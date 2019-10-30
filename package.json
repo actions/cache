@@ -1,0 +1,43 @@
+{
+  "name": "cache",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Cache dependencies and build outputs",
+  "main": "dist/restore/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "tsc --noEmit && jest --coverage",
+    "format": "prettier --write **/*.ts",
+    "format-check": "prettier --check **/*.ts",
+    "release": "ncc build -o dist/restore src/restore.ts && ncc build -o dist/save src/save.ts && git add -f dist/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/actions/cache.git"
+  },
+  "keywords": [
+    "actions",
+    "node",
+    "cache"
+  ],
+  "author": "GitHub",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "^1.2.0",
+    "@actions/exec": "^1.0.1",
+    "@actions/io": "^1.0.1",
+    "typed-rest-client": "^1.5.0",
+    "uuid": "^3.3.3"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.13",
+    "@types/node": "^12.0.4",
+    "@types/uuid": "^3.4.5",
+    "@zeit/ncc": "^0.20.5",
+    "jest": "^24.8.0",
+    "jest-circus": "^24.7.1",
+    "prettier": "1.18.2",
+    "ts-jest": "^24.0.2",
+    "typescript": "^3.5.1"
+  }
+}

@@ -1,0 +1,20 @@
+name: Test Cache Action
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - run: npm ci
+
+    - name: Prettier Format Check
+      run: npm run format-check
+
+    - name: Build & Test
+      run: npm run test
