@@ -15,8 +15,12 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
+      
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '12.x'
 
-    - run: npm install
+    - run: npm ci
 
     - name: Prettier Format Check
       run: npm run format-check
