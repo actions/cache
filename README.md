@@ -2,6 +2,8 @@
 
 This GitHub Action allows caching dependencies and build outputs to improve workflow execution time.
 
+<a href="https://github.com/actions/cache"><img alt="GitHub Actions status" src="https://github.com/actions/cache/workflows/Tests/badge.svg"></a>
+
 ## Usage
 
 ### Pre-requisites
@@ -108,6 +110,26 @@ uses: actions/cache@preview
         key: ${{ runner.os }}-carthage-${{ hashFiles('**/Cartfile.resolved') }}
         restore-keys: |
           ${{ runner.os }}-carthage-
+```
+
+### Swift, Objective-C - CocoaPods
+```yaml
+- uses: actions/cache@preview
+  with:
+    path: Pods
+    key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-pods-
+```
+
+### Ruby - Gem
+```yaml
+- uses: actions/cache@preview
+  with:
+    path: vendor/bundle
+    key: ${{ runner.os }}-gem-${{ hashFiles('**/Gemfile.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-gem-
 ```
 
 ## Cache Limits
