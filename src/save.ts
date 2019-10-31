@@ -66,7 +66,6 @@ async function run() {
 
         const stream = fs.createReadStream(archivePath);
         await cacheHttpClient.saveCache(stream, primaryKey);
-
     } catch (error) {
         core.warning(error.message);
     }
