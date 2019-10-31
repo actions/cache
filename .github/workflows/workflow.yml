@@ -1,4 +1,4 @@
-name: Test Cache Action
+name: Tests
 on:
   pull_request:
   push:
@@ -7,9 +7,18 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: Test on ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+    runs-on: ${{ matrix.os }}
+    
     steps:
     - uses: actions/checkout@v1
+      
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '12.x'
 
     - run: npm ci
 
