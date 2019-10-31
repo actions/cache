@@ -32,7 +32,7 @@
 ```
 
 ## C# - Nuget
-
+Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
 ```yaml
 - uses: actions/cache@preview
   with:
