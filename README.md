@@ -40,8 +40,8 @@ jobs:
       with:
         path: node_modules
         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-      restore-keys: |
-        ${{ runner.os }}-node-
+        restore-keys: |
+          ${{ runner.os }}-node-
 
     - name: Install Dependencies
       run: npm install
