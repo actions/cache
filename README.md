@@ -35,11 +35,13 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
-    - name: Cache node_modules
+    - name: Cache node modules
       uses: actions/cache@preview
       with:
         path: node_modules
-        key: ${{ runner.os }}-node
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+      restore-keys: |
+        ${{ runner.os }}-node-
 
     - name: Install Dependencies
       run: npm install
