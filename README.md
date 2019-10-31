@@ -102,6 +102,16 @@ jobs:
     key: ${{ runner.os }}-maven
 ```
 
+### Ruby - Gem
+```yaml
+- uses: actions/cache@preview
+  with:
+    path: vendor/bundle
+    key: ${{ runner.os }}-gem-${{ hashFiles('**/Gemfile.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-gem-
+```
+
 ## Cache Limits
 
 Individual caches are limited to 200MB and a repository can have up to 2GB of caches. Once the 2GB limit is reached, older caches will be evicted based on when the cache was last accessed.
