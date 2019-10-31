@@ -100,6 +100,16 @@ jobs:
     key: ${{ runner.os }}-maven
 ```
 
+### Swift, Objective-C - Carthage
+```yaml
+uses: actions/cache@preview
+      with:
+        path: Carthage
+        key: ${{ runner.os }}-carthage-${{ hashFiles('**/Cartfile.resolved') }}
+        restore-keys: |
+          ${{ runner.os }}-carthage-
+```
+
 ## Cache Limits
 
 Individual caches are limited to 200MB and a repository can have up to 2GB of caches. Once the 2GB limit is reached, older caches will be evicted based on when the cache was last accessed.
