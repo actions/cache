@@ -129,7 +129,7 @@ Use with virtual environments.
 - uses: actions/cache@preview
   with:
     path: .venv
-    key: ${{ runner.os }}-pip-${{ hashFiles(format('{0}/{1}', github.workspace, 'requirements.txt')) }}
+    key: ${{ runner.os }}-pip-${{ hashFiles(format('{0}/{1}', github.workspace, '**/requirements.txt')) }}
     restore-keys: |
       ${{ runner.os }}-pip-
 - run: |
