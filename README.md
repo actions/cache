@@ -50,87 +50,10 @@ jobs:
     - name: Test
       run: npm run test
 ```
+
 ## Ecosystem Examples
 
-### Node - npm
-
-```yaml
-- uses: actions/cache@preview
-  with:
-    path: node_modules
-    key: ${{ runner.os }}-node
-```
-
-### Node - Yarn
-
-```yaml
-- uses: actions/cache@preview
-  with:
-    path: ~/.cache/yarn
-    key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
-    restore-keys: |
-      ${{ runner.os }}-yarn-
-```
-
-### C# - Nuget
-
-```yaml
-- uses: actions/cache@preview
-  with:
-    path: ~/.nuget/packages
-    key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-    restore-keys: |
-      ${{ runner.os }}-nuget-
-```
-
-### Java - Gradle
-
-```yaml
-- uses: actions/cache@preview
-  with:
-    path: ~/.gradle/caches
-    key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle') }}
-    restore-keys: |
-      gradle-${{ runner.os }}-
-```
-
-### Java - Maven
-```yaml
-- uses: actions/cache@preview
-  with:
-    path: ~/.m2/repository
-    key: ${{ runner.os }}-maven
-```
-
-### Swift, Objective-C - Carthage
-```yaml
-uses: actions/cache@preview
-      with:
-        path: Carthage
-        key: ${{ runner.os }}-carthage-${{ hashFiles('**/Cartfile.resolved') }}
-        restore-keys: |
-          ${{ runner.os }}-carthage-
-```
-
-### Swift, Objective-C - CocoaPods
-```yaml
-- uses: actions/cache@preview
-  with:
-    path: Pods
-    key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-pods-
-```
-
-### Ruby - Gem
-```yaml
-- uses: actions/cache@preview
-  with:
-    path: vendor/bundle
-    key: ${{ runner.os }}-gem-${{ hashFiles('**/Gemfile.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-gem-
-```
+See [Examples](examples.md)
 
 ## Cache Limits
 
