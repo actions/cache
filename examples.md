@@ -61,7 +61,7 @@
     path: ~/.m2/repository
     key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
     restore-keys: |
-      ${{ runner.os }}-maven
+      ${{ runner.os }}-maven-
 ```
 
 ## Swift, Objective-C - Carthage
