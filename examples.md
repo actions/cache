@@ -10,7 +10,7 @@
 - [Ruby - Gem](#ruby---gem)
 - [Go - Modules](#go---modules)
 - [Elixir - Mix](#elixir---mix)
-- [Python - pip, virtuelenv](#python---pip-virtuelenv)
+- [Python - pip, virtualenv](#python---pip-virtualenv)
 
 ## Node - npm
 
@@ -121,7 +121,7 @@ uses: actions/cache@preview
       ${{ runner.os }}-mix-
 ```
 
-## Python - pip, virtuelenv
+## Python - pip, virtualenv
 
 Use with virtual environments.
 
