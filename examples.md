@@ -10,6 +10,7 @@
 - [Ruby - Gem](#ruby---gem)
 - [Go - Modules](#go---modules)
 - [Elixir - Mix](#elixir---mix)
+- [Python - pip](#python---pip)
 
 ## Node - npm
 
