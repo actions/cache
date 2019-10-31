@@ -102,6 +102,16 @@ jobs:
     key: ${{ runner.os }}-maven
 ```
 
+### Swift, Objective-C - CocoaPods
+```yaml
+- uses: actions/cache@preview
+  with:
+    path: Pods
+    key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-pods-
+```
+
 ### Ruby - Gem
 ```yaml
 - uses: actions/cache@preview
@@ -110,6 +120,7 @@ jobs:
     key: ${{ runner.os }}-gem-${{ hashFiles('**/Gemfile.lock') }}
     restore-keys: |
       ${{ runner.os }}-gem-
+
 ```
 
 ## Cache Limits
