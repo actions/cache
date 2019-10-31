@@ -119,3 +119,20 @@ uses: actions/cache@preview
     restore-keys: |
       ${{ runner.os }}-mix-
 ```
+
+### Python - pip
+
+Use with virtual environments.
+
+```yaml
+- uses: actions/cache@preview
+  with:
+    path: .venv
+    key: ${{ runner.os }}-pip-${{ hashFiles(format('{0}/{1}', github.workspace, 'requirements.txt')) }}
+    restore-keys: |
+      ${{ runner.os }}-pip-
+- run: |
+    python -m venv .venv
+    source .venv/bin/activate
+    python -m pip install -r requirements.txt
+```
