@@ -96,3 +96,14 @@ uses: actions/cache@preview
     restore-keys: |
       ${{ runner.os }}-gem-
 ```
+
+## Go - Modules
+
+```yaml
+- uses: actions/cache@preview
+  with:
+    path: ~/go/pkg/mod
+    key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+    restore-keys: |
+      ${{ runner.os }}-go-
+```
