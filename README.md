@@ -102,6 +102,16 @@ jobs:
     key: ${{ runner.os }}-maven
 ```
 
+### Swift, Objective-C - Carthage
+```yaml
+uses: actions/cache@preview
+      with:
+        path: Carthage
+        key: ${{ runner.os }}-carthage-${{ hashFiles('**/Cartfile.resolved') }}
+        restore-keys: |
+          ${{ runner.os }}-carthage-
+```
+
 ### Swift, Objective-C - CocoaPods
 ```yaml
 - uses: actions/cache@preview
@@ -120,7 +130,6 @@ jobs:
     key: ${{ runner.os }}-gem-${{ hashFiles('**/Gemfile.lock') }}
     restore-keys: |
       ${{ runner.os }}-gem-
-
 ```
 
 ## Cache Limits
