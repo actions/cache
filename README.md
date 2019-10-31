@@ -64,17 +64,17 @@ See [Examples](examples.md)
   uses: actions/cache@preview
   with:
     path: ~/.cargo/registry
-    key: ${{ runner.os }}-cargo-registry
+    key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 - name: Cache cargo index
   uses: actions/cache@preview
   with:
     path: ~/.cargo/git
-    key: ${{ runner.os }}-cargo-index
+    key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
 - name: Cache cargo build
   uses: actions/cache@preview
   with:
     path: target
-    key: ${{ runner.os }}-cargo-build-target
+    key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 ```
 
 ## Cache Limits
