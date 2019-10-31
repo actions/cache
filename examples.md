@@ -10,7 +10,7 @@
 - [Ruby - Gem](#ruby---gem)
 - [Go - Modules](#go---modules)
 - [Elixir - Mix](#elixir---mix)
-- [Python - pip, virtuelenv](#python---pip,-virtuelenv)
+- [Python - pip, virtuelenv](#python---pip-virtuelenv)
 
 ## Node - npm
 
@@ -111,7 +111,6 @@ uses: actions/cache@preview
       ${{ runner.os }}-go-
 ```
 
-<<<<<<< HEAD
 ## Elixir - Mix
 ```yaml
 - uses: actions/cache@preview
@@ -122,10 +121,7 @@ uses: actions/cache@preview
       ${{ runner.os }}-mix-
 ```
 
-## Python - pip
-=======
 ## Python - pip, virtuelenv
->>>>>>> Add virtualenv for title and fix wrong format
 
 Use with virtual environments.
 
