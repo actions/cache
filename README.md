@@ -100,6 +100,16 @@ jobs:
     key: ${{ runner.os }}-maven
 ```
 
+### Swift, Objective-C - CocoaPods
+```yaml
+- uses: actions/cache@preview
+  with:
+    path: Pods
+    key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-pods-
+```
+
 ## Cache Limits
 
 Individual caches are limited to 200MB and a repository can have up to 2GB of caches. Once the 2GB limit is reached, older caches will be evicted based on when the cache was last accessed.
