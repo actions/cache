@@ -120,7 +120,7 @@ uses: actions/cache@preview
       ${{ runner.os }}-mix-
 ```
 
-### Python - pip
+## Python - pip
 
 Use with virtual environments.
 
