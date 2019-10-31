@@ -10,7 +10,7 @@
 - [Ruby - Gem](#ruby---gem)
 - [Go - Modules](#go---modules)
 - [Elixir - Mix](#elixir---mix)
-- [Python - pip](#python---pip)
+- [Python - pip, virtuelenv](#python---pip,-virtuelenv)
 
 ## Node - npm
 
@@ -111,6 +111,7 @@ uses: actions/cache@preview
       ${{ runner.os }}-go-
 ```
 
+<<<<<<< HEAD
 ## Elixir - Mix
 ```yaml
 - uses: actions/cache@preview
@@ -122,6 +123,9 @@ uses: actions/cache@preview
 ```
 
 ## Python - pip
+=======
+## Python - pip, virtuelenv
+>>>>>>> Add virtualenv for title and fix wrong format
 
 Use with virtual environments.
 
@@ -129,11 +133,7 @@ Use with virtual environments.
 - uses: actions/cache@preview
   with:
     path: .venv
-    key: ${{ runner.os }}-pip-${{ hashFiles(format('{0}/{1}', github.workspace, '**/requirements.txt')) }}
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
     restore-keys: |
       ${{ runner.os }}-pip-
-- run: |
-    python -m venv .venv
-    source .venv/bin/activate
-    python -m pip install -r requirements.txt
 ```
