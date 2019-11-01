@@ -8,6 +8,7 @@
 - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 - [Ruby - Gem](#ruby---gem)
+- [Go - Modules](#go---modules)
 - [Rust - Cargo](#rust---cargo)
 
 ## Node - npm
@@ -96,6 +97,17 @@ uses: actions/cache@preview
     key: ${{ runner.os }}-gem-${{ hashFiles('**/Gemfile.lock') }}
     restore-keys: |
       ${{ runner.os }}-gem-
+```
+
+## Go - Modules
+
+```yaml
+- uses: actions/cache@preview
+  with:
+    path: ~/go/pkg/mod
+    key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+    restore-keys: |
+      ${{ runner.os }}-go-
 ```
 
 ## Rust - Cargo
