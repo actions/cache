@@ -72,7 +72,7 @@ export function resolvePath(filePath: string): string {
     if (filePath[0] === "~") {
         const home = os.homedir();
         if (!home) {
-            throw new Error("Unable to resole `~` to HOME");
+            throw new Error("Unable to resolve `~` to HOME");
         }
         return path.join(home, filePath.slice(1));
     }
