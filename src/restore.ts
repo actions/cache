@@ -94,13 +94,6 @@ async function run() {
             core.info(
                 `Cache restored from key:${cacheEntry && cacheEntry.cacheKey}`
             );
-
-            try {
-                core.info("Cache Checksum:");
-                await exec(`md5sum`, [`${archivePath}`]);
-            } catch (error) {
-                core.debug(`Failed to checkum with ${error}`);
-            }
         } catch (error) {
             core.warning(error.message);
             utils.setCacheHitOutput(false);
