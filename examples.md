@@ -123,7 +123,7 @@ uses: actions/cache@preview
 
 ## Python - pip, virtualenv
 
-Use with virtual environments.
+If caching the virtualenv, you have to activate the environment for each tasks.
 
 ```yaml
 - uses: actions/cache@preview
