@@ -57,26 +57,6 @@ jobs:
 
 See [Examples](examples.md)
 
-### Rust - Cargo
-
-```
-- name: Cache cargo registry
-  uses: actions/cache@preview
-  with:
-    path: ~/.cargo/registry
-    key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-- name: Cache cargo index
-  uses: actions/cache@preview
-  with:
-    path: ~/.cargo/git
-    key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-- name: Cache cargo build
-  uses: actions/cache@preview
-  with:
-    path: target
-    key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-```
-
 ## Cache Limits
 
 Individual caches are limited to 200MB and a repository can have up to 2GB of caches. Once the 2GB limit is reached, older caches will be evicted based on when the cache was last accessed.

@@ -8,6 +8,7 @@
 - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 - [Ruby - Gem](#ruby---gem)
+- [Rust - Cargo](#rust---cargo)
 
 ## Node - npm
 
@@ -95,4 +96,24 @@ uses: actions/cache@preview
     key: ${{ runner.os }}-gem-${{ hashFiles('**/Gemfile.lock') }}
     restore-keys: |
       ${{ runner.os }}-gem-
+```
+
+## Rust - Cargo
+
+```
+- name: Cache cargo registry
+  uses: actions/cache@preview
+  with:
+    path: ~/.cargo/registry
+    key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+- name: Cache cargo index
+  uses: actions/cache@preview
+  with:
+    path: ~/.cargo/git
+    key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+- name: Cache cargo build
+  uses: actions/cache@preview
+  with:
+    path: target
+    key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 ```
