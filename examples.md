@@ -8,6 +8,7 @@
 - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 - [Ruby - Gem](#ruby---gem)
+- [Go - Modules](#go---modules)
 
 ## Node - npm
 
