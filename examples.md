@@ -1,6 +1,7 @@
 # Examples
 
 - [C# - Nuget](#c---nuget)
+- [Docker](#docker)
 - [Elixir - Mix](#elixir---mix)
 - [Go - Modules](#go---modules)
 - [Java - Gradle](#java---gradle)
@@ -156,4 +157,30 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
     key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
     restore-keys: |
       ${{ runner.os }}-pods-
+```
+
+## Docker
+
+```yaml
+- uses: actions/cache@preview
+  id: cache
+  with:
+    path: docker-cache
+    key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile') }}
+    restore-keys: |
+      ${{ runner.os }}-docker-
+- name: Load cached Docker layers
+  run: |
+    if [ -d "docker-cache" ]; then
+      cat docker-cache/x* > my-image.tar
+      docker load < my-image.tar
+      rm -fr docker-cache
+    fi
+- name: Build image
+  if: steps.cache.outputs.cache-hit != 'true'
+  run: |
+    docker build --cache-from my-image -t my-image .
+    docker save my-image > my-image.tar
+    mkdir docker-cache
+    split -b 100m my-image.tar docker-cache/x
 ```
