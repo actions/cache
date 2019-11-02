@@ -9,6 +9,8 @@
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 - [Ruby - Gem](#ruby---gem)
 - [Go - Modules](#go---modules)
+- [PHP - Composer](#php---composer)
+
 
 ## Node - npm
 
@@ -107,4 +109,15 @@ uses: actions/cache@preview
     key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
     restore-keys: |
       ${{ runner.os }}-go-
+```
+
+## PHP - Composer
+
+```yaml
+- uses: actions/cache@preview
+  with:
+    path: ~/.cache/composer
+    key: ${{ runner.os }}-composer-${{ hashFiles(format('{0}{1}', github.workspace, '/composer.lock')) }}
+    restore-keys: |
+      ${{ runner.os }}-composer-
 ```
