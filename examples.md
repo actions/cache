@@ -9,6 +9,7 @@
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 - [Ruby - Gem](#ruby---gem)
 - [Go - Modules](#go---modules)
+- [Haskell - Cabal](#haskell---cabal)
 
 ## Node - npm
 
@@ -107,4 +108,13 @@ uses: actions/cache@preview
     key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
     restore-keys: |
       ${{ runner.os }}-go-
+```
+
+## Haskell - Cabal
+
+```yaml
+- uses: actions/cache@preview
+  with:
+    path: ~/.cabal/store
+    key: ${{ runner.os }}-haskell-${{ matrix.ghc }}
 ```
