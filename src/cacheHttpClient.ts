@@ -10,7 +10,7 @@ import { ArtifactCacheEntry } from "./contracts";
 
 export async function getCacheEntry(
     keys: string[]
-): Promise<ArtifactCacheEntry> {
+): Promise<ArtifactCacheEntry | null> {
     const cacheUrl = getCacheUrl();
     const token = process.env["ACTIONS_RUNTIME_TOKEN"] || "";
     const bearerCredentialHandler = new BearerCredentialHandler(token);
@@ -28,9 +28,7 @@ export async function getCacheEntry(
         getRequestOptions()
     );
     if (response.statusCode === 204) {
-        throw new Error(
-            `Cache not found for input keys: ${JSON.stringify(keys)}.`
-        );
+        return null;
     }
     if (response.statusCode !== 200) {
         throw new Error(`Cache service responded with ${response.statusCode}`);
