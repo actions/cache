@@ -166,7 +166,7 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
   id: cache
   with:
     path: docker-cache
-    key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile') }}
+    key: ${{ runner.os }}-docker-${{ github.sha }}
     restore-keys: |
       ${{ runner.os }}-docker-
 - name: Load cached Docker layers
