@@ -112,7 +112,7 @@ uses: actions/cache@preview
 
 ## Elixir - Mix
 ```yaml
-- uses: actions.cache@preview
+- uses: actions/cache@preview
   with:
     path: deps
     key: ${{ runner.os }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
