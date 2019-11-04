@@ -2,6 +2,8 @@
 
 This GitHub Action allows caching dependencies and build outputs to improve workflow execution time.
 
+<a href="https://github.com/actions/cache"><img alt="GitHub Actions status" src="https://github.com/actions/cache/workflows/Tests/badge.svg"></a>
+
 ## Usage
 
 ### Pre-requisites
@@ -33,11 +35,13 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
-    - name: Cache node_modules
+    - name: Cache node modules
       uses: actions/cache@preview
       with:
         path: node_modules
-        key: ${{ runner.os }}-node
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
 
     - name: Install Dependencies
       run: npm install
@@ -48,61 +52,14 @@ jobs:
     - name: Test
       run: npm run test
 ```
+
 ## Ecosystem Examples
 
-### Node - npm
-
-```yaml
-- uses: actions/cache@preview
-  with:
-    path: node_modules
-    key: ${{ runner.os }}-node
-```
-
-### Node - Yarn
-
-```yaml
-- uses: actions/cache@preview
-  with:
-    path: ~/.cache/yarn
-    key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
-    restore-keys: |
-      ${{ runner.os }}-yarn-
-```
-
-### C# - Nuget
-
-```yaml
-- uses: actions/cache@preview
-  with:
-    path: ~/.nuget/packages
-    key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-    restore-keys: |
-      ${{ runner.os }}-nuget-
-```
-
-### Java - Gradle
-
-```yaml
-- uses: actions/cache@preview
-  with:
-    path: ~/.gradle/caches
-    key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle') }}
-    restore-keys: |
-      gradle-${{ runner.os }}-
-```
-
-### Java - Maven
-```yaml
-- uses: actions/cache@preview
-  with:
-    path: ~/.m2/repository
-    key: ${{ runner.os }}-maven
-```
+See [Examples](examples.md)
 
 ## Cache Limits
 
-Individual caches are limited to 200MB and a repository can have up to 2GB of caches. Once the 2GB limit is reached, older caches will be evicted based on when the cache was last accessed.
+Individual caches are limited to 200MB and a repository can have up to 2GB of caches. Once the 2GB limit is reached, older caches will be evicted based on when the cache was last accessed.  Caches that are not accessed within the last week will also be evicted.
 
 ## Skipping steps based on cache-hit
 
@@ -124,7 +81,7 @@ steps:
     run: /install.sh
 ```
 
-> Note: The `id` defined in `actions/cache` must match the `id` in the `if` statement (i.e. `steps.[ID].outupts.cache-hit`)
+> Note: The `id` defined in `actions/cache` must match the `id` in the `if` statement (i.e. `steps.[ID].outputs.cache-hit`)
 
 ## Contributing
 We would love for you to contribute to `@actions/cache`, pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.

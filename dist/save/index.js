@@ -1475,10 +1475,11 @@ exports.debug = debug; // for test
 "use strict";
 
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -1506,7 +1507,7 @@ function getCacheEntry(keys) {
         ]);
         const response = yield restClient.get(resource, getRequestOptions());
         if (response.statusCode === 204) {
-            throw new Error(`Cache not found for input keys: ${JSON.stringify(keys)}.`);
+            return null;
         }
         if (response.statusCode !== 200) {
             throw new Error(`Cache service responded with ${response.statusCode}`);
@@ -2120,10 +2121,11 @@ exports.createType3Message = createType3Message;
 "use strict";
 
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -2200,7 +2202,7 @@ function resolvePath(filePath) {
     if (filePath[0] === "~") {
         const home = os.homedir();
         if (!home) {
-            throw new Error("Unable to resole `~` to HOME");
+            throw new Error("Unable to resolve `~` to HOME");
         }
         return path.join(home, filePath.slice(1));
     }
@@ -2832,10 +2834,11 @@ function isUnixExecutable(stats) {
 "use strict";
 
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -2895,13 +2898,6 @@ function run() {
             }
             const stream = fs.createReadStream(archivePath);
             yield cacheHttpClient.saveCache(stream, primaryKey);
-            try {
-                core.info("Cache Checksum:");
-                yield exec_1.exec(`md5sum`, [`${archivePath}`]);
-            }
-            catch (error) {
-                core.debug(`Failed to checkum with ${error}`);
-            }
         }
         catch (error) {
             core.warning(error.message);
