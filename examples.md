@@ -15,7 +15,7 @@
 ## Node - npm
 
 ```yaml
-- uses: actions/cache@preview
+- uses: actions/cache@v1
   with:
     path: node_modules
     key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
@@ -26,7 +26,7 @@
 ## Node - Yarn
 
 ```yaml
-- uses: actions/cache@preview
+- uses: actions/cache@v1
   with:
     path: ~/.cache/yarn
     key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
@@ -37,7 +37,7 @@
 ## C# - Nuget
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
 ```yaml
-- uses: actions/cache@preview
+- uses: actions/cache@v1
   with:
     path: ~/.nuget/packages
     key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
@@ -48,7 +48,7 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 ## Java - Gradle
 
 ```yaml
-- uses: actions/cache@preview
+- uses: actions/cache@v1
   with:
     path: ~/.gradle/caches
     key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
@@ -59,7 +59,7 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 ## Java - Maven
 
 ```yaml
-- uses: actions/cache@preview
+- uses: actions/cache@v1
   with:
     path: ~/.m2/repository
     key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -70,7 +70,7 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 ## Swift, Objective-C - Carthage
 
 ```yaml
-uses: actions/cache@preview
+uses: actions/cache@v1
       with:
         path: Carthage
         key: ${{ runner.os }}-carthage-${{ hashFiles('**/Cartfile.resolved') }}
@@ -81,7 +81,7 @@ uses: actions/cache@preview
 ## Swift, Objective-C - CocoaPods
 
 ```yaml
-- uses: actions/cache@preview
+- uses: actions/cache@v1
   with:
     path: Pods
     key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
@@ -92,7 +92,7 @@ uses: actions/cache@preview
 ## Ruby - Gem
 
 ```yaml
-- uses: actions/cache@preview
+- uses: actions/cache@v1
   with:
     path: vendor/bundle
     key: ${{ runner.os }}-gem-${{ hashFiles('**/Gemfile.lock') }}
@@ -103,7 +103,7 @@ uses: actions/cache@preview
 ## Go - Modules
 
 ```yaml
-- uses: actions/cache@preview
+- uses: actions/cache@v1
   with:
     path: ~/go/pkg/mod
     key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -113,7 +113,7 @@ uses: actions/cache@preview
 
 ## Elixir - Mix
 ```yaml
-- uses: actions/cache@preview
+- uses: actions/cache@v1
   with:
     path: deps
     key: ${{ runner.os }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
@@ -125,17 +125,17 @@ uses: actions/cache@preview
 
 ```
 - name: Cache cargo registry
-  uses: actions/cache@preview
+  uses: actions/cache@v1
   with:
     path: ~/.cargo/registry
     key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 - name: Cache cargo index
-  uses: actions/cache@preview
+  uses: actions/cache@v1
   with:
     path: ~/.cargo/git
     key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
 - name: Cache cargo build
-  uses: actions/cache@preview
+  uses: actions/cache@v1
   with:
     path: target
     key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
