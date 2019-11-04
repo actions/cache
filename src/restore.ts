@@ -49,13 +49,19 @@ async function run() {
         }
 
         try {
+            const cacheEntry = await cacheHttpClient.getCacheEntry(keys);
+            if (!cacheEntry) {
+                core.info(
+                    `Cache not found for input keys: ${JSON.stringify(keys)}.`
+                );
+                return;
+            }
+
             let archivePath = path.join(
                 await utils.createTempDirectory(),
                 "cache.tgz"
             );
             core.debug(`Archive Path: ${archivePath}`);
-
-            const cacheEntry = await cacheHttpClient.getCacheEntry(keys);
 
             // Store the cache result
             utils.setCacheState(cacheEntry);
@@ -92,7 +98,7 @@ async function run() {
             utils.setCacheHitOutput(isExactKeyMatch);
 
             core.info(
-                `Cache restored from key:${cacheEntry && cacheEntry.cacheKey}`
+                `Cache restored from key: ${cacheEntry && cacheEntry.cacheKey}`
             );
         } catch (error) {
             core.warning(error.message);
