@@ -9,6 +9,7 @@
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 - [Ruby - Gem](#ruby---gem)
 - [Go - Modules](#go---modules)
+- [Elixir - Mix](#elixir---mix)
 
 ## Node - npm
 
@@ -107,4 +108,14 @@ uses: actions/cache@preview
     key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
     restore-keys: |
       ${{ runner.os }}-go-
+```
+
+## Elixir - Mix
+```yaml
+- uses: actions/cache@preview
+  with:
+    path: deps
+    key: ${{ runner.os }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+    restore-keys: |
+      ${{ runner.os }}-mix-
 ```
