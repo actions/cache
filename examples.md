@@ -10,7 +10,7 @@
 - [Ruby - Gem](#ruby---gem)
 - [Go - Modules](#go---modules)
 - [Elixir - Mix](#elixir---mix)
-- [Python - pip, virtualenv](#python---pip-virtualenv)
+- [Python - pip](#python---pip)
 
 ## Node - npm
 
@@ -121,14 +121,12 @@ uses: actions/cache@preview
       ${{ runner.os }}-mix-
 ```
 
-## Python - pip, virtualenv
-
-If caching the virtualenv, you have to activate the environment for each tasks.
+## Python - pip
 
 ```yaml
 - uses: actions/cache@preview
   with:
-    path: .venv
+    path: ~/.cache/pip
     key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
     restore-keys: |
       ${{ runner.os }}-pip-
