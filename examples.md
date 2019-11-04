@@ -125,8 +125,17 @@ uses: actions/cache@preview
 
 ```yaml
 - uses: actions/cache@preview
+  if: startsWith(runner.os, 'Linux')
   with:
     path: ~/.cache/pip
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    restore-keys: |
+      ${{ runner.os }}-pip-
+
+- uses: actions/cache@preview
+  if: startsWith(runner.os, 'macOS')
+  with:
+    path: ~/Library/Caches/pip
     key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
     restore-keys: |
       ${{ runner.os }}-pip-
