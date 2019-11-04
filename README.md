@@ -36,7 +36,7 @@ jobs:
     - uses: actions/checkout@v1
 
     - name: Cache node modules
-      uses: actions/cache@preview
+      uses: actions/cache@v1
       with:
         path: node_modules
         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
@@ -70,7 +70,7 @@ Example:
 steps:
   - uses: actions/checkout@v1
 
-  - uses: actions/cache@preview
+  - uses: actions/cache@v1
     id: cache
     with:
       path: path/to/dependencies
