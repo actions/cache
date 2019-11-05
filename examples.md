@@ -180,7 +180,7 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
   if: steps.cache.outputs.cache-hit != 'true'
   run: |
     docker build --cache-from my-image -t my-image .
-    docker save my-image > my-image.tar
+    docker save my-image $(docker history -q my-image | awk '!/<missing>/{print}') > my-image.tar
     mkdir docker-cache
     split -b 100m my-image.tar docker-cache/x
 ```
