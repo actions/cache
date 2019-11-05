@@ -7,6 +7,7 @@
 - [Java - Maven](#java---maven)
 - [Node - npm](#node---npm)
 - [Node - Yarn](#node---yarn)
+- [PHP - Composer](#php---composer)
 - [Ruby - Gem](#ruby---gem)
 - [Rust - Cargo](#rust---cargo)
 - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
@@ -87,6 +88,21 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
     key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
     restore-keys: |
       ${{ runner.os }}-yarn-
+```
+
+## PHP - Composer
+
+```yaml  
+- name: Get Composer Cache Directory
+  id: composer-cache
+  run: |
+    echo "::set-output name=dir::$(composer config cache-files-dir)"
+- uses: actions/cache@v1
+  with:
+    path: ${{ steps.composer-cache.outputs.dir }}
+    key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-composer-
 ```
 
 ## Ruby - Gem
