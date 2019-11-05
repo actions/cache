@@ -4,6 +4,10 @@ This GitHub Action allows caching dependencies and build outputs to improve work
 
 <a href="https://github.com/actions/cache"><img alt="GitHub Actions status" src="https://github.com/actions/cache/workflows/Tests/badge.svg?branch=master&event=push"></a>
 
+## Documentation
+
+See ["Caching dependencies to speed up workflows"](https://help.github.com/en/github/automating-your-workflow-with-github-actions/caching-dependencies-to-speed-up-workflows).
+
 ## Usage
 
 ### Pre-requisites
