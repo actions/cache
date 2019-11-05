@@ -63,7 +63,7 @@ See [Examples](examples.md)
 
 ## Cache Limits
 
-Individual caches are limited to 200MB and a repository can have up to 2GB of caches. Once the 2GB limit is reached, older caches will be evicted based on when the cache was last accessed.  Caches that are not accessed within the last week will also be evicted.
+Individual caches are limited to 400MB and a repository can have up to 2GB of caches. Once the 2GB limit is reached, older caches will be evicted based on when the cache was last accessed.  Caches that are not accessed within the last week will also be evicted.
 
 ## Skipping steps based on cache-hit
 
