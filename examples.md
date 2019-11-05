@@ -162,7 +162,7 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 ## Docker
 
 ```yaml
-- uses: actions/cache@preview
+- uses: actions/cache@v1
   id: cache
   with:
     path: docker-cache
