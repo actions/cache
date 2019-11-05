@@ -20,7 +20,10 @@ async function run() {
         const primaryKey = core.getInput(Inputs.Key, { required: true });
         core.saveState(State.CacheKey, primaryKey);
 
-        const restoreKeys = core.getInput(Inputs.RestoreKeys).split("\n");
+        const restoreKeys = core
+            .getInput(Inputs.RestoreKeys)
+            .split("\n")
+            .filter(x => x !== "");
         const keys = [primaryKey, ...restoreKeys];
 
         core.debug("Resolved Keys:");
@@ -52,7 +55,7 @@ async function run() {
             const cacheEntry = await cacheHttpClient.getCacheEntry(keys);
             if (!cacheEntry) {
                 core.info(
-                    `Cache not found for input keys: ${JSON.stringify(keys)}.`
+                    `Cache not found for input keys: ${keys.join(", ")}.`
                 );
                 return;
             }

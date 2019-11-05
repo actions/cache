@@ -2,7 +2,11 @@
 
 This GitHub Action allows caching dependencies and build outputs to improve workflow execution time.
 
-<a href="https://github.com/actions/cache"><img alt="GitHub Actions status" src="https://github.com/actions/cache/workflows/Tests/badge.svg"></a>
+<a href="https://github.com/actions/cache"><img alt="GitHub Actions status" src="https://github.com/actions/cache/workflows/Tests/badge.svg?branch=master&event=push"></a>
+
+## Documentation
+
+See ["Caching dependencies to speed up workflows"](https://help.github.com/github/automating-your-workflow-with-github-actions/caching-dependencies-to-speed-up-workflows).
 
 ## Usage
 
@@ -59,7 +63,7 @@ See [Examples](examples.md)
 
 ## Cache Limits
 
-Individual caches are limited to 200MB and a repository can have up to 2GB of caches. Once the 2GB limit is reached, older caches will be evicted based on when the cache was last accessed.  Caches that are not accessed within the last week will also be evicted.
+Individual caches are limited to 400MB and a repository can have up to 2GB of caches. Once the 2GB limit is reached, older caches will be evicted based on when the cache was last accessed.  Caches that are not accessed within the last week will also be evicted.
 
 ## Skipping steps based on cache-hit
 

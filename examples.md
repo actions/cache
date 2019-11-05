@@ -1,41 +1,20 @@
 # Examples
 
-- [Node - npm](#node---npm)
-- [Node - Yarn](#node---yarn)
 - [C# - Nuget](#c---nuget)
+- [Elixir - Mix](#elixir---mix)
+- [Go - Modules](#go---modules)
 - [Java - Gradle](#java---gradle)
 - [Java - Maven](#java---maven)
+- [Node - npm](#node---npm)
+- [Node - Yarn](#node---yarn)
+- [Ruby - Gem](#ruby---gem)
+- [Rust - Cargo](#rust---cargo)
 - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
-- [Ruby - Gem](#ruby---gem)
-- [Go - Modules](#go---modules)
-- [Elixir - Mix](#elixir---mix)
-- [Rust - Cargo](#rust---cargo)
-
-## Node - npm
-
-```yaml
-- uses: actions/cache@v1
-  with:
-    path: node_modules
-    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-    restore-keys: |
-      ${{ runner.os }}-node-
-```
-
-## Node - Yarn
-
-```yaml
-- uses: actions/cache@v1
-  with:
-    path: ~/.cache/yarn
-    key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
-    restore-keys: |
-      ${{ runner.os }}-yarn-
-```
 
 ## C# - Nuget
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
+
 ```yaml
 - uses: actions/cache@v1
   with:
@@ -43,6 +22,27 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
     key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
     restore-keys: |
       ${{ runner.os }}-nuget-
+```
+
+## Elixir - Mix
+```yaml
+- uses: actions/cache@v1
+  with:
+    path: deps
+    key: ${{ runner.os }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+    restore-keys: |
+      ${{ runner.os }}-mix-
+```
+
+## Go - Modules
+
+```yaml
+- uses: actions/cache@v1
+  with:
+    path: ~/go/pkg/mod
+    key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+    restore-keys: |
+      ${{ runner.os }}-go-
 ```
 
 ## Java - Gradle
@@ -67,26 +67,26 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
       ${{ runner.os }}-maven-
 ```
 
-## Swift, Objective-C - Carthage
-
-```yaml
-uses: actions/cache@v1
-      with:
-        path: Carthage
-        key: ${{ runner.os }}-carthage-${{ hashFiles('**/Cartfile.resolved') }}
-        restore-keys: |
-          ${{ runner.os }}-carthage-
-```
-
-## Swift, Objective-C - CocoaPods
+## Node - npm
 
 ```yaml
 - uses: actions/cache@v1
   with:
-    path: Pods
-    key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+    path: node_modules
+    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
     restore-keys: |
-      ${{ runner.os }}-pods-
+      ${{ runner.os }}-node-
+```
+
+## Node - Yarn
+
+```yaml
+- uses: actions/cache@v1
+  with:
+    path: ~/.cache/yarn
+    key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
+    restore-keys: |
+      ${{ runner.os }}-yarn-
 ```
 
 ## Ruby - Gem
@@ -100,30 +100,9 @@ uses: actions/cache@v1
       ${{ runner.os }}-gem-
 ```
 
-## Go - Modules
-
-```yaml
-- uses: actions/cache@v1
-  with:
-    path: ~/go/pkg/mod
-    key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-    restore-keys: |
-      ${{ runner.os }}-go-
-```
-
-## Elixir - Mix
-```yaml
-- uses: actions/cache@v1
-  with:
-    path: deps
-    key: ${{ runner.os }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
-    restore-keys: |
-      ${{ runner.os }}-mix-
-```
-
 ## Rust - Cargo
 
-```
+```yaml
 - name: Cache cargo registry
   uses: actions/cache@v1
   with:
@@ -139,4 +118,26 @@ uses: actions/cache@v1
   with:
     path: target
     key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+```
+
+## Swift, Objective-C - Carthage
+
+```yaml
+- uses: actions/cache@v1
+  with:
+    path: Carthage
+    key: ${{ runner.os }}-carthage-${{ hashFiles('**/Cartfile.resolved') }}
+    restore-keys: |
+      ${{ runner.os }}-carthage-
+```
+
+## Swift, Objective-C - CocoaPods
+
+```yaml
+- uses: actions/cache@v1
+  with:
+    path: Pods
+    key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-pods-
 ```
