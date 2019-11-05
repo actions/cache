@@ -17,11 +17,15 @@ async function run() {
         );
         core.debug(`Cache Path: ${cachePath}`);
 
-        const primaryKey = core.getInput(Inputs.Key, { required: true });
+        const keys = [
+            core.getInput(Inputs.Key, { required: true }),
+            ...core
+                .getInput(Inputs.RestoreKeys)
+                .split(/\s*\n\s*/)
+                .filter(x => x)
+        ].map(key => encodeURIComponent(key).replace(/%/g, " "));
+        const primaryKey = keys[0];
         core.saveState(State.CacheKey, primaryKey);
-
-        const restoreKeys = core.getInput(Inputs.RestoreKeys).split("\n");
-        const keys = [primaryKey, ...restoreKeys];
 
         core.debug("Resolved Keys:");
         core.debug(JSON.stringify(keys));
@@ -36,13 +40,6 @@ async function run() {
             if (key.length > 512) {
                 core.setFailed(
                     `Key Validation Error: ${key} cannot be larger than 512 characters.`
-                );
-                return;
-            }
-            const regex = /^[^,]*$/;
-            if (!regex.test(key)) {
-                core.setFailed(
-                    `Key Validation Error: ${key} cannot contain commas.`
                 );
                 return;
             }
