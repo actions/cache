@@ -2889,11 +2889,11 @@ function run() {
             const tarPath = yield io.which("tar", true);
             core.debug(`Tar Path: ${tarPath}`);
             yield exec_1.exec(`"${tarPath}"`, args);
-            const fileSizeLimit = 200 * 1024 * 1024; // 200MB
+            const fileSizeLimit = 400 * 1024 * 1024; // 400MB
             const archiveFileSize = fs.statSync(archivePath).size;
             core.debug(`File Size: ${archiveFileSize}`);
             if (archiveFileSize > fileSizeLimit) {
-                core.warning(`Cache size of ${archiveFileSize} bytes is over the 200MB limit, not saving cache.`);
+                core.warning(`Cache size of ${archiveFileSize} bytes is over the 400MB limit, not saving cache.`);
                 return;
             }
             const stream = fs.createReadStream(archivePath);

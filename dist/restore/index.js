@@ -2972,7 +2972,10 @@ function run() {
             core.debug(`Cache Path: ${cachePath}`);
             const primaryKey = core.getInput(constants_1.Inputs.Key, { required: true });
             core.saveState(constants_1.State.CacheKey, primaryKey);
-            const restoreKeys = core.getInput(constants_1.Inputs.RestoreKeys).split("\n");
+            const restoreKeys = core
+                .getInput(constants_1.Inputs.RestoreKeys)
+                .split("\n")
+                .filter(x => x !== "");
             const keys = [primaryKey, ...restoreKeys];
             core.debug("Resolved Keys:");
             core.debug(JSON.stringify(keys));
@@ -2994,7 +2997,7 @@ function run() {
             try {
                 const cacheEntry = yield cacheHttpClient.getCacheEntry(keys);
                 if (!cacheEntry) {
-                    core.info(`Cache not found for input keys: ${JSON.stringify(keys)}.`);
+                    core.info(`Cache not found for input keys: ${keys.join(", ")}.`);
                     return;
                 }
                 let archivePath = path.join(yield utils.createTempDirectory(), "cache.tgz");
