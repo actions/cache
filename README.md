@@ -6,7 +6,7 @@ This GitHub Action allows caching dependencies and build outputs to improve work
 
 ## Documentation
 
-See ["Caching dependencies to speed up workflows"](https://help.github.com/en/github/automating-your-workflow-with-github-actions/caching-dependencies-to-speed-up-workflows).
+See ["Caching dependencies to speed up workflows"](https://help.github.com/github/automating-your-workflow-with-github-actions/caching-dependencies-to-speed-up-workflows).
 
 ## Usage
 
