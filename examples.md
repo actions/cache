@@ -36,6 +36,7 @@
 
 ## C# - Nuget
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
+
 ```yaml
 - uses: actions/cache@v1
   with:
@@ -70,12 +71,12 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 ## Swift, Objective-C - Carthage
 
 ```yaml
-uses: actions/cache@v1
-      with:
-        path: Carthage
-        key: ${{ runner.os }}-carthage-${{ hashFiles('**/Cartfile.resolved') }}
-        restore-keys: |
-          ${{ runner.os }}-carthage-
+- uses: actions/cache@v1
+  with:
+    path: Carthage
+    key: ${{ runner.os }}-carthage-${{ hashFiles('**/Cartfile.resolved') }}
+    restore-keys: |
+      ${{ runner.os }}-carthage-
 ```
 
 ## Swift, Objective-C - CocoaPods
@@ -123,7 +124,7 @@ uses: actions/cache@v1
 
 ## Rust - Cargo
 
-```
+```yaml
 - name: Cache cargo registry
   uses: actions/cache@v1
   with:
