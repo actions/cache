@@ -124,7 +124,7 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 
 ## Rust - Cargo
 
-```
+```yaml
 - name: Cache cargo registry
   uses: actions/cache@v1
   with:
