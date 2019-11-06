@@ -36,7 +36,7 @@ afterEach(() => {
     testUtils.clearInputs();
 });
 
-test("restore with no path", async () => {
+test("restore with no path should fail", async () => {
     const failedMock = jest.spyOn(core, "setFailed");
     await run();
     expect(failedMock).toHaveBeenCalledWith(
@@ -53,7 +53,7 @@ test("restore with no key", async () => {
     );
 });
 
-test("restore with too many keys", async () => {
+test("restore with too many keys should fail", async () => {
     const key = "node-test";
     const restoreKeys = [...Array(20).keys()].map(x => x.toString());
     testUtils.setInputs({
@@ -68,7 +68,7 @@ test("restore with too many keys", async () => {
     );
 });
 
-test("restore with large key", async () => {
+test("restore with large key should fail", async () => {
     const key = "foo".repeat(512); // Over the 512 character limit
     testUtils.setInputs({
         path: "node_modules",
@@ -81,7 +81,7 @@ test("restore with large key", async () => {
     );
 });
 
-test("restore with invalid key", async () => {
+test("restore with invalid key should fail", async () => {
     const key = "comma,comma";
     testUtils.setInputs({
         path: "node_modules",
@@ -122,7 +122,7 @@ test("restore with no cache found", async () => {
     );
 });
 
-test("restore with no server error", async () => {
+test("restore with server error should fail", async () => {
     const key = "node-test";
     testUtils.setInputs({
         path: "node_modules",
@@ -153,7 +153,7 @@ test("restore with no server error", async () => {
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
-test("restore with restore keys no cache found", async () => {
+test("restore with restore keys and no cache found", async () => {
     const key = "node-test";
     const restoreKey = "node-";
     testUtils.setInputs({
@@ -199,7 +199,7 @@ test("restore with cache found", async () => {
     const cacheEntry: ArtifactCacheEntry = {
         cacheKey: key,
         scope: "refs/heads/master",
-        archiveLocation: "https://www.example.com/download"
+        archiveLocation: "www.actionscache.test/download"
     };
     const getCacheMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
     getCacheMock.mockImplementation(_ => {
@@ -275,7 +275,7 @@ test("restore with cache found for restore key", async () => {
     const cacheEntry: ArtifactCacheEntry = {
         cacheKey: restoreKey,
         scope: "refs/heads/master",
-        archiveLocation: "https://www.example.com/download"
+        archiveLocation: "www.actionscache.test/download"
     };
     const getCacheMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
     getCacheMock.mockImplementation(_ => {
