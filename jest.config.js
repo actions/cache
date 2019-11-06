@@ -1,3 +1,5 @@
+require('nock').disableNetConnect();
+
 module.exports = {
   clearMocks: true,
   moduleFileExtensions: ['js', 'ts'],

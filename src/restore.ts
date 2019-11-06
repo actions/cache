@@ -2,7 +2,6 @@ import * as core from "@actions/core";
 import { exec } from "@actions/exec";
 import * as io from "@actions/io";
 
-import * as fs from "fs";
 import * as path from "path";
 
 import * as cacheHttpClient from "./cacheHttpClient";
@@ -72,6 +71,9 @@ async function run() {
             // Download the cache from the cache entry
             await cacheHttpClient.downloadCache(cacheEntry, archivePath);
 
+            const archiveFileSize = utils.getArchiveFileSize(archivePath);
+            core.debug(`File Size: ${archiveFileSize}`);
+
             io.mkdirP(cachePath);
 
             // http://man7.org/linux/man-pages/man1/tar.1.html
@@ -88,9 +90,6 @@ async function run() {
 
             const tarPath = await io.which("tar", true);
             core.debug(`Tar Path: ${tarPath}`);
-
-            const archiveFileSize = fs.statSync(archivePath).size;
-            core.debug(`File Size: ${archiveFileSize}`);
 
             await exec(`"${tarPath}"`, args);
 

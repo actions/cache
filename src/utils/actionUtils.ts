@@ -1,5 +1,6 @@
 import * as core from "@actions/core";
 import * as io from "@actions/io";
+import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as uuidV4 from "uuid/v4";
@@ -30,6 +31,10 @@ export async function createTempDirectory(): Promise<string> {
     const dest = path.join(tempDirectory, uuidV4.default());
     await io.mkdirP(dest);
     return dest;
+}
+
+export function getArchiveFileSize(path: string): number {
+    return fs.statSync(path).size;
 }
 
 export function isExactKeyMatch(
