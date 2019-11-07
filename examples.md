@@ -113,7 +113,7 @@ uses: actions/cache@preview
 ## Haskell - Cabal
 
 ```yaml
-- uses: actions/cache@preview
+- uses: actions/cache@v1
   with:
     path: ~/.cabal/store
     key: ${{ runner.os }}-haskell-${{ matrix.ghc }}
