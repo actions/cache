@@ -80,12 +80,17 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 ```
 
 ## Node - Yarn
+The yarn cache directory will depend on your operating system and version of `yarn`. See https://yarnpkg.com/lang/en/docs/cli/cache/ for more info.
 
 ```yaml
+- name: Get yarn cache
+  id: yarn-cache
+  run: echo "::set-output name=dir::$(yarn cache dir)"
+
 - uses: actions/cache@v1
   with:
-    path: ~/.cache/yarn
-    key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
+    path: ${{ steps.yarn-cache.outputs.dir }}
+    key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock')) }}
     restore-keys: |
       ${{ runner.os }}-yarn-
 ```
