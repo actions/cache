@@ -111,8 +111,6 @@ For npm, cache files are stored in `~/.npm` on Posix, or `%AppData%/npm-cache` o
       ${{ runner.os }}-node-
 ```
 
-</details>
-
 ## Node - Yarn
 
 ```yaml
