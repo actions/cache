@@ -12,3 +12,9 @@ export namespace State {
     export const CacheKey = "CACHE_KEY";
     export const CacheResult = "CACHE_RESULT";
 }
+
+export namespace Events {
+    export const Key = "GITHUB_EVENT_NAME";
+    export const Push = "push";
+    export const PullRequest = "pull_request";
+}

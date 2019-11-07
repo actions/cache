@@ -11,6 +11,12 @@ import * as utils from "./utils/actionUtils";
 async function run() {
     try {
         // Validate inputs, this can cause task failure
+        if (!utils.isValidEvent()) {
+            core.setFailed(
+                `Event Validation Error: The event type ${process.env["GITHUB_EVENT_NAME"]} is not supported. Only \`push\` and \`pull_request\` events are supported at this time.`
+            );
+        }
+
         let cachePath = utils.resolvePath(
             core.getInput(Inputs.Path, { required: true })
         );
