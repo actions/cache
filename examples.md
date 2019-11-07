@@ -118,3 +118,5 @@ uses: actions/cache@preview
     path: ~/.cabal/store
     key: ${{ runner.os }}-haskell-${{ matrix.ghc }}
 ```
+
+Note: `matrix.ghc` denotes the Haskell compiler version (see also https://github.com/actions/setup-haskell)
