@@ -90,7 +90,7 @@ The yarn cache directory will depend on your operating system and version of `ya
 - uses: actions/cache@v1
   with:
     path: ${{ steps.yarn-cache.outputs.dir }}
-    key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock')) }}
+    key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
     restore-keys: |
       ${{ runner.os }}-yarn-
 ```
