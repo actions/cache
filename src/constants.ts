@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-namespace */
 export namespace Inputs {
     export const Key = "key";
     export const Path = "path";
