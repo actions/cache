@@ -5,7 +5,7 @@ import * as io from "@actions/io";
 import * as path from "path";
 
 import * as cacheHttpClient from "./cacheHttpClient";
-import { Inputs, State } from "./constants";
+import { Events, Inputs, State } from "./constants";
 import * as utils from "./utils/actionUtils";
 
 async function run() {
@@ -13,7 +13,7 @@ async function run() {
         // Validate inputs, this can cause task failure
         if (!utils.isValidEvent()) {
             core.setFailed(
-                `Event Validation Error: The event type ${process.env["GITHUB_EVENT_NAME"]} is not supported. Only \`push\` and \`pull_request\` events are supported at this time.`
+                `Event Validation Error: The event type ${process.env[Events.Key]} is not supported. Only ${utils.getSupportedEvents().join(", ")} events are supported at this time.`
             );
         }
 

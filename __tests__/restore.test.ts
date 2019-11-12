@@ -33,6 +33,11 @@ beforeAll(() => {
         return actualUtils.isValidEvent();
     });
 
+    jest.spyOn(actionUtils, "getSupportedEvents", ).mockImplementation(() => {
+        const actualUtils = jest.requireActual("../src/utils/actionUtils");
+        return actualUtils.getSupportedEvents();
+    });
+
     jest.spyOn(io, "which").mockImplementation(tool => {
         return Promise.resolve(tool);
     });
@@ -53,7 +58,7 @@ test("restore with invalid event", async () => {
     process.env[Events.Key] = invalidEvent;
     await run();
     expect(failedMock).toHaveBeenCalledWith(
-        `Event Validation Error: The event type ${invalidEvent} is not supported. Only \`push\` and \`pull_request\` events are supported at this time.`
+        `Event Validation Error: The event type ${invalidEvent} is not supported. Only push, pull_request events are supported at this time.`
     );
 });
 

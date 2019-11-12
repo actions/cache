@@ -90,5 +90,9 @@ export function resolvePath(filePath: string): string {
 // See GitHub Context https://help.github.com/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions#github-context
 export function isValidEvent(): boolean {
     const githubEvent = process.env[Events.Key] || "";
-    return githubEvent === Events.Push || githubEvent === Events.PullRequest;
+    return getSupportedEvents().includes(githubEvent);
+}
+
+export function getSupportedEvents(): string[] {
+    return [Events.Push, Events.PullRequest];
 }
