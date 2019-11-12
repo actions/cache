@@ -8,6 +8,7 @@
 - [Node - npm](#node---npm)
 - [Node - Yarn](#node---yarn)
 - [PHP - Composer](#php---composer)
+- [Python - pip](#python---pip)
 - [Ruby - Gem](#ruby---gem)
 - [Rust - Cargo](#rust---cargo)
 - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
@@ -135,6 +136,72 @@ For npm, cache files are stored in `~/.npm` on Posix, or `%AppData%/npm-cache` o
     key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
     restore-keys: |
       ${{ runner.os }}-composer-
+```
+
+## Python - pip
+
+For pip, the cache directory will vary by OS. See https://pip.pypa.io/en/stable/reference/pip_install/#caching
+
+Locations:
+ - Ubuntu: `~/.cache/pip`
+ - Windows: `~\AppData\Local\pip\Cache`
+ - macOS: `~/Library/Caches/pip`
+
+### Simple example
+```yaml
+- uses: actions/cache@v1
+  with:
+    path: ~/.cache/pip
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    restore-keys: |
+      ${{ runner.os }}-pip-
+```
+
+Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
+
+### Multiple OS's in a workflow
+
+```yaml
+- uses: actions/cache@v1
+  if: startsWith(runner.os, 'Linux')
+  with:
+    path: ~/.cache/pip
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    restore-keys: |
+      ${{ runner.os }}-pip-
+
+- uses: actions/cache@v1
+  if: startsWith(runner.os, 'macOS')
+  with:
+    path: ~/Library/Caches/pip
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    restore-keys: |
+      ${{ runner.os }}-pip-
+
+- uses: actions/cache@v1
+  if: startsWith(runner.os, 'Windows')
+  with:
+    path: ~\AppData\Local\pip\Cache
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    restore-keys: |
+      ${{ runner.os }}-pip-
+```
+
+### Using a script to get cache location
+
+> Note: This uses an internal pip API and may not always work
+```yaml
+- name: Get pip cache
+   id: pip-cache
+   run: |
+     python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
+
+- uses: actions/cache@v1
+  with:
+    path: ${{ steps.pip-cache.outputs.dir }}
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    restore-keys: |
+      ${{ runner.os }}-pip-
 ```
 
 ## Ruby - Gem
