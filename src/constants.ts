@@ -1,15 +1,14 @@
-/* eslint-disable @typescript-eslint/no-namespace */
-export namespace Inputs {
-    export const Key = "key";
-    export const Path = "path";
-    export const RestoreKeys = "restore-keys";
+export enum Inputs {
+    Key = "key",
+    Path = "path",
+    RestoreKeys = "restore-keys"
 }
 
-export namespace Outputs {
-    export const CacheHit = "cache-hit";
+export enum Outputs {
+    CacheHit = "cache-hit"
 }
 
-export namespace State {
-    export const CacheKey = "CACHE_KEY";
-    export const CacheResult = "CACHE_RESULT";
+export enum State {
+    CacheKey = "CACHE_KEY",
+    CacheResult = "CACHE_RESULT"
 }
