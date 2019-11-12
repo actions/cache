@@ -13,7 +13,11 @@ async function run() {
         // Validate inputs, this can cause task failure
         if (!utils.isValidEvent()) {
             core.setFailed(
-                `Event Validation Error: The event type ${process.env[Events.Key]} is not supported. Only ${utils.getSupportedEvents().join(", ")} events are supported at this time.`
+                `Event Validation Error: The event type ${
+                    process.env[Events.Key]
+                } is not supported. Only ${utils
+                    .getSupportedEvents()
+                    .join(", ")} events are supported at this time.`
             );
         }
 

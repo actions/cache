@@ -33,7 +33,7 @@ beforeAll(() => {
         return actualUtils.isValidEvent();
     });
 
-    jest.spyOn(actionUtils, "getSupportedEvents", ).mockImplementation(() => {
+    jest.spyOn(actionUtils, "getSupportedEvents").mockImplementation(() => {
         const actualUtils = jest.requireActual("../src/utils/actionUtils");
         return actualUtils.getSupportedEvents();
     });
