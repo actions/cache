@@ -32,11 +32,9 @@ jobs:
     - run: npm ci
 
     - name: Prettier Format Check
-      if: matrix.os == 'ubuntu-latest'
       run: npm run format-check
 
     - name: ESLint Check
-      if: matrix.os == 'ubuntu-latest'
       run: npm run lint
 
     - name: Build & Test
