@@ -219,7 +219,7 @@ test("restore with cache found", async () => {
     const setCacheStateMock = jest.spyOn(actionUtils, "setCacheState");
     const downloadCacheMock = jest.spyOn(cacheHttpClient, "downloadCache");
 
-    const fileSize = 142;
+    const fileSize = 62915000;
     const getArchiveFileSizeMock = jest
         .spyOn(actionUtils, "getArchiveFileSize")
         .mockReturnValue(fileSize);
@@ -236,6 +236,7 @@ test("restore with cache found", async () => {
     expect(createTempDirectoryMock).toHaveBeenCalledTimes(1);
     expect(downloadCacheMock).toHaveBeenCalledWith(cacheEntry, archivePath);
     expect(getArchiveFileSizeMock).toHaveBeenCalledWith(archivePath);
+    expect(infoMock).toHaveBeenCalledWith(`Cache Size: ~60 MB (62915000 B)`);
     expect(mkdirMock).toHaveBeenCalledWith(cachePath);
 
     const IS_WINDOWS = process.platform === "win32";
@@ -312,6 +313,7 @@ test("restore with cache found for restore key", async () => {
     expect(createTempDirectoryMock).toHaveBeenCalledTimes(1);
     expect(downloadCacheMock).toHaveBeenCalledWith(cacheEntry, archivePath);
     expect(getArchiveFileSizeMock).toHaveBeenCalledWith(archivePath);
+    expect(infoMock).toHaveBeenCalledWith(`Cache Size: ~0 MB (142 B)`);
     expect(mkdirMock).toHaveBeenCalledWith(cachePath);
 
     const IS_WINDOWS = process.platform === "win32";
