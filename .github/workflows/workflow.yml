@@ -1,4 +1,5 @@
 name: Tests
+
 on:
   pull_request:
     branches:
@@ -14,14 +15,16 @@ on:
 jobs:
   test:
     name: Test on ${{ matrix.os }}
+
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
+
     runs-on: ${{ matrix.os }}
-    
+
     steps:
     - uses: actions/checkout@v1
-      
+
     - uses: actions/setup-node@v1
       with:
         node-version: '12.x'
@@ -29,7 +32,12 @@ jobs:
     - run: npm ci
 
     - name: Prettier Format Check
+      if: matrix.os == 'ubuntu-latest'
       run: npm run format-check
+
+    - name: ESLint Check
+      if: matrix.os == 'ubuntu-latest'
+      run: npm run lint
 
     - name: Build & Test
       run: npm run test

@@ -1,9 +1,7 @@
 import * as core from "@actions/core";
 import * as exec from "@actions/exec";
 import * as io from "@actions/io";
-
 import * as path from "path";
-
 import * as cacheHttpClient from "../src/cacheHttpClient";
 import { Inputs } from "../src/constants";
 import { ArtifactCacheEntry } from "../src/contracts";
@@ -107,7 +105,7 @@ test("restore with no cache found", async () => {
     const stateMock = jest.spyOn(core, "saveState");
 
     const clientMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
-    clientMock.mockImplementation(_ => {
+    clientMock.mockImplementation(() => {
         return Promise.resolve(null);
     });
 
@@ -134,7 +132,7 @@ test("restore with server error should fail", async () => {
     const stateMock = jest.spyOn(core, "saveState");
 
     const clientMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
-    clientMock.mockImplementation(_ => {
+    clientMock.mockImplementation(() => {
         throw new Error("HTTP Error Occurred");
     });
 
@@ -168,7 +166,7 @@ test("restore with restore keys and no cache found", async () => {
     const stateMock = jest.spyOn(core, "saveState");
 
     const clientMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
-    clientMock.mockImplementation(_ => {
+    clientMock.mockImplementation(() => {
         return Promise.resolve(null);
     });
 
@@ -202,7 +200,7 @@ test("restore with cache found", async () => {
         archiveLocation: "www.actionscache.test/download"
     };
     const getCacheMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
-    getCacheMock.mockImplementation(_ => {
+    getCacheMock.mockImplementation(() => {
         return Promise.resolve(cacheEntry);
     });
     const tempPath = "/foo/bar";
@@ -278,7 +276,7 @@ test("restore with cache found for restore key", async () => {
         archiveLocation: "www.actionscache.test/download"
     };
     const getCacheMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
-    getCacheMock.mockImplementation(_ => {
+    getCacheMock.mockImplementation(() => {
         return Promise.resolve(cacheEntry);
     });
     const tempPath = "/foo/bar";
