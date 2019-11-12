@@ -75,7 +75,7 @@ steps:
     id: cache
     with:
       path: path/to/dependencies
-      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles')}}
+      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
   
   - name: Install Dependencies
     if: steps.cache.outputs.cache-hit != 'true'
