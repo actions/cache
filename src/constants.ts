@@ -13,8 +13,8 @@ export enum State {
     CacheResult = "CACHE_RESULT"
 }
 
-export namespace Events {
-    export const Key = "GITHUB_EVENT_NAME";
-    export const Push = "push";
-    export const PullRequest = "pull_request";
+export enum Events {
+    Key = "GITHUB_EVENT_NAME",
+    Push = "push",
+    PullRequest = "pull_request"
 }

@@ -302,7 +302,7 @@ test("restore with a pull request event and cache found", async () => {
         archiveLocation: "https://www.example.com/download"
     };
     const getCacheMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
-    getCacheMock.mockImplementation(_ => {
+    getCacheMock.mockImplementation(() => {
         return Promise.resolve(cacheEntry);
     });
     const tempPath = "/foo/bar";
