@@ -80,7 +80,11 @@ async function run(): Promise<void> {
             await cacheHttpClient.downloadCache(cacheEntry, archivePath);
 
             const archiveFileSize = utils.getArchiveFileSize(archivePath);
-            core.debug(`File Size: ${archiveFileSize}`);
+            core.info(
+                `Cache Size: ~${Math.round(
+                    archiveFileSize / (1024 * 1024)
+                )} MB (${archiveFileSize} B)`
+            );
 
             io.mkdirP(cachePath);
 
