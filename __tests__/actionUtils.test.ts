@@ -1,4 +1,5 @@
 import * as core from "@actions/core";
+import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
@@ -18,7 +19,7 @@ test("getArchiveFileSize returns file size", () => {
 
     const size = actionUtils.getArchiveFileSize(filePath);
 
-    expect(size).toBe(13);
+    expect(size).toBe(11);
 });
 
 test("isExactKeyMatch with undefined cache entry returns false", () => {
@@ -28,7 +29,7 @@ test("isExactKeyMatch with undefined cache entry returns false", () => {
     expect(actionUtils.isExactKeyMatch(key, cacheEntry)).toBe(false);
 });
 
-test("isExactKeyMatch with undefined cache entry key returns false", () => {
+test("isExactKeyMatch with empty cache entry returns false", () => {
     const key = "linux-rust";
     const cacheEntry: ArtifactCacheEntry = {};
 
