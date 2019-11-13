@@ -50,10 +50,18 @@ export function isExactKeyMatch(
     );
 }
 
+export function setCacheState(state: ArtifactCacheEntry): void {
+    core.saveState(State.CacheResult, JSON.stringify(state));
+}
+
+export function setCacheHitOutput(isCacheHit: boolean): void {
+    core.setOutput(Outputs.CacheHit, isCacheHit.toString());
+}
+
 export function setOutputAndState(
     key: string,
     cacheResult?: ArtifactCacheEntry
-) {
+): void {
     setCacheHitOutput(isExactKeyMatch(key, cacheResult));
     // Store the cache result if it exists
     cacheResult && setCacheState(cacheResult);
@@ -63,14 +71,6 @@ export function getCacheState(): ArtifactCacheEntry | undefined {
     const stateData = core.getState(State.CacheResult);
     core.debug(`State: ${stateData}`);
     return (stateData && JSON.parse(stateData)) as ArtifactCacheEntry;
-}
-
-export function setCacheState(state: ArtifactCacheEntry) {
-    core.saveState(State.CacheResult, JSON.stringify(state));
-}
-
-export function setCacheHitOutput(isCacheHit: boolean) {
-    core.setOutput(Outputs.CacheHit, isCacheHit.toString());
 }
 
 export function resolvePath(filePath: string): string {

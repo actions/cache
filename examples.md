@@ -70,22 +70,59 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 
 ## Node - npm
 
+For npm, cache files are stored in `~/.npm` on Posix, or `%AppData%/npm-cache` on Windows. See https://docs.npmjs.com/cli/cache#cache
+
+>Note: It is not recommended to cache `node_modules`, as it can break across Node versions and won't work with `npm ci`
+
+### macOS and Ubuntu
+
 ```yaml
 - uses: actions/cache@v1
   with:
-    path: node_modules
+    path: ~/.npm
+    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+    restore-keys: |
+      ${{ runner.os }}-node-
+```
+
+### Windows
+
+```yaml
+- uses: actions/cache@v1
+  with:
+    path: ~\AppData\Roaming\npm-cache
+    key: ${{ runner.os }}-node-${{ hashFiles('**\package-lock.json') }}
+    restore-keys: |
+      ${{ runner.os }}-node-
+```
+
+### Using multiple systems and `npm config`
+
+```yaml  
+- name: Get npm cache directory
+  id: npm-cache
+  run: |
+    echo "::set-output name=dir::$(npm config get cache)"
+- uses: actions/cache@v1
+  with:
+    path: ${{ steps.npm-cache.outputs.dir }}
     key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
     restore-keys: |
       ${{ runner.os }}-node-
 ```
 
 ## Node - Yarn
+The yarn cache directory will depend on your operating system and version of `yarn`. See https://yarnpkg.com/lang/en/docs/cli/cache/ for more info.
 
 ```yaml
+- name: Get yarn cache
+  id: yarn-cache
+  run: echo "::set-output name=dir::$(yarn cache dir)"
+
 - uses: actions/cache@v1
   with:
-    path: ~/.cache/yarn
-    key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
+    path: ${{ steps.yarn-cache.outputs.dir }}
+    key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
     restore-keys: |
       ${{ runner.os }}-yarn-
 ```

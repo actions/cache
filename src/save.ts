@@ -1,15 +1,13 @@
 import * as core from "@actions/core";
 import { exec } from "@actions/exec";
-
 import * as io from "@actions/io";
 import * as fs from "fs";
 import * as path from "path";
-
 import * as cacheHttpClient from "./cacheHttpClient";
 import { Inputs, State } from "./constants";
 import * as utils from "./utils/actionUtils";
 
-async function run() {
+async function run(): Promise<void> {
     try {
         const state = utils.getCacheState();
 
