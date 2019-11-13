@@ -70,7 +70,11 @@ export function setOutputAndState(
 export function getCacheState(): ArtifactCacheEntry | undefined {
     const stateData = core.getState(State.CacheResult);
     core.debug(`State: ${stateData}`);
-    return (stateData && JSON.parse(stateData)) as ArtifactCacheEntry;
+    if (stateData) {
+        return JSON.parse(stateData) as ArtifactCacheEntry;
+    }
+
+    return undefined;
 }
 
 export function resolvePath(filePath: string): string {

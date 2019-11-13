@@ -299,7 +299,7 @@ test("restore with a pull request event and cache found", async () => {
     const cacheEntry: ArtifactCacheEntry = {
         cacheKey: key,
         scope: "refs/heads/master",
-        archiveLocation: "https://www.example.com/download"
+        archiveLocation: "www.actionscache.test/download"
     };
     const getCacheMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
     getCacheMock.mockImplementation(() => {
