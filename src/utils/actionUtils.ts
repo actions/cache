@@ -4,7 +4,8 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as uuidV4 from "uuid/v4";
-import { Outputs, State } from "../constants";
+
+import { Events, Outputs, State } from "../constants";
 import { ArtifactCacheEntry } from "../contracts";
 
 // From https://github.com/actions/toolkit/blob/master/packages/tool-cache/src/tool-cache.ts#L23
@@ -82,4 +83,16 @@ export function resolvePath(filePath: string): string {
     }
 
     return path.resolve(filePath);
+}
+
+export function getSupportedEvents(): string[] {
+    return [Events.Push, Events.PullRequest];
+}
+
+// Currently the cache token is only authorized for push and pull_request events
+// All other events will fail when reading and saving the cache
+// See GitHub Context https://help.github.com/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions#github-context
+export function isValidEvent(): boolean {
+    const githubEvent = process.env[Events.Key] || "";
+    return getSupportedEvents().includes(githubEvent);
 }

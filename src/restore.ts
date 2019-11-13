@@ -3,12 +3,22 @@ import { exec } from "@actions/exec";
 import * as io from "@actions/io";
 import * as path from "path";
 import * as cacheHttpClient from "./cacheHttpClient";
-import { Inputs, State } from "./constants";
+import { Events, Inputs, State } from "./constants";
 import * as utils from "./utils/actionUtils";
 
 async function run(): Promise<void> {
     try {
         // Validate inputs, this can cause task failure
+        if (!utils.isValidEvent()) {
+            core.setFailed(
+                `Event Validation Error: The event type ${
+                    process.env[Events.Key]
+                } is not supported. Only ${utils
+                    .getSupportedEvents()
+                    .join(", ")} events are supported at this time.`
+            );
+        }
+
         let cachePath = utils.resolvePath(
             core.getInput(Inputs.Path, { required: true })
         );
