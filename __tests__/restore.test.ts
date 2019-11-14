@@ -263,12 +263,16 @@ test("restore with cache found", async () => {
     expect(mkdirMock).toHaveBeenCalledWith(cachePath);
 
     const IS_WINDOWS = process.platform === "win32";
-    const tarArchivePath = IS_WINDOWS
-        ? archivePath.replace(/\\/g, "/")
-        : archivePath;
-    const tarCachePath = IS_WINDOWS ? cachePath.replace(/\\/g, "/") : cachePath;
-    const args = IS_WINDOWS ? ["-xz", "--force-local"] : ["-xz"];
-    args.push(...["-f", tarArchivePath, "-C", tarCachePath]);
+    const args = IS_WINDOWS
+        ? [
+              "-xz",
+              "--force-local",
+              "-f",
+              archivePath.replace(/\\/g, "/"),
+              "-C",
+              cachePath.replace(/\\/g, "/")
+          ]
+        : ["-xz", "-f", archivePath, "-C", cachePath];
 
     expect(execMock).toHaveBeenCalledTimes(1);
     expect(execMock).toHaveBeenCalledWith(`"tar"`, args);
@@ -340,12 +344,16 @@ test("restore with a pull request event and cache found", async () => {
     expect(mkdirMock).toHaveBeenCalledWith(cachePath);
 
     const IS_WINDOWS = process.platform === "win32";
-    const tarArchivePath = IS_WINDOWS
-        ? archivePath.replace(/\\/g, "/")
-        : archivePath;
-    const tarCachePath = IS_WINDOWS ? cachePath.replace(/\\/g, "/") : cachePath;
-    const args = IS_WINDOWS ? ["-xz", "--force-local"] : ["-xz"];
-    args.push(...["-f", tarArchivePath, "-C", tarCachePath]);
+    const args = IS_WINDOWS
+        ? [
+              "-xz",
+              "--force-local",
+              "-f",
+              archivePath.replace(/\\/g, "/"),
+              "-C",
+              cachePath.replace(/\\/g, "/")
+          ]
+        : ["-xz", "-f", archivePath, "-C", cachePath];
 
     expect(execMock).toHaveBeenCalledTimes(1);
     expect(execMock).toHaveBeenCalledWith(`"tar"`, args);
@@ -417,12 +425,16 @@ test("restore with cache found for restore key", async () => {
     expect(mkdirMock).toHaveBeenCalledWith(cachePath);
 
     const IS_WINDOWS = process.platform === "win32";
-    const tarArchivePath = IS_WINDOWS
-        ? archivePath.replace(/\\/g, "/")
-        : archivePath;
-    const tarCachePath = IS_WINDOWS ? cachePath.replace(/\\/g, "/") : cachePath;
-    const args = IS_WINDOWS ? ["-xz", "--force-local"] : ["-xz"];
-    args.push(...["-f", tarArchivePath, "-C", tarCachePath]);
+    const args = IS_WINDOWS
+        ? [
+              "-xz",
+              "--force-local",
+              "-f",
+              archivePath.replace(/\\/g, "/"),
+              "-C",
+              cachePath.replace(/\\/g, "/")
+          ]
+        : ["-xz", "-f", archivePath, "-C", cachePath];
 
     expect(execMock).toHaveBeenCalledTimes(1);
     expect(execMock).toHaveBeenCalledWith(`"tar"`, args);
