@@ -24,12 +24,12 @@ async function run(): Promise<void> {
             return;
         }
 
-        let cachePath = utils.resolvePath(
+        const cachePath = utils.resolvePath(
             core.getInput(Inputs.Path, { required: true })
         );
         core.debug(`Cache Path: ${cachePath}`);
 
-        let archivePath = path.join(
+        const archivePath = path.join(
             await utils.createTempDirectory(),
             "cache.tgz"
         );
