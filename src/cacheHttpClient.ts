@@ -93,9 +93,11 @@ export async function downloadCache(
 }
 
 export async function saveCache(
-    stream: NodeJS.ReadableStream,
-    key: string
+    key: string,
+    archivePath: string
 ): Promise<void> {
+    const stream = fs.createReadStream(archivePath);
+
     const cacheUrl = getCacheUrl();
     const token = process.env["ACTIONS_RUNTIME_TOKEN"] || "";
     const bearerCredentialHandler = new BearerCredentialHandler(token);

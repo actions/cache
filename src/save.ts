@@ -1,7 +1,6 @@
 import * as core from "@actions/core";
 import { exec } from "@actions/exec";
 import * as io from "@actions/io";
-import * as fs from "fs";
 import * as path from "path";
 import * as cacheHttpClient from "./cacheHttpClient";
 import { Inputs, State } from "./constants";
@@ -38,22 +37,25 @@ async function run(): Promise<void> {
 
         // http://man7.org/linux/man-pages/man1/tar.1.html
         // tar [-options] <name of the tar archive> [files or directories which to add into archive]
-        const args = ["-cz"];
         const IS_WINDOWS = process.platform === "win32";
-        if (IS_WINDOWS) {
-            args.push("--force-local");
-            archivePath = archivePath.replace(/\\/g, "/");
-            cachePath = cachePath.replace(/\\/g, "/");
-        }
-
-        args.push(...["-f", archivePath, "-C", cachePath, "."]);
+        const args = IS_WINDOWS
+            ? [
+                  "-cz",
+                  "--force-local",
+                  "-f",
+                  archivePath.replace(/\\/g, "/"),
+                  "-C",
+                  cachePath.replace(/\\/g, "/"),
+                  "."
+              ]
+            : ["-cz", "-f", archivePath, "-C", cachePath, "."];
 
         const tarPath = await io.which("tar", true);
         core.debug(`Tar Path: ${tarPath}`);
         await exec(`"${tarPath}"`, args);
 
         const fileSizeLimit = 400 * 1024 * 1024; // 400MB
-        const archiveFileSize = fs.statSync(archivePath).size;
+        const archiveFileSize = utils.getArchiveFileSize(archivePath);
         core.debug(`File Size: ${archiveFileSize}`);
         if (archiveFileSize > fileSizeLimit) {
             core.warning(
@@ -64,8 +66,7 @@ async function run(): Promise<void> {
             return;
         }
 
-        const stream = fs.createReadStream(archivePath);
-        await cacheHttpClient.saveCache(stream, primaryKey);
+        await cacheHttpClient.saveCache(primaryKey, archivePath);
     } catch (error) {
         core.warning(error.message);
     }

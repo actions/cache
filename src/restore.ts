@@ -19,7 +19,7 @@ async function run(): Promise<void> {
             );
         }
 
-        let cachePath = utils.resolvePath(
+        const cachePath = utils.resolvePath(
             core.getInput(Inputs.Path, { required: true })
         );
         core.debug(`Cache Path: ${cachePath}`);
@@ -67,7 +67,7 @@ async function run(): Promise<void> {
                 return;
             }
 
-            let archivePath = path.join(
+            const archivePath = path.join(
                 await utils.createTempDirectory(),
                 "cache.tgz"
             );
@@ -90,15 +90,17 @@ async function run(): Promise<void> {
 
             // http://man7.org/linux/man-pages/man1/tar.1.html
             // tar [-options] <name of the tar archive> [files or directories which to add into archive]
-            const args = ["-xz"];
-
             const IS_WINDOWS = process.platform === "win32";
-            if (IS_WINDOWS) {
-                args.push("--force-local");
-                archivePath = archivePath.replace(/\\/g, "/");
-                cachePath = cachePath.replace(/\\/g, "/");
-            }
-            args.push(...["-f", archivePath, "-C", cachePath]);
+            const args = IS_WINDOWS
+                ? [
+                      "-xz",
+                      "--force-local",
+                      "-f",
+                      archivePath.replace(/\\/g, "/"),
+                      "-C",
+                      cachePath.replace(/\\/g, "/")
+                  ]
+                : ["-xz", "-f", archivePath, "-C", cachePath];
 
             const tarPath = await io.which("tar", true);
             core.debug(`Tar Path: ${tarPath}`);
