@@ -1496,6 +1496,26 @@ const fs = __importStar(__webpack_require__(747));
 const Handlers_1 = __webpack_require__(941);
 const HttpClient_1 = __webpack_require__(874);
 const RestClient_1 = __webpack_require__(105);
+function getCacheUrl() {
+    // Ideally we just use ACTIONS_CACHE_URL
+    const cacheUrl = (process.env["ACTIONS_CACHE_URL"] ||
+        process.env["ACTIONS_RUNTIME_URL"] ||
+        "").replace("pipelines", "artifactcache");
+    if (!cacheUrl) {
+        throw new Error("Cache Service Url not found, unable to restore cache.");
+    }
+    core.debug(`Cache Url: ${cacheUrl}`);
+    return cacheUrl;
+}
+function createAcceptHeader(type, apiVersion) {
+    return `${type};api-version=${apiVersion}`;
+}
+function getRequestOptions() {
+    const requestOptions = {
+        acceptHeader: createAcceptHeader("application/json", "5.2-preview.1")
+    };
+    return requestOptions;
+}
 function getCacheEntry(keys) {
     return __awaiter(this, void 0, void 0, function* () {
         const cacheUrl = getCacheUrl();
@@ -1522,15 +1542,6 @@ function getCacheEntry(keys) {
     });
 }
 exports.getCacheEntry = getCacheEntry;
-function downloadCache(cacheEntry, archivePath) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const stream = fs.createWriteStream(archivePath);
-        const httpClient = new HttpClient_1.HttpClient("actions/cache");
-        const downloadResponse = yield httpClient.get(cacheEntry.archiveLocation);
-        yield pipeResponseToStream(downloadResponse, stream);
-    });
-}
-exports.downloadCache = downloadCache;
 function pipeResponseToStream(response, stream) {
     return __awaiter(this, void 0, void 0, function* () {
         return new Promise(resolve => {
@@ -1540,8 +1551,19 @@ function pipeResponseToStream(response, stream) {
         });
     });
 }
-function saveCache(stream, key) {
+function downloadCache(cacheEntry, archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
+        const stream = fs.createWriteStream(archivePath);
+        const httpClient = new HttpClient_1.HttpClient("actions/cache");
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const downloadResponse = yield httpClient.get(cacheEntry.archiveLocation);
+        yield pipeResponseToStream(downloadResponse, stream);
+    });
+}
+exports.downloadCache = downloadCache;
+function saveCache(key, archivePath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const stream = fs.createReadStream(archivePath);
         const cacheUrl = getCacheUrl();
         const token = process.env["ACTIONS_RUNTIME_TOKEN"] || "";
         const bearerCredentialHandler = new Handlers_1.BearerCredentialHandler(token);
@@ -1562,26 +1584,6 @@ function saveCache(stream, key) {
     });
 }
 exports.saveCache = saveCache;
-function getRequestOptions() {
-    const requestOptions = {
-        acceptHeader: createAcceptHeader("application/json", "5.2-preview.1")
-    };
-    return requestOptions;
-}
-function createAcceptHeader(type, apiVersion) {
-    return `${type};api-version=${apiVersion}`;
-}
-function getCacheUrl() {
-    // Ideally we just use ACTIONS_CACHE_URL
-    let cacheUrl = (process.env["ACTIONS_CACHE_URL"] ||
-        process.env["ACTIONS_RUNTIME_URL"] ||
-        "").replace("pipelines", "artifactcache");
-    if (!cacheUrl) {
-        throw new Error("Cache Service Url not found, unable to restore cache.");
-    }
-    core.debug(`Cache Url: ${cacheUrl}`);
-    return cacheUrl;
-}
 
 
 /***/ }),
@@ -2139,6 +2141,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const io = __importStar(__webpack_require__(1));
+const fs = __importStar(__webpack_require__(747));
 const os = __importStar(__webpack_require__(87));
 const path = __importStar(__webpack_require__(622));
 const uuidV4 = __importStar(__webpack_require__(826));
@@ -2170,6 +2173,10 @@ function createTempDirectory() {
     });
 }
 exports.createTempDirectory = createTempDirectory;
+function getArchiveFileSize(path) {
+    return fs.statSync(path).size;
+}
+exports.getArchiveFileSize = getArchiveFileSize;
 function isExactKeyMatch(key, cacheResult) {
     return !!(cacheResult &&
         cacheResult.cacheKey &&
@@ -2178,6 +2185,14 @@ function isExactKeyMatch(key, cacheResult) {
         }) === 0);
 }
 exports.isExactKeyMatch = isExactKeyMatch;
+function setCacheState(state) {
+    core.saveState(constants_1.State.CacheResult, JSON.stringify(state));
+}
+exports.setCacheState = setCacheState;
+function setCacheHitOutput(isCacheHit) {
+    core.setOutput(constants_1.Outputs.CacheHit, isCacheHit.toString());
+}
+exports.setCacheHitOutput = setCacheHitOutput;
 function setOutputAndState(key, cacheResult) {
     setCacheHitOutput(isExactKeyMatch(key, cacheResult));
     // Store the cache result if it exists
@@ -2187,17 +2202,12 @@ exports.setOutputAndState = setOutputAndState;
 function getCacheState() {
     const stateData = core.getState(constants_1.State.CacheResult);
     core.debug(`State: ${stateData}`);
-    return (stateData && JSON.parse(stateData));
+    if (stateData) {
+        return JSON.parse(stateData);
+    }
+    return undefined;
 }
 exports.getCacheState = getCacheState;
-function setCacheState(state) {
-    core.saveState(constants_1.State.CacheResult, JSON.stringify(state));
-}
-exports.setCacheState = setCacheState;
-function setCacheHitOutput(isCacheHit) {
-    core.setOutput(constants_1.Outputs.CacheHit, isCacheHit.toString());
-}
-exports.setCacheHitOutput = setCacheHitOutput;
 function resolvePath(filePath) {
     if (filePath[0] === "~") {
         const home = os.homedir();
@@ -2209,6 +2219,18 @@ function resolvePath(filePath) {
     return path.resolve(filePath);
 }
 exports.resolvePath = resolvePath;
+function getSupportedEvents() {
+    return [constants_1.Events.Push, constants_1.Events.PullRequest];
+}
+exports.getSupportedEvents = getSupportedEvents;
+// Currently the cache token is only authorized for push and pull_request events
+// All other events will fail when reading and saving the cache
+// See GitHub Context https://help.github.com/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions#github-context
+function isValidEvent() {
+    const githubEvent = process.env[constants_1.Events.Key] || "";
+    return getSupportedEvents().includes(githubEvent);
+}
+exports.isValidEvent = isValidEvent;
 
 
 /***/ }),
@@ -2836,19 +2858,25 @@ function isUnixExecutable(stats) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var Inputs;
 (function (Inputs) {
-    Inputs.Key = "key";
-    Inputs.Path = "path";
-    Inputs.RestoreKeys = "restore-keys";
+    Inputs["Key"] = "key";
+    Inputs["Path"] = "path";
+    Inputs["RestoreKeys"] = "restore-keys";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
-    Outputs.CacheHit = "cache-hit";
+    Outputs["CacheHit"] = "cache-hit";
 })(Outputs = exports.Outputs || (exports.Outputs = {}));
 var State;
 (function (State) {
-    State.CacheKey = "CACHE_KEY";
-    State.CacheResult = "CACHE_RESULT";
+    State["CacheKey"] = "CACHE_KEY";
+    State["CacheResult"] = "CACHE_RESULT";
 })(State = exports.State || (exports.State = {}));
+var Events;
+(function (Events) {
+    Events["Key"] = "GITHUB_EVENT_NAME";
+    Events["Push"] = "push";
+    Events["PullRequest"] = "pull_request";
+})(Events = exports.Events || (exports.Events = {}));
 
 
 /***/ }),
@@ -2959,7 +2987,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const exec_1 = __webpack_require__(986);
 const io = __importStar(__webpack_require__(1));
-const fs = __importStar(__webpack_require__(747));
 const path = __importStar(__webpack_require__(622));
 const cacheHttpClient = __importStar(__webpack_require__(154));
 const constants_1 = __webpack_require__(694);
@@ -2968,7 +2995,12 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             // Validate inputs, this can cause task failure
-            let cachePath = utils.resolvePath(core.getInput(constants_1.Inputs.Path, { required: true }));
+            if (!utils.isValidEvent()) {
+                core.setFailed(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported. Only ${utils
+                    .getSupportedEvents()
+                    .join(", ")} events are supported at this time.`);
+            }
+            const cachePath = utils.resolvePath(core.getInput(constants_1.Inputs.Path, { required: true }));
             core.debug(`Cache Path: ${cachePath}`);
             const primaryKey = core.getInput(constants_1.Inputs.Key, { required: true });
             core.saveState(constants_1.State.CacheKey, primaryKey);
@@ -3000,27 +3032,31 @@ function run() {
                     core.info(`Cache not found for input keys: ${keys.join(", ")}.`);
                     return;
                 }
-                let archivePath = path.join(yield utils.createTempDirectory(), "cache.tgz");
+                const archivePath = path.join(yield utils.createTempDirectory(), "cache.tgz");
                 core.debug(`Archive Path: ${archivePath}`);
                 // Store the cache result
                 utils.setCacheState(cacheEntry);
                 // Download the cache from the cache entry
                 yield cacheHttpClient.downloadCache(cacheEntry, archivePath);
-                io.mkdirP(cachePath);
+                const archiveFileSize = utils.getArchiveFileSize(archivePath);
+                core.info(`Cache Size: ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B)`);
+                // Create directory to extract tar into
+                yield io.mkdirP(cachePath);
                 // http://man7.org/linux/man-pages/man1/tar.1.html
                 // tar [-options] <name of the tar archive> [files or directories which to add into archive]
-                const args = ["-xz"];
                 const IS_WINDOWS = process.platform === "win32";
-                if (IS_WINDOWS) {
-                    args.push("--force-local");
-                    archivePath = archivePath.replace(/\\/g, "/");
-                    cachePath = cachePath.replace(/\\/g, "/");
-                }
-                args.push(...["-f", archivePath, "-C", cachePath]);
+                const args = IS_WINDOWS
+                    ? [
+                        "-xz",
+                        "--force-local",
+                        "-f",
+                        archivePath.replace(/\\/g, "/"),
+                        "-C",
+                        cachePath.replace(/\\/g, "/")
+                    ]
+                    : ["-xz", "-f", archivePath, "-C", cachePath];
                 const tarPath = yield io.which("tar", true);
                 core.debug(`Tar Path: ${tarPath}`);
-                const archiveFileSize = fs.statSync(archivePath).size;
-                core.debug(`File Size: ${archiveFileSize}`);
                 yield exec_1.exec(`"${tarPath}"`, args);
                 const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheEntry);
                 utils.setCacheHitOutput(isExactKeyMatch);
