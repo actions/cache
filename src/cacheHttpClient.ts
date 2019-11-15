@@ -1,12 +1,39 @@
 import * as core from "@actions/core";
 import * as fs from "fs";
-
 import { BearerCredentialHandler } from "typed-rest-client/Handlers";
 import { HttpClient } from "typed-rest-client/HttpClient";
 import { IHttpClientResponse } from "typed-rest-client/Interfaces";
-import { RestClient, IRequestOptions } from "typed-rest-client/RestClient";
-
+import { IRequestOptions, RestClient } from "typed-rest-client/RestClient";
 import { ArtifactCacheEntry } from "./contracts";
+
+function getCacheUrl(): string {
+    // Ideally we just use ACTIONS_CACHE_URL
+    const cacheUrl: string = (
+        process.env["ACTIONS_CACHE_URL"] ||
+        process.env["ACTIONS_RUNTIME_URL"] ||
+        ""
+    ).replace("pipelines", "artifactcache");
+    if (!cacheUrl) {
+        throw new Error(
+            "Cache Service Url not found, unable to restore cache."
+        );
+    }
+
+    core.debug(`Cache Url: ${cacheUrl}`);
+    return cacheUrl;
+}
+
+function createAcceptHeader(type: string, apiVersion: string): string {
+    return `${type};api-version=${apiVersion}`;
+}
+
+function getRequestOptions(): IRequestOptions {
+    const requestOptions: IRequestOptions = {
+        acceptHeader: createAcceptHeader("application/json", "5.2-preview.1")
+    };
+
+    return requestOptions;
+}
 
 export async function getCacheEntry(
     keys: string[]
@@ -43,16 +70,6 @@ export async function getCacheEntry(
     return cacheResult;
 }
 
-export async function downloadCache(
-    cacheEntry: ArtifactCacheEntry,
-    archivePath: string
-): Promise<void> {
-    const stream = fs.createWriteStream(archivePath);
-    const httpClient = new HttpClient("actions/cache");
-    const downloadResponse = await httpClient.get(cacheEntry.archiveLocation!);
-    await pipeResponseToStream(downloadResponse, stream);
-}
-
 async function pipeResponseToStream(
     response: IHttpClientResponse,
     stream: NodeJS.WritableStream
@@ -64,7 +81,23 @@ async function pipeResponseToStream(
     });
 }
 
-export async function saveCache(stream: NodeJS.ReadableStream, key: string) {
+export async function downloadCache(
+    cacheEntry: ArtifactCacheEntry,
+    archivePath: string
+): Promise<void> {
+    const stream = fs.createWriteStream(archivePath);
+    const httpClient = new HttpClient("actions/cache");
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const downloadResponse = await httpClient.get(cacheEntry.archiveLocation!);
+    await pipeResponseToStream(downloadResponse, stream);
+}
+
+export async function saveCache(
+    key: string,
+    archivePath: string
+): Promise<void> {
+    const stream = fs.createReadStream(archivePath);
+
     const cacheUrl = getCacheUrl();
     const token = process.env["ACTIONS_RUNTIME_TOKEN"] || "";
     const bearerCredentialHandler = new BearerCredentialHandler(token);
@@ -92,33 +125,4 @@ export async function saveCache(stream: NodeJS.ReadableStream, key: string) {
     }
 
     core.info("Cache saved successfully");
-}
-
-function getRequestOptions(): IRequestOptions {
-    const requestOptions: IRequestOptions = {
-        acceptHeader: createAcceptHeader("application/json", "5.2-preview.1")
-    };
-
-    return requestOptions;
-}
-
-function createAcceptHeader(type: string, apiVersion: string): string {
-    return `${type};api-version=${apiVersion}`;
-}
-
-function getCacheUrl(): string {
-    // Ideally we just use ACTIONS_CACHE_URL
-    let cacheUrl: string = (
-        process.env["ACTIONS_CACHE_URL"] ||
-        process.env["ACTIONS_RUNTIME_URL"] ||
-        ""
-    ).replace("pipelines", "artifactcache");
-    if (!cacheUrl) {
-        throw new Error(
-            "Cache Service Url not found, unable to restore cache."
-        );
-    }
-
-    core.debug(`Cache Url: ${cacheUrl}`);
-    return cacheUrl;
 }

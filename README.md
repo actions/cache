@@ -28,7 +28,7 @@ Create a workflow `.yml` file in your repositories `.github/workflows` directory
 ### Example workflow
 
 ```yaml
-name: Example Caching with npm
+name: Caching Primes
 
 on: push
 
@@ -39,22 +39,19 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
-    - name: Cache node modules
+    - name: Cache Primes
+      id: cache-primes
       uses: actions/cache@v1
       with:
-        path: node_modules
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
+        path: prime-numbers
+        key: ${{ runner.os }}-primes
 
-    - name: Install Dependencies
-      run: npm install
+    - name: Generate Prime Numbers
+      if: steps.cache-primes.outputs.cache-hit != 'true'
+      run: /generate-primes.sh -d prime-numbers
     
-    - name: Build
-      run: npm run build
-
-    - name: Test
-      run: npm run test
+    - name: Use Prime Numbers
+      run: /primes.sh -d prime-numbers
 ```
 
 ## Ecosystem Examples
@@ -78,7 +75,7 @@ steps:
     id: cache
     with:
       path: path/to/dependencies
-      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles')}}
+      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
   
   - name: Install Dependencies
     if: steps.cache.outputs.cache-hit != 'true'

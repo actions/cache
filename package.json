@@ -7,6 +7,7 @@
   "scripts": {
     "build": "tsc",
     "test": "tsc --noEmit && jest --coverage",
+    "lint": "eslint **/*.ts --cache",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
     "release": "ncc build -o dist/restore src/restore.ts && ncc build -o dist/save src/save.ts && git add -f dist/"
@@ -31,11 +32,20 @@
   },
   "devDependencies": {
     "@types/jest": "^24.0.13",
+    "@types/nock": "^11.1.0",
     "@types/node": "^12.0.4",
     "@types/uuid": "^3.4.5",
+    "@typescript-eslint/eslint-plugin": "^2.7.0",
+    "@typescript-eslint/parser": "^2.7.0",
     "@zeit/ncc": "^0.20.5",
+    "eslint": "^6.6.0",
+    "eslint-config-prettier": "^6.5.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-jest": "^23.0.3",
+    "eslint-plugin-prettier": "^3.1.1",
     "jest": "^24.8.0",
     "jest-circus": "^24.7.1",
+    "nock": "^11.7.0",
     "prettier": "1.18.2",
     "ts-jest": "^24.0.2",
     "typescript": "^3.6.4"

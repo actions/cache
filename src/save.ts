@@ -1,15 +1,12 @@
 import * as core from "@actions/core";
 import { exec } from "@actions/exec";
-
 import * as io from "@actions/io";
-import * as fs from "fs";
 import * as path from "path";
-
 import * as cacheHttpClient from "./cacheHttpClient";
 import { Inputs, State } from "./constants";
 import * as utils from "./utils/actionUtils";
 
-async function run() {
+async function run(): Promise<void> {
     try {
         const state = utils.getCacheState();
 
@@ -27,12 +24,12 @@ async function run() {
             return;
         }
 
-        let cachePath = utils.resolvePath(
+        const cachePath = utils.resolvePath(
             core.getInput(Inputs.Path, { required: true })
         );
         core.debug(`Cache Path: ${cachePath}`);
 
-        let archivePath = path.join(
+        const archivePath = path.join(
             await utils.createTempDirectory(),
             "cache.tgz"
         );
@@ -40,32 +37,36 @@ async function run() {
 
         // http://man7.org/linux/man-pages/man1/tar.1.html
         // tar [-options] <name of the tar archive> [files or directories which to add into archive]
-        const args = ["-cz"];
         const IS_WINDOWS = process.platform === "win32";
-        if (IS_WINDOWS) {
-            args.push("--force-local");
-            archivePath = archivePath.replace(/\\/g, "/");
-            cachePath = cachePath.replace(/\\/g, "/");
-        }
-
-        args.push(...["-f", archivePath, "-C", cachePath, "."]);
+        const args = IS_WINDOWS
+            ? [
+                  "-cz",
+                  "--force-local",
+                  "-f",
+                  archivePath.replace(/\\/g, "/"),
+                  "-C",
+                  cachePath.replace(/\\/g, "/"),
+                  "."
+              ]
+            : ["-cz", "-f", archivePath, "-C", cachePath, "."];
 
         const tarPath = await io.which("tar", true);
         core.debug(`Tar Path: ${tarPath}`);
         await exec(`"${tarPath}"`, args);
 
         const fileSizeLimit = 400 * 1024 * 1024; // 400MB
-        const archiveFileSize = fs.statSync(archivePath).size;
+        const archiveFileSize = utils.getArchiveFileSize(archivePath);
         core.debug(`File Size: ${archiveFileSize}`);
         if (archiveFileSize > fileSizeLimit) {
             core.warning(
-                `Cache size of ${archiveFileSize} bytes is over the 400MB limit, not saving cache.`
+                `Cache size of ~${Math.round(
+                    archiveFileSize / (1024 * 1024)
+                )} MB (${archiveFileSize} B) is over the 400MB limit, not saving cache.`
             );
             return;
         }
 
-        const stream = fs.createReadStream(archivePath);
-        await cacheHttpClient.saveCache(stream, primaryKey);
+        await cacheHttpClient.saveCache(primaryKey, archivePath);
     } catch (error) {
         core.warning(error.message);
     }

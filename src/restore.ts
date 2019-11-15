@@ -1,18 +1,25 @@
 import * as core from "@actions/core";
 import { exec } from "@actions/exec";
 import * as io from "@actions/io";
-
-import * as fs from "fs";
 import * as path from "path";
-
 import * as cacheHttpClient from "./cacheHttpClient";
-import { Inputs, State } from "./constants";
+import { Events, Inputs, State } from "./constants";
 import * as utils from "./utils/actionUtils";
 
-async function run() {
+async function run(): Promise<void> {
     try {
         // Validate inputs, this can cause task failure
-        let cachePath = utils.resolvePath(
+        if (!utils.isValidEvent()) {
+            core.setFailed(
+                `Event Validation Error: The event type ${
+                    process.env[Events.Key]
+                } is not supported. Only ${utils
+                    .getSupportedEvents()
+                    .join(", ")} events are supported at this time.`
+            );
+        }
+
+        const cachePath = utils.resolvePath(
             core.getInput(Inputs.Path, { required: true })
         );
         core.debug(`Cache Path: ${cachePath}`);
@@ -60,7 +67,7 @@ async function run() {
                 return;
             }
 
-            let archivePath = path.join(
+            const archivePath = path.join(
                 await utils.createTempDirectory(),
                 "cache.tgz"
             );
@@ -72,25 +79,32 @@ async function run() {
             // Download the cache from the cache entry
             await cacheHttpClient.downloadCache(cacheEntry, archivePath);
 
-            io.mkdirP(cachePath);
+            const archiveFileSize = utils.getArchiveFileSize(archivePath);
+            core.info(
+                `Cache Size: ~${Math.round(
+                    archiveFileSize / (1024 * 1024)
+                )} MB (${archiveFileSize} B)`
+            );
+
+            // Create directory to extract tar into
+            await io.mkdirP(cachePath);
 
             // http://man7.org/linux/man-pages/man1/tar.1.html
             // tar [-options] <name of the tar archive> [files or directories which to add into archive]
-            const args = ["-xz"];
-
             const IS_WINDOWS = process.platform === "win32";
-            if (IS_WINDOWS) {
-                args.push("--force-local");
-                archivePath = archivePath.replace(/\\/g, "/");
-                cachePath = cachePath.replace(/\\/g, "/");
-            }
-            args.push(...["-f", archivePath, "-C", cachePath]);
+            const args = IS_WINDOWS
+                ? [
+                      "-xz",
+                      "--force-local",
+                      "-f",
+                      archivePath.replace(/\\/g, "/"),
+                      "-C",
+                      cachePath.replace(/\\/g, "/")
+                  ]
+                : ["-xz", "-f", archivePath, "-C", cachePath];
 
             const tarPath = await io.which("tar", true);
             core.debug(`Tar Path: ${tarPath}`);
-
-            const archiveFileSize = fs.statSync(archivePath).size;
-            core.debug(`File Size: ${archiveFileSize}`);
 
             await exec(`"${tarPath}"`, args);
 

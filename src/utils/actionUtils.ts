@@ -1,10 +1,11 @@
 import * as core from "@actions/core";
 import * as io from "@actions/io";
+import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as uuidV4 from "uuid/v4";
 
-import { Outputs, State } from "../constants";
+import { Events, Outputs, State } from "../constants";
 import { ArtifactCacheEntry } from "../contracts";
 
 // From https://github.com/actions/toolkit/blob/master/packages/tool-cache/src/tool-cache.ts#L23
@@ -32,6 +33,10 @@ export async function createTempDirectory(): Promise<string> {
     return dest;
 }
 
+export function getArchiveFileSize(path: string): number {
+    return fs.statSync(path).size;
+}
+
 export function isExactKeyMatch(
     key: string,
     cacheResult?: ArtifactCacheEntry
@@ -45,10 +50,18 @@ export function isExactKeyMatch(
     );
 }
 
+export function setCacheState(state: ArtifactCacheEntry): void {
+    core.saveState(State.CacheResult, JSON.stringify(state));
+}
+
+export function setCacheHitOutput(isCacheHit: boolean): void {
+    core.setOutput(Outputs.CacheHit, isCacheHit.toString());
+}
+
 export function setOutputAndState(
     key: string,
     cacheResult?: ArtifactCacheEntry
-) {
+): void {
     setCacheHitOutput(isExactKeyMatch(key, cacheResult));
     // Store the cache result if it exists
     cacheResult && setCacheState(cacheResult);
@@ -57,15 +70,11 @@ export function setOutputAndState(
 export function getCacheState(): ArtifactCacheEntry | undefined {
     const stateData = core.getState(State.CacheResult);
     core.debug(`State: ${stateData}`);
-    return (stateData && JSON.parse(stateData)) as ArtifactCacheEntry;
-}
+    if (stateData) {
+        return JSON.parse(stateData) as ArtifactCacheEntry;
+    }
 
-export function setCacheState(state: ArtifactCacheEntry) {
-    core.saveState(State.CacheResult, JSON.stringify(state));
-}
-
-export function setCacheHitOutput(isCacheHit: boolean) {
-    core.setOutput(Outputs.CacheHit, isCacheHit.toString());
+    return undefined;
 }
 
 export function resolvePath(filePath: string): string {
@@ -78,4 +87,16 @@ export function resolvePath(filePath: string): string {
     }
 
     return path.resolve(filePath);
+}
+
+export function getSupportedEvents(): string[] {
+    return [Events.Push, Events.PullRequest];
+}
+
+// Currently the cache token is only authorized for push and pull_request events
+// All other events will fail when reading and saving the cache
+// See GitHub Context https://help.github.com/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions#github-context
+export function isValidEvent(): boolean {
+    const githubEvent = process.env[Events.Key] || "";
+    return getSupportedEvents().includes(githubEvent);
 }

@@ -1,16 +1,25 @@
 # Examples
 
-- [C# - Nuget](#c---nuget)
-- [Elixir - Mix](#elixir---mix)
-- [Go - Modules](#go---modules)
-- [Java - Gradle](#java---gradle)
-- [Java - Maven](#java---maven)
-- [Node - npm](#node---npm)
-- [Node - Yarn](#node---yarn)
-- [Ruby - Gem](#ruby---gem)
-- [Rust - Cargo](#rust---cargo)
-- [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
-- [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
+- [Examples](#examples)
+  - [C# - Nuget](#c---nuget)
+  - [Elixir - Mix](#elixir---mix)
+  - [Go - Modules](#go---modules)
+  - [Java - Gradle](#java---gradle)
+  - [Java - Maven](#java---maven)
+  - [Node - npm](#node---npm)
+    - [macOS and Ubuntu](#macos-and-ubuntu)
+    - [Windows](#windows)
+    - [Using multiple systems and `npm config`](#using-multiple-systems-and-npm-config)
+  - [Node - Yarn](#node---yarn)
+  - [PHP - Composer](#php---composer)
+  - [Python - pip](#python---pip)
+    - [Simple example](#simple-example)
+    - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow)
+    - [Using a script to get cache location](#using-a-script-to-get-cache-location)
+  - [Ruby - Gem](#ruby---gem)
+  - [Rust - Cargo](#rust---cargo)
+  - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
+  - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 
 ## C# - Nuget
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
@@ -69,24 +78,142 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 
 ## Node - npm
 
+For npm, cache files are stored in `~/.npm` on Posix, or `%AppData%/npm-cache` on Windows. See https://docs.npmjs.com/cli/cache#cache
+
+>Note: It is not recommended to cache `node_modules`, as it can break across Node versions and won't work with `npm ci`
+
+### macOS and Ubuntu
+
 ```yaml
 - uses: actions/cache@v1
   with:
-    path: node_modules
+    path: ~/.npm
+    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+    restore-keys: |
+      ${{ runner.os }}-node-
+```
+
+### Windows
+
+```yaml
+- uses: actions/cache@v1
+  with:
+    path: ~\AppData\Roaming\npm-cache
+    key: ${{ runner.os }}-node-${{ hashFiles('**\package-lock.json') }}
+    restore-keys: |
+      ${{ runner.os }}-node-
+```
+
+### Using multiple systems and `npm config`
+
+```yaml  
+- name: Get npm cache directory
+  id: npm-cache
+  run: |
+    echo "::set-output name=dir::$(npm config get cache)"
+- uses: actions/cache@v1
+  with:
+    path: ${{ steps.npm-cache.outputs.dir }}
     key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
     restore-keys: |
       ${{ runner.os }}-node-
 ```
 
 ## Node - Yarn
+The yarn cache directory will depend on your operating system and version of `yarn`. See https://yarnpkg.com/lang/en/docs/cli/cache/ for more info.
 
+```yaml
+- name: Get yarn cache
+  id: yarn-cache
+  run: echo "::set-output name=dir::$(yarn cache dir)"
+
+- uses: actions/cache@v1
+  with:
+    path: ${{ steps.yarn-cache.outputs.dir }}
+    key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-yarn-
+```
+
+## PHP - Composer
+
+```yaml  
+- name: Get Composer Cache Directory
+  id: composer-cache
+  run: |
+    echo "::set-output name=dir::$(composer config cache-files-dir)"
+- uses: actions/cache@v1
+  with:
+    path: ${{ steps.composer-cache.outputs.dir }}
+    key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-composer-
+```
+
+## Python - pip
+
+For pip, the cache directory will vary by OS. See https://pip.pypa.io/en/stable/reference/pip_install/#caching
+
+Locations:
+ - Ubuntu: `~/.cache/pip`
+ - Windows: `~\AppData\Local\pip\Cache`
+ - macOS: `~/Library/Caches/pip`
+
+### Simple example
 ```yaml
 - uses: actions/cache@v1
   with:
-    path: ~/.cache/yarn
-    key: ${{ runner.os }}-yarn-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
+    path: ~/.cache/pip
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
     restore-keys: |
-      ${{ runner.os }}-yarn-
+      ${{ runner.os }}-pip-
+```
+
+Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
+
+### Multiple OS's in a workflow
+
+```yaml
+- uses: actions/cache@v1
+  if: startsWith(runner.os, 'Linux')
+  with:
+    path: ~/.cache/pip
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    restore-keys: |
+      ${{ runner.os }}-pip-
+
+- uses: actions/cache@v1
+  if: startsWith(runner.os, 'macOS')
+  with:
+    path: ~/Library/Caches/pip
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    restore-keys: |
+      ${{ runner.os }}-pip-
+
+- uses: actions/cache@v1
+  if: startsWith(runner.os, 'Windows')
+  with:
+    path: ~\AppData\Local\pip\Cache
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    restore-keys: |
+      ${{ runner.os }}-pip-
+```
+
+### Using a script to get cache location
+
+> Note: This uses an internal pip API and may not always work
+```yaml
+- name: Get pip cache
+   id: pip-cache
+   run: |
+     python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
+
+- uses: actions/cache@v1
+  with:
+    path: ${{ steps.pip-cache.outputs.dir }}
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    restore-keys: |
+      ${{ runner.os }}-pip-
 ```
 
 ## Ruby - Gem
