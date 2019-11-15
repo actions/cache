@@ -86,7 +86,8 @@ async function run(): Promise<void> {
                 )} MB (${archiveFileSize} B)`
             );
 
-            io.mkdirP(cachePath);
+            // Create directory to extract tar into
+            await io.mkdirP(cachePath);
 
             // http://man7.org/linux/man-pages/man1/tar.1.html
             // tar [-options] <name of the tar archive> [files or directories which to add into archive]
