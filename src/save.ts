@@ -3,17 +3,28 @@ import { exec } from "@actions/exec";
 import * as io from "@actions/io";
 import * as path from "path";
 import * as cacheHttpClient from "./cacheHttpClient";
-import { Inputs, State } from "./constants";
+import { Events, Inputs, State } from "./constants";
 import * as utils from "./utils/actionUtils";
 
 async function run(): Promise<void> {
     try {
+        if (!utils.isValidEvent()) {
+            utils.logWarning(
+                `Event Validation Error: The event type ${
+                    process.env[Events.Key]
+                } is not supported. Only ${utils
+                    .getSupportedEvents()
+                    .join(", ")} events are supported at this time.`
+            );
+            return;
+        }
+
         const state = utils.getCacheState();
 
         // Inputs are re-evaluted before the post action, so we want the original key used for restore
         const primaryKey = core.getState(State.CacheKey);
         if (!primaryKey) {
-            core.warning(`Error retrieving key from state.`);
+            utils.logWarning(`Error retrieving key from state.`);
             return;
         }
 
@@ -58,7 +69,7 @@ async function run(): Promise<void> {
         const archiveFileSize = utils.getArchiveFileSize(archivePath);
         core.debug(`File Size: ${archiveFileSize}`);
         if (archiveFileSize > fileSizeLimit) {
-            core.warning(
+            utils.logWarning(
                 `Cache size of ~${Math.round(
                     archiveFileSize / (1024 * 1024)
                 )} MB (${archiveFileSize} B) is over the 400MB limit, not saving cache.`
@@ -68,7 +79,7 @@ async function run(): Promise<void> {
 
         await cacheHttpClient.saveCache(primaryKey, archivePath);
     } catch (error) {
-        core.warning(error.message);
+        utils.logWarning(error.message);
     }
 }
 

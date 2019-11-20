@@ -3,7 +3,7 @@ import * as exec from "@actions/exec";
 import * as io from "@actions/io";
 import * as path from "path";
 import * as cacheHttpClient from "../src/cacheHttpClient";
-import { Inputs } from "../src/constants";
+import { Events, Inputs } from "../src/constants";
 import { ArtifactCacheEntry } from "../src/contracts";
 import run from "../src/save";
 import * as actionUtils from "../src/utils/actionUtils";
@@ -32,6 +32,16 @@ beforeAll(() => {
         }
     );
 
+    jest.spyOn(actionUtils, "isValidEvent").mockImplementation(() => {
+        const actualUtils = jest.requireActual("../src/utils/actionUtils");
+        return actualUtils.isValidEvent();
+    });
+
+    jest.spyOn(actionUtils, "getSupportedEvents").mockImplementation(() => {
+        const actualUtils = jest.requireActual("../src/utils/actionUtils");
+        return actualUtils.getSupportedEvents();
+    });
+
     jest.spyOn(actionUtils, "resolvePath").mockImplementation(filePath => {
         return path.resolve(filePath);
     });
@@ -45,12 +55,29 @@ beforeAll(() => {
     });
 });
 
+beforeEach(() => {
+    process.env[Events.Key] = Events.Push;
+});
+
 afterEach(() => {
     testUtils.clearInputs();
+    delete process.env[Events.Key];
+});
+
+test("save with invalid event outputs warning", async () => {
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const failedMock = jest.spyOn(core, "setFailed");
+    const invalidEvent = "commit_comment";
+    process.env[Events.Key] = invalidEvent;
+    await run();
+    expect(logWarningMock).toHaveBeenCalledWith(
+        `Event Validation Error: The event type ${invalidEvent} is not supported. Only push, pull_request events are supported at this time.`
+    );
+    expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
 test("save with no primary key in state outputs warning", async () => {
-    const warningMock = jest.spyOn(core, "warning");
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const failedMock = jest.spyOn(core, "setFailed");
 
     const cacheEntry: ArtifactCacheEntry = {
@@ -72,16 +99,15 @@ test("save with no primary key in state outputs warning", async () => {
 
     await run();
 
-    expect(warningMock).toHaveBeenCalledWith(
+    expect(logWarningMock).toHaveBeenCalledWith(
         `Error retrieving key from state.`
     );
-    expect(warningMock).toHaveBeenCalledTimes(1);
+    expect(logWarningMock).toHaveBeenCalledTimes(1);
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
 test("save with exact match returns early", async () => {
     const infoMock = jest.spyOn(core, "info");
-    const warningMock = jest.spyOn(core, "warning");
     const failedMock = jest.spyOn(core, "setFailed");
 
     const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
@@ -112,12 +138,11 @@ test("save with exact match returns early", async () => {
 
     expect(execMock).toHaveBeenCalledTimes(0);
 
-    expect(warningMock).toHaveBeenCalledTimes(0);
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
 test("save with missing input outputs warning", async () => {
-    const warningMock = jest.spyOn(core, "warning");
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const failedMock = jest.spyOn(core, "setFailed");
 
     const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
@@ -140,15 +165,15 @@ test("save with missing input outputs warning", async () => {
 
     await run();
 
-    expect(warningMock).toHaveBeenCalledWith(
+    expect(logWarningMock).toHaveBeenCalledWith(
         "Input required and not supplied: path"
     );
-    expect(warningMock).toHaveBeenCalledTimes(1);
+    expect(logWarningMock).toHaveBeenCalledTimes(1);
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
 test("save with large cache outputs warning", async () => {
-    const warningMock = jest.spyOn(core, "warning");
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const failedMock = jest.spyOn(core, "setFailed");
 
     const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
@@ -200,8 +225,8 @@ test("save with large cache outputs warning", async () => {
     expect(execMock).toHaveBeenCalledTimes(1);
     expect(execMock).toHaveBeenCalledWith(`"tar"`, args);
 
-    expect(warningMock).toHaveBeenCalledTimes(1);
-    expect(warningMock).toHaveBeenCalledWith(
+    expect(logWarningMock).toHaveBeenCalledTimes(1);
+    expect(logWarningMock).toHaveBeenCalledWith(
         "Cache size of ~1024 MB (1073741824 B) is over the 400MB limit, not saving cache."
     );
 
@@ -209,7 +234,7 @@ test("save with large cache outputs warning", async () => {
 });
 
 test("save with server error outputs warning", async () => {
-    const warningMock = jest.spyOn(core, "warning");
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const failedMock = jest.spyOn(core, "setFailed");
 
     const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
@@ -265,14 +290,13 @@ test("save with server error outputs warning", async () => {
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
     expect(saveCacheMock).toHaveBeenCalledWith(primaryKey, archivePath);
 
-    expect(warningMock).toHaveBeenCalledTimes(1);
-    expect(warningMock).toHaveBeenCalledWith("HTTP Error Occurred");
+    expect(logWarningMock).toHaveBeenCalledTimes(1);
+    expect(logWarningMock).toHaveBeenCalledWith("HTTP Error Occurred");
 
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
 test("save with valid inputs uploads a cache", async () => {
-    const warningMock = jest.spyOn(core, "warning");
     const failedMock = jest.spyOn(core, "setFailed");
 
     const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
@@ -324,6 +348,5 @@ test("save with valid inputs uploads a cache", async () => {
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
     expect(saveCacheMock).toHaveBeenCalledWith(primaryKey, archivePath);
 
-    expect(warningMock).toHaveBeenCalledTimes(0);
     expect(failedMock).toHaveBeenCalledTimes(0);
 });

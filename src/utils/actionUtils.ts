@@ -77,6 +77,11 @@ export function getCacheState(): ArtifactCacheEntry | undefined {
     return undefined;
 }
 
+export function logWarning(message: string) {
+    const warningPrefix = "[warning]";
+    core.info(`${warningPrefix}${message}`);
+}
+
 export function resolvePath(filePath: string): string {
     if (filePath[0] === "~") {
         const home = os.homedir();
