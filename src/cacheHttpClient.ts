@@ -61,11 +61,12 @@ export async function getCacheEntry(
         throw new Error(`Cache service responded with ${response.statusCode}`);
     }
     const cacheResult = response.result;
-    core.debug(`Cache Result:`);
-    core.debug(JSON.stringify(cacheResult));
     if (!cacheResult || !cacheResult.archiveLocation) {
         throw new Error("Cache not found.");
     }
+    core.setSecret(cacheResult.archiveLocation);
+    core.debug(`Cache Result:`);
+    core.debug(JSON.stringify(cacheResult));
 
     return cacheResult;
 }
