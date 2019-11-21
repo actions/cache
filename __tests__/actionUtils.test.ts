@@ -162,6 +162,16 @@ test("getCacheState with valid state", () => {
     expect(getStateMock).toHaveBeenCalledTimes(1);
 });
 
+test("logWarning logs a message with a warning prefix", () => {
+    const message = "A warning occurred.";
+
+    const infoMock = jest.spyOn(core, "info");
+
+    actionUtils.logWarning(message);
+
+    expect(infoMock).toHaveBeenCalledWith(`[warning]${message}`);
+});
+
 test("isValidEvent returns false for unknown event", () => {
     const event = "foo";
     process.env[Events.Key] = event;

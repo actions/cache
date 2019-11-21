@@ -50,14 +50,16 @@ afterEach(() => {
     delete process.env[Events.Key];
 });
 
-test("restore with invalid event", async () => {
+test("restore with invalid event outputs warning", async () => {
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const failedMock = jest.spyOn(core, "setFailed");
     const invalidEvent = "commit_comment";
     process.env[Events.Key] = invalidEvent;
     await run();
-    expect(failedMock).toHaveBeenCalledWith(
+    expect(logWarningMock).toHaveBeenCalledWith(
         `Event Validation Error: The event type ${invalidEvent} is not supported. Only push, pull_request events are supported at this time.`
     );
+    expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
 test("restore with no path should fail", async () => {
@@ -126,7 +128,6 @@ test("restore with no cache found", async () => {
     });
 
     const infoMock = jest.spyOn(core, "info");
-    const warningMock = jest.spyOn(core, "warning");
     const failedMock = jest.spyOn(core, "setFailed");
     const stateMock = jest.spyOn(core, "saveState");
 
@@ -138,7 +139,6 @@ test("restore with no cache found", async () => {
     await run();
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(warningMock).toHaveBeenCalledTimes(0);
     expect(failedMock).toHaveBeenCalledTimes(0);
 
     expect(infoMock).toHaveBeenCalledWith(
@@ -153,7 +153,7 @@ test("restore with server error should fail", async () => {
         key
     });
 
-    const warningMock = jest.spyOn(core, "warning");
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const failedMock = jest.spyOn(core, "setFailed");
     const stateMock = jest.spyOn(core, "saveState");
 
@@ -168,8 +168,8 @@ test("restore with server error should fail", async () => {
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
 
-    expect(warningMock).toHaveBeenCalledTimes(1);
-    expect(warningMock).toHaveBeenCalledWith("HTTP Error Occurred");
+    expect(logWarningMock).toHaveBeenCalledTimes(1);
+    expect(logWarningMock).toHaveBeenCalledWith("HTTP Error Occurred");
 
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
@@ -187,7 +187,6 @@ test("restore with restore keys and no cache found", async () => {
     });
 
     const infoMock = jest.spyOn(core, "info");
-    const warningMock = jest.spyOn(core, "warning");
     const failedMock = jest.spyOn(core, "setFailed");
     const stateMock = jest.spyOn(core, "saveState");
 
@@ -199,7 +198,6 @@ test("restore with restore keys and no cache found", async () => {
     await run();
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(warningMock).toHaveBeenCalledTimes(0);
     expect(failedMock).toHaveBeenCalledTimes(0);
 
     expect(infoMock).toHaveBeenCalledWith(
@@ -216,7 +214,6 @@ test("restore with cache found", async () => {
     });
 
     const infoMock = jest.spyOn(core, "info");
-    const warningMock = jest.spyOn(core, "warning");
     const failedMock = jest.spyOn(core, "setFailed");
     const stateMock = jest.spyOn(core, "saveState");
 
@@ -281,7 +278,6 @@ test("restore with cache found", async () => {
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(true);
 
     expect(infoMock).toHaveBeenCalledWith(`Cache restored from key: ${key}`);
-    expect(warningMock).toHaveBeenCalledTimes(0);
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
@@ -296,7 +292,6 @@ test("restore with a pull request event and cache found", async () => {
     process.env[Events.Key] = Events.PullRequest;
 
     const infoMock = jest.spyOn(core, "info");
-    const warningMock = jest.spyOn(core, "warning");
     const failedMock = jest.spyOn(core, "setFailed");
     const stateMock = jest.spyOn(core, "saveState");
 
@@ -362,7 +357,6 @@ test("restore with a pull request event and cache found", async () => {
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(true);
 
     expect(infoMock).toHaveBeenCalledWith(`Cache restored from key: ${key}`);
-    expect(warningMock).toHaveBeenCalledTimes(0);
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
@@ -377,7 +371,6 @@ test("restore with cache found for restore key", async () => {
     });
 
     const infoMock = jest.spyOn(core, "info");
-    const warningMock = jest.spyOn(core, "warning");
     const failedMock = jest.spyOn(core, "setFailed");
     const stateMock = jest.spyOn(core, "saveState");
 
@@ -445,6 +438,5 @@ test("restore with cache found for restore key", async () => {
     expect(infoMock).toHaveBeenCalledWith(
         `Cache restored from key: ${restoreKey}`
     );
-    expect(warningMock).toHaveBeenCalledTimes(0);
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
