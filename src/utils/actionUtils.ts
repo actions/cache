@@ -77,7 +77,7 @@ export function getCacheState(): ArtifactCacheEntry | undefined {
     return undefined;
 }
 
-export function logWarning(message: string) {
+export function logWarning(message: string): void {
     const warningPrefix = "[warning]";
     core.info(`${warningPrefix}${message}`);
 }
