@@ -1533,11 +1533,12 @@ function getCacheEntry(keys) {
             throw new Error(`Cache service responded with ${response.statusCode}`);
         }
         const cacheResult = response.result;
-        core.debug(`Cache Result:`);
-        core.debug(JSON.stringify(cacheResult));
         if (!cacheResult || !cacheResult.archiveLocation) {
             throw new Error("Cache not found.");
         }
+        core.setSecret(cacheResult.archiveLocation);
+        core.debug(`Cache Result:`);
+        core.debug(JSON.stringify(cacheResult));
         return cacheResult;
     });
 }
@@ -2208,6 +2209,11 @@ function getCacheState() {
     return undefined;
 }
 exports.getCacheState = getCacheState;
+function logWarning(message) {
+    const warningPrefix = "[warning]";
+    core.info(`${warningPrefix}${message}`);
+}
+exports.logWarning = logWarning;
 function resolvePath(filePath) {
     if (filePath[0] === "~") {
         const home = os.homedir();
@@ -2996,9 +3002,10 @@ function run() {
         try {
             // Validate inputs, this can cause task failure
             if (!utils.isValidEvent()) {
-                core.setFailed(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported. Only ${utils
+                utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported. Only ${utils
                     .getSupportedEvents()
                     .join(", ")} events are supported at this time.`);
+                return;
             }
             const cachePath = utils.resolvePath(core.getInput(constants_1.Inputs.Path, { required: true }));
             core.debug(`Cache Path: ${cachePath}`);
@@ -3063,7 +3070,7 @@ function run() {
                 core.info(`Cache restored from key: ${cacheEntry && cacheEntry.cacheKey}`);
             }
             catch (error) {
-                core.warning(error.message);
+                utils.logWarning(error.message);
                 utils.setCacheHitOutput(false);
             }
         }

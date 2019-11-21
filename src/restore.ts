@@ -10,13 +10,14 @@ async function run(): Promise<void> {
     try {
         // Validate inputs, this can cause task failure
         if (!utils.isValidEvent()) {
-            core.setFailed(
+            utils.logWarning(
                 `Event Validation Error: The event type ${
                     process.env[Events.Key]
                 } is not supported. Only ${utils
                     .getSupportedEvents()
                     .join(", ")} events are supported at this time.`
             );
+            return;
         }
 
         const cachePath = utils.resolvePath(
@@ -118,7 +119,7 @@ async function run(): Promise<void> {
                 `Cache restored from key: ${cacheEntry && cacheEntry.cacheKey}`
             );
         } catch (error) {
-            core.warning(error.message);
+            utils.logWarning(error.message);
             utils.setCacheHitOutput(false);
         }
     } catch (error) {

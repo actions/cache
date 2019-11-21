@@ -1533,11 +1533,12 @@ function getCacheEntry(keys) {
             throw new Error(`Cache service responded with ${response.statusCode}`);
         }
         const cacheResult = response.result;
-        core.debug(`Cache Result:`);
-        core.debug(JSON.stringify(cacheResult));
         if (!cacheResult || !cacheResult.archiveLocation) {
             throw new Error("Cache not found.");
         }
+        core.setSecret(cacheResult.archiveLocation);
+        core.debug(`Cache Result:`);
+        core.debug(JSON.stringify(cacheResult));
         return cacheResult;
     });
 }
@@ -2208,6 +2209,11 @@ function getCacheState() {
     return undefined;
 }
 exports.getCacheState = getCacheState;
+function logWarning(message) {
+    const warningPrefix = "[warning]";
+    core.info(`${warningPrefix}${message}`);
+}
+exports.logWarning = logWarning;
 function resolvePath(filePath) {
     if (filePath[0] === "~") {
         const home = os.homedir();
@@ -2882,11 +2888,17 @@ const utils = __importStar(__webpack_require__(443));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
+            if (!utils.isValidEvent()) {
+                utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported. Only ${utils
+                    .getSupportedEvents()
+                    .join(", ")} events are supported at this time.`);
+                return;
+            }
             const state = utils.getCacheState();
             // Inputs are re-evaluted before the post action, so we want the original key used for restore
             const primaryKey = core.getState(constants_1.State.CacheKey);
             if (!primaryKey) {
-                core.warning(`Error retrieving key from state.`);
+                utils.logWarning(`Error retrieving key from state.`);
                 return;
             }
             if (utils.isExactKeyMatch(primaryKey, state)) {
@@ -2918,13 +2930,13 @@ function run() {
             const archiveFileSize = utils.getArchiveFileSize(archivePath);
             core.debug(`File Size: ${archiveFileSize}`);
             if (archiveFileSize > fileSizeLimit) {
-                core.warning(`Cache size of ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B) is over the 400MB limit, not saving cache.`);
+                utils.logWarning(`Cache size of ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B) is over the 400MB limit, not saving cache.`);
                 return;
             }
             yield cacheHttpClient.saveCache(primaryKey, archivePath);
         }
         catch (error) {
-            core.warning(error.message);
+            utils.logWarning(error.message);
         }
     });
 }
