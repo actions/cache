@@ -223,9 +223,9 @@ When dependencies are installed later in the workflow, we must specify the same 
 
 ```yaml
 - name: Bundle install
-        run: |
-          bundle config path vendor/bundle
-          bundle install --jobs 4 --retry 3
+  run: |
+    bundle config path vendor/bundle
+    bundle install --jobs 4 --retry 3
 ```
 
 ## Rust - Cargo
