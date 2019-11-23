@@ -219,6 +219,14 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
     restore-keys: |
       ${{ runner.os }}-gem-
 ```
+When dependencies are installed later in the workflow, we must specify the same path for the bundler.
+
+```yaml
+- name: Bundle install
+  run: |
+    bundle config path vendor/bundle
+    bundle install --jobs 4 --retry 3
+```
 
 ## Rust - Cargo
 
