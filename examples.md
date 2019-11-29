@@ -18,7 +18,7 @@
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
 
 ```yaml
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   with:
     path: ~/.nuget/packages
     key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
@@ -28,7 +28,7 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 
 ## Elixir - Mix
 ```yaml
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   with:
     path: deps
     key: ${{ runner.os }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
@@ -39,7 +39,7 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 ## Go - Modules
 
 ```yaml
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   with:
     path: ~/go/pkg/mod
     key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -50,7 +50,7 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 ## Java - Gradle
 
 ```yaml
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   with:
     path: ~/.gradle/caches
     key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
@@ -61,7 +61,7 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 ## Java - Maven
 
 ```yaml
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   with:
     path: ~/.m2/repository
     key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -78,7 +78,7 @@ For npm, cache files are stored in `~/.npm` on Posix, or `%AppData%/npm-cache` o
 ### macOS and Ubuntu
 
 ```yaml
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   with:
     path: ~/.npm
     key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
@@ -89,7 +89,7 @@ For npm, cache files are stored in `~/.npm` on Posix, or `%AppData%/npm-cache` o
 ### Windows
 
 ```yaml
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   with:
     path: ~\AppData\Roaming\npm-cache
     key: ${{ runner.os }}-node-${{ hashFiles('**\package-lock.json') }}
@@ -104,7 +104,7 @@ For npm, cache files are stored in `~/.npm` on Posix, or `%AppData%/npm-cache` o
   id: npm-cache
   run: |
     echo "::set-output name=dir::$(npm config get cache)"
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   with:
     path: ${{ steps.npm-cache.outputs.dir }}
     key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
@@ -120,7 +120,7 @@ The yarn cache directory will depend on your operating system and version of `ya
   id: yarn-cache
   run: echo "::set-output name=dir::$(yarn cache dir)"
 
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   with:
     path: ${{ steps.yarn-cache.outputs.dir }}
     key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
@@ -135,7 +135,7 @@ The yarn cache directory will depend on your operating system and version of `ya
   id: composer-cache
   run: |
     echo "::set-output name=dir::$(composer config cache-files-dir)"
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   with:
     path: ${{ steps.composer-cache.outputs.dir }}
     key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -154,7 +154,7 @@ Locations:
 
 ### Simple example
 ```yaml
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   with:
     path: ~/.cache/pip
     key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -167,7 +167,7 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
 ### Multiple OS's in a workflow
 
 ```yaml
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   if: startsWith(runner.os, 'Linux')
   with:
     path: ~/.cache/pip
@@ -175,7 +175,7 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
     restore-keys: |
       ${{ runner.os }}-pip-
 
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   if: startsWith(runner.os, 'macOS')
   with:
     path: ~/Library/Caches/pip
@@ -183,7 +183,7 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
     restore-keys: |
       ${{ runner.os }}-pip-
 
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   if: startsWith(runner.os, 'Windows')
   with:
     path: ~\AppData\Local\pip\Cache
@@ -201,7 +201,7 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
    run: |
      python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
 
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   with:
     path: ${{ steps.pip-cache.outputs.dir }}
     key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -212,7 +212,7 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
 ## Ruby - Gem
 
 ```yaml
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   with:
     path: vendor/bundle
     key: ${{ runner.os }}-gem-${{ hashFiles('**/Gemfile.lock') }}
@@ -232,17 +232,17 @@ When dependencies are installed later in the workflow, we must specify the same 
 
 ```yaml
 - name: Cache cargo registry
-  uses: actions/cache@v1
+  uses: actions/cache@v1.0.3
   with:
     path: ~/.cargo/registry
     key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 - name: Cache cargo index
-  uses: actions/cache@v1
+  uses: actions/cache@v1.0.3
   with:
     path: ~/.cargo/git
     key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
 - name: Cache cargo build
-  uses: actions/cache@v1
+  uses: actions/cache@v1.0.3
   with:
     path: target
     key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
@@ -251,7 +251,7 @@ When dependencies are installed later in the workflow, we must specify the same 
 ## Swift, Objective-C - Carthage
 
 ```yaml
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   with:
     path: Carthage
     key: ${{ runner.os }}-carthage-${{ hashFiles('**/Cartfile.resolved') }}
@@ -262,7 +262,7 @@ When dependencies are installed later in the workflow, we must specify the same 
 ## Swift, Objective-C - CocoaPods
 
 ```yaml
-- uses: actions/cache@v1
+- uses: actions/cache@v1.0.3
   with:
     path: Pods
     key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}

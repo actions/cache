@@ -41,7 +41,7 @@ jobs:
 
     - name: Cache Primes
       id: cache-primes
-      uses: actions/cache@v1
+      uses: actions/cache@v1.0.3
       with:
         path: prime-numbers
         key: ${{ runner.os }}-primes
@@ -71,7 +71,7 @@ Example:
 steps:
   - uses: actions/checkout@v1
 
-  - uses: actions/cache@v1
+  - uses: actions/cache@v1.0.3
     id: cache
     with:
       path: path/to/dependencies
