@@ -54,9 +54,26 @@ jobs:
       run: /primes.sh -d prime-numbers
 ```
 
-## Ecosystem Examples
+## Implementation Examples
 
-See [Examples](examples.md)
+Every programming language and framework has it's own way of caching. 
+
+See [Examples](examples.md) for a list of `actions/cache` implementations for use with:
+
+- [C# - Nuget](./examples.md#c---nuget)
+- [Elixir - Mix](./examples.md#elixir---mix)
+- [Go - Modules](./examples.md#go---modules)
+- [Java - Gradle](./examples.md#java---gradle)
+- [Java - Maven](./examples.md#java---maven)
+- [Node - npm](./examples.md#node---npm)
+- [Node - Yarn](./examples.md#node---yarn)
+- [PHP - Composer](./examples.md#php---composer)
+- [Python - pip](./examples.md#python---pip)
+- [Ruby - Gem](./examples.md#ruby---gem)
+- [Rust - Cargo](./examples.md#rust---cargo)
+- [Swift, Objective-C - Carthage](./examples.md#swift-objective-c---carthage)
+- [Swift, Objective-C - CocoaPods](./examples.md#swift-objective-c---cocoapods)
+
 
 ## Cache Limits
 
