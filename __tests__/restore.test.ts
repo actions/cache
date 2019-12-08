@@ -1,18 +1,16 @@
 import * as core from "@actions/core";
-import * as exec from "@actions/exec";
-import * as io from "@actions/io";
 import * as path from "path";
 import * as cacheHttpClient from "../src/cacheHttpClient";
 import { Events, Inputs } from "../src/constants";
 import { ArtifactCacheEntry } from "../src/contracts";
 import run from "../src/restore";
+import * as tar from "../src/tar";
 import * as actionUtils from "../src/utils/actionUtils";
 import * as testUtils from "../src/utils/testUtils";
 
-jest.mock("@actions/exec");
-jest.mock("@actions/io");
-jest.mock("../src/utils/actionUtils");
 jest.mock("../src/cacheHttpClient");
+jest.mock("../src/tar");
+jest.mock("../src/utils/actionUtils");
 
 beforeAll(() => {
     jest.spyOn(actionUtils, "resolvePath").mockImplementation(filePath => {
@@ -34,10 +32,6 @@ beforeAll(() => {
     jest.spyOn(actionUtils, "getSupportedEvents").mockImplementation(() => {
         const actualUtils = jest.requireActual("../src/utils/actionUtils");
         return actualUtils.getSupportedEvents();
-    });
-
-    jest.spyOn(io, "which").mockImplementation(tool => {
-        return Promise.resolve(tool);
     });
 });
 
@@ -245,8 +239,7 @@ test("restore with cache found", async () => {
         .spyOn(actionUtils, "getArchiveFileSize")
         .mockReturnValue(fileSize);
 
-    const mkdirMock = jest.spyOn(io, "mkdirP");
-    const execMock = jest.spyOn(exec, "exec");
+    const extractTarMock = jest.spyOn(tar, "extractTar");
     const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
 
     await run();
@@ -257,22 +250,9 @@ test("restore with cache found", async () => {
     expect(createTempDirectoryMock).toHaveBeenCalledTimes(1);
     expect(downloadCacheMock).toHaveBeenCalledWith(cacheEntry, archivePath);
     expect(getArchiveFileSizeMock).toHaveBeenCalledWith(archivePath);
-    expect(mkdirMock).toHaveBeenCalledWith(cachePath);
 
-    const IS_WINDOWS = process.platform === "win32";
-    const args = IS_WINDOWS
-        ? [
-              "-xz",
-              "--force-local",
-              "-f",
-              archivePath.replace(/\\/g, "/"),
-              "-C",
-              cachePath.replace(/\\/g, "/")
-          ]
-        : ["-xz", "-f", archivePath, "-C", cachePath];
-
-    expect(execMock).toHaveBeenCalledTimes(1);
-    expect(execMock).toHaveBeenCalledWith(`"tar"`, args);
+    expect(extractTarMock).toHaveBeenCalledTimes(1);
+    expect(extractTarMock).toHaveBeenCalledWith(archivePath, cachePath);
 
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(true);
@@ -323,8 +303,7 @@ test("restore with a pull request event and cache found", async () => {
         .spyOn(actionUtils, "getArchiveFileSize")
         .mockReturnValue(fileSize);
 
-    const mkdirMock = jest.spyOn(io, "mkdirP");
-    const execMock = jest.spyOn(exec, "exec");
+    const extractTarMock = jest.spyOn(tar, "extractTar");
     const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
 
     await run();
@@ -336,22 +315,9 @@ test("restore with a pull request event and cache found", async () => {
     expect(downloadCacheMock).toHaveBeenCalledWith(cacheEntry, archivePath);
     expect(getArchiveFileSizeMock).toHaveBeenCalledWith(archivePath);
     expect(infoMock).toHaveBeenCalledWith(`Cache Size: ~60 MB (62915000 B)`);
-    expect(mkdirMock).toHaveBeenCalledWith(cachePath);
 
-    const IS_WINDOWS = process.platform === "win32";
-    const args = IS_WINDOWS
-        ? [
-              "-xz",
-              "--force-local",
-              "-f",
-              archivePath.replace(/\\/g, "/"),
-              "-C",
-              cachePath.replace(/\\/g, "/")
-          ]
-        : ["-xz", "-f", archivePath, "-C", cachePath];
-
-    expect(execMock).toHaveBeenCalledTimes(1);
-    expect(execMock).toHaveBeenCalledWith(`"tar"`, args);
+    expect(extractTarMock).toHaveBeenCalledTimes(1);
+    expect(extractTarMock).toHaveBeenCalledWith(archivePath, cachePath);
 
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(true);
@@ -402,8 +368,7 @@ test("restore with cache found for restore key", async () => {
         .spyOn(actionUtils, "getArchiveFileSize")
         .mockReturnValue(fileSize);
 
-    const mkdirMock = jest.spyOn(io, "mkdirP");
-    const execMock = jest.spyOn(exec, "exec");
+    const extractTarMock = jest.spyOn(tar, "extractTar");
     const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
 
     await run();
@@ -415,22 +380,9 @@ test("restore with cache found for restore key", async () => {
     expect(downloadCacheMock).toHaveBeenCalledWith(cacheEntry, archivePath);
     expect(getArchiveFileSizeMock).toHaveBeenCalledWith(archivePath);
     expect(infoMock).toHaveBeenCalledWith(`Cache Size: ~0 MB (142 B)`);
-    expect(mkdirMock).toHaveBeenCalledWith(cachePath);
 
-    const IS_WINDOWS = process.platform === "win32";
-    const args = IS_WINDOWS
-        ? [
-              "-xz",
-              "--force-local",
-              "-f",
-              archivePath.replace(/\\/g, "/"),
-              "-C",
-              cachePath.replace(/\\/g, "/")
-          ]
-        : ["-xz", "-f", archivePath, "-C", cachePath];
-
-    expect(execMock).toHaveBeenCalledTimes(1);
-    expect(execMock).toHaveBeenCalledWith(`"tar"`, args);
+    expect(extractTarMock).toHaveBeenCalledTimes(1);
+    expect(extractTarMock).toHaveBeenCalledWith(archivePath, cachePath);
 
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
