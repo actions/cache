@@ -194,7 +194,7 @@ test("save with large cache outputs warning", async () => {
 
     const createTarMock = jest.spyOn(tar, "createTar");
 
-    const cacheSize = 1024 * 1024 * 1024; //~1GB, over the 400MB limit
+    const cacheSize = 4 * 1024 * 1024 * 1024; //~4GB, over the 2GB limit
     jest.spyOn(actionUtils, "getArchiveFileSize").mockImplementationOnce(() => {
         return cacheSize;
     });
@@ -208,7 +208,7 @@ test("save with large cache outputs warning", async () => {
 
     expect(logWarningMock).toHaveBeenCalledTimes(1);
     expect(logWarningMock).toHaveBeenCalledWith(
-        "Cache size of ~1024 MB (1073741824 B) is over the 400MB limit, not saving cache."
+        "Cache size of ~4 GB (4294967296 B) is over the 2GB limit, not saving cache."
     );
 
     expect(failedMock).toHaveBeenCalledTimes(0);
