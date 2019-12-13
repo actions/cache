@@ -78,7 +78,10 @@ async function run(): Promise<void> {
             utils.setCacheState(cacheEntry);
 
             // Download the cache from the cache entry
-            await cacheHttpClient.downloadCache(cacheEntry?.archiveLocation, archivePath);
+            await cacheHttpClient.downloadCache(
+                cacheEntry?.archiveLocation,
+                archivePath
+            );
 
             const archiveFileSize = utils.getArchiveFileSize(archivePath);
             core.info(
