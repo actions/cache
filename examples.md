@@ -18,9 +18,19 @@
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
 
 ```yaml
+- uses: actions/cache@v1
+  with:
+    path: ~/.nuget/packages
+    key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+    restore-keys: |
+      ${{ runner.os }}-nuget-
+```
+
+Depending on the environment, huge packages might be pre-installed in the global cache folder.
+If you do not want to include them, consider to move the cache folder like below.
+>Note: This workflow does not work for projects that require files to be placed in the global.
+```yaml
 env:
-  # Use personal cache folder because global cache may have huge packages like Xamarin.
-  # Learn more, see issue #115.
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 steps:
   - uses: actions/cache@v1
