@@ -65,14 +65,14 @@ async function run(): Promise<void> {
         core.debug(`Tar Path: ${tarPath}`);
         await exec(`"${tarPath}"`, args);
 
-        const fileSizeLimit = 400 * 1024 * 1024; // 400MB
+        const fileSizeLimit = 2 * 1024 * 1024 * 1024; // 2GB per repo limit
         const archiveFileSize = utils.getArchiveFileSize(archivePath);
         core.debug(`File Size: ${archiveFileSize}`);
         if (archiveFileSize > fileSizeLimit) {
             utils.logWarning(
                 `Cache size of ~${Math.round(
-                    archiveFileSize / (1024 * 1024)
-                )} MB (${archiveFileSize} B) is over the 400MB limit, not saving cache.`
+                    archiveFileSize / (1024 * 1024 * 1024)
+                )} GB (${archiveFileSize} B) is over the 2GB limit, not saving cache.`
             );
             return;
         }

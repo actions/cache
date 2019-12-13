@@ -4,3 +4,16 @@ export interface ArtifactCacheEntry {
     creationTime?: string;
     archiveLocation?: string;
 }
+
+export interface CommitCacheRequest {
+    size: number;
+}
+
+export interface ReserveCacheRequest {
+    key: string;
+    version?: string;
+}
+
+export interface ReserverCacheResponse {
+    cacheId: number;
+}
