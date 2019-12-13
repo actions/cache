@@ -1,12 +1,31 @@
 import { exec } from "@actions/exec";
 import * as io from "@actions/io";
+import { existsSync } from "fs";
 
 async function getTarPath(): Promise<string> {
     // Explicitly use BSD Tar on Windows
     const IS_WINDOWS = process.platform === "win32";
-    return IS_WINDOWS
-        ? `${process.env["windir"]}\\System32\\tar.exe`
-        : await io.which("tar", true);
+    if (IS_WINDOWS) {
+        const systemTar = `${process.env["windir"]}\\System32\\tar.exe`;
+        if (existsSync(systemTar)) {
+            return systemTar;
+        }
+    }
+    return await io.which("tar", true);
+}
+
+async function execTar(args: string[]): Promise<void> {
+    try {
+        await exec(`"${await getTarPath()}"`, args);
+    } catch (error) {
+        const IS_WINDOWS = process.platform === "win32";
+        if (IS_WINDOWS) {
+            throw new Error(
+                `Tar failed with error: ${error?.message}. Ensure BSD tar is installed and on the PATH.`
+            );
+        }
+        throw new Error(`Tar failed with error: ${error?.message}`);
+    }
 }
 
 export async function extractTar(
@@ -15,19 +34,14 @@ export async function extractTar(
 ): Promise<void> {
     // Create directory to extract tar into
     await io.mkdirP(targetDirectory);
-
-    // http://man7.org/linux/man-pages/man1/tar.1.html
-    // tar [-options] <name of the tar archive> [files or directories which to add into archive]
     const args = ["-xz", "-f", archivePath, "-C", targetDirectory];
-    await exec(`"${await getTarPath()}"`, args);
+    await execTar(args);
 }
 
 export async function createTar(
     archivePath: string,
     sourceDirectory: string
 ): Promise<void> {
-    // http://man7.org/linux/man-pages/man1/tar.1.html
-    // tar [-options] <name of the tar archive> [files or directories which to add into archive]
     const args = ["-cz", "-f", archivePath, "-C", sourceDirectory, "."];
-    await exec(`"${await getTarPath()}"`, args);
+    await execTar(args);
 }
