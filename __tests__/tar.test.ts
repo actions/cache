@@ -22,7 +22,9 @@ test("extract tar", async () => {
     expect(mkdirMock).toHaveBeenCalledWith(targetDirectory);
 
     const IS_WINDOWS = process.platform === "win32";
-    const tarPath = IS_WINDOWS ? `${process.env["windir"]}\\System32\\tar.exe` : "tar";
+    const tarPath = IS_WINDOWS
+        ? `${process.env["windir"]}\\System32\\tar.exe`
+        : "tar";
     expect(execMock).toHaveBeenCalledTimes(1);
     expect(execMock).toHaveBeenCalledWith(`"${tarPath}"`, [
         "-xz",
@@ -41,7 +43,9 @@ test("create tar", async () => {
     await tar.createTar(archivePath, sourceDirectory);
 
     const IS_WINDOWS = process.platform === "win32";
-    const tarPath = IS_WINDOWS ? `${process.env["windir"]}\\System32\\tar.exe` : "tar";
+    const tarPath = IS_WINDOWS
+        ? `${process.env["windir"]}\\System32\\tar.exe`
+        : "tar";
     expect(execMock).toHaveBeenCalledTimes(1);
     expect(execMock).toHaveBeenCalledWith(`"${tarPath}"`, [
         "-cz",
