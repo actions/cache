@@ -28,7 +28,7 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 
 Depending on the environment, huge packages might be pre-installed in the global cache folder.
 If you do not want to include them, consider to move the cache folder like below.
->Note: This workflow does not work for projects that require files to be placed in the global.
+>Note: This workflow does not work for projects that require files to be placed in user profile package folder
 ```yaml
 env:
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
