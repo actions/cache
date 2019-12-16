@@ -1,6 +1,6 @@
 # Examples
 
-- [C# - Nuget](#c---nuget)
+- [C# - NuGet](#c---nuget)
 - [Elixir - Mix](#elixir---mix)
 - [Go - Modules](#go---modules)
 - [Java - Gradle](#java---gradle)
@@ -14,7 +14,7 @@
 - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 
-## C# - Nuget
+## C# - NuGet
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
 
 ```yaml
@@ -24,6 +24,21 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
     key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
     restore-keys: |
       ${{ runner.os }}-nuget-
+```
+
+Depending on the environment, huge packages might be pre-installed in the global cache folder.
+If you do not want to include them, consider to move the cache folder like below.
+>Note: This workflow does not work for projects that require files to be placed in user profile package folder
+```yaml
+env:
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+steps:
+  - uses: actions/cache@v1
+    with:
+      path: ${{ github.workspace }}/.nuget/packages
+      key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+      restore-keys: |
+        ${{ runner.os }}-nuget-
 ```
 
 ## Elixir - Mix
