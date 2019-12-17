@@ -16,8 +16,6 @@ import {
 } from "./contracts";
 import * as utils from "./utils/actionUtils";
 
-const MAX_CHUNK_SIZE = 4000000; // 4 MB Chunks
-
 function isSuccessStatusCode(statusCode: number): boolean {
     return statusCode >= 200 && statusCode < 300;
 }
@@ -179,14 +177,15 @@ async function uploadFile(restClient: RestClient, cacheId: number, archivePath: 
     const fileSize = fs.statSync(archivePath).size;
     const resourceUrl = getCacheApiUrl() + "caches/" + cacheId.toString();
     const responses: IRestResponse<void>[] = [];
-    const fd = fs.openSync(archivePath, "r"); // Use the same fd for serial reads? Will this work for parallel too?
+    const fd = fs.openSync(archivePath, "r");
 
     const concurrency = 16; // # of HTTP requests in parallel
-    core.debug(`Concurrency: ${concurrency}`);
-    const threads = [...new Array(concurrency).keys()];
+    const MAX_CHUNK_SIZE = 32000000; // 32 MB Chunks
+    core.debug(`Concurrency: ${concurrency} and Chunk Size: ${MAX_CHUNK_SIZE}`);
+    const parallelUploads = [...new Array(concurrency).keys()];
     core.debug("Awaiting all uploads");
     let offset = 0;
-    await Promise.all(threads.map(async () => {
+    await Promise.all(parallelUploads.map(async () => {
         while (offset < fileSize) {
             const chunkSize = offset + MAX_CHUNK_SIZE > fileSize ? fileSize - offset : MAX_CHUNK_SIZE;
             const start = offset;

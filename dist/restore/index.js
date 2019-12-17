@@ -1497,7 +1497,6 @@ const Handlers_1 = __webpack_require__(941);
 const HttpClient_1 = __webpack_require__(874);
 const RestClient_1 = __webpack_require__(105);
 const utils = __importStar(__webpack_require__(443));
-const MAX_CHUNK_SIZE = 4000000; // 4 MB Chunks
 function isSuccessStatusCode(statusCode) {
     return statusCode >= 200 && statusCode < 300;
 }
@@ -1621,13 +1620,14 @@ function uploadFile(restClient, cacheId, archivePath) {
         const fileSize = fs.statSync(archivePath).size;
         const resourceUrl = getCacheApiUrl() + "caches/" + cacheId.toString();
         const responses = [];
-        const fd = fs.openSync(archivePath, "r"); // Use the same fd for serial reads? Will this work for parallel too?
+        const fd = fs.openSync(archivePath, "r");
         const concurrency = 16; // # of HTTP requests in parallel
-        core.debug(`Concurrency: ${concurrency}`);
-        const threads = [...new Array(concurrency).keys()];
+        const MAX_CHUNK_SIZE = 32000000; // 32 MB Chunks
+        core.debug(`Concurrency: ${concurrency} and Chunk Size: ${MAX_CHUNK_SIZE}`);
+        const parallelUploads = [...new Array(concurrency).keys()];
         core.debug("Awaiting all uploads");
         let offset = 0;
-        yield Promise.all(threads.map(() => __awaiter(this, void 0, void 0, function* () {
+        yield Promise.all(parallelUploads.map(() => __awaiter(this, void 0, void 0, function* () {
             while (offset < fileSize) {
                 const chunkSize = offset + MAX_CHUNK_SIZE > fileSize ? fileSize - offset : MAX_CHUNK_SIZE;
                 const start = offset;
