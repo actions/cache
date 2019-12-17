@@ -1626,7 +1626,7 @@ function uploadFile(restClient, cacheId, archivePath) {
         const threads = new Array(concurrency);
         core.debug("Awaiting all uploads");
         let offset = 0;
-        Promise.all(threads.map(() => __awaiter(this, void 0, void 0, function* () {
+        yield Promise.all(threads.map(() => __awaiter(this, void 0, void 0, function* () {
             while (offset < fileSize) {
                 const chunkSize = offset + MAX_CHUNK_SIZE > fileSize ? fileSize - offset : MAX_CHUNK_SIZE;
                 const start = offset;
