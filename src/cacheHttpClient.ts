@@ -181,18 +181,17 @@ async function uploadFile(restClient: RestClient, cacheId: number, archivePath: 
     const responses: IRestResponse<void>[] = [];
     const fd = fs.openSync(archivePath, "r"); // Use the same fd for serial reads? Will this work for parallel too?
 
-    const concurrency = 8; // # of HTTP requests in parallel
+    const concurrency = 16; // # of HTTP requests in parallel
+    core.debug(`Concurrency: ${concurrency}`);
     const threads = [...new Array(concurrency).keys()];
     core.debug("Awaiting all uploads");
     let offset = 0;
-    await Promise.all(threads.map(async () => { // This might not work cause something something closures
-        core.debug(`Offset: ${offset} FileSize: ${fileSize}`);
+    await Promise.all(threads.map(async () => {
         while (offset < fileSize) {
             const chunkSize = offset + MAX_CHUNK_SIZE > fileSize ? fileSize - offset : MAX_CHUNK_SIZE;
             const start = offset;
             const end = offset + chunkSize - 1;
-            core.debug(`Start: ${start} End: ${end}`);
-            offset += MAX_CHUNK_SIZE; // Do this before losing thread during await?
+            offset += MAX_CHUNK_SIZE;
             const chunk = fs.createReadStream(archivePath, { fd, start, end, autoClose: false });
             responses.push(await uploadChunk(restClient, resourceUrl, chunk, start, end));
         }
