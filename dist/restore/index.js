@@ -1579,7 +1579,7 @@ function reserveCache(key) {
         const reserveCacheRequest = {
             key
         };
-        const response = yield restClient.create("caches", reserveCacheRequest);
+        const response = yield restClient.create("caches", reserveCacheRequest, getRequestOptions());
         return _c = (_b = (_a = response) === null || _a === void 0 ? void 0 : _a.result) === null || _b === void 0 ? void 0 : _b.cacheId, (_c !== null && _c !== void 0 ? _c : -1);
     });
 }
@@ -1600,6 +1600,7 @@ function bufferToStream(buffer) {
 }
 function uploadChunk(restClient, resourceUrl, data, offset) {
     return __awaiter(this, void 0, void 0, function* () {
+        core.debug(`Uploading chunk of size ${data.byteLength} bytes at offset ${offset}`);
         const requestOptions = getRequestOptions();
         requestOptions.additionalHeaders = {
             "Content-Type": "application/octet-stream",
@@ -1619,6 +1620,7 @@ function commitCache(restClient, cacheId, filesize) {
 function saveCache(cacheId, archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
         const restClient = createRestClient();
+        core.debug("Uploading chunks");
         // Upload Chunks
         const stream = fs.createReadStream(archivePath);
         let streamIsClosed = false;
@@ -1633,11 +1635,13 @@ function saveCache(cacheId, archivePath) {
             uploads.push(uploadChunk(restClient, resourceUrl, chunk, offset));
             offset += MAX_CHUNK_SIZE;
         }
+        core.debug("Awaiting all uplaods");
         const responses = yield Promise.all(uploads);
         const failedResponse = responses.find(x => !isSuccessStatusCode(x.statusCode));
         if (failedResponse) {
             throw new Error(`Cache service responded with ${failedResponse.statusCode} during chunk upload.`);
         }
+        core.debug("Commiting cache");
         // Commit Cache
         const cacheSize = utils.getArchiveFileSize(archivePath);
         const commitCacheResponse = yield commitCache(restClient, cacheId, cacheSize);

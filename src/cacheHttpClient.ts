@@ -120,7 +120,8 @@ export async function reserveCache(
     };
     const response = await restClient.create<ReserverCacheResponse>(
         "caches",
-        reserveCacheRequest
+        reserveCacheRequest,
+        getRequestOptions()
     );
 
     return response?.result?.cacheId ?? -1;
@@ -149,6 +150,7 @@ async function uploadChunk(
     data: Buffer,
     offset: number
 ): Promise<IRestResponse<void>> {
+    core.debug(`Uploading chunk of size ${data.byteLength} bytes at offset ${offset}`);
     const requestOptions = getRequestOptions();
     requestOptions.additionalHeaders = {
         "Content-Type": "application/octet-stream",
@@ -179,6 +181,7 @@ export async function saveCache(
 ): Promise<void> {
     const restClient = createRestClient();
 
+    core.debug("Uploading chunks");
     // Upload Chunks
     const stream = fs.createReadStream(archivePath);
     let streamIsClosed = false;
@@ -195,6 +198,7 @@ export async function saveCache(
         offset += MAX_CHUNK_SIZE;
     }
 
+    core.debug("Awaiting all uplaods");
     const responses = await Promise.all(uploads);
 
     const failedResponse = responses.find(
@@ -206,6 +210,7 @@ export async function saveCache(
         );
     }
 
+    core.debug("Commiting cache");
     // Commit Cache
     const cacheSize = utils.getArchiveFileSize(archivePath);
     const commitCacheResponse = await commitCache(

@@ -35,12 +35,13 @@ async function run(): Promise<void> {
             return;
         }
 
+        core.debug("Reserving Cache");
         const cacheId = await cacheHttpClient.reserveCache(primaryKey);
         if (cacheId < 0) {
             core.info(`Unable to reserve cache with key ${primaryKey}, another job may be creating this cache.`);
             return;
         }
-
+        core.debug(`Cache ID: ${cacheId}`);
         const cachePath = utils.resolvePath(
             core.getInput(Inputs.Path, { required: true })
         );
@@ -83,6 +84,7 @@ async function run(): Promise<void> {
             return;
         }
 
+        core.debug("Saving Cache");
         await cacheHttpClient.saveCache(cacheId, archivePath);
     } catch (error) {
         utils.logWarning(error.message);
