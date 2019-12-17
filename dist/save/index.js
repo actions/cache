@@ -2980,7 +2980,6 @@ function run() {
             core.debug(`Cache Path: ${cachePath}`);
             const archivePath = path.join(yield utils.createTempDirectory(), "cache.tgz");
             core.debug(`Archive Path: ${archivePath}`);
-            yield exec_1.exec(`md5sum`, [archivePath]);
             // http://man7.org/linux/man-pages/man1/tar.1.html
             // tar [-options] <name of the tar archive> [files or directories which to add into archive]
             const IS_WINDOWS = process.platform === "win32";
@@ -3005,6 +3004,7 @@ function run() {
                 utils.logWarning(`Cache size of ~${Math.round(archiveFileSize / (1024 * 1024 * 1024))} GB (${archiveFileSize} B) is over the 2GB limit, not saving cache.`);
                 return;
             }
+            yield exec_1.exec(`md5sum`, [archivePath]);
             core.debug("Saving Cache");
             yield cacheHttpClient.saveCache(cacheId, archivePath);
         }
