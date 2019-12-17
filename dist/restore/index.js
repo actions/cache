@@ -1624,8 +1624,8 @@ function saveCache(cacheId, archivePath) {
         // Upload Chunks
         const stream = fs.createReadStream(archivePath);
         let streamIsClosed = false;
-        stream.on("close", () => {
-            core.debug("Stream is closed");
+        stream.on("end", () => {
+            core.debug("Stream is ended");
             streamIsClosed = true;
         });
         const resourceUrl = getCacheApiUrl() + cacheId.toString();
@@ -1634,6 +1634,10 @@ function saveCache(cacheId, archivePath) {
         while (!streamIsClosed) {
             core.debug(`Offset: ${offset}`);
             const chunk = stream.read(MAX_CHUNK_SIZE);
+            if (chunk == null) {
+                core.debug(`Chunk is null, reading is over?`);
+                break;
+            }
             uploads.push(uploadChunk(restClient, resourceUrl, chunk, offset));
             offset += MAX_CHUNK_SIZE;
         }
