@@ -15,6 +15,7 @@ import {
     ReserverCacheResponse
 } from "./contracts";
 import * as utils from "./utils/actionUtils";
+import { Duplex } from "stream";
 
 const MAX_CHUNK_SIZE = 4000000; // 4 MB Chunks
 
@@ -50,18 +51,20 @@ function getRequestOptions(): IRequestOptions {
     return requestOptions;
 }
 
-export async function getCacheEntry(
-    keys: string[]
-): Promise<ArtifactCacheEntry | null> {
-    const cacheUrl = getCacheApiUrl();
+function createRestClient(): RestClient {
     const token = process.env["ACTIONS_RUNTIME_TOKEN"] || "";
     const bearerCredentialHandler = new BearerCredentialHandler(token);
 
-    const resource = `cache?keys=${encodeURIComponent(keys.join(","))}`;
-
-    const restClient = new RestClient("actions/cache", cacheUrl, [
+    return new RestClient("actions/cache", getCacheApiUrl(), [
         bearerCredentialHandler
     ]);
+}
+
+export async function getCacheEntry(
+    keys: string[]
+): Promise<ArtifactCacheEntry | null> {
+    const restClient = createRestClient();
+    const resource = `cache?keys=${encodeURIComponent(keys.join(","))}`;
 
     const response = await restClient.get<ArtifactCacheEntry>(
         resource,
@@ -106,11 +109,12 @@ export async function downloadCache(
     await pipeResponseToStream(downloadResponse, stream);
 }
 
-// Returns Cache ID
-async function reserveCache(
-    restClient: RestClient,
+// Reserve Cache
+export async function reserveCache(
     key: string
 ): Promise<number> {
+    const restClient = createRestClient();
+
     const reserveCacheRequest: ReserveCacheRequest = {
         key
     };
@@ -119,7 +123,7 @@ async function reserveCache(
         reserveCacheRequest
     );
 
-    return response?.result?.cacheId || -1;
+    return response?.result?.cacheId ?? -1;
 }
 
 function getContentRange(start: number, length: number): string {
@@ -131,9 +135,17 @@ function getContentRange(start: number, length: number): string {
     return `bytes ${start}-${start + length - 1}/*`;
 }
 
+function bufferToStream(buffer: Buffer): NodeJS.ReadableStream {
+    const stream = new Duplex();
+    stream.push(buffer);
+    stream.push(null);
+
+    return stream;
+}
+
 async function uploadChunk(
     restClient: RestClient,
-    cacheId: number,
+    resourceUrl: string,
     data: Buffer,
     offset: number
 ): Promise<IRestResponse<void>> {
@@ -143,11 +155,8 @@ async function uploadChunk(
         "Content-Range": getContentRange(offset, data.byteLength)
     };
 
-    return await restClient.update(
-        cacheId.toString(),
-        data.toString("utf8"),
-        requestOptions
-    );
+    const stream = bufferToStream(data);
+    return await restClient.uploadStream<void>("PATCH", resourceUrl, stream, requestOptions);
 }
 
 async function commitCache(
@@ -165,21 +174,10 @@ async function commitCache(
 }
 
 export async function saveCache(
-    key: string,
+    cacheId: number,
     archivePath: string
 ): Promise<void> {
-    const token = process.env["ACTIONS_RUNTIME_TOKEN"] || "";
-    const bearerCredentialHandler = new BearerCredentialHandler(token);
-
-    const restClient = new RestClient("actions/cache", getCacheApiUrl(), [
-        bearerCredentialHandler
-    ]);
-
-    // Reserve Cache
-    const cacheId = await reserveCache(restClient, key);
-    if (cacheId < 0) {
-        throw new Error(`Unable to reserve cache.`);
-    }
+    const restClient = createRestClient();
 
     // Upload Chunks
     const stream = fs.createReadStream(archivePath);
@@ -188,11 +186,12 @@ export async function saveCache(
         streamIsClosed = true;
     });
 
+    const resourceUrl = getCacheApiUrl() + cacheId.toString();
     const uploads: Promise<IRestResponse<void>>[] = [];
     let offset = 0;
     while (!streamIsClosed) {
         const chunk: Buffer = stream.read(MAX_CHUNK_SIZE);
-        uploads.push(uploadChunk(restClient, cacheId, chunk, offset));
+        uploads.push(uploadChunk(restClient, resourceUrl, chunk, offset));
         offset += MAX_CHUNK_SIZE;
     }
 
