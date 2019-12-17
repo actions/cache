@@ -15,7 +15,6 @@ import {
     ReserverCacheResponse
 } from "./contracts";
 import * as utils from "./utils/actionUtils";
-import { Duplex } from "stream";
 
 const MAX_CHUNK_SIZE = 4000000; // 4 MB Chunks
 
@@ -127,38 +126,38 @@ export async function reserveCache(
     return response?.result?.cacheId ?? -1;
 }
 
-function getContentRange(start: number, length: number): string {
+function getContentRange(start: number, end: number): string {
     // Format: `bytes start-end/filesize
     // start and end are inclusive
     // filesize can be *
     // For a 200 byte chunk starting at byte 0:
     // Content-Range: bytes 0-199/*
-    return `bytes ${start}-${start + length - 1}/*`;
+    return `bytes ${start}-${end}/*`;
 }
 
-function bufferToStream(buffer: Buffer): NodeJS.ReadableStream {
-    const stream = new Duplex();
-    stream.push(buffer);
-    stream.push(null);
+// function bufferToStream(buffer: Buffer): NodeJS.ReadableStream {
+//     const stream = new Duplex();
+//     stream.push(buffer);
+//     stream.push(null);
 
-    return stream;
-}
+//     return stream;
+// }
 
 async function uploadChunk(
     restClient: RestClient,
     resourceUrl: string,
-    data: Buffer,
-    offset: number
+    data: NodeJS.ReadableStream,
+    start: number,
+    end: number
 ): Promise<IRestResponse<void>> {
-    core.debug(`Uploading chunk of size ${data.byteLength} bytes at offset ${offset}`);
+    core.debug(`Uploading chunk of size ${end - start + 1} bytes at offset ${start}`);
     const requestOptions = getRequestOptions();
     requestOptions.additionalHeaders = {
         "Content-Type": "application/octet-stream",
-        "Content-Range": getContentRange(offset, data.byteLength)
+        "Content-Range": getContentRange(start, end)
     };
 
-    const stream = bufferToStream(data);
-    return await restClient.uploadStream<void>("PATCH", resourceUrl, stream, requestOptions);
+    return await restClient.uploadStream<void>("PATCH", resourceUrl, data, requestOptions);
 }
 
 async function commitCache(
@@ -183,28 +182,20 @@ export async function saveCache(
 
     core.debug("Uploading chunks");
     // Upload Chunks
-    const stream = fs.createReadStream(archivePath);
-    let streamIsClosed = false;
-    stream.on("end", () => {
-        core.debug("Stream is ended");
-        streamIsClosed = true;
-    });
-
+    const fileSize = fs.statSync(archivePath).size;
     const resourceUrl = getCacheApiUrl() + cacheId.toString();
     const uploads: Promise<IRestResponse<void>>[] = [];
     let offset = 0;
-    while (!streamIsClosed) {
+    while (offset < fileSize) {
+        const chunkSize = offset + MAX_CHUNK_SIZE > fileSize ? fileSize - offset : MAX_CHUNK_SIZE;
+        const end = offset + chunkSize - 1;
         core.debug(`Offset: ${offset}`);
-        const chunk: Buffer = stream.read(MAX_CHUNK_SIZE);
-        if (chunk == null) {
-            core.debug(`Chunk is null, reading is over?`);
-            break;
-        }
-        uploads.push(uploadChunk(restClient, resourceUrl, chunk, offset));
+        const chunk = fs.createReadStream(archivePath, { start: offset, end });
+        uploads.push(uploadChunk(restClient, resourceUrl, chunk, offset, end));
         offset += MAX_CHUNK_SIZE;
     }
 
-    core.debug("Awaiting all uplaods");
+    core.debug("Awaiting all uploads");
     const responses = await Promise.all(uploads);
 
     const failedResponse = responses.find(
