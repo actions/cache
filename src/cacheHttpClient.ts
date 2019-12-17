@@ -190,10 +190,13 @@ async function uploadFile(restClient: RestClient, cacheId: number, archivePath: 
             const chunkSize = offset + MAX_CHUNK_SIZE > fileSize ? fileSize - offset : MAX_CHUNK_SIZE;
             const start = offset;
             const end = offset + chunkSize - 1;
+            core.debug(`Start: ${start} End: ${end}`);
             offset += MAX_CHUNK_SIZE; // Do this before losing thread during await?
             const chunk = fs.createReadStream(archivePath, { fd, start, end, autoClose: false });
             responses.push(await uploadChunk(restClient, resourceUrl, chunk, start, end));
         }
+
+        return Promise.resolve();
     }));
 
     fs.closeSync(fd);
