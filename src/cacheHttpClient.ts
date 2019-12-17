@@ -182,7 +182,7 @@ async function uploadFile(restClient: RestClient, cacheId: number, archivePath: 
     const fd = fs.openSync(archivePath, "r"); // Use the same fd for serial reads? Will this work for parallel too?
 
     const concurrency = 4; // # of HTTP requests in parallel
-    const threads = new Array(concurrency);
+    const threads = [...new Array(concurrency).keys()];
     core.debug("Awaiting all uploads");
     let offset = 0;
     await Promise.all(threads.map(async () => { // This might not work cause something something closures
