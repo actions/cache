@@ -174,6 +174,26 @@ async function commitCache(
     );
 }
 
+async function parallelAwait(queue: Promise<any>[], concurrency: number): Promise<any[]> {
+    const workQueue = queue.reverse();
+    let completedWork: any[] = [];
+    let entries = queue.length;
+    while (entries > 0) {
+        if (entries < concurrency) {
+            completedWork.push(await Promise.all(workQueue));
+        } else {
+            let promises: Promise<any>[] = [];
+            let i: number;
+            for (i = 0; i < concurrency; i++) {
+                promises.push(workQueue.pop() ?? Promise.resolve());
+            }
+            completedWork.push(await Promise.all(promises));
+        }
+    }
+
+    return completedWork;
+}
+
 export async function saveCache(
     cacheId: number,
     archivePath: string
@@ -184,7 +204,7 @@ export async function saveCache(
     // Upload Chunks
     const fileSize = fs.statSync(archivePath).size;
     const resourceUrl = getCacheApiUrl() + "caches/" + cacheId.toString();
-    const uploads: IRestResponse<void>[] = [];
+    const uploads: Promise<IRestResponse<void>>[] = [];
 
     const fd = fs.openSync(archivePath, "r"); // Use the same fd for serial reads? Will this work for parallel too?
     let offset = 0;
@@ -192,16 +212,18 @@ export async function saveCache(
         const chunkSize = offset + MAX_CHUNK_SIZE > fileSize ? fileSize - offset : MAX_CHUNK_SIZE;
         const end = offset + chunkSize - 1;
         const chunk = fs.createReadStream(archivePath, { fd, start: offset, end, autoClose: false });
-        uploads.push(await uploadChunk(restClient, resourceUrl, chunk, offset, end)); // Making this serial
+        uploads.push(uploadChunk(restClient, resourceUrl, chunk, offset, end));
         offset += MAX_CHUNK_SIZE;
     }
 
+    core.debug("Awaiting all uploads");
+    const responses = await parallelAwait(uploads, 4);
     fs.closeSync(fd);
 
-    core.debug("Awaiting all uploads");
+
     //const responses = await Promise.all(uploads);
 
-    const failedResponse = uploads.find(
+    const failedResponse = responses.find(
         x => !isSuccessStatusCode(x.statusCode)
     );
     if (failedResponse) {

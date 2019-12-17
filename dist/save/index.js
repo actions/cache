@@ -1615,6 +1615,28 @@ function commitCache(restClient, cacheId, filesize) {
         return yield restClient.create(`caches/${cacheId.toString()}`, commitCacheRequest, requestOptions);
     });
 }
+function parallelAwait(queue, concurrency) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function* () {
+        const workQueue = queue.reverse();
+        let completedWork = [];
+        let entries = queue.length;
+        while (entries > 0) {
+            if (entries < concurrency) {
+                completedWork.push(yield Promise.all(workQueue));
+            }
+            else {
+                let promises = [];
+                let i;
+                for (i = 0; i < concurrency; i++) {
+                    promises.push((_a = workQueue.pop(), (_a !== null && _a !== void 0 ? _a : Promise.resolve())));
+                }
+                completedWork.push(yield Promise.all(promises));
+            }
+        }
+        return completedWork;
+    });
+}
 function saveCache(cacheId, archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
         const restClient = createRestClient();
@@ -1629,13 +1651,14 @@ function saveCache(cacheId, archivePath) {
             const chunkSize = offset + MAX_CHUNK_SIZE > fileSize ? fileSize - offset : MAX_CHUNK_SIZE;
             const end = offset + chunkSize - 1;
             const chunk = fs.createReadStream(archivePath, { fd, start: offset, end, autoClose: false });
-            uploads.push(yield uploadChunk(restClient, resourceUrl, chunk, offset, end)); // Making this serial
+            uploads.push(uploadChunk(restClient, resourceUrl, chunk, offset, end));
             offset += MAX_CHUNK_SIZE;
         }
-        fs.closeSync(fd);
         core.debug("Awaiting all uploads");
+        const responses = yield parallelAwait(uploads, 4);
+        fs.closeSync(fd);
         //const responses = await Promise.all(uploads);
-        const failedResponse = uploads.find(x => !isSuccessStatusCode(x.statusCode));
+        const failedResponse = responses.find(x => !isSuccessStatusCode(x.statusCode));
         if (failedResponse) {
             throw new Error(`Cache service responded with ${failedResponse.statusCode} during chunk upload.`);
         }
