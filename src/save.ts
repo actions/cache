@@ -52,6 +52,7 @@ async function run(): Promise<void> {
             "cache.tgz"
         );
         core.debug(`Archive Path: ${archivePath}`);
+        exec("md5", [archivePath]);
 
         // http://man7.org/linux/man-pages/man1/tar.1.html
         // tar [-options] <name of the tar archive> [files or directories which to add into archive]
