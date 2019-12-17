@@ -1623,18 +1623,19 @@ function saveCache(cacheId, archivePath) {
         const fileSize = fs.statSync(archivePath).size;
         const resourceUrl = getCacheApiUrl() + "caches/" + cacheId.toString();
         const uploads = [];
+        const fd = fs.openSync(archivePath, "r"); // Use the same fd for serial reads? Will this work for parallel too?
         let offset = 0;
         while (offset < fileSize) {
             const chunkSize = offset + MAX_CHUNK_SIZE > fileSize ? fileSize - offset : MAX_CHUNK_SIZE;
             const end = offset + chunkSize - 1;
-            core.debug(`Offset: ${offset}`);
-            const chunk = fs.createReadStream(archivePath, { start: offset, end });
-            uploads.push(uploadChunk(restClient, resourceUrl, chunk, offset, end));
+            const chunk = fs.createReadStream(archivePath, { fd, start: offset, end });
+            uploads.push(yield uploadChunk(restClient, resourceUrl, chunk, offset, end)); // Making this serial
             offset += MAX_CHUNK_SIZE;
         }
+        fs.closeSync(fd);
         core.debug("Awaiting all uploads");
-        const responses = yield Promise.all(uploads);
-        const failedResponse = responses.find(x => !isSuccessStatusCode(x.statusCode));
+        //const responses = await Promise.all(uploads);
+        const failedResponse = uploads.find(x => !isSuccessStatusCode(x.statusCode));
         if (failedResponse) {
             throw new Error(`Cache service responded with ${failedResponse.statusCode} during chunk upload.`);
         }
