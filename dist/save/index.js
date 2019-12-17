@@ -1625,12 +1625,14 @@ function saveCache(cacheId, archivePath) {
         const stream = fs.createReadStream(archivePath);
         let streamIsClosed = false;
         stream.on("close", () => {
+            core.debug("Stream is closed");
             streamIsClosed = true;
         });
         const resourceUrl = getCacheApiUrl() + cacheId.toString();
         const uploads = [];
         let offset = 0;
         while (!streamIsClosed) {
+            core.debug(`Offset: ${offset}`);
             const chunk = stream.read(MAX_CHUNK_SIZE);
             uploads.push(uploadChunk(restClient, resourceUrl, chunk, offset));
             offset += MAX_CHUNK_SIZE;

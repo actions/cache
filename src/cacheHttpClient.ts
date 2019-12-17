@@ -186,6 +186,7 @@ export async function saveCache(
     const stream = fs.createReadStream(archivePath);
     let streamIsClosed = false;
     stream.on("close", () => {
+        core.debug("Stream is closed");
         streamIsClosed = true;
     });
 
@@ -193,6 +194,7 @@ export async function saveCache(
     const uploads: Promise<IRestResponse<void>>[] = [];
     let offset = 0;
     while (!streamIsClosed) {
+        core.debug(`Offset: ${offset}`);
         const chunk: Buffer = stream.read(MAX_CHUNK_SIZE);
         uploads.push(uploadChunk(restClient, resourceUrl, chunk, offset));
         offset += MAX_CHUNK_SIZE;
