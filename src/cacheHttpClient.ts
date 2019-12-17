@@ -150,13 +150,14 @@ async function uploadChunk(
     start: number,
     end: number
 ): Promise<IRestResponse<void>> {
-    core.debug(`Uploading chunk of size ${end - start + 1} bytes at offset ${start}`);
+    core.debug(`Uploading chunk of size ${end - start + 1} bytes at offset ${start} with content range: ${getContentRange(start, end)}`);
     const requestOptions = getRequestOptions();
     requestOptions.additionalHeaders = {
         "Content-Type": "application/octet-stream",
         "Content-Range": getContentRange(start, end)
     };
 
+    core.debug(`Resource URL: ${resourceUrl}`);
     return await restClient.uploadStream<void>("PATCH", resourceUrl, data, requestOptions);
 }
 

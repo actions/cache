@@ -1599,12 +1599,13 @@ function getContentRange(start, end) {
 // }
 function uploadChunk(restClient, resourceUrl, data, start, end) {
     return __awaiter(this, void 0, void 0, function* () {
-        core.debug(`Uploading chunk of size ${end - start + 1} bytes at offset ${start}`);
+        core.debug(`Uploading chunk of size ${end - start + 1} bytes at offset ${start} with content range: ${getContentRange(start, end)}`);
         const requestOptions = getRequestOptions();
         requestOptions.additionalHeaders = {
             "Content-Type": "application/octet-stream",
             "Content-Range": getContentRange(start, end)
         };
+        core.debug(`Resource URL: ${resourceUrl}`);
         return yield restClient.uploadStream("PATCH", resourceUrl, data, requestOptions);
     });
 }
