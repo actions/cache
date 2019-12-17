@@ -186,6 +186,7 @@ async function uploadFile(restClient: RestClient, cacheId: number, archivePath: 
     core.debug("Awaiting all uploads");
     let offset = 0;
     await Promise.all(threads.map(async () => { // This might not work cause something something closures
+        core.debug(`Offset: ${offset} FileSize: ${fileSize}`);
         while (offset < fileSize) {
             const chunkSize = offset + MAX_CHUNK_SIZE > fileSize ? fileSize - offset : MAX_CHUNK_SIZE;
             const start = offset;
@@ -195,8 +196,6 @@ async function uploadFile(restClient: RestClient, cacheId: number, archivePath: 
             const chunk = fs.createReadStream(archivePath, { fd, start, end, autoClose: false });
             responses.push(await uploadChunk(restClient, resourceUrl, chunk, start, end));
         }
-
-        return Promise.resolve();
     }));
 
     fs.closeSync(fd);
