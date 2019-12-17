@@ -82,7 +82,7 @@ async function run(): Promise<void> {
                 cacheEntry?.archiveLocation,
                 archivePath
             );
-            exec("md5", [archivePath]);
+            await exec(`md5sum`, [archivePath]);
 
             const archiveFileSize = utils.getArchiveFileSize(archivePath);
             core.info(

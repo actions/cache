@@ -3110,7 +3110,7 @@ function run() {
                 utils.setCacheState(cacheEntry);
                 // Download the cache from the cache entry
                 yield cacheHttpClient.downloadCache((_b = cacheEntry) === null || _b === void 0 ? void 0 : _b.archiveLocation, archivePath);
-                exec_1.exec("md5", [archivePath]);
+                yield exec_1.exec(`md5sum`, [archivePath]);
                 const archiveFileSize = utils.getArchiveFileSize(archivePath);
                 core.info(`Cache Size: ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B)`);
                 // Create directory to extract tar into
