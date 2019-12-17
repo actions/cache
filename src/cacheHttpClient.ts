@@ -174,54 +174,29 @@ async function commitCache(
     );
 }
 
-async function parallelAwait(queue: Promise<any>[], concurrency: number): Promise<any[]> {
-    const workQueue = queue.reverse();
-    let completedWork: any[] = [];
-    let entries = queue.length;
-    while (entries > 0) {
-        if (entries < concurrency) {
-            completedWork.push(await Promise.all(workQueue));
-        } else {
-            let promises: Promise<any>[] = [];
-            let i: number;
-            for (i = 0; i < concurrency; i++) {
-                promises.push(workQueue.pop() ?? Promise.resolve());
-            }
-            completedWork.push(await Promise.all(promises));
-        }
-    }
-
-    return completedWork;
-}
-
-export async function saveCache(
-    cacheId: number,
-    archivePath: string
-): Promise<void> {
-    const restClient = createRestClient();
-
-    core.debug("Uploading chunks");
+async function uploadFile(restClient: RestClient, cacheId: number, archivePath: string): Promise<void> {
     // Upload Chunks
     const fileSize = fs.statSync(archivePath).size;
     const resourceUrl = getCacheApiUrl() + "caches/" + cacheId.toString();
-    const uploads: Promise<IRestResponse<void>>[] = [];
-
+    const responses: IRestResponse<void>[] = [];
     const fd = fs.openSync(archivePath, "r"); // Use the same fd for serial reads? Will this work for parallel too?
-    let offset = 0;
-    while (offset < fileSize) {
-        const chunkSize = offset + MAX_CHUNK_SIZE > fileSize ? fileSize - offset : MAX_CHUNK_SIZE;
-        const end = offset + chunkSize - 1;
-        const chunk = fs.createReadStream(archivePath, { fd, start: offset, end, autoClose: false });
-        uploads.push(uploadChunk(restClient, resourceUrl, chunk, offset, end));
-        offset += MAX_CHUNK_SIZE;
-    }
 
+    const concurrency = 4; // # of HTTP requests in parallel
+    const threads = new Array(concurrency);
     core.debug("Awaiting all uploads");
-    const responses = await parallelAwait(uploads, 4);
+    let offset = 0;
+    Promise.all(threads.map(async () => { // This might not work cause something something closures
+        while (offset < fileSize) {
+            const chunkSize = offset + MAX_CHUNK_SIZE > fileSize ? fileSize - offset : MAX_CHUNK_SIZE;
+            const start = offset;
+            const end = offset + chunkSize - 1;
+            offset += MAX_CHUNK_SIZE; // Do this before losing thread during await?
+            const chunk = fs.createReadStream(archivePath, { fd, start, end, autoClose: false });
+            responses.push(await uploadChunk(restClient, resourceUrl, chunk, start, end));
+        }
+    }));
+
     fs.closeSync(fd);
-
-
-    //const responses = await Promise.all(uploads);
 
     const failedResponse = responses.find(
         x => !isSuccessStatusCode(x.statusCode)
@@ -231,6 +206,18 @@ export async function saveCache(
             `Cache service responded with ${failedResponse.statusCode} during chunk upload.`
         );
     }
+
+    return;
+}
+
+export async function saveCache(
+    cacheId: number,
+    archivePath: string
+): Promise<void> {
+    const restClient = createRestClient();
+
+    core.debug("Upload cache");
+    await uploadFile(restClient, cacheId, archivePath);
 
     core.debug("Commiting cache");
     // Commit Cache

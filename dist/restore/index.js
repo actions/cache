@@ -1615,53 +1615,40 @@ function commitCache(restClient, cacheId, filesize) {
         return yield restClient.create(`caches/${cacheId.toString()}`, commitCacheRequest, requestOptions);
     });
 }
-function parallelAwait(queue, concurrency) {
-    var _a;
+function uploadFile(restClient, cacheId, archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
-        const workQueue = queue.reverse();
-        let completedWork = [];
-        let entries = queue.length;
-        while (entries > 0) {
-            if (entries < concurrency) {
-                completedWork.push(yield Promise.all(workQueue));
+        // Upload Chunks
+        const fileSize = fs.statSync(archivePath).size;
+        const resourceUrl = getCacheApiUrl() + "caches/" + cacheId.toString();
+        const responses = [];
+        const fd = fs.openSync(archivePath, "r"); // Use the same fd for serial reads? Will this work for parallel too?
+        const concurrency = 4; // # of HTTP requests in parallel
+        const threads = new Array(concurrency);
+        core.debug("Awaiting all uploads");
+        let offset = 0;
+        Promise.all(threads.map(() => __awaiter(this, void 0, void 0, function* () {
+            while (offset < fileSize) {
+                const chunkSize = offset + MAX_CHUNK_SIZE > fileSize ? fileSize - offset : MAX_CHUNK_SIZE;
+                const start = offset;
+                const end = offset + chunkSize - 1;
+                offset += MAX_CHUNK_SIZE; // Do this before losing thread during await?
+                const chunk = fs.createReadStream(archivePath, { fd, start, end, autoClose: false });
+                responses.push(yield uploadChunk(restClient, resourceUrl, chunk, start, end));
             }
-            else {
-                let promises = [];
-                let i;
-                for (i = 0; i < concurrency; i++) {
-                    promises.push((_a = workQueue.pop(), (_a !== null && _a !== void 0 ? _a : Promise.resolve())));
-                }
-                completedWork.push(yield Promise.all(promises));
-            }
+        })));
+        fs.closeSync(fd);
+        const failedResponse = responses.find(x => !isSuccessStatusCode(x.statusCode));
+        if (failedResponse) {
+            throw new Error(`Cache service responded with ${failedResponse.statusCode} during chunk upload.`);
         }
-        return completedWork;
+        return;
     });
 }
 function saveCache(cacheId, archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
         const restClient = createRestClient();
-        core.debug("Uploading chunks");
-        // Upload Chunks
-        const fileSize = fs.statSync(archivePath).size;
-        const resourceUrl = getCacheApiUrl() + "caches/" + cacheId.toString();
-        const uploads = [];
-        const fd = fs.openSync(archivePath, "r"); // Use the same fd for serial reads? Will this work for parallel too?
-        let offset = 0;
-        while (offset < fileSize) {
-            const chunkSize = offset + MAX_CHUNK_SIZE > fileSize ? fileSize - offset : MAX_CHUNK_SIZE;
-            const end = offset + chunkSize - 1;
-            const chunk = fs.createReadStream(archivePath, { fd, start: offset, end, autoClose: false });
-            uploads.push(uploadChunk(restClient, resourceUrl, chunk, offset, end));
-            offset += MAX_CHUNK_SIZE;
-        }
-        core.debug("Awaiting all uploads");
-        const responses = yield parallelAwait(uploads, 4);
-        fs.closeSync(fd);
-        //const responses = await Promise.all(uploads);
-        const failedResponse = responses.find(x => !isSuccessStatusCode(x.statusCode));
-        if (failedResponse) {
-            throw new Error(`Cache service responded with ${failedResponse.statusCode} during chunk upload.`);
-        }
+        core.debug("Upload cache");
+        yield uploadFile(restClient, cacheId, archivePath);
         core.debug("Commiting cache");
         // Commit Cache
         const cacheSize = utils.getArchiveFileSize(archivePath);
