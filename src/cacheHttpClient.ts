@@ -191,7 +191,7 @@ export async function saveCache(
     while (offset < fileSize) {
         const chunkSize = offset + MAX_CHUNK_SIZE > fileSize ? fileSize - offset : MAX_CHUNK_SIZE;
         const end = offset + chunkSize - 1;
-        const chunk = fs.createReadStream(archivePath, { fd, start: offset, end });
+        const chunk = fs.createReadStream(archivePath, { fd, start: offset, end, autoClose: false });
         uploads.push(await uploadChunk(restClient, resourceUrl, chunk, offset, end)); // Making this serial
         offset += MAX_CHUNK_SIZE;
     }
