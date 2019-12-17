@@ -1622,7 +1622,7 @@ function uploadFile(restClient, cacheId, archivePath) {
         const resourceUrl = getCacheApiUrl() + "caches/" + cacheId.toString();
         const responses = [];
         const fd = fs.openSync(archivePath, "r"); // Use the same fd for serial reads? Will this work for parallel too?
-        const concurrency = 4; // # of HTTP requests in parallel
+        const concurrency = 8; // # of HTTP requests in parallel
         const threads = [...new Array(concurrency).keys()];
         core.debug("Awaiting all uploads");
         let offset = 0;
