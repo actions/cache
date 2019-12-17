@@ -157,7 +157,6 @@ async function uploadChunk(
         "Content-Range": getContentRange(start, end)
     };
 
-    core.debug(`Resource URL: ${resourceUrl}`);
     return await restClient.uploadStream<void>("PATCH", resourceUrl, data, requestOptions);
 }
 
@@ -169,7 +168,7 @@ async function commitCache(
     const requestOptions = getRequestOptions();
     const commitCacheRequest: CommitCacheRequest = { size: filesize };
     return await restClient.create(
-        cacheId.toString(),
+        `caches/${cacheId.toString()}`,
         commitCacheRequest,
         requestOptions
     );
@@ -184,7 +183,7 @@ export async function saveCache(
     core.debug("Uploading chunks");
     // Upload Chunks
     const fileSize = fs.statSync(archivePath).size;
-    const resourceUrl = getCacheApiUrl() + cacheId.toString();
+    const resourceUrl = getCacheApiUrl() + "caches/" + cacheId.toString();
     const uploads: Promise<IRestResponse<void>>[] = [];
     let offset = 0;
     while (offset < fileSize) {

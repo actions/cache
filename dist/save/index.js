@@ -1605,7 +1605,6 @@ function uploadChunk(restClient, resourceUrl, data, start, end) {
             "Content-Type": "application/octet-stream",
             "Content-Range": getContentRange(start, end)
         };
-        core.debug(`Resource URL: ${resourceUrl}`);
         return yield restClient.uploadStream("PATCH", resourceUrl, data, requestOptions);
     });
 }
@@ -1613,7 +1612,7 @@ function commitCache(restClient, cacheId, filesize) {
     return __awaiter(this, void 0, void 0, function* () {
         const requestOptions = getRequestOptions();
         const commitCacheRequest = { size: filesize };
-        return yield restClient.create(cacheId.toString(), commitCacheRequest, requestOptions);
+        return yield restClient.create(`caches/${cacheId.toString()}`, commitCacheRequest, requestOptions);
     });
 }
 function saveCache(cacheId, archivePath) {
@@ -1622,7 +1621,7 @@ function saveCache(cacheId, archivePath) {
         core.debug("Uploading chunks");
         // Upload Chunks
         const fileSize = fs.statSync(archivePath).size;
-        const resourceUrl = getCacheApiUrl() + cacheId.toString();
+        const resourceUrl = getCacheApiUrl() + "caches/" + cacheId.toString();
         const uploads = [];
         let offset = 0;
         while (offset < fileSize) {
