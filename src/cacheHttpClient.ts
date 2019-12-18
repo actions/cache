@@ -12,7 +12,7 @@ import {
     ArtifactCacheEntry,
     CommitCacheRequest,
     ReserveCacheRequest,
-    ReserverCacheResponse
+    ReserveCacheResponse
 } from "./contracts";
 import * as utils from "./utils/actionUtils";
 
@@ -113,7 +113,7 @@ export async function reserveCache(key: string): Promise<number> {
     const reserveCacheRequest: ReserveCacheRequest = {
         key
     };
-    const response = await restClient.create<ReserverCacheResponse>(
+    const response = await restClient.create<ReserveCacheResponse>(
         "caches",
         reserveCacheRequest,
         getRequestOptions()

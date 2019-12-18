@@ -14,6 +14,6 @@ export interface ReserveCacheRequest {
     version?: string;
 }
 
-export interface ReserverCacheResponse {
+export interface ReserveCacheResponse {
     cacheId: number;
 }
