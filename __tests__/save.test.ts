@@ -214,6 +214,57 @@ test("save with large cache outputs warning", async () => {
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
+test("save with reserve cache failure outputs warning", async () => {
+    const infoMock = jest.spyOn(core, "info");
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const cacheEntry: ArtifactCacheEntry = {
+        cacheKey: "Linux-node-",
+        scope: "refs/heads/master",
+        creationTime: "2019-11-13T19:18:02+00:00",
+        archiveLocation: "www.actionscache.test/download"
+    };
+
+    jest.spyOn(core, "getState")
+        // Cache Entry State
+        .mockImplementationOnce(() => {
+            return JSON.stringify(cacheEntry);
+        })
+        // Cache Key State
+        .mockImplementationOnce(() => {
+            return primaryKey;
+        });
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Path, inputPath);
+
+    const reserveCacheMock = jest
+        .spyOn(cacheHttpClient, "reserveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(-1);
+        });
+
+    const createTarMock = jest.spyOn(tar, "createTar");
+
+    const saveCacheMock = jest.spyOn(cacheHttpClient, "saveCache");
+
+    await run();
+
+    expect(reserveCacheMock).toHaveBeenCalledTimes(1);
+    expect(reserveCacheMock).toHaveBeenCalledWith(primaryKey);
+
+    expect(infoMock).toHaveBeenCalledWith(
+        `Unable to reserve cache with key ${primaryKey}, another job may be creating this cache.`
+    );
+
+    expect(createTarMock).toHaveBeenCalledTimes(0);
+    expect(saveCacheMock).toHaveBeenCalledTimes(0);
+    expect(logWarningMock).toHaveBeenCalledTimes(0);
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
 test("save with server error outputs warning", async () => {
     const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const failedMock = jest.spyOn(core, "setFailed");
