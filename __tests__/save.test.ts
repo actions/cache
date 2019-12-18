@@ -240,6 +240,13 @@ test("save with server error outputs warning", async () => {
     const cachePath = path.resolve(inputPath);
     testUtils.setInput(Inputs.Path, inputPath);
 
+    const cacheId = 4;
+    const reserveCacheMock = jest
+        .spyOn(cacheHttpClient, "reserveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(cacheId);
+        });
+
     const createTarMock = jest.spyOn(tar, "createTar");
 
     const saveCacheMock = jest
@@ -250,13 +257,16 @@ test("save with server error outputs warning", async () => {
 
     await run();
 
+    expect(reserveCacheMock).toHaveBeenCalledTimes(1);
+    expect(reserveCacheMock).toHaveBeenCalledWith(primaryKey);
+
     const archivePath = path.join("/foo/bar", "cache.tgz");
 
     expect(createTarMock).toHaveBeenCalledTimes(1);
     expect(createTarMock).toHaveBeenCalledWith(archivePath, cachePath);
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith(primaryKey, archivePath);
+    expect(saveCacheMock).toHaveBeenCalledWith(cacheId, archivePath);
 
     expect(logWarningMock).toHaveBeenCalledTimes(1);
     expect(logWarningMock).toHaveBeenCalledWith("HTTP Error Occurred");
@@ -289,10 +299,21 @@ test("save with valid inputs uploads a cache", async () => {
     const cachePath = path.resolve(inputPath);
     testUtils.setInput(Inputs.Path, inputPath);
 
+    const cacheId = 4;
+    const reserveCacheMock = jest
+        .spyOn(cacheHttpClient, "reserveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(cacheId);
+        });
+
     const createTarMock = jest.spyOn(tar, "createTar");
+
     const saveCacheMock = jest.spyOn(cacheHttpClient, "saveCache");
 
     await run();
+
+    expect(reserveCacheMock).toHaveBeenCalledTimes(1);
+    expect(reserveCacheMock).toHaveBeenCalledWith(primaryKey);
 
     const archivePath = path.join("/foo/bar", "cache.tgz");
 
@@ -300,7 +321,7 @@ test("save with valid inputs uploads a cache", async () => {
     expect(createTarMock).toHaveBeenCalledWith(archivePath, cachePath);
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith(primaryKey, archivePath);
+    expect(saveCacheMock).toHaveBeenCalledWith(cacheId, archivePath);
 
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
