@@ -38,7 +38,9 @@ async function run(): Promise<void> {
         core.debug("Reserving Cache");
         const cacheId = await cacheHttpClient.reserveCache(primaryKey);
         if (cacheId < 0) {
-            core.info(`Unable to reserve cache with key ${primaryKey}, another job may be creating this cache.`);
+            core.info(
+                `Unable to reserve cache with key ${primaryKey}, another job may be creating this cache.`
+            );
             return;
         }
         core.debug(`Cache ID: ${cacheId}`);
@@ -84,7 +86,6 @@ async function run(): Promise<void> {
             return;
         }
 
-        await exec(`md5sum`, [archivePath]);
         core.debug("Saving Cache");
         await cacheHttpClient.saveCache(cacheId, archivePath);
     } catch (error) {

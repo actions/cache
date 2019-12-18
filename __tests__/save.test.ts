@@ -212,14 +212,14 @@ test("save with large cache outputs warning", async () => {
     const IS_WINDOWS = process.platform === "win32";
     const args = IS_WINDOWS
         ? [
-              "-cz",
-              "--force-local",
-              "-f",
-              archivePath.replace(/\\/g, "/"),
-              "-C",
-              cachePath.replace(/\\/g, "/"),
-              "."
-          ]
+            "-cz",
+            "--force-local",
+            "-f",
+            archivePath.replace(/\\/g, "/"),
+            "-C",
+            cachePath.replace(/\\/g, "/"),
+            "."
+        ]
         : ["-cz", "-f", archivePath, "-C", cachePath, "."];
 
     expect(execMock).toHaveBeenCalledTimes(1);
@@ -259,6 +259,11 @@ test("save with server error outputs warning", async () => {
     const cachePath = path.resolve(inputPath);
     testUtils.setInput(Inputs.Path, inputPath);
 
+    const cacheId = 4;
+    const reserveCacheMock = jest.spyOn(cacheHttpClient, "reserveCache").mockImplementationOnce(() => {
+        return Promise.resolve(cacheId);
+    });
+
     const execMock = jest.spyOn(exec, "exec");
 
     const saveCacheMock = jest
@@ -269,26 +274,29 @@ test("save with server error outputs warning", async () => {
 
     await run();
 
+    expect(reserveCacheMock).toHaveBeenCalledTimes(1);
+    expect(reserveCacheMock).toHaveBeenCalledWith(primaryKey);
+
     const archivePath = path.join("/foo/bar", "cache.tgz");
 
     const IS_WINDOWS = process.platform === "win32";
     const args = IS_WINDOWS
         ? [
-              "-cz",
-              "--force-local",
-              "-f",
-              archivePath.replace(/\\/g, "/"),
-              "-C",
-              cachePath.replace(/\\/g, "/"),
-              "."
-          ]
+            "-cz",
+            "--force-local",
+            "-f",
+            archivePath.replace(/\\/g, "/"),
+            "-C",
+            cachePath.replace(/\\/g, "/"),
+            "."
+        ]
         : ["-cz", "-f", archivePath, "-C", cachePath, "."];
 
     expect(execMock).toHaveBeenCalledTimes(1);
     expect(execMock).toHaveBeenCalledWith(`"tar"`, args);
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith(primaryKey, archivePath);
+    expect(saveCacheMock).toHaveBeenCalledWith(cacheId, archivePath);
 
     expect(logWarningMock).toHaveBeenCalledTimes(1);
     expect(logWarningMock).toHaveBeenCalledWith("HTTP Error Occurred");
@@ -321,32 +329,40 @@ test("save with valid inputs uploads a cache", async () => {
     const cachePath = path.resolve(inputPath);
     testUtils.setInput(Inputs.Path, inputPath);
 
+    const cacheId = 4;
+    const reserveCacheMock = jest.spyOn(cacheHttpClient, "reserveCache").mockImplementationOnce(() => {
+        return Promise.resolve(cacheId);
+    });
+
     const execMock = jest.spyOn(exec, "exec");
 
     const saveCacheMock = jest.spyOn(cacheHttpClient, "saveCache");
 
     await run();
 
+    expect(reserveCacheMock).toHaveBeenCalledTimes(1);
+    expect(reserveCacheMock).toHaveBeenCalledWith(primaryKey);
+
     const archivePath = path.join("/foo/bar", "cache.tgz");
 
     const IS_WINDOWS = process.platform === "win32";
     const args = IS_WINDOWS
         ? [
-              "-cz",
-              "--force-local",
-              "-f",
-              archivePath.replace(/\\/g, "/"),
-              "-C",
-              cachePath.replace(/\\/g, "/"),
-              "."
-          ]
+            "-cz",
+            "--force-local",
+            "-f",
+            archivePath.replace(/\\/g, "/"),
+            "-C",
+            cachePath.replace(/\\/g, "/"),
+            "."
+        ]
         : ["-cz", "-f", archivePath, "-C", cachePath, "."];
 
     expect(execMock).toHaveBeenCalledTimes(1);
     expect(execMock).toHaveBeenCalledWith(`"tar"`, args);
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith(primaryKey, archivePath);
+    expect(saveCacheMock).toHaveBeenCalledWith(cacheId, archivePath);
 
     expect(failedMock).toHaveBeenCalledTimes(0);
 });

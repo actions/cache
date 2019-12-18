@@ -107,9 +107,7 @@ export async function downloadCache(
 }
 
 // Reserve Cache
-export async function reserveCache(
-    key: string
-): Promise<number> {
+export async function reserveCache(key: string): Promise<number> {
     const restClient = createRestClient();
 
     const reserveCacheRequest: ReserveCacheRequest = {
@@ -133,14 +131,6 @@ function getContentRange(start: number, end: number): string {
     return `bytes ${start}-${end}/*`;
 }
 
-// function bufferToStream(buffer: Buffer): NodeJS.ReadableStream {
-//     const stream = new Duplex();
-//     stream.push(buffer);
-//     stream.push(null);
-
-//     return stream;
-// }
-
 async function uploadChunk(
     restClient: RestClient,
     resourceUrl: string,
@@ -148,14 +138,87 @@ async function uploadChunk(
     start: number,
     end: number
 ): Promise<IRestResponse<void>> {
-    core.debug(`Uploading chunk of size ${end - start + 1} bytes at offset ${start} with content range: ${getContentRange(start, end)}`);
+    core.debug(
+        `Uploading chunk of size ${end -
+            start +
+            1} bytes at offset ${start} with content range: ${getContentRange(
+            start,
+            end
+        )}`
+    );
     const requestOptions = getRequestOptions();
     requestOptions.additionalHeaders = {
         "Content-Type": "application/octet-stream",
         "Content-Range": getContentRange(start, end)
     };
 
-    return await restClient.uploadStream<void>("PATCH", resourceUrl, data, requestOptions);
+    return await restClient.uploadStream<void>(
+        "PATCH",
+        resourceUrl,
+        data,
+        requestOptions
+    );
+}
+
+async function uploadFile(
+    restClient: RestClient,
+    cacheId: number,
+    archivePath: string
+): Promise<void> {
+    // Upload Chunks
+    const fileSize = fs.statSync(archivePath).size;
+    const resourceUrl = getCacheApiUrl() + "caches/" + cacheId.toString();
+    const responses: IRestResponse<void>[] = [];
+    const fd = fs.openSync(archivePath, "r");
+
+    const concurrency = 4; // # of HTTP requests in parallel
+    const MAX_CHUNK_SIZE = 32000000; // 32 MB Chunks
+    core.debug(`Concurrency: ${concurrency} and Chunk Size: ${MAX_CHUNK_SIZE}`);
+
+    const parallelUploads = [...new Array(concurrency).keys()];
+    core.debug("Awaiting all uploads");
+    let offset = 0;
+    await Promise.all(
+        parallelUploads.map(async () => {
+            while (offset < fileSize) {
+                const chunkSize =
+                    offset + MAX_CHUNK_SIZE > fileSize
+                        ? fileSize - offset
+                        : MAX_CHUNK_SIZE;
+                const start = offset;
+                const end = offset + chunkSize - 1;
+                offset += MAX_CHUNK_SIZE;
+                const chunk = fs.createReadStream(archivePath, {
+                    fd,
+                    start,
+                    end,
+                    autoClose: false
+                });
+                responses.push(
+                    await uploadChunk(
+                        restClient,
+                        resourceUrl,
+                        chunk,
+                        start,
+                        end
+                    )
+                );
+            }
+        })
+    );
+
+    fs.closeSync(fd);
+
+    const failedResponse = responses.find(
+        x => !isSuccessStatusCode(x.statusCode)
+    );
+    if (failedResponse) {
+        throw new Error(
+            `Cache service responded with ${failedResponse.statusCode} during chunk upload.`
+        );
+    }
+
+    return;
 }
 
 async function commitCache(
@@ -172,44 +235,6 @@ async function commitCache(
     );
 }
 
-async function uploadFile(restClient: RestClient, cacheId: number, archivePath: string): Promise<void> {
-    // Upload Chunks
-    const fileSize = fs.statSync(archivePath).size;
-    const resourceUrl = getCacheApiUrl() + "caches/" + cacheId.toString();
-    const responses: IRestResponse<void>[] = [];
-    const fd = fs.openSync(archivePath, "r");
-
-    const concurrency = 16; // # of HTTP requests in parallel
-    const MAX_CHUNK_SIZE = 32000000; // 32 MB Chunks
-    core.debug(`Concurrency: ${concurrency} and Chunk Size: ${MAX_CHUNK_SIZE}`);
-    const parallelUploads = [...new Array(concurrency).keys()];
-    core.debug("Awaiting all uploads");
-    let offset = 0;
-    await Promise.all(parallelUploads.map(async () => {
-        while (offset < fileSize) {
-            const chunkSize = offset + MAX_CHUNK_SIZE > fileSize ? fileSize - offset : MAX_CHUNK_SIZE;
-            const start = offset;
-            const end = offset + chunkSize - 1;
-            offset += MAX_CHUNK_SIZE;
-            const chunk = fs.createReadStream(archivePath, { fd, start, end, autoClose: false });
-            responses.push(await uploadChunk(restClient, resourceUrl, chunk, start, end));
-        }
-    }));
-
-    fs.closeSync(fd);
-
-    const failedResponse = responses.find(
-        x => !isSuccessStatusCode(x.statusCode)
-    );
-    if (failedResponse) {
-        throw new Error(
-            `Cache service responded with ${failedResponse.statusCode} during chunk upload.`
-        );
-    }
-
-    return;
-}
-
 export async function saveCache(
     cacheId: number,
     archivePath: string
@@ -219,8 +244,8 @@ export async function saveCache(
     core.debug("Upload cache");
     await uploadFile(restClient, cacheId, archivePath);
 
-    core.debug("Commiting cache");
     // Commit Cache
+    core.debug("Commiting cache");
     const cacheSize = utils.getArchiveFileSize(archivePath);
     const commitCacheResponse = await commitCache(
         restClient,
