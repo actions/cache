@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import * as fs from "fs";
 import { BearerCredentialHandler } from "typed-rest-client/Handlers";
-import { HttpClient } from "typed-rest-client/HttpClient";
+import { HttpClient, HttpCodes } from "typed-rest-client/HttpClient";
 import { IHttpClientResponse } from "typed-rest-client/Interfaces";
 import {
     IRequestOptions,
@@ -19,6 +19,16 @@ import * as utils from "./utils/actionUtils";
 function isSuccessStatusCode(statusCode: number): boolean {
     return statusCode >= 200 && statusCode < 300;
 }
+
+function isRetryableStatusCode(statusCode: number): boolean {
+    const retryableStatusCodes = [
+        HttpCodes.BadGateway,
+        HttpCodes.ServiceUnavailable,
+        HttpCodes.GatewayTimeout
+    ];
+    return retryableStatusCodes.includes(statusCode);
+}
+
 function getCacheApiUrl(): string {
     // Ideally we just use ACTIONS_CACHE_URL
     const baseUrl: string = (
@@ -152,11 +162,29 @@ async function uploadChunk(
         "Content-Range": getContentRange(start, end)
     };
 
-    return await restClient.uploadStream<void>(
-        "PATCH",
-        resourceUrl,
-        data,
-        requestOptions
+    const uploadChunkRequest = async (): Promise<IRestResponse<void>> => {
+        return await restClient.uploadStream<void>(
+            "PATCH",
+            resourceUrl,
+            data,
+            requestOptions
+        );
+    };
+
+    const response = await uploadChunkRequest();
+    if (isSuccessStatusCode(response.statusCode)) {
+        return response;
+    }
+
+    if (isRetryableStatusCode(response.statusCode)) {
+        const retryResponse = await uploadChunkRequest();
+        if (isSuccessStatusCode(retryResponse.statusCode)) {
+            return retryResponse;
+        }
+    }
+
+    throw new Error(
+        `Cache service responded with ${response.statusCode} during chunk upload.`
     );
 }
 
