@@ -11,6 +11,7 @@
 - [Python - pip](#python---pip)
 - [Ruby - Gem](#ruby---gem)
 - [Rust - Cargo](#rust---cargo)
+- [Scala - SBT](#scala---sbt)
 - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 
@@ -261,6 +262,21 @@ When dependencies are installed later in the workflow, we must specify the same 
   with:
     path: target
     key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+```
+
+## Scala - SBT
+
+```yaml
+- name: Cache SBT ivy cache
+  uses: actions/cache@v1
+  with:
+    path: ~/.ivy2/cache
+    key: ${{ runner.os }}-sbt-ivy-cache-${{ hashFiles('**/build.sbt') }}
+- name: Cache SBT
+  uses: actions/cache@v1
+  with:
+    path: ~/.sbt
+    key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
 ```
 
 ## Swift, Objective-C - Carthage
