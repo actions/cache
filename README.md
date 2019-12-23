@@ -35,7 +35,7 @@ on: push
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v1
 
@@ -49,14 +49,14 @@ jobs:
     - name: Generate Prime Numbers
       if: steps.cache-primes.outputs.cache-hit != 'true'
       run: /generate-primes.sh -d prime-numbers
-    
+
     - name: Use Prime Numbers
       run: /primes.sh -d prime-numbers
 ```
 
 ## Implementation Examples
 
-Every programming language and framework has it's own way of caching. 
+Every programming language and framework has its own way of caching.
 
 See [Examples](examples.md) for a list of `actions/cache` implementations for use with:
 
@@ -93,7 +93,7 @@ steps:
     with:
       path: path/to/dependencies
       key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
-  
+
   - name: Install Dependencies
     if: steps.cache.outputs.cache-hit != 'true'
     run: /install.sh
