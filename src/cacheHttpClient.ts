@@ -147,11 +147,11 @@ async function uploadChunk(
     data: NodeJS.ReadableStream,
     start: number,
     end: number
-): Promise<IRestResponse<void>> {
+): Promise<void> {
     core.debug(
         `Uploading chunk of size ${end -
-        start +
-        1} bytes at offset ${start} with content range: ${getContentRange(
+            start +
+            1} bytes at offset ${start} with content range: ${getContentRange(
             start,
             end
         )}`
@@ -173,14 +173,16 @@ async function uploadChunk(
 
     const response = await uploadChunkRequest();
     if (isSuccessStatusCode(response.statusCode)) {
-        return response;
+        return;
     }
 
     if (isRetryableStatusCode(response.statusCode)) {
-        core.debug(`Received ${response.statusCode}, retrying chunk at offset ${start}.`);
+        core.debug(
+            `Received ${response.statusCode}, retrying chunk at offset ${start}.`
+        );
         const retryResponse = await uploadChunkRequest();
         if (isSuccessStatusCode(retryResponse.statusCode)) {
-            return retryResponse;
+            return;
         }
     }
 
@@ -197,11 +199,11 @@ async function uploadFile(
     // Upload Chunks
     const fileSize = fs.statSync(archivePath).size;
     const resourceUrl = getCacheApiUrl() + "caches/" + cacheId.toString();
-    const responses: IRestResponse<void>[] = [];
     const fd = fs.openSync(archivePath, "r");
 
     const concurrency = Number(process.env["CACHE_UPLOAD_CONCURRENCY"]) ?? 4; // # of HTTP requests in parallel
-    const MAX_CHUNK_SIZE = Number(process.env["CACHE_UPLOAD_CHUNK_SIZE"]) ?? (32 * 1024 * 1024); // 32 MB Chunks
+    const MAX_CHUNK_SIZE =
+        Number(process.env["CACHE_UPLOAD_CHUNK_SIZE"]) ?? 32 * 1024 * 1024; // 32 MB Chunks
     core.debug(`Concurrency: ${concurrency} and Chunk Size: ${MAX_CHUNK_SIZE}`);
 
     const parallelUploads = [...new Array(concurrency).keys()];
@@ -212,7 +214,10 @@ async function uploadFile(
         await Promise.all(
             parallelUploads.map(async () => {
                 while (offset < fileSize) {
-                    const chunkSize = Math.min(fileSize - offset, MAX_CHUNK_SIZE)
+                    const chunkSize = Math.min(
+                        fileSize - offset,
+                        MAX_CHUNK_SIZE
+                    );
                     const start = offset;
                     const end = offset + chunkSize - 1;
                     offset += MAX_CHUNK_SIZE;
@@ -222,14 +227,13 @@ async function uploadFile(
                         end,
                         autoClose: false
                     });
-                    responses.push(
-                        await uploadChunk(
-                            restClient,
-                            resourceUrl,
-                            chunk,
-                            start,
-                            end
-                        )
+
+                    await uploadChunk(
+                        restClient,
+                        resourceUrl,
+                        chunk,
+                        start,
+                        end
                     );
                 }
             })
