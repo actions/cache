@@ -201,7 +201,7 @@ async function uploadFile(
     const fd = fs.openSync(archivePath, "r");
 
     const concurrency = Number(process.env["CACHE_UPLOAD_CONCURRENCY"]) ?? 4; // # of HTTP requests in parallel
-    const MAX_CHUNK_SIZE = Number(process.env["CACHE_UPLOAD_CHUNK_SIZE"]) ?? 32000000; // 32 MB Chunks
+    const MAX_CHUNK_SIZE = Number(process.env["CACHE_UPLOAD_CHUNK_SIZE"]) ?? (32 * 1024 * 1024); // 32 MB Chunks
     core.debug(`Concurrency: ${concurrency} and Chunk Size: ${MAX_CHUNK_SIZE}`);
 
     const parallelUploads = [...new Array(concurrency).keys()];
