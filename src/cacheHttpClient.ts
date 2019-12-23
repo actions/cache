@@ -150,8 +150,8 @@ async function uploadChunk(
 ): Promise<IRestResponse<void>> {
     core.debug(
         `Uploading chunk of size ${end -
-            start +
-            1} bytes at offset ${start} with content range: ${getContentRange(
+        start +
+        1} bytes at offset ${start} with content range: ${getContentRange(
             start,
             end
         )}`
@@ -177,6 +177,7 @@ async function uploadChunk(
     }
 
     if (isRetryableStatusCode(response.statusCode)) {
+        core.debug(`Received ${response.statusCode}, retrying chunk at offset ${start}.`);
         const retryResponse = await uploadChunkRequest();
         if (isSuccessStatusCode(retryResponse.statusCode)) {
             return retryResponse;
@@ -199,53 +200,43 @@ async function uploadFile(
     const responses: IRestResponse<void>[] = [];
     const fd = fs.openSync(archivePath, "r");
 
-    const concurrency = 4; // # of HTTP requests in parallel
-    const MAX_CHUNK_SIZE = 32000000; // 32 MB Chunks
+    const concurrency = Number(process.env["CACHE_UPLOAD_CONCURRENCY"]) ?? 4; // # of HTTP requests in parallel
+    const MAX_CHUNK_SIZE = Number(process.env["CACHE_UPLOAD_CHUNK_SIZE"]) ?? 32000000; // 32 MB Chunks
     core.debug(`Concurrency: ${concurrency} and Chunk Size: ${MAX_CHUNK_SIZE}`);
 
     const parallelUploads = [...new Array(concurrency).keys()];
     core.debug("Awaiting all uploads");
     let offset = 0;
-    await Promise.all(
-        parallelUploads.map(async () => {
-            while (offset < fileSize) {
-                const chunkSize =
-                    offset + MAX_CHUNK_SIZE > fileSize
-                        ? fileSize - offset
-                        : MAX_CHUNK_SIZE;
-                const start = offset;
-                const end = offset + chunkSize - 1;
-                offset += MAX_CHUNK_SIZE;
-                const chunk = fs.createReadStream(archivePath, {
-                    fd,
-                    start,
-                    end,
-                    autoClose: false
-                });
-                responses.push(
-                    await uploadChunk(
-                        restClient,
-                        resourceUrl,
-                        chunk,
+
+    try {
+        await Promise.all(
+            parallelUploads.map(async () => {
+                while (offset < fileSize) {
+                    const chunkSize = Math.min(fileSize - offset, MAX_CHUNK_SIZE)
+                    const start = offset;
+                    const end = offset + chunkSize - 1;
+                    offset += MAX_CHUNK_SIZE;
+                    const chunk = fs.createReadStream(archivePath, {
+                        fd,
                         start,
-                        end
-                    )
-                );
-            }
-        })
-    );
-
-    fs.closeSync(fd);
-
-    const failedResponse = responses.find(
-        x => !isSuccessStatusCode(x.statusCode)
-    );
-    if (failedResponse) {
-        throw new Error(
-            `Cache service responded with ${failedResponse.statusCode} during chunk upload.`
+                        end,
+                        autoClose: false
+                    });
+                    responses.push(
+                        await uploadChunk(
+                            restClient,
+                            resourceUrl,
+                            chunk,
+                            start,
+                            end
+                        )
+                    );
+                }
+            })
         );
+    } finally {
+        fs.closeSync(fd);
     }
-
     return;
 }
 

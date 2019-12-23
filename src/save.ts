@@ -36,7 +36,7 @@ async function run(): Promise<void> {
 
         core.debug("Reserving Cache");
         const cacheId = await cacheHttpClient.reserveCache(primaryKey);
-        if (cacheId < 0) {
+        if (cacheId == -1) {
             core.info(
                 `Unable to reserve cache with key ${primaryKey}, another job may be creating this cache.`
             );
@@ -62,13 +62,13 @@ async function run(): Promise<void> {
         if (archiveFileSize > fileSizeLimit) {
             utils.logWarning(
                 `Cache size of ~${Math.round(
-                    archiveFileSize / (1024 * 1024 * 1024)
-                )} GB (${archiveFileSize} B) is over the 2GB limit, not saving cache.`
+                    archiveFileSize / (1024 * 1024)
+                )} MB (${archiveFileSize} B) is over the 2GB limit, not saving cache.`
             );
             return;
         }
 
-        core.debug("Saving Cache");
+        core.debug(`Saving Cache (ID: ${cacheId})`);
         await cacheHttpClient.saveCache(cacheId, archivePath);
     } catch (error) {
         utils.logWarning(error.message);

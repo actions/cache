@@ -60,7 +60,7 @@ async function run(): Promise<void> {
 
         try {
             const cacheEntry = await cacheHttpClient.getCacheEntry(keys);
-            if (!cacheEntry || !cacheEntry?.archiveLocation) {
+            if (!cacheEntry?.archiveLocation) {
                 core.info(
                     `Cache not found for input keys: ${keys.join(", ")}.`
                 );
@@ -78,7 +78,7 @@ async function run(): Promise<void> {
 
             // Download the cache from the cache entry
             await cacheHttpClient.downloadCache(
-                cacheEntry?.archiveLocation,
+                cacheEntry.archiveLocation,
                 archivePath
             );
 

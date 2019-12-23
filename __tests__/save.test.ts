@@ -208,7 +208,7 @@ test("save with large cache outputs warning", async () => {
 
     expect(logWarningMock).toHaveBeenCalledTimes(1);
     expect(logWarningMock).toHaveBeenCalledWith(
-        "Cache size of ~4 GB (4294967296 B) is over the 2GB limit, not saving cache."
+        "Cache size of ~4096 MB (4294967296 B) is over the 2GB limit, not saving cache."
     );
 
     expect(failedMock).toHaveBeenCalledTimes(0);
