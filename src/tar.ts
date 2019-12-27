@@ -16,7 +16,9 @@ async function getTarPath(): Promise<string> {
 
 async function execTar(args: string[]): Promise<void> {
     try {
-        await exec(`"${await getTarPath()}"`, args);
+        const tarPath = await getTarPath();
+        const tarExec = process.platform !== "win32" ? `sudo ${tarPath}` : tarPath;
+        await exec(`"${tarExec}"`, args);
     } catch (error) {
         const IS_WINDOWS = process.platform === "win32";
         if (IS_WINDOWS) {
