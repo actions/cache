@@ -34,6 +34,15 @@ async function run(): Promise<void> {
             return;
         }
 
+        core.debug("Reserving Cache");
+        const cacheId = await cacheHttpClient.reserveCache(primaryKey);
+        if (cacheId == -1) {
+            core.info(
+                `Unable to reserve cache with key ${primaryKey}, another job may be creating this cache.`
+            );
+            return;
+        }
+        core.debug(`Cache ID: ${cacheId}`);
         const cachePath = utils.resolvePath(
             core.getInput(Inputs.Path, { required: true })
         );
@@ -47,19 +56,20 @@ async function run(): Promise<void> {
 
         await createTar(archivePath, cachePath);
 
-        const fileSizeLimit = 400 * 1024 * 1024; // 400MB
+        const fileSizeLimit = 2 * 1024 * 1024 * 1024; // 2GB per repo limit
         const archiveFileSize = utils.getArchiveFileSize(archivePath);
         core.debug(`File Size: ${archiveFileSize}`);
         if (archiveFileSize > fileSizeLimit) {
             utils.logWarning(
                 `Cache size of ~${Math.round(
                     archiveFileSize / (1024 * 1024)
-                )} MB (${archiveFileSize} B) is over the 400MB limit, not saving cache.`
+                )} MB (${archiveFileSize} B) is over the 2GB limit, not saving cache.`
             );
             return;
         }
 
-        await cacheHttpClient.saveCache(primaryKey, archivePath);
+        core.debug(`Saving Cache (ID: ${cacheId})`);
+        await cacheHttpClient.saveCache(cacheId, archivePath);
     } catch (error) {
         utils.logWarning(error.message);
     }
