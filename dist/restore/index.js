@@ -1496,47 +1496,63 @@ const fs = __importStar(__webpack_require__(747));
 const Handlers_1 = __webpack_require__(941);
 const HttpClient_1 = __webpack_require__(874);
 const RestClient_1 = __webpack_require__(105);
-function getCacheUrl() {
+const utils = __importStar(__webpack_require__(443));
+function isSuccessStatusCode(statusCode) {
+    return statusCode >= 200 && statusCode < 300;
+}
+function isRetryableStatusCode(statusCode) {
+    const retryableStatusCodes = [
+        HttpClient_1.HttpCodes.BadGateway,
+        HttpClient_1.HttpCodes.ServiceUnavailable,
+        HttpClient_1.HttpCodes.GatewayTimeout
+    ];
+    return retryableStatusCodes.includes(statusCode);
+}
+function getCacheApiUrl() {
     // Ideally we just use ACTIONS_CACHE_URL
-    const cacheUrl = (process.env["ACTIONS_CACHE_URL"] ||
+    const baseUrl = (process.env["ACTIONS_CACHE_URL"] ||
         process.env["ACTIONS_RUNTIME_URL"] ||
         "").replace("pipelines", "artifactcache");
-    if (!cacheUrl) {
+    if (!baseUrl) {
         throw new Error("Cache Service Url not found, unable to restore cache.");
     }
-    core.debug(`Cache Url: ${cacheUrl}`);
-    return cacheUrl;
+    core.debug(`Cache Url: ${baseUrl}`);
+    return `${baseUrl}_apis/artifactcache/`;
 }
 function createAcceptHeader(type, apiVersion) {
     return `${type};api-version=${apiVersion}`;
 }
 function getRequestOptions() {
     const requestOptions = {
-        acceptHeader: createAcceptHeader("application/json", "5.2-preview.1")
+        acceptHeader: createAcceptHeader("application/json", "6.0-preview.1")
     };
     return requestOptions;
 }
+function createRestClient() {
+    const token = process.env["ACTIONS_RUNTIME_TOKEN"] || "";
+    const bearerCredentialHandler = new Handlers_1.BearerCredentialHandler(token);
+    return new RestClient_1.RestClient("actions/cache", getCacheApiUrl(), [
+        bearerCredentialHandler
+    ]);
+}
 function getCacheEntry(keys) {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
-        const cacheUrl = getCacheUrl();
-        const token = process.env["ACTIONS_RUNTIME_TOKEN"] || "";
-        const bearerCredentialHandler = new Handlers_1.BearerCredentialHandler(token);
-        const resource = `_apis/artifactcache/cache?keys=${encodeURIComponent(keys.join(","))}`;
-        const restClient = new RestClient_1.RestClient("actions/cache", cacheUrl, [
-            bearerCredentialHandler
-        ]);
+        const restClient = createRestClient();
+        const resource = `cache?keys=${encodeURIComponent(keys.join(","))}`;
         const response = yield restClient.get(resource, getRequestOptions());
         if (response.statusCode === 204) {
             return null;
         }
-        if (response.statusCode !== 200) {
+        if (!isSuccessStatusCode(response.statusCode)) {
             throw new Error(`Cache service responded with ${response.statusCode}`);
         }
         const cacheResult = response.result;
-        if (!cacheResult || !cacheResult.archiveLocation) {
+        const cacheDownloadUrl = (_a = cacheResult) === null || _a === void 0 ? void 0 : _a.archiveLocation;
+        if (!cacheDownloadUrl) {
             throw new Error("Cache not found.");
         }
-        core.setSecret(cacheResult.archiveLocation);
+        core.setSecret(cacheDownloadUrl);
         core.debug(`Cache Result:`);
         core.debug(JSON.stringify(cacheResult));
         return cacheResult;
@@ -1552,34 +1568,117 @@ function pipeResponseToStream(response, stream) {
         });
     });
 }
-function downloadCache(cacheEntry, archivePath) {
+function downloadCache(archiveLocation, archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
         const stream = fs.createWriteStream(archivePath);
         const httpClient = new HttpClient_1.HttpClient("actions/cache");
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const downloadResponse = yield httpClient.get(cacheEntry.archiveLocation);
+        const downloadResponse = yield httpClient.get(archiveLocation);
         yield pipeResponseToStream(downloadResponse, stream);
     });
 }
 exports.downloadCache = downloadCache;
-function saveCache(key, archivePath) {
+// Reserve Cache
+function reserveCache(key) {
+    var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function* () {
-        const stream = fs.createReadStream(archivePath);
-        const cacheUrl = getCacheUrl();
-        const token = process.env["ACTIONS_RUNTIME_TOKEN"] || "";
-        const bearerCredentialHandler = new Handlers_1.BearerCredentialHandler(token);
-        const resource = `_apis/artifactcache/cache/${encodeURIComponent(key)}`;
-        const postUrl = cacheUrl + resource;
-        const restClient = new RestClient_1.RestClient("actions/cache", undefined, [
-            bearerCredentialHandler
-        ]);
+        const restClient = createRestClient();
+        const reserveCacheRequest = {
+            key
+        };
+        const response = yield restClient.create("caches", reserveCacheRequest, getRequestOptions());
+        return _c = (_b = (_a = response) === null || _a === void 0 ? void 0 : _a.result) === null || _b === void 0 ? void 0 : _b.cacheId, (_c !== null && _c !== void 0 ? _c : -1);
+    });
+}
+exports.reserveCache = reserveCache;
+function getContentRange(start, end) {
+    // Format: `bytes start-end/filesize
+    // start and end are inclusive
+    // filesize can be *
+    // For a 200 byte chunk starting at byte 0:
+    // Content-Range: bytes 0-199/*
+    return `bytes ${start}-${end}/*`;
+}
+function uploadChunk(restClient, resourceUrl, data, start, end) {
+    return __awaiter(this, void 0, void 0, function* () {
+        core.debug(`Uploading chunk of size ${end -
+            start +
+            1} bytes at offset ${start} with content range: ${getContentRange(start, end)}`);
         const requestOptions = getRequestOptions();
         requestOptions.additionalHeaders = {
-            "Content-Type": "application/octet-stream"
+            "Content-Type": "application/octet-stream",
+            "Content-Range": getContentRange(start, end)
         };
-        const response = yield restClient.uploadStream("POST", postUrl, stream, requestOptions);
-        if (response.statusCode !== 200) {
-            throw new Error(`Cache service responded with ${response.statusCode}`);
+        const uploadChunkRequest = () => __awaiter(this, void 0, void 0, function* () {
+            return yield restClient.uploadStream("PATCH", resourceUrl, data, requestOptions);
+        });
+        const response = yield uploadChunkRequest();
+        if (isSuccessStatusCode(response.statusCode)) {
+            return;
+        }
+        if (isRetryableStatusCode(response.statusCode)) {
+            core.debug(`Received ${response.statusCode}, retrying chunk at offset ${start}.`);
+            const retryResponse = yield uploadChunkRequest();
+            if (isSuccessStatusCode(retryResponse.statusCode)) {
+                return;
+            }
+        }
+        throw new Error(`Cache service responded with ${response.statusCode} during chunk upload.`);
+    });
+}
+function uploadFile(restClient, cacheId, archivePath) {
+    var _a, _b;
+    return __awaiter(this, void 0, void 0, function* () {
+        // Upload Chunks
+        const fileSize = fs.statSync(archivePath).size;
+        const resourceUrl = getCacheApiUrl() + "caches/" + cacheId.toString();
+        const fd = fs.openSync(archivePath, "r");
+        const concurrency = (_a = Number(process.env["CACHE_UPLOAD_CONCURRENCY"]), (_a !== null && _a !== void 0 ? _a : 4)); // # of HTTP requests in parallel
+        const MAX_CHUNK_SIZE = (_b = Number(process.env["CACHE_UPLOAD_CHUNK_SIZE"]), (_b !== null && _b !== void 0 ? _b : 32 * 1024 * 1024)); // 32 MB Chunks
+        core.debug(`Concurrency: ${concurrency} and Chunk Size: ${MAX_CHUNK_SIZE}`);
+        const parallelUploads = [...new Array(concurrency).keys()];
+        core.debug("Awaiting all uploads");
+        let offset = 0;
+        try {
+            yield Promise.all(parallelUploads.map(() => __awaiter(this, void 0, void 0, function* () {
+                while (offset < fileSize) {
+                    const chunkSize = Math.min(fileSize - offset, MAX_CHUNK_SIZE);
+                    const start = offset;
+                    const end = offset + chunkSize - 1;
+                    offset += MAX_CHUNK_SIZE;
+                    const chunk = fs.createReadStream(archivePath, {
+                        fd,
+                        start,
+                        end,
+                        autoClose: false
+                    });
+                    yield uploadChunk(restClient, resourceUrl, chunk, start, end);
+                }
+            })));
+        }
+        finally {
+            fs.closeSync(fd);
+        }
+        return;
+    });
+}
+function commitCache(restClient, cacheId, filesize) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const requestOptions = getRequestOptions();
+        const commitCacheRequest = { size: filesize };
+        return yield restClient.create(`caches/${cacheId.toString()}`, commitCacheRequest, requestOptions);
+    });
+}
+function saveCache(cacheId, archivePath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const restClient = createRestClient();
+        core.debug("Upload cache");
+        yield uploadFile(restClient, cacheId, archivePath);
+        // Commit Cache
+        core.debug("Commiting cache");
+        const cacheSize = utils.getArchiveFileSize(archivePath);
+        const commitCacheResponse = yield commitCache(restClient, cacheId, cacheSize);
+        if (!isSuccessStatusCode(commitCacheResponse.statusCode)) {
+            throw new Error(`Cache service responded with ${commitCacheResponse.statusCode} during commit cache.`);
         }
         core.info("Cache saved successfully");
     });
@@ -2991,13 +3090,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
-const exec_1 = __webpack_require__(986);
-const io = __importStar(__webpack_require__(1));
 const path = __importStar(__webpack_require__(622));
 const cacheHttpClient = __importStar(__webpack_require__(154));
 const constants_1 = __webpack_require__(694);
+const tar_1 = __webpack_require__(943);
 const utils = __importStar(__webpack_require__(443));
 function run() {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             // Validate inputs, this can cause task failure
@@ -3035,7 +3134,7 @@ function run() {
             }
             try {
                 const cacheEntry = yield cacheHttpClient.getCacheEntry(keys);
-                if (!cacheEntry) {
+                if (!((_a = cacheEntry) === null || _a === void 0 ? void 0 : _a.archiveLocation)) {
                     core.info(`Cache not found for input keys: ${keys.join(", ")}.`);
                     return;
                 }
@@ -3044,27 +3143,10 @@ function run() {
                 // Store the cache result
                 utils.setCacheState(cacheEntry);
                 // Download the cache from the cache entry
-                yield cacheHttpClient.downloadCache(cacheEntry, archivePath);
+                yield cacheHttpClient.downloadCache(cacheEntry.archiveLocation, archivePath);
                 const archiveFileSize = utils.getArchiveFileSize(archivePath);
                 core.info(`Cache Size: ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B)`);
-                // Create directory to extract tar into
-                yield io.mkdirP(cachePath);
-                // http://man7.org/linux/man-pages/man1/tar.1.html
-                // tar [-options] <name of the tar archive> [files or directories which to add into archive]
-                const IS_WINDOWS = process.platform === "win32";
-                const args = IS_WINDOWS
-                    ? [
-                        "-xz",
-                        "--force-local",
-                        "-f",
-                        archivePath.replace(/\\/g, "/"),
-                        "-C",
-                        cachePath.replace(/\\/g, "/")
-                    ]
-                    : ["-xz", "-f", archivePath, "-C", cachePath];
-                const tarPath = yield io.which("tar", true);
-                core.debug(`Tar Path: ${tarPath}`);
-                yield exec_1.exec(`"${tarPath}"`, args);
+                yield tar_1.extractTar(archivePath, cachePath);
                 const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheEntry);
                 utils.setCacheHitOutput(isExactKeyMatch);
                 core.info(`Cache restored from key: ${cacheEntry && cacheEntry.cacheKey}`);
@@ -5158,6 +5240,79 @@ var ntlm_1 = __webpack_require__(525);
 exports.NtlmCredentialHandler = ntlm_1.NtlmCredentialHandler;
 var personalaccesstoken_1 = __webpack_require__(327);
 exports.PersonalAccessTokenCredentialHandler = personalaccesstoken_1.PersonalAccessTokenCredentialHandler;
+
+
+/***/ }),
+
+/***/ 943:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const exec_1 = __webpack_require__(986);
+const io = __importStar(__webpack_require__(1));
+const fs_1 = __webpack_require__(747);
+function getTarPath() {
+    return __awaiter(this, void 0, void 0, function* () {
+        // Explicitly use BSD Tar on Windows
+        const IS_WINDOWS = process.platform === "win32";
+        if (IS_WINDOWS) {
+            const systemTar = `${process.env["windir"]}\\System32\\tar.exe`;
+            if (fs_1.existsSync(systemTar)) {
+                return systemTar;
+            }
+        }
+        return yield io.which("tar", true);
+    });
+}
+function execTar(args) {
+    var _a, _b;
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            yield exec_1.exec(`"${yield getTarPath()}"`, args);
+        }
+        catch (error) {
+            const IS_WINDOWS = process.platform === "win32";
+            if (IS_WINDOWS) {
+                throw new Error(`Tar failed with error: ${(_a = error) === null || _a === void 0 ? void 0 : _a.message}. Ensure BSD tar is installed and on the PATH.`);
+            }
+            throw new Error(`Tar failed with error: ${(_b = error) === null || _b === void 0 ? void 0 : _b.message}`);
+        }
+    });
+}
+function extractTar(archivePath, targetDirectory) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // Create directory to extract tar into
+        yield io.mkdirP(targetDirectory);
+        const args = ["-xz", "-f", archivePath, "-C", targetDirectory];
+        yield execTar(args);
+    });
+}
+exports.extractTar = extractTar;
+function createTar(archivePath, sourceDirectory) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const args = ["-cz", "-f", archivePath, "-C", sourceDirectory, "."];
+        yield execTar(args);
+    });
+}
+exports.createTar = createTar;
 
 
 /***/ }),

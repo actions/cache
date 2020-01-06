@@ -1,9 +1,8 @@
 import * as core from "@actions/core";
-import { exec } from "@actions/exec";
-import * as io from "@actions/io";
 import * as path from "path";
 import * as cacheHttpClient from "./cacheHttpClient";
 import { Events, Inputs, State } from "./constants";
+import { extractTar } from "./tar";
 import * as utils from "./utils/actionUtils";
 
 async function run(): Promise<void> {
@@ -61,7 +60,7 @@ async function run(): Promise<void> {
 
         try {
             const cacheEntry = await cacheHttpClient.getCacheEntry(keys);
-            if (!cacheEntry) {
+            if (!cacheEntry?.archiveLocation) {
                 core.info(
                     `Cache not found for input keys: ${keys.join(", ")}.`
                 );
@@ -78,7 +77,10 @@ async function run(): Promise<void> {
             utils.setCacheState(cacheEntry);
 
             // Download the cache from the cache entry
-            await cacheHttpClient.downloadCache(cacheEntry, archivePath);
+            await cacheHttpClient.downloadCache(
+                cacheEntry.archiveLocation,
+                archivePath
+            );
 
             const archiveFileSize = utils.getArchiveFileSize(archivePath);
             core.info(
@@ -87,27 +89,7 @@ async function run(): Promise<void> {
                 )} MB (${archiveFileSize} B)`
             );
 
-            // Create directory to extract tar into
-            await io.mkdirP(cachePath);
-
-            // http://man7.org/linux/man-pages/man1/tar.1.html
-            // tar [-options] <name of the tar archive> [files or directories which to add into archive]
-            const IS_WINDOWS = process.platform === "win32";
-            const args = IS_WINDOWS
-                ? [
-                      "-xz",
-                      "--force-local",
-                      "-f",
-                      archivePath.replace(/\\/g, "/"),
-                      "-C",
-                      cachePath.replace(/\\/g, "/")
-                  ]
-                : ["-xz", "-f", archivePath, "-C", cachePath];
-
-            const tarPath = await io.which("tar", true);
-            core.debug(`Tar Path: ${tarPath}`);
-
-            await exec(`"${tarPath}"`, args);
+            await extractTar(archivePath, cachePath);
 
             const isExactKeyMatch = utils.isExactKeyMatch(
                 primaryKey,

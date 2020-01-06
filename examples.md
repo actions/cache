@@ -1,27 +1,20 @@
 # Examples
 
-- [Examples](#examples)
-  - [C# - Nuget](#c---nuget)
-  - [Elixir - Mix](#elixir---mix)
-  - [Go - Modules](#go---modules)
-  - [Java - Gradle](#java---gradle)
-  - [Java - Maven](#java---maven)
-  - [Node - npm](#node---npm)
-    - [macOS and Ubuntu](#macos-and-ubuntu)
-    - [Windows](#windows)
-    - [Using multiple systems and `npm config`](#using-multiple-systems-and-npm-config)
-  - [Node - Yarn](#node---yarn)
-  - [PHP - Composer](#php---composer)
-  - [Python - pip](#python---pip)
-    - [Simple example](#simple-example)
-    - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow)
-    - [Using a script to get cache location](#using-a-script-to-get-cache-location)
-  - [Ruby - Gem](#ruby---gem)
-  - [Rust - Cargo](#rust---cargo)
-  - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
-  - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
+- [C# - NuGet](#c---nuget)
+- [Elixir - Mix](#elixir---mix)
+- [Go - Modules](#go---modules)
+- [Java - Gradle](#java---gradle)
+- [Java - Maven](#java---maven)
+- [Node - npm](#node---npm)
+- [Node - Yarn](#node---yarn)
+- [PHP - Composer](#php---composer)
+- [Python - pip](#python---pip)
+- [Ruby - Gem](#ruby---gem)
+- [Rust - Cargo](#rust---cargo)
+- [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
+- [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 
-## C# - Nuget
+## C# - NuGet
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
 
 ```yaml
@@ -31,6 +24,21 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
     key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
     restore-keys: |
       ${{ runner.os }}-nuget-
+```
+
+Depending on the environment, huge packages might be pre-installed in the global cache folder.
+If you do not want to include them, consider to move the cache folder like below.
+>Note: This workflow does not work for projects that require files to be placed in user profile package folder
+```yaml
+env:
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+steps:
+  - uses: actions/cache@v1
+    with:
+      path: ${{ github.workspace }}/.nuget/packages
+      key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+      restore-keys: |
+        ${{ runner.os }}-nuget-
 ```
 
 ## Elixir - Mix
@@ -225,6 +233,14 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
     key: ${{ runner.os }}-gem-${{ hashFiles('**/Gemfile.lock') }}
     restore-keys: |
       ${{ runner.os }}-gem-
+```
+When dependencies are installed later in the workflow, we must specify the same path for the bundler.
+
+```yaml
+- name: Bundle install
+  run: |
+    bundle config path vendor/bundle
+    bundle install --jobs 4 --retry 3
 ```
 
 ## Rust - Cargo

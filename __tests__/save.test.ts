@@ -1,19 +1,17 @@
 import * as core from "@actions/core";
-import * as exec from "@actions/exec";
-import * as io from "@actions/io";
 import * as path from "path";
 import * as cacheHttpClient from "../src/cacheHttpClient";
 import { Events, Inputs } from "../src/constants";
 import { ArtifactCacheEntry } from "../src/contracts";
 import run from "../src/save";
+import * as tar from "../src/tar";
 import * as actionUtils from "../src/utils/actionUtils";
 import * as testUtils from "../src/utils/testUtils";
 
 jest.mock("@actions/core");
-jest.mock("@actions/exec");
-jest.mock("@actions/io");
-jest.mock("../src/utils/actionUtils");
 jest.mock("../src/cacheHttpClient");
+jest.mock("../src/tar");
+jest.mock("../src/utils/actionUtils");
 
 beforeAll(() => {
     jest.spyOn(core, "getInput").mockImplementation((name, options) => {
@@ -48,10 +46,6 @@ beforeAll(() => {
 
     jest.spyOn(actionUtils, "createTempDirectory").mockImplementation(() => {
         return Promise.resolve("/foo/bar");
-    });
-
-    jest.spyOn(io, "which").mockImplementation(tool => {
-        return Promise.resolve(tool);
     });
 });
 
@@ -128,7 +122,7 @@ test("save with exact match returns early", async () => {
             return primaryKey;
         });
 
-    const execMock = jest.spyOn(exec, "exec");
+    const createTarMock = jest.spyOn(tar, "createTar");
 
     await run();
 
@@ -136,7 +130,7 @@ test("save with exact match returns early", async () => {
         `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
     );
 
-    expect(execMock).toHaveBeenCalledTimes(0);
+    expect(createTarMock).toHaveBeenCalledTimes(0);
 
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
@@ -198,9 +192,9 @@ test("save with large cache outputs warning", async () => {
     const cachePath = path.resolve(inputPath);
     testUtils.setInput(Inputs.Path, inputPath);
 
-    const execMock = jest.spyOn(exec, "exec");
+    const createTarMock = jest.spyOn(tar, "createTar");
 
-    const cacheSize = 1024 * 1024 * 1024; //~1GB, over the 400MB limit
+    const cacheSize = 4 * 1024 * 1024 * 1024; //~4GB, over the 2GB limit
     jest.spyOn(actionUtils, "getArchiveFileSize").mockImplementationOnce(() => {
         return cacheSize;
     });
@@ -209,27 +203,65 @@ test("save with large cache outputs warning", async () => {
 
     const archivePath = path.join("/foo/bar", "cache.tgz");
 
-    const IS_WINDOWS = process.platform === "win32";
-    const args = IS_WINDOWS
-        ? [
-              "-cz",
-              "--force-local",
-              "-f",
-              archivePath.replace(/\\/g, "/"),
-              "-C",
-              cachePath.replace(/\\/g, "/"),
-              "."
-          ]
-        : ["-cz", "-f", archivePath, "-C", cachePath, "."];
-
-    expect(execMock).toHaveBeenCalledTimes(1);
-    expect(execMock).toHaveBeenCalledWith(`"tar"`, args);
+    expect(createTarMock).toHaveBeenCalledTimes(1);
+    expect(createTarMock).toHaveBeenCalledWith(archivePath, cachePath);
 
     expect(logWarningMock).toHaveBeenCalledTimes(1);
     expect(logWarningMock).toHaveBeenCalledWith(
-        "Cache size of ~1024 MB (1073741824 B) is over the 400MB limit, not saving cache."
+        "Cache size of ~4096 MB (4294967296 B) is over the 2GB limit, not saving cache."
     );
 
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
+test("save with reserve cache failure outputs warning", async () => {
+    const infoMock = jest.spyOn(core, "info");
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const cacheEntry: ArtifactCacheEntry = {
+        cacheKey: "Linux-node-",
+        scope: "refs/heads/master",
+        creationTime: "2019-11-13T19:18:02+00:00",
+        archiveLocation: "www.actionscache.test/download"
+    };
+
+    jest.spyOn(core, "getState")
+        // Cache Entry State
+        .mockImplementationOnce(() => {
+            return JSON.stringify(cacheEntry);
+        })
+        // Cache Key State
+        .mockImplementationOnce(() => {
+            return primaryKey;
+        });
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Path, inputPath);
+
+    const reserveCacheMock = jest
+        .spyOn(cacheHttpClient, "reserveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(-1);
+        });
+
+    const createTarMock = jest.spyOn(tar, "createTar");
+
+    const saveCacheMock = jest.spyOn(cacheHttpClient, "saveCache");
+
+    await run();
+
+    expect(reserveCacheMock).toHaveBeenCalledTimes(1);
+    expect(reserveCacheMock).toHaveBeenCalledWith(primaryKey);
+
+    expect(infoMock).toHaveBeenCalledWith(
+        `Unable to reserve cache with key ${primaryKey}, another job may be creating this cache.`
+    );
+
+    expect(createTarMock).toHaveBeenCalledTimes(0);
+    expect(saveCacheMock).toHaveBeenCalledTimes(0);
+    expect(logWarningMock).toHaveBeenCalledTimes(0);
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
@@ -259,7 +291,14 @@ test("save with server error outputs warning", async () => {
     const cachePath = path.resolve(inputPath);
     testUtils.setInput(Inputs.Path, inputPath);
 
-    const execMock = jest.spyOn(exec, "exec");
+    const cacheId = 4;
+    const reserveCacheMock = jest
+        .spyOn(cacheHttpClient, "reserveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(cacheId);
+        });
+
+    const createTarMock = jest.spyOn(tar, "createTar");
 
     const saveCacheMock = jest
         .spyOn(cacheHttpClient, "saveCache")
@@ -269,26 +308,16 @@ test("save with server error outputs warning", async () => {
 
     await run();
 
+    expect(reserveCacheMock).toHaveBeenCalledTimes(1);
+    expect(reserveCacheMock).toHaveBeenCalledWith(primaryKey);
+
     const archivePath = path.join("/foo/bar", "cache.tgz");
 
-    const IS_WINDOWS = process.platform === "win32";
-    const args = IS_WINDOWS
-        ? [
-              "-cz",
-              "--force-local",
-              "-f",
-              archivePath.replace(/\\/g, "/"),
-              "-C",
-              cachePath.replace(/\\/g, "/"),
-              "."
-          ]
-        : ["-cz", "-f", archivePath, "-C", cachePath, "."];
-
-    expect(execMock).toHaveBeenCalledTimes(1);
-    expect(execMock).toHaveBeenCalledWith(`"tar"`, args);
+    expect(createTarMock).toHaveBeenCalledTimes(1);
+    expect(createTarMock).toHaveBeenCalledWith(archivePath, cachePath);
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith(primaryKey, archivePath);
+    expect(saveCacheMock).toHaveBeenCalledWith(cacheId, archivePath);
 
     expect(logWarningMock).toHaveBeenCalledTimes(1);
     expect(logWarningMock).toHaveBeenCalledWith("HTTP Error Occurred");
@@ -321,32 +350,29 @@ test("save with valid inputs uploads a cache", async () => {
     const cachePath = path.resolve(inputPath);
     testUtils.setInput(Inputs.Path, inputPath);
 
-    const execMock = jest.spyOn(exec, "exec");
+    const cacheId = 4;
+    const reserveCacheMock = jest
+        .spyOn(cacheHttpClient, "reserveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(cacheId);
+        });
+
+    const createTarMock = jest.spyOn(tar, "createTar");
 
     const saveCacheMock = jest.spyOn(cacheHttpClient, "saveCache");
 
     await run();
 
+    expect(reserveCacheMock).toHaveBeenCalledTimes(1);
+    expect(reserveCacheMock).toHaveBeenCalledWith(primaryKey);
+
     const archivePath = path.join("/foo/bar", "cache.tgz");
 
-    const IS_WINDOWS = process.platform === "win32";
-    const args = IS_WINDOWS
-        ? [
-              "-cz",
-              "--force-local",
-              "-f",
-              archivePath.replace(/\\/g, "/"),
-              "-C",
-              cachePath.replace(/\\/g, "/"),
-              "."
-          ]
-        : ["-cz", "-f", archivePath, "-C", cachePath, "."];
-
-    expect(execMock).toHaveBeenCalledTimes(1);
-    expect(execMock).toHaveBeenCalledWith(`"tar"`, args);
+    expect(createTarMock).toHaveBeenCalledTimes(1);
+    expect(createTarMock).toHaveBeenCalledWith(archivePath, cachePath);
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith(primaryKey, archivePath);
+    expect(saveCacheMock).toHaveBeenCalledWith(cacheId, archivePath);
 
     expect(failedMock).toHaveBeenCalledTimes(0);
 });

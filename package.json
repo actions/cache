@@ -1,6 +1,6 @@
 {
   "name": "cache",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "private": true,
   "description": "Cache dependencies and build outputs",
   "main": "dist/restore/index.js",
@@ -46,8 +46,8 @@
     "jest": "^24.8.0",
     "jest-circus": "^24.7.1",
     "nock": "^11.7.0",
-    "prettier": "1.18.2",
+    "prettier": "^1.19.1",
     "ts-jest": "^24.0.2",
-    "typescript": "^3.6.4"
+    "typescript": "^3.7.3"
   }
 }
