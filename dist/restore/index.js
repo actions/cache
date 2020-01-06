@@ -1625,20 +1625,22 @@ function uploadChunk(restClient, resourceUrl, data, start, end) {
         throw new Error(`Cache service responded with ${response.statusCode} during chunk upload.`);
     });
 }
+function parseEnvNumber(key) {
+    const value = Number(process.env[key]);
+    if (Number.isNaN(value) || value < 0) {
+        return undefined;
+    }
+    return value;
+}
 function uploadFile(restClient, cacheId, archivePath) {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         // Upload Chunks
         const fileSize = fs.statSync(archivePath).size;
         const resourceUrl = getCacheApiUrl() + "caches/" + cacheId.toString();
         const fd = fs.openSync(archivePath, "r");
-        let concurrency = Number(process.env["CACHE_UPLOAD_CONCURRENCY"]); // # of HTTP requests in parallel
-        if (Number.isNaN(concurrency) || concurrency < 0) {
-            concurrency = 4;
-        }
-        let MAX_CHUNK_SIZE = Number(process.env["CACHE_UPLOAD_CHUNK_SIZE"]);
-        if (Number.isNaN(MAX_CHUNK_SIZE) || MAX_CHUNK_SIZE < 0) {
-            concurrency = 32 * 1024 * 1024; // 32 MB Chunks
-        }
+        const concurrency = (_a = parseEnvNumber("CACHE_UPLOAD_CONCURRENCY"), (_a !== null && _a !== void 0 ? _a : 4)); // # of HTTP requests in parallel
+        const MAX_CHUNK_SIZE = (_b = parseEnvNumber("CACHE_UPLOAD_CHUNK_SIZE"), (_b !== null && _b !== void 0 ? _b : 32 * 1024 * 1024)); // 32 MB Chunks
         core.debug(`Concurrency: ${concurrency} and Chunk Size: ${MAX_CHUNK_SIZE}`);
         const parallelUploads = [...new Array(concurrency).keys()];
         core.debug("Awaiting all uploads");
