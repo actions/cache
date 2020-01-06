@@ -191,6 +191,14 @@ async function uploadChunk(
     );
 }
 
+function parseEnvNumber(key: string): number | undefined {
+    const value = Number(process.env[key]);
+    if (Number.isNaN(value) || value < 0) {
+        return undefined;
+    }
+    return value;
+}
+
 async function uploadFile(
     restClient: RestClient,
     cacheId: number,
@@ -201,9 +209,9 @@ async function uploadFile(
     const resourceUrl = getCacheApiUrl() + "caches/" + cacheId.toString();
     const fd = fs.openSync(archivePath, "r");
 
-    const concurrency = Number(process.env["CACHE_UPLOAD_CONCURRENCY"]) ?? 4; // # of HTTP requests in parallel
+    const concurrency = parseEnvNumber("CACHE_UPLOAD_CONCURRENCY") ?? 4; // # of HTTP requests in parallel
     const MAX_CHUNK_SIZE =
-        Number(process.env["CACHE_UPLOAD_CHUNK_SIZE"]) ?? 32 * 1024 * 1024; // 32 MB Chunks
+        parseEnvNumber("CACHE_UPLOAD_CHUNK_SIZE") ?? 32 * 1024 * 1024; // 32 MB Chunks
     core.debug(`Concurrency: ${concurrency} and Chunk Size: ${MAX_CHUNK_SIZE}`);
 
     const parallelUploads = [...new Array(concurrency).keys()];
