@@ -72,6 +72,7 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 - [Python - pip](./examples.md#python---pip)
 - [Ruby - Gem](./examples.md#ruby---gem)
 - [Rust - Cargo](./examples.md#rust---cargo)
+- [Scala - SBT](./examples.md#scala---sbt)
 - [Swift, Objective-C - Carthage](./examples.md#swift-objective-c---carthage)
 - [Swift, Objective-C - CocoaPods](./examples.md#swift-objective-c---cocoapods)
 
