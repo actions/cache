@@ -3,6 +3,7 @@
 - [C# - NuGet](#c---nuget)
 - [Elixir - Mix](#elixir---mix)
 - [Go - Modules](#go---modules)
+- [Haskell - Cabal](#haskell---cabal)
 - [Java - Gradle](#java---gradle)
 - [Java - Maven](#java---maven)
 - [Node - npm](#node---npm)
@@ -60,6 +61,28 @@ steps:
     key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
     restore-keys: |
       ${{ runner.os }}-go-
+```
+
+## Haskell - Cabal
+
+We cache the elements of the Cabal store separately, as the entirety of `~/.cabal` can grow very large for projects with many dependencies.
+
+```yaml
+- uses: actions/cache@v1
+  name: Cache ~/.cabal/packages
+  with:
+    path: ~/.cabal/packages
+    key: ${{ runner.os }}-${{ matrix.ghc }}-cabal-packages
+- uses: actions/cache@v1
+  name: Cache ~/.cabal/store
+  with:
+    path: ~/.cabal/store
+    key: ${{ runner.os }}-${{ matrix.ghc }}-cabal-store
+- uses: actions/cache@v1
+  name: Cache dist-newstyle
+  with:
+    path: dist-newstyle
+    key: ${{ runner.os }}-${{ matrix.ghc }}-dist-newstyle
 ```
 
 ## Java - Gradle
