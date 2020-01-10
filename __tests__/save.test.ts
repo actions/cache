@@ -65,7 +65,9 @@ test("save with invalid event outputs warning", async () => {
     process.env[Events.Key] = invalidEvent;
     await run();
     expect(logWarningMock).toHaveBeenCalledWith(
-        `Event Validation Error: The event type ${invalidEvent} is not supported. Only push, pull_request events are supported at this time.`
+        `Event Validation Error: The event type ${invalidEvent} is not supported. Only ${actionUtils
+            .getSupportedEvents()
+            .join(", ")} events are supported at this time.`
     );
     expect(failedMock).toHaveBeenCalledTimes(0);
 });

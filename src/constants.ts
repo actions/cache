@@ -16,5 +16,6 @@ export enum State {
 export enum Events {
     Key = "GITHUB_EVENT_NAME",
     Push = "push",
-    PullRequest = "pull_request"
+    PullRequest = "pull_request",
+    Schedule = "schedule"
 }

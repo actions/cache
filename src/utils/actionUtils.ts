@@ -95,7 +95,7 @@ export function resolvePath(filePath: string): string {
 }
 
 export function getSupportedEvents(): string[] {
-    return [Events.Push, Events.PullRequest];
+    return [Events.Push, Events.PullRequest, Events.Schedule];
 }
 
 // Currently the cache token is only authorized for push and pull_request events
