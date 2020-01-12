@@ -248,15 +248,15 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
       ${{ runner.os }}-pip-
 ```
 
-## Ruby - Gem
+## Ruby - Bundler
 
 ```yaml
 - uses: actions/cache@v1
   with:
     path: vendor/bundle
-    key: ${{ runner.os }}-gem-${{ hashFiles('**/Gemfile.lock') }}
+    key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
     restore-keys: |
-      ${{ runner.os }}-gem-
+      ${{ runner.os }}-gems-
 ```
 When dependencies are installed later in the workflow, we must specify the same path for the bundler.
 
