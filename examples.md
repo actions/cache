@@ -10,7 +10,7 @@
 - [Node - Yarn](#node---yarn)
 - [PHP - Composer](#php---composer)
 - [Python - pip](#python---pip)
-- [Ruby - Gem](#ruby---gem)
+- [Ruby - Bundler](#ruby---bundler)
 - [Rust - Cargo](#rust---cargo)
 - [Scala - SBT](#scala---sbt)
 - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
