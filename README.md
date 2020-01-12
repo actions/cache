@@ -70,7 +70,7 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 - [Node - Yarn](./examples.md#node---yarn)
 - [PHP - Composer](./examples.md#php---composer)
 - [Python - pip](./examples.md#python---pip)
-- [Ruby - Gem](./examples.md#ruby---gem)
+- [Ruby - Bundler](./examples.md#ruby---bundler)
 - [Rust - Cargo](./examples.md#rust---cargo)
 - [Scala - SBT](./examples.md#scala---sbt)
 - [Swift, Objective-C - Carthage](./examples.md#swift-objective-c---carthage)
