@@ -16,6 +16,7 @@
 - [Scala - SBT](#scala---sbt)
 - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
+- [Swift - Swift Package Manager](#swift---swift-package-manager)
 
 ## C# - NuGet
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
@@ -372,4 +373,15 @@ When dependencies are installed later in the workflow, we must specify the same 
     key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
     restore-keys: |
       ${{ runner.os }}-pods-
+```
+
+## Swift - Swift Package Manager
+
+```yaml
+- uses: actions/cache@v1
+  with:
+    path: .build
+    key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+    restore-keys: |
+      ${{ runner.os }}-spm-
 ```
