@@ -26,8 +26,8 @@
   "dependencies": {
     "@actions/core": "^1.2.0",
     "@actions/exec": "^1.0.1",
+    "@actions/http-client": "^1.0.3",
     "@actions/io": "^1.0.1",
-    "typed-rest-client": "^1.5.0",
     "uuid": "^3.3.3"
   },
   "devDependencies": {
