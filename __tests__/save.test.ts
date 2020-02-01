@@ -414,7 +414,7 @@ test("save skipped with restore only", async () => {
     await run();
 
     expect(infoMock).toHaveBeenCalledWith(
-        "Cache action configured for restore-only, skipping save step"
+        "Cache action configured for restore-only, skipping save step."
     );
 
     expect(reserveCacheMock).toHaveBeenCalledTimes(0);

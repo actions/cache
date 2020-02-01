@@ -67,14 +67,27 @@ async function run(): Promise<void> {
                 return;
             }
 
+            const isExactKeyMatch = utils.isExactKeyMatch(
+                primaryKey,
+                cacheEntry
+            );
+
+            // Store the cache result
+            utils.setCacheState(cacheEntry);
+
+            if (core.getInput(Inputs.SaveOnly) === "true") {
+                core.info(
+                    "Cache action configured for save-only, skipping restore step."
+                );
+                utils.setCacheHitOutput(isExactKeyMatch);
+                return;
+            }
+
             const archivePath = path.join(
                 await utils.createTempDirectory(),
                 "cache.tgz"
             );
             core.debug(`Archive Path: ${archivePath}`);
-
-            // Store the cache result
-            utils.setCacheState(cacheEntry);
 
             // Download the cache from the cache entry
             await cacheHttpClient.downloadCache(
@@ -91,10 +104,6 @@ async function run(): Promise<void> {
 
             await extractTar(archivePath, cachePath);
 
-            const isExactKeyMatch = utils.isExactKeyMatch(
-                primaryKey,
-                cacheEntry
-            );
             utils.setCacheHitOutput(isExactKeyMatch);
 
             core.info(

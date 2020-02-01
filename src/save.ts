@@ -20,7 +20,7 @@ async function run(): Promise<void> {
 
         if (core.getInput(Inputs.RestoreOnly) === "true") {
             core.info(
-                "Cache action configured for restore-only, skipping save step"
+                "Cache action configured for restore-only, skipping save step."
             );
             return;
         }

@@ -401,3 +401,57 @@ test("restore with cache found for restore key", async () => {
     );
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
+
+test("restore skipped with save-only", async () => {
+    const key = "node-test";
+    const restoreKey = "node-";
+    testUtils.setInputs({
+        path: "node_modules",
+        key,
+        restoreKeys: [restoreKey],
+        saveOnly: "true"
+    });
+
+    const infoMock = jest.spyOn(core, "info");
+    const failedMock = jest.spyOn(core, "setFailed");
+    const stateMock = jest.spyOn(core, "saveState");
+
+    const cacheEntry: ArtifactCacheEntry = {
+        cacheKey: restoreKey,
+        scope: "refs/heads/master",
+        archiveLocation: "www.actionscache.test/download"
+    };
+    const getCacheMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
+    getCacheMock.mockImplementation(() => {
+        return Promise.resolve(cacheEntry);
+    });
+    const tempPath = "/foo/bar";
+
+    const createTempDirectoryMock = jest.spyOn(
+        actionUtils,
+        "createTempDirectory"
+    );
+    createTempDirectoryMock.mockImplementation(() => {
+        return Promise.resolve(tempPath);
+    });
+
+    const setCacheStateMock = jest.spyOn(actionUtils, "setCacheState");
+    const downloadCacheMock = jest.spyOn(cacheHttpClient, "downloadCache");
+    const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
+
+    await run();
+
+    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
+    expect(getCacheMock).toHaveBeenCalledWith([key, restoreKey]);
+    expect(setCacheStateMock).toHaveBeenCalledWith(cacheEntry);
+    expect(createTempDirectoryMock).toHaveBeenCalledTimes(0);
+    expect(downloadCacheMock).toHaveBeenCalledTimes(0);
+
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
+
+    expect(infoMock).toHaveBeenCalledWith(
+        "Cache action configured for save-only, skipping restore step."
+    );
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});

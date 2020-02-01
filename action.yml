@@ -14,6 +14,9 @@ inputs:
   restore-only:
     description: 'Disables saving a new cache entry when true'
     required: false
+  save-only:
+    description: 'Disables downloading and restoring a new cache entry when true'
+    required: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
