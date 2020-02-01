@@ -56,14 +56,14 @@ async function run(): Promise<void> {
 
         await createTar(archivePath, cachePath);
 
-        const fileSizeLimit = 2 * 1024 * 1024 * 1024; // 2GB per repo limit
+        const fileSizeLimit = 5 * 1024 * 1024 * 1024; // 5GB per repo limit
         const archiveFileSize = utils.getArchiveFileSize(archivePath);
         core.debug(`File Size: ${archiveFileSize}`);
         if (archiveFileSize > fileSizeLimit) {
             utils.logWarning(
                 `Cache size of ~${Math.round(
                     archiveFileSize / (1024 * 1024)
-                )} MB (${archiveFileSize} B) is over the 2GB limit, not saving cache.`
+                )} MB (${archiveFileSize} B) is over the 5GB limit, not saving cache.`
             );
             return;
         }
