@@ -140,7 +140,7 @@ For npm, cache files are stored in `~/.npm` on Posix, or `%AppData%/npm-cache` o
 
 ### Using multiple systems and `npm config`
 
-```yaml  
+```yaml
 - name: Get npm cache directory
   id: npm-cache
   run: |
@@ -171,7 +171,7 @@ The yarn cache directory will depend on your operating system and version of `ya
 
 ## PHP - Composer
 
-```yaml  
+```yaml
 - name: Get Composer Cache Directory
   id: composer-cache
   run: |
@@ -305,9 +305,9 @@ Replace `~/.local/share/renv` with the correct `path` if not using Ubuntu.
 - uses: actions/cache@v1
   with:
     path: vendor/bundle
-    key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+    key: ${{ runner.os }}-gem-${{ hashFiles('**/Gemfile.lock') }}
     restore-keys: |
-      ${{ runner.os }}-gems-
+      ${{ runner.os }}-gem-
 ```
 When dependencies are installed later in the workflow, we must specify the same path for the bundler.
 
