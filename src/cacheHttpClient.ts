@@ -4,7 +4,8 @@ import { BearerCredentialHandler } from "@actions/http-client/auth";
 import { HttpClient, HttpCodes, ITypedResponse } from "@actions/http-client";
 import {
     IHttpClientResponse,
-    IRequestOptions
+    IRequestOptions,
+    IHeaders
 } from "@actions/http-client/interfaces";
 import {
     ArtifactCacheEntry,
@@ -88,9 +89,7 @@ export async function getCacheEntry(
         return null;
     }
     if (!isSuccessStatusCode(response.statusCode)) {
-        throw new Error(
-            `Cache service responded with ${response.statusCode}`
-        );
+        throw new Error(`Cache service responded with ${response.statusCode}`);
     }
 
     const cacheResult = response.result;
