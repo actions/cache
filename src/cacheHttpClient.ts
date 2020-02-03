@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import * as fs from "fs";
 import { BearerCredentialHandler } from "@actions/http-client/auth";
-import { HttpClient, HttpCodes } from "@actions/http-client";
+import { HttpClient, HttpCodes, ITypedResponse } from "@actions/http-client";
 import {
     IHttpClientResponse,
     IRequestOptions
@@ -9,8 +9,7 @@ import {
 import {
     ArtifactCacheEntry,
     CommitCacheRequest,
-    ReserveCacheRequest,
-    ReserveCacheResponse
+    ReserveCacheRequest
 } from "./contracts";
 import * as utils from "./utils/actionUtils";
 
@@ -46,8 +45,9 @@ function getCacheApiUrl(resource: string): string {
         );
     }
 
-    core.debug(`Cache Url: ${baseUrl}`);
-    return `${baseUrl}_apis/artifactcache/${resource}`;
+    const url = `${baseUrl}_apis/artifactcache/${resource}`;
+    core.debug(`Resource Url: ${url}`);
+    return url;
 }
 
 function createAcceptHeader(type: string, apiVersion: string): string {
@@ -81,19 +81,20 @@ export async function getCacheEntry(
     const httpClient = createHttpClient();
     const resource = `cache?keys=${encodeURIComponent(keys.join(","))}`;
 
-    const response = await httpClient.get(getCacheApiUrl(resource));
-    if (response.message.statusCode === 204) {
+    const response = await httpClient.getJson<ArtifactCacheEntry>(
+        getCacheApiUrl(resource)
+    );
+    if (response.statusCode === 204) {
         return null;
     }
-    if (!isSuccessStatusCode(response.message.statusCode)) {
+    if (!isSuccessStatusCode(response.statusCode)) {
         throw new Error(
-            `Cache service responded with ${response.message.statusCode}`
+            `Cache service responded with ${response.statusCode}`
         );
     }
 
-    const body = await response.readBody();
-    const cacheResult = JSON.parse(body) as ArtifactCacheEntry;
-    const cacheDownloadUrl = cacheResult.archiveLocation;
+    const cacheResult = response.result;
+    const cacheDownloadUrl = cacheResult?.archiveLocation;
     if (!cacheDownloadUrl) {
         throw new Error("Cache not found.");
     }
@@ -132,13 +133,15 @@ export async function reserveCache(key: string): Promise<number> {
     const reserveCacheRequest: ReserveCacheRequest = {
         key
     };
-    const response = await httpClient.post(
+    const additionalHeaders = {
+        "Content-Type": "application/json"
+    };
+    const response = await httpClient.postJson<any>(
         getCacheApiUrl("caches"),
-        JSON.stringify(reserveCacheRequest)
+        reserveCacheRequest,
+        additionalHeaders
     );
-    const body = await response.readBody();
-    const cacheResult = JSON.parse(body) as ReserveCacheResponse;
-    return cacheResult.cacheId || -1;
+    return response?.result?.cacheId ?? -1;
 }
 
 function getContentRange(start: number, end: number): string {
@@ -264,11 +267,15 @@ async function commitCache(
     httpClient: HttpClient,
     cacheId: number,
     filesize: number
-): Promise<IHttpClientResponse> {
+): Promise<ITypedResponse<any>> {
     const commitCacheRequest: CommitCacheRequest = { size: filesize };
-    return await httpClient.post(
+    const additionalHeaders = {
+        "Content-Type": "application/json"
+    };
+    return await httpClient.postJson<any>(
         getCacheApiUrl(`caches/${cacheId.toString()}`),
-        JSON.stringify(commitCacheRequest)
+        commitCacheRequest,
+        additionalHeaders
     );
 }
 
@@ -289,9 +296,9 @@ export async function saveCache(
         cacheId,
         cacheSize
     );
-    if (!isSuccessStatusCode(commitCacheResponse.message.statusCode)) {
+    if (!isSuccessStatusCode(commitCacheResponse.statusCode)) {
         throw new Error(
-            `Cache service responded with ${commitCacheResponse.message.statusCode} during commit cache.`
+            `Cache service responded with ${commitCacheResponse.statusCode} during commit cache.`
         );
     }
 
