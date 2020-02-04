@@ -1,16 +1,17 @@
 import * as core from "@actions/core";
 import * as fs from "fs";
 import { BearerCredentialHandler } from "@actions/http-client/auth";
-import { HttpClient, HttpCodes, ITypedResponse } from "@actions/http-client";
+import { HttpClient, HttpCodes } from "@actions/http-client";
 import {
     IHttpClientResponse,
     IRequestOptions,
-    IHeaders
+    ITypedResponse
 } from "@actions/http-client/interfaces";
 import {
     ArtifactCacheEntry,
     CommitCacheRequest,
-    ReserveCacheRequest
+    ReserveCacheRequest,
+    ReserveCacheResponse
 } from "./contracts";
 import * as utils from "./utils/actionUtils";
 
@@ -135,7 +136,7 @@ export async function reserveCache(key: string): Promise<number> {
     const additionalHeaders = {
         "Content-Type": "application/json"
     };
-    const response = await httpClient.postJson<any>(
+    const response = await httpClient.postJson<ReserveCacheResponse>(
         getCacheApiUrl("caches"),
         reserveCacheRequest,
         additionalHeaders
@@ -266,12 +267,12 @@ async function commitCache(
     httpClient: HttpClient,
     cacheId: number,
     filesize: number
-): Promise<ITypedResponse<any>> {
+): Promise<ITypedResponse<null>> {
     const commitCacheRequest: CommitCacheRequest = { size: filesize };
     const additionalHeaders = {
         "Content-Type": "application/json"
     };
-    return await httpClient.postJson<any>(
+    return await httpClient.postJson<null>(
         getCacheApiUrl(`caches/${cacheId.toString()}`),
         commitCacheRequest,
         additionalHeaders
