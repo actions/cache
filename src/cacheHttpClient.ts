@@ -133,13 +133,9 @@ export async function reserveCache(key: string): Promise<number> {
     const reserveCacheRequest: ReserveCacheRequest = {
         key
     };
-    const additionalHeaders = {
-        "Content-Type": "application/json"
-    };
     const response = await httpClient.postJson<ReserveCacheResponse>(
         getCacheApiUrl("caches"),
-        reserveCacheRequest,
-        additionalHeaders
+        reserveCacheRequest
     );
     return response?.result?.cacheId ?? -1;
 }
@@ -269,13 +265,9 @@ async function commitCache(
     filesize: number
 ): Promise<ITypedResponse<null>> {
     const commitCacheRequest: CommitCacheRequest = { size: filesize };
-    const additionalHeaders = {
-        "Content-Type": "application/json"
-    };
     return await httpClient.postJson<null>(
         getCacheApiUrl(`caches/${cacheId.toString()}`),
-        commitCacheRequest,
-        additionalHeaders
+        commitCacheRequest
     );
 }
 
