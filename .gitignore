@@ -94,3 +94,6 @@ typings/
 
 # DynamoDB Local files
 .dynamodb/
+
+# Text editor files
+.vscode/
