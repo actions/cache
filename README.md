@@ -1,6 +1,6 @@
 # cache
 
-This GitHub Action allows caching dependencies and build outputs to improve workflow execution time.
+This action allows caching dependencies and build outputs to improve workflow execution time.
 
 <a href="https://github.com/actions/cache/actions?query=workflow%3ATests"><img alt="GitHub Actions status" src="https://github.com/actions/cache/workflows/Tests/badge.svg?branch=master&event=push"></a>
 
@@ -63,21 +63,24 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 - [C# - Nuget](./examples.md#c---nuget)
 - [Elixir - Mix](./examples.md#elixir---mix)
 - [Go - Modules](./examples.md#go---modules)
+- [Haskell - Cabal](./examples.md#haskell---cabal)
 - [Java - Gradle](./examples.md#java---gradle)
 - [Java - Maven](./examples.md#java---maven)
 - [Node - npm](./examples.md#node---npm)
 - [Node - Yarn](./examples.md#node---yarn)
 - [PHP - Composer](./examples.md#php---composer)
 - [Python - pip](./examples.md#python---pip)
-- [Ruby - Gem](./examples.md#ruby---gem)
+- [R - renv](./examples.md#r---renv)
+- [Ruby - Bundler](./examples.md#ruby---bundler)
 - [Rust - Cargo](./examples.md#rust---cargo)
+- [Scala - SBT](./examples.md#scala---sbt)
 - [Swift, Objective-C - Carthage](./examples.md#swift-objective-c---carthage)
 - [Swift, Objective-C - CocoaPods](./examples.md#swift-objective-c---cocoapods)
-
+- [Swift - Swift Package Manager](./examples.md#swift---swift-package-manager)
 
 ## Cache Limits
 
-Individual caches are limited to 400MB and a repository can have up to 2GB of caches. Once the 2GB limit is reached, older caches will be evicted based on when the cache was last accessed.  Caches that are not accessed within the last week will also be evicted.
+A repository can have up to 2GB of caches. Once the 2GB limit is reached, older caches will be evicted based on when the cache was last accessed.  Caches that are not accessed within the last week will also be evicted.
 
 ## Skipping steps based on cache-hit
 

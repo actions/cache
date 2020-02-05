@@ -1,13 +1,12 @@
 import * as core from "@actions/core";
 import * as fs from "fs";
-import { BearerCredentialHandler } from "typed-rest-client/Handlers";
-import { HttpClient, HttpCodes } from "typed-rest-client/HttpClient";
-import { IHttpClientResponse } from "typed-rest-client/Interfaces";
+import { BearerCredentialHandler } from "@actions/http-client/auth";
+import { HttpClient, HttpCodes } from "@actions/http-client";
 import {
+    IHttpClientResponse,
     IRequestOptions,
-    RestClient,
-    IRestResponse
-} from "typed-rest-client/RestClient";
+    ITypedResponse
+} from "@actions/http-client/interfaces";
 import {
     ArtifactCacheEntry,
     CommitCacheRequest,
@@ -16,11 +15,17 @@ import {
 } from "./contracts";
 import * as utils from "./utils/actionUtils";
 
-function isSuccessStatusCode(statusCode: number): boolean {
+function isSuccessStatusCode(statusCode?: number): boolean {
+    if (!statusCode) {
+        return false;
+    }
     return statusCode >= 200 && statusCode < 300;
 }
 
-function isRetryableStatusCode(statusCode: number): boolean {
+function isRetryableStatusCode(statusCode?: number): boolean {
+    if (!statusCode) {
+        return false;
+    }
     const retryableStatusCodes = [
         HttpCodes.BadGateway,
         HttpCodes.ServiceUnavailable,
@@ -29,7 +34,7 @@ function isRetryableStatusCode(statusCode: number): boolean {
     return retryableStatusCodes.includes(statusCode);
 }
 
-function getCacheApiUrl(): string {
+function getCacheApiUrl(resource: string): string {
     // Ideally we just use ACTIONS_CACHE_URL
     const baseUrl: string = (
         process.env["ACTIONS_CACHE_URL"] ||
@@ -42,8 +47,9 @@ function getCacheApiUrl(): string {
         );
     }
 
-    core.debug(`Cache Url: ${baseUrl}`);
-    return `${baseUrl}_apis/artifactcache/`;
+    const url = `${baseUrl}_apis/artifactcache/${resource}`;
+    core.debug(`Resource Url: ${url}`);
+    return url;
 }
 
 function createAcceptHeader(type: string, apiVersion: string): string {
@@ -52,30 +58,33 @@ function createAcceptHeader(type: string, apiVersion: string): string {
 
 function getRequestOptions(): IRequestOptions {
     const requestOptions: IRequestOptions = {
-        acceptHeader: createAcceptHeader("application/json", "6.0-preview.1")
+        headers: {
+            Accept: createAcceptHeader("application/json", "6.0-preview.1")
+        }
     };
 
     return requestOptions;
 }
 
-function createRestClient(): RestClient {
+function createHttpClient(): HttpClient {
     const token = process.env["ACTIONS_RUNTIME_TOKEN"] || "";
     const bearerCredentialHandler = new BearerCredentialHandler(token);
 
-    return new RestClient("actions/cache", getCacheApiUrl(), [
-        bearerCredentialHandler
-    ]);
+    return new HttpClient(
+        "actions/cache",
+        [bearerCredentialHandler],
+        getRequestOptions()
+    );
 }
 
 export async function getCacheEntry(
     keys: string[]
 ): Promise<ArtifactCacheEntry | null> {
-    const restClient = createRestClient();
+    const httpClient = createHttpClient();
     const resource = `cache?keys=${encodeURIComponent(keys.join(","))}`;
 
-    const response = await restClient.get<ArtifactCacheEntry>(
-        resource,
-        getRequestOptions()
+    const response = await httpClient.getJson<ArtifactCacheEntry>(
+        getCacheApiUrl(resource)
     );
     if (response.statusCode === 204) {
         return null;
@@ -83,6 +92,7 @@ export async function getCacheEntry(
     if (!isSuccessStatusCode(response.statusCode)) {
         throw new Error(`Cache service responded with ${response.statusCode}`);
     }
+
     const cacheResult = response.result;
     const cacheDownloadUrl = cacheResult?.archiveLocation;
     if (!cacheDownloadUrl) {
@@ -118,17 +128,15 @@ export async function downloadCache(
 
 // Reserve Cache
 export async function reserveCache(key: string): Promise<number> {
-    const restClient = createRestClient();
+    const httpClient = createHttpClient();
 
     const reserveCacheRequest: ReserveCacheRequest = {
         key
     };
-    const response = await restClient.create<ReserveCacheResponse>(
-        "caches",
-        reserveCacheRequest,
-        getRequestOptions()
+    const response = await httpClient.postJson<ReserveCacheResponse>(
+        getCacheApiUrl("caches"),
+        reserveCacheRequest
     );
-
     return response?.result?.cacheId ?? -1;
 }
 
@@ -142,7 +150,7 @@ function getContentRange(start: number, end: number): string {
 }
 
 async function uploadChunk(
-    restClient: RestClient,
+    httpClient: HttpClient,
     resourceUrl: string,
     data: NodeJS.ReadableStream,
     start: number,
@@ -156,38 +164,37 @@ async function uploadChunk(
             end
         )}`
     );
-    const requestOptions = getRequestOptions();
-    requestOptions.additionalHeaders = {
+    const additionalHeaders = {
         "Content-Type": "application/octet-stream",
         "Content-Range": getContentRange(start, end)
     };
 
-    const uploadChunkRequest = async (): Promise<IRestResponse<void>> => {
-        return await restClient.uploadStream<void>(
+    const uploadChunkRequest = async (): Promise<IHttpClientResponse> => {
+        return await httpClient.sendStream(
             "PATCH",
             resourceUrl,
             data,
-            requestOptions
+            additionalHeaders
         );
     };
 
     const response = await uploadChunkRequest();
-    if (isSuccessStatusCode(response.statusCode)) {
+    if (isSuccessStatusCode(response.message.statusCode)) {
         return;
     }
 
-    if (isRetryableStatusCode(response.statusCode)) {
+    if (isRetryableStatusCode(response.message.statusCode)) {
         core.debug(
-            `Received ${response.statusCode}, retrying chunk at offset ${start}.`
+            `Received ${response.message.statusCode}, retrying chunk at offset ${start}.`
         );
         const retryResponse = await uploadChunkRequest();
-        if (isSuccessStatusCode(retryResponse.statusCode)) {
+        if (isSuccessStatusCode(retryResponse.message.statusCode)) {
             return;
         }
     }
 
     throw new Error(
-        `Cache service responded with ${response.statusCode} during chunk upload.`
+        `Cache service responded with ${response.message.statusCode} during chunk upload.`
     );
 }
 
@@ -200,13 +207,13 @@ function parseEnvNumber(key: string): number | undefined {
 }
 
 async function uploadFile(
-    restClient: RestClient,
+    httpClient: HttpClient,
     cacheId: number,
     archivePath: string
 ): Promise<void> {
     // Upload Chunks
     const fileSize = fs.statSync(archivePath).size;
-    const resourceUrl = getCacheApiUrl() + "caches/" + cacheId.toString();
+    const resourceUrl = getCacheApiUrl(`caches/${cacheId.toString()}`);
     const fd = fs.openSync(archivePath, "r");
 
     const concurrency = parseEnvNumber("CACHE_UPLOAD_CONCURRENCY") ?? 4; // # of HTTP requests in parallel
@@ -237,7 +244,7 @@ async function uploadFile(
                     });
 
                     await uploadChunk(
-                        restClient,
+                        httpClient,
                         resourceUrl,
                         chunk,
                         start,
@@ -253,16 +260,14 @@ async function uploadFile(
 }
 
 async function commitCache(
-    restClient: RestClient,
+    httpClient: HttpClient,
     cacheId: number,
     filesize: number
-): Promise<IRestResponse<void>> {
-    const requestOptions = getRequestOptions();
+): Promise<ITypedResponse<null>> {
     const commitCacheRequest: CommitCacheRequest = { size: filesize };
-    return await restClient.create(
-        `caches/${cacheId.toString()}`,
-        commitCacheRequest,
-        requestOptions
+    return await httpClient.postJson<null>(
+        getCacheApiUrl(`caches/${cacheId.toString()}`),
+        commitCacheRequest
     );
 }
 
@@ -270,16 +275,16 @@ export async function saveCache(
     cacheId: number,
     archivePath: string
 ): Promise<void> {
-    const restClient = createRestClient();
+    const httpClient = createHttpClient();
 
     core.debug("Upload cache");
-    await uploadFile(restClient, cacheId, archivePath);
+    await uploadFile(httpClient, cacheId, archivePath);
 
     // Commit Cache
     core.debug("Commiting cache");
     const cacheSize = utils.getArchiveFileSize(archivePath);
     const commitCacheResponse = await commitCache(
-        restClient,
+        httpClient,
         cacheId,
         cacheSize
     );

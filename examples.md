@@ -3,16 +3,20 @@
 - [C# - NuGet](#c---nuget)
 - [Elixir - Mix](#elixir---mix)
 - [Go - Modules](#go---modules)
+- [Haskell - Cabal](#haskell---cabal)
 - [Java - Gradle](#java---gradle)
 - [Java - Maven](#java---maven)
 - [Node - npm](#node---npm)
 - [Node - Yarn](#node---yarn)
 - [PHP - Composer](#php---composer)
 - [Python - pip](#python---pip)
-- [Ruby - Gem](#ruby---gem)
+- [R - renv](#r---renv)
+- [Ruby - Bundler](#ruby---bundler)
 - [Rust - Cargo](#rust---cargo)
+- [Scala - SBT](#scala---sbt)
 - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
+- [Swift - Swift Package Manager](#swift---swift-package-manager)
 
 ## C# - NuGet
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
@@ -60,6 +64,28 @@ steps:
     key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
     restore-keys: |
       ${{ runner.os }}-go-
+```
+
+## Haskell - Cabal
+
+We cache the elements of the Cabal store separately, as the entirety of `~/.cabal` can grow very large for projects with many dependencies.
+
+```yaml
+- uses: actions/cache@v1
+  name: Cache ~/.cabal/packages
+  with:
+    path: ~/.cabal/packages
+    key: ${{ runner.os }}-${{ matrix.ghc }}-cabal-packages
+- uses: actions/cache@v1
+  name: Cache ~/.cabal/store
+  with:
+    path: ~/.cabal/store
+    key: ${{ runner.os }}-${{ matrix.ghc }}-cabal-store
+- uses: actions/cache@v1
+  name: Cache dist-newstyle
+  with:
+    path: dist-newstyle
+    key: ${{ runner.os }}-${{ matrix.ghc }}-dist-newstyle
 ```
 
 ## Java - Gradle
@@ -224,15 +250,64 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
       ${{ runner.os }}-pip-
 ```
 
-## Ruby - Gem
+## R - renv
+
+For renv, the cache directory will vary by OS. Look at https://rstudio.github.io/renv/articles/renv.html#cache
+
+Locations:
+ - Ubuntu: `~/.local/share/renv`
+ - macOS: `~/Library/Application Support/renv`
+ - Windows: `%LOCALAPPDATA%/renv`
+
+### Simple example
+```yaml
+- uses: actions/cache@v1
+  with:
+    path: ~/.local/share/renv
+    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-renv-
+```
+
+Replace `~/.local/share/renv` with the correct `path` if not using Ubuntu.
+
+### Multiple OS's in a workflow
+
+```yaml
+- uses: actions/cache@v1
+  if: startsWith(runner.os, 'Linux')
+  with:
+    path: ~/.local/share/renv
+    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-renv-
+
+- uses: actions/cache@v1
+  if: startsWith(runner.os, 'macOS')
+  with:
+    path: ~/Library/Application Support/renv
+    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-renv-
+
+- uses: actions/cache@v1
+  if: startsWith(runner.os, 'Windows')
+  with:
+    path: ~\AppData\Local\renv
+    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-renv-
+```
+
+## Ruby - Bundler
 
 ```yaml
 - uses: actions/cache@v1
   with:
     path: vendor/bundle
-    key: ${{ runner.os }}-gem-${{ hashFiles('**/Gemfile.lock') }}
+    key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
     restore-keys: |
-      ${{ runner.os }}-gem-
+      ${{ runner.os }}-gems-
 ```
 When dependencies are installed later in the workflow, we must specify the same path for the bundler.
 
@@ -263,6 +338,21 @@ When dependencies are installed later in the workflow, we must specify the same 
     key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 ```
 
+## Scala - SBT
+
+```yaml
+- name: Cache SBT ivy cache
+  uses: actions/cache@v1
+  with:
+    path: ~/.ivy2/cache
+    key: ${{ runner.os }}-sbt-ivy-cache-${{ hashFiles('**/build.sbt') }}
+- name: Cache SBT
+  uses: actions/cache@v1
+  with:
+    path: ~/.sbt
+    key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
+```
+
 ## Swift, Objective-C - Carthage
 
 ```yaml
@@ -283,4 +373,15 @@ When dependencies are installed later in the workflow, we must specify the same 
     key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
     restore-keys: |
       ${{ runner.os }}-pods-
+```
+
+## Swift - Swift Package Manager
+
+```yaml
+- uses: actions/cache@v1
+  with:
+    path: .build
+    key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+    restore-keys: |
+      ${{ runner.os }}-spm-
 ```
