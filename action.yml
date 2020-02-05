@@ -1,4 +1,4 @@
-name: 'Cache Artifacts'
+name: 'Cache'
 description: 'Cache artifacts like dependencies and build outputs to improve workflow execution time'
 author: 'GitHub'
 inputs:
