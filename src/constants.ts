@@ -1,6 +1,7 @@
 export enum Inputs {
     Key = "key",
     Path = "path",
+    Paths = "paths",
     RestoreKeys = "restore-keys"
 }
 
