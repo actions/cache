@@ -46,6 +46,16 @@ async function run(): Promise<void> {
         const cachePath = utils.resolvePath(
             core.getInput(Inputs.Path, { required: true })
         );
+
+        /** TODO use `core.getInputList` instead - see https://github.com/actions/toolkit/pull/336 */
+        let cachePathList = core
+            .getInput(Inputs.Paths, { required: false })
+            .split("\n")
+            .filter(x => x !== "")
+            .map(path => utils.resolvePath(path));
+
+        cachePathList = [cachePath, ...cachePathList];
+
         core.debug(`Cache Path: ${cachePath}`);
 
         const archivePath = path.join(
