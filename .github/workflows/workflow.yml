@@ -52,3 +52,45 @@ jobs:
 
     - name: Build & Test
       run: npm run test
+
+  test-proxy:
+    name: Test on ubuntu-latest
+    runs-on: ubuntu-latest
+    services:
+      squid:
+        image: dakale/squid
+        ports: ['3128:3128']
+        options: '--health-cmd "exit 0" --health-interval 3s'
+    env:
+      http_proxy: http://localhost:3128
+      https_proxy: http://localhost:3128
+    steps:
+    - uses: actions/checkout@v1
+
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '12.x'
+
+    - name: Get npm cache directory
+      id: npm-cache
+      run: |
+        echo "::set-output name=dir::$(npm config get cache)"
+
+    - uses: ./
+      with:
+        path: ${{ steps.npm-cache.outputs.dir }}
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+
+    - name: Install
+      run: npm ci
+
+    - name: Prettier Format Check
+      run: npm run format-check
+
+    - name: ESLint Check
+      run: npm run lint
+
+    - name: Build & Test
+      run: npm run test
