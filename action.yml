@@ -5,6 +5,9 @@ inputs:
   path:
     description: 'A directory to store and save the cache'
     required: true
+  paths:
+    description: 'A list of directories to store and save the cache'
+    required: false
   key:
     description: 'An explicit key for restoring and saving the cache'
     required: true
