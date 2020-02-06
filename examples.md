@@ -162,7 +162,7 @@ The yarn cache directory will depend on your operating system and version of `ya
   run: echo "::set-output name=dir::$(yarn cache dir)"
 
 - uses: actions/cache@v1
-  id: yarn-cache
+  id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
   with:
     path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
     key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
