@@ -56,30 +56,32 @@ async function run(): Promise<void> {
 
         cachePathList = [cachePath, ...cachePathList];
 
-        core.debug(`Cache Path: ${cachePath}`);
+        for (const cachePath of cachePathList) {
+            core.debug(`Cache Path: ${cachePath}`);
 
-        const archivePath = path.join(
-            await utils.createTempDirectory(),
-            "cache.tgz"
-        );
-        core.debug(`Archive Path: ${archivePath}`);
-
-        await createTar(archivePath, cachePath);
-
-        const fileSizeLimit = 5 * 1024 * 1024 * 1024; // 5GB per repo limit
-        const archiveFileSize = utils.getArchiveFileSize(archivePath);
-        core.debug(`File Size: ${archiveFileSize}`);
-        if (archiveFileSize > fileSizeLimit) {
-            utils.logWarning(
-                `Cache size of ~${Math.round(
-                    archiveFileSize / (1024 * 1024)
-                )} MB (${archiveFileSize} B) is over the 5GB limit, not saving cache.`
+            const archivePath = path.join(
+                await utils.createTempDirectory(),
+                "cache.tgz"
             );
-            return;
-        }
+            core.debug(`Archive Path: ${archivePath}`);
 
-        core.debug(`Saving Cache (ID: ${cacheId})`);
-        await cacheHttpClient.saveCache(cacheId, archivePath);
+            await createTar(archivePath, cachePath);
+
+            const fileSizeLimit = 5 * 1024 * 1024 * 1024; // 5GB per repo limit
+            const archiveFileSize = utils.getArchiveFileSize(archivePath);
+            core.debug(`File Size: ${archiveFileSize}`);
+            if (archiveFileSize > fileSizeLimit) {
+                utils.logWarning(
+                    `Cache size of ~${Math.round(
+                        archiveFileSize / (1024 * 1024)
+                    )} MB (${archiveFileSize} B) is over the 5GB limit, not saving cache.`
+                );
+                return;
+            }
+
+            core.debug(`Saving Cache (ID: ${cacheId})`);
+            await cacheHttpClient.saveCache(cacheId, archivePath);
+        }
     } catch (error) {
         utils.logWarning(error.message);
     }
