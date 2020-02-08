@@ -15,10 +15,16 @@ async function getTarPath(): Promise<string> {
 }
 
 async function execTar(args: string[]): Promise<void> {
+    const IS_WINDOWS = process.platform === "win32";
     try {
-        await exec(`"${await getTarPath()}"`, args);
+        const tarPath = await getTarPath();
+        let tarExec = tarPath;
+        if (!IS_WINDOWS) {
+            tarExec = "sudo";
+            args = [`${tarPath}`, ...args];
+        }
+        await exec(`"${tarExec}"`, args);
     } catch (error) {
-        const IS_WINDOWS = process.platform === "win32";
         if (IS_WINDOWS) {
             throw new Error(
                 `Tar failed with error: ${error?.message}. Ensure BSD tar is installed and on the PATH.`

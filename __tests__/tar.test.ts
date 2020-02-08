@@ -25,14 +25,15 @@ test("extract tar", async () => {
     const tarPath = IS_WINDOWS
         ? `${process.env["windir"]}\\System32\\tar.exe`
         : "tar";
+    let tarParams = ["-xz", "-f", archivePath, "-C", targetDirectory];
+    let tarExec = `${tarPath}`;
+    if (!IS_WINDOWS) {
+        tarExec = "sudo";
+        tarParams = [`${tarPath}`, ...tarParams];
+    }
+
     expect(execMock).toHaveBeenCalledTimes(1);
-    expect(execMock).toHaveBeenCalledWith(`"${tarPath}"`, [
-        "-xz",
-        "-f",
-        archivePath,
-        "-C",
-        targetDirectory
-    ]);
+    expect(execMock).toHaveBeenCalledWith(`"${tarExec}"`, tarParams);
 });
 
 test("create tar", async () => {
@@ -46,13 +47,13 @@ test("create tar", async () => {
     const tarPath = IS_WINDOWS
         ? `${process.env["windir"]}\\System32\\tar.exe`
         : "tar";
+    let tarParams = ["-cz", "-f", archivePath, "-C", sourceDirectory, "."];
+    let tarExec = `${tarPath}`;
+    if (!IS_WINDOWS) {
+        tarExec = "sudo";
+        tarParams = [`${tarPath}`, ...tarParams];
+    }
+
     expect(execMock).toHaveBeenCalledTimes(1);
-    expect(execMock).toHaveBeenCalledWith(`"${tarPath}"`, [
-        "-cz",
-        "-f",
-        archivePath,
-        "-C",
-        sourceDirectory,
-        "."
-    ]);
+    expect(execMock).toHaveBeenCalledWith(`"${tarExec}"`, tarParams);
 });
