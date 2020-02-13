@@ -5,12 +5,11 @@
   "description": "Cache dependencies and build outputs",
   "main": "dist/restore/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && ncc build -o dist/restore src/restore.ts && ncc build -o dist/save src/save.ts",
     "test": "tsc --noEmit && jest --coverage",
     "lint": "eslint **/*.ts --cache",
     "format": "prettier --write **/*.ts",
-    "format-check": "prettier --check **/*.ts",
-    "release": "ncc build -o dist/restore src/restore.ts && ncc build -o dist/save src/save.ts && git add -f dist/"
+    "format-check": "prettier --check **/*.ts"
   },
   "repository": {
     "type": "git",
