@@ -140,7 +140,7 @@ For npm, cache files are stored in `~/.npm` on Posix, or `%AppData%/npm-cache` o
 
 ### Using multiple systems and `npm config`
 
-```yaml  
+```yaml
 - name: Get npm cache directory
   id: npm-cache
   run: |
@@ -157,21 +157,23 @@ For npm, cache files are stored in `~/.npm` on Posix, or `%AppData%/npm-cache` o
 The yarn cache directory will depend on your operating system and version of `yarn`. See https://yarnpkg.com/lang/en/docs/cli/cache/ for more info.
 
 ```yaml
-- name: Get yarn cache
-  id: yarn-cache
+- name: Get yarn cache directory path
+  id: yarn-cache-dir-path
   run: echo "::set-output name=dir::$(yarn cache dir)"
 
 - uses: actions/cache@v1
+  id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
   with:
-    path: ${{ steps.yarn-cache.outputs.dir }}
+    path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
     key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
     restore-keys: |
       ${{ runner.os }}-yarn-
 ```
 
+
 ## PHP - Composer
 
-```yaml  
+```yaml
 - name: Get Composer Cache Directory
   id: composer-cache
   run: |
