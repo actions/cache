@@ -136,7 +136,7 @@ test("restore with no cache found", async () => {
     expect(failedMock).toHaveBeenCalledTimes(0);
 
     expect(infoMock).toHaveBeenCalledWith(
-        `Cache not found for input keys: ${key}.`
+        `Cache not found for input keys: ${key}`
     );
 });
 
@@ -195,7 +195,7 @@ test("restore with restore keys and no cache found", async () => {
     expect(failedMock).toHaveBeenCalledTimes(0);
 
     expect(infoMock).toHaveBeenCalledWith(
-        `Cache not found for input keys: ${key}, ${restoreKey}.`
+        `Cache not found for input keys: ${key}, ${restoreKey}`
     );
 });
 
