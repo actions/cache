@@ -1,22 +1,32 @@
 # Examples
 
-- [C# - NuGet](#c---nuget)
-- [Elixir - Mix](#elixir---mix)
-- [Go - Modules](#go---modules)
-- [Haskell - Cabal](#haskell---cabal)
-- [Java - Gradle](#java---gradle)
-- [Java - Maven](#java---maven)
-- [Node - npm](#node---npm)
-- [Node - Yarn](#node---yarn)
-- [PHP - Composer](#php---composer)
-- [Python - pip](#python---pip)
-- [R - renv](#r---renv)
-- [Ruby - Bundler](#ruby---bundler)
-- [Rust - Cargo](#rust---cargo)
-- [Scala - SBT](#scala---sbt)
-- [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
-- [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
-- [Swift - Swift Package Manager](#swift---swift-package-manager)
+- [Examples](#examples)
+  - [C# - NuGet](#c---nuget)
+  - [Elixir - Mix](#elixir---mix)
+  - [Go - Modules](#go---modules)
+  - [Haskell - Cabal](#haskell---cabal)
+  - [Java - Gradle](#java---gradle)
+  - [Java - Maven](#java---maven)
+  - [Node - npm](#node---npm)
+    - [macOS and Ubuntu](#macos-and-ubuntu)
+    - [Windows](#windows)
+    - [Using multiple systems and `npm config`](#using-multiple-systems-and-npm-config)
+  - [Node - Yarn](#node---yarn)
+  - [OCaml/Reason - esy](#ocamlreason---esy)
+  - [PHP - Composer](#php---composer)
+  - [Python - pip](#python---pip)
+    - [Simple example](#simple-example)
+    - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow)
+    - [Using a script to get cache location](#using-a-script-to-get-cache-location)
+  - [R - renv](#r---renv)
+    - [Simple example](#simple-example-1)
+    - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow-1)
+  - [Ruby - Bundler](#ruby---bundler)
+  - [Rust - Cargo](#rust---cargo)
+  - [Scala - SBT](#scala---sbt)
+  - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
+  - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
+  - [Swift - Swift Package Manager](#swift---swift-package-manager)
 
 ## C# - NuGet
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
@@ -168,6 +178,33 @@ The yarn cache directory will depend on your operating system and version of `ya
     key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
     restore-keys: |
       ${{ runner.os }}-yarn-
+```
+
+## OCaml/Reason - esy
+Esy allows you to export built dependencies and import pre-built dependencies.
+```yaml
+    - name: Restore Cache
+      id: restore-cache
+      uses: actions/cache@v1
+      with:
+        path: _export
+        key:  ${{ runner.os }}-esy-${{ hashFiles('esy.lock/index.json') }}
+        restore-keys: |
+          ${{ runner.os }}-esy-
+    - name: Esy install
+      run: 'esy install'
+    - name: Import Cache
+      run: |
+        esy import-dependencies _export
+        rm -rf _export
+
+    ...(Build job)...
+
+    # Re-export dependencies if anything has changed or if it is the first time
+    - name: Setting dependency cache 
+      run: |
+        esy export-dependencies
+      if: steps.restore-cache.outputs.cache-hit != 'true'
 ```
 
 
