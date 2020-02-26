@@ -176,7 +176,7 @@ Esy allows you to export built dependencies and import pre-built dependencies.
 ```yaml
     - name: Restore Cache
       id: restore-cache
-      uses: actions/cache@v1.1.2
+      uses: actions/cache@v1
       with:
         path: _export
         key:  ${{ runner.os }}-esy-${{ hashFiles('esy.lock/index.json') }}
