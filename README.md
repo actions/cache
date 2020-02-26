@@ -68,7 +68,7 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 - [Java - Maven](./examples.md#java---maven)
 - [Node - npm](./examples.md#node---npm)
 - [Node - Yarn](./examples.md#node---yarn)
-- [OCaml - esy](./examples.md#ocaml---esy)
+- [OCaml - esy](./examples.md##ocamlreason---esy)
 - [PHP - Composer](./examples.md#php---composer)
 - [Python - pip](./examples.md#python---pip)
 - [R - renv](./examples.md#r---renv)
