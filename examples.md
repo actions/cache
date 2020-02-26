@@ -8,6 +8,7 @@
 - [Java - Maven](#java---maven)
 - [Node - npm](#node---npm)
 - [Node - Yarn](#node---yarn)
+- [OCaml- esy](#ocaml---esy)
 - [PHP - Composer](#php---composer)
 - [Python - pip](#python---pip)
 - [R - renv](#r---renv)
@@ -168,6 +169,33 @@ The yarn cache directory will depend on your operating system and version of `ya
     key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
     restore-keys: |
       ${{ runner.os }}-yarn-
+```
+
+## OCaml - esy
+Esy allows you to export built dependencies and import pre-built dependencies.
+```yaml
+    - name: Restore Cache
+      id: restore-cache
+      uses: actions/cache@v1.1.2
+      with:
+        path: _export
+        key:  ${{ runner.os }}-esy-${{ hashFiles('esy.lock/index.json') }}
+        restore-keys: |
+          ${{ runner.os }}-esy-
+    - name: Esy install
+      run: 'esy install'
+    - name: Import Cache
+      run: |
+        esy import-dependencies _export
+        rm -rf _export
+
+    ...(Build job)...
+
+    # Re-export dependencies if anything has changed or if it is the first time
+    - name: Setting dependency cache 
+      run: |
+        esy export-dependencies
+      if: steps.restore-cache.outputs.cache-hit != 'true'
 ```
 
 
