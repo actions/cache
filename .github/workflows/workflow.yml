@@ -1,11 +1,11 @@
 name: Tests
 
 on:
-  pull_request:
-    branches:
-      - master
-    paths-ignore:
-      - '**.md'
+  # pull_request:
+  #   branches:
+  #     - master
+  #   paths-ignore:
+  #     - '**.md'
   push:
     branches:
       - master

@@ -28,6 +28,7 @@ export async function createTempDirectory(): Promise<string> {
         }
         tempDirectory = path.join(baseLocation, "actions", "temp");
     }
+
     const dest = path.join(tempDirectory, uuidV4.default());
     await io.mkdirP(dest);
     return dest;
@@ -82,17 +83,21 @@ export function logWarning(message: string): void {
     core.info(`${warningPrefix}${message}`);
 }
 
-export async function expandPaths(patterns: string[]): Promise<string[]> {
+export async function resolvePaths(patterns: string[]): Promise<string[]> {
     const paths: string[] = [];
     const workspace = process.env["GITHUB_WORKSPACE"] ?? process.cwd();
+    const globber = await glob.create(patterns.join("\n"), {
+        implicitDescendants: false
+    });
 
-    const globber = await glob.create(patterns.join("\n"));
-    const files = await globber.glob();
+    for await (const file of globber.globGenerator()) {
+        const relativeFile = path.relative(workspace, file);
+        core.debug(`Matched: ${relativeFile}`);
+        // Paths are made relative so the tar entries are all relative to the root of the workspace.
+        paths.push(`${relativeFile}`);
+    }
 
-    paths.push(...files);
-
-    // Convert paths to relative paths here?
-    return paths.map(x => path.relative(workspace, x));
+    return paths;
 }
 
 export function getSupportedEvents(): string[] {

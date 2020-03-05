@@ -1,6 +1,8 @@
-import { exec } from "@actions/exec";
 import * as io from "@actions/io";
-import { existsSync } from "fs";
+import * as path from "path";
+import { CacheFilename } from "./constants";
+import { exec } from "@actions/exec";
+import { existsSync, writeFileSync } from "fs";
 
 async function getTarPath(): Promise<string> {
     // Explicitly use BSD Tar on Windows
@@ -14,10 +16,12 @@ async function getTarPath(): Promise<string> {
     return await io.which("tar", true);
 }
 
-async function execTar(args: string[]): Promise<void> {
+async function execTar(args: string[], cwd?: string): Promise<void> {
     try {
-        await exec(`"${await getTarPath()}"`, args);
+        await exec(`"${await getTarPath()}"`, args, { cwd: cwd });
     } catch (error) {
+        console.log("error", error);
+
         const IS_WINDOWS = process.platform === "win32";
         if (IS_WINDOWS) {
             throw new Error(
@@ -41,18 +45,25 @@ export async function extractTar(archivePath: string): Promise<void> {
 }
 
 export async function createTar(
-    archivePath: string,
+    archiveFolder: string,
     sourceDirectories: string[]
 ): Promise<void> {
     // TODO: will want to stream sourceDirectories into tar
+    const manifestFilename = "manifest.txt";
+    writeFileSync(
+        path.join(archiveFolder, manifestFilename),
+        sourceDirectories.join("\n")
+    );
+
     const workingDirectory = getWorkingDirectory();
     const args = [
         "-cz",
         "-f",
-        archivePath,
+        CacheFilename,
         "-C",
         workingDirectory,
-        sourceDirectories.join(" ")
+        "--files-from",
+        manifestFilename
     ];
-    await execTar(args);
+    await execTar(args, archiveFolder);
 }

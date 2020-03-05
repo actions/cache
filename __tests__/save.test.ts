@@ -40,7 +40,7 @@ beforeAll(() => {
         return actualUtils.getSupportedEvents();
     });
 
-    jest.spyOn(actionUtils, "expandPaths").mockImplementation(
+    jest.spyOn(actionUtils, "resolvePaths").mockImplementation(
         async filePaths => {
             return filePaths.map(x => path.resolve(x));
         }

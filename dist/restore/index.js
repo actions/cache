@@ -3151,6 +3151,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __asyncValues = (this && this.__asyncValues) || function (o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+};
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
@@ -3233,19 +3240,35 @@ function logWarning(message) {
     core.info(`${warningPrefix}${message}`);
 }
 exports.logWarning = logWarning;
-function expandPaths(patterns) {
-    var _a;
+function resolvePaths(patterns) {
+    var e_1, _a;
+    var _b;
     return __awaiter(this, void 0, void 0, function* () {
         const paths = [];
-        const workspace = (_a = process.env["GITHUB_WORKSPACE"], (_a !== null && _a !== void 0 ? _a : process.cwd()));
-        const globber = yield glob.create(patterns.join("\n"));
-        const files = yield globber.glob();
-        paths.push(...files);
-        // Convert paths to relative paths here?
-        return paths.map(x => path.relative(workspace, x));
+        const workspace = (_b = process.env["GITHUB_WORKSPACE"], (_b !== null && _b !== void 0 ? _b : process.cwd()));
+        const globber = yield glob.create(patterns.join("\n"), {
+            implicitDescendants: false
+        });
+        try {
+            for (var _c = __asyncValues(globber.globGenerator()), _d; _d = yield _c.next(), !_d.done;) {
+                const file = _d.value;
+                const relativeFile = path.relative(workspace, file);
+                core.debug(`Matched: ${relativeFile}`);
+                // Paths are made relative so the tar entries are all relative to the root of the workspace.
+                paths.push(`${relativeFile}`);
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (_d && !_d.done && (_a = _c.return)) yield _a.call(_c);
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+        return paths;
     });
 }
-exports.expandPaths = expandPaths;
+exports.resolvePaths = resolvePaths;
 function getSupportedEvents() {
     return [constants_1.Events.Push, constants_1.Events.PullRequest];
 }
@@ -4421,6 +4444,7 @@ var Events;
     Events["Push"] = "push";
     Events["PullRequest"] = "pull_request";
 })(Events = exports.Events || (exports.Events = {}));
+exports.CacheFilename = "cache.tgz";
 
 
 /***/ }),
@@ -4901,8 +4925,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const exec_1 = __webpack_require__(986);
 const io = __importStar(__webpack_require__(1));
+const path = __importStar(__webpack_require__(622));
+const constants_1 = __webpack_require__(694);
+const exec_1 = __webpack_require__(986);
 const fs_1 = __webpack_require__(747);
 function getTarPath() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -4917,13 +4943,14 @@ function getTarPath() {
         return yield io.which("tar", true);
     });
 }
-function execTar(args) {
+function execTar(args, cwd) {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            yield exec_1.exec(`"${yield getTarPath()}"`, args);
+            yield exec_1.exec(`"${yield getTarPath()}"`, args, { cwd: cwd });
         }
         catch (error) {
+            console.log("error", error);
             const IS_WINDOWS = process.platform === "win32";
             if (IS_WINDOWS) {
                 throw new Error(`Tar failed with error: ${(_a = error) === null || _a === void 0 ? void 0 : _a.message}. Ensure BSD tar is installed and on the PATH.`);
@@ -4946,19 +4973,22 @@ function extractTar(archivePath) {
     });
 }
 exports.extractTar = extractTar;
-function createTar(archivePath, sourceDirectories) {
+function createTar(archiveFolder, sourceDirectories) {
     return __awaiter(this, void 0, void 0, function* () {
         // TODO: will want to stream sourceDirectories into tar
+        const manifestFilename = "manifest.txt";
+        fs_1.writeFileSync(path.join(archiveFolder, manifestFilename), sourceDirectories.join("\n"));
         const workingDirectory = getWorkingDirectory();
         const args = [
             "-cz",
             "-f",
-            archivePath,
+            constants_1.CacheFilename,
             "-C",
             workingDirectory,
-            sourceDirectories.join(" ")
+            "--files-from",
+            manifestFilename
         ];
-        yield execTar(args);
+        yield execTar(args, archiveFolder);
     });
 }
 exports.createTar = createTar;

@@ -1,4 +1,5 @@
 import * as core from "@actions/core";
+import * as glob from "@actions/glob";
 import * as os from "os";
 import * as path from "path";
 
@@ -181,16 +182,17 @@ test("isValidEvent returns false for unknown event", () => {
     expect(isValidEvent).toBe(false);
 });
 
-test("expandPaths with no ~ in path", () => {
+test("resolvePaths with no ~ in path", async () => {
+    // TODO: these test paths will need to exist
     const filePath = ".cache/yarn";
 
-    const resolvedPath = actionUtils.expandPaths([filePath]);
+    const resolvedPath = await actionUtils.resolvePaths([filePath]);
 
     const expectedPath = [path.resolve(filePath)];
     expect(resolvedPath).toStrictEqual(expectedPath);
 });
 
-test("expandPaths with ~ in path", () => {
+test("resolvePaths with ~ in path", async () => {
     const filePath = "~/.cache/yarn";
 
     const homedir = jest.requireActual("os").homedir();
@@ -199,20 +201,22 @@ test("expandPaths with ~ in path", () => {
         return homedir;
     });
 
-    const resolvedPath = actionUtils.expandPaths([filePath]);
+    const resolvedPath = await actionUtils.resolvePaths([filePath]);
 
     const expectedPath = [path.join(homedir, ".cache/yarn")];
     expect(resolvedPath).toStrictEqual(expectedPath);
 });
 
-test("expandPaths with home not found", () => {
+test("resolvePaths with home not found", () => {
     const filePath = "~/.cache/yarn";
     const homedirMock = jest.spyOn(os, "homedir");
     homedirMock.mockImplementation(() => {
         return "";
     });
+    // const globMock = jest.spyOn(glob, "homedir");
+    // globMock.mockImplementation(() => "");
 
-    expect(() => actionUtils.expandPaths([filePath])).toThrow(
+    expect(async () => await actionUtils.resolvePaths([filePath])).toThrow(
         "Unable to resolve `~` to HOME"
     );
 });
