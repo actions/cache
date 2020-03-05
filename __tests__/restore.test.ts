@@ -7,18 +7,12 @@ import run from "../src/restore";
 import * as tar from "../src/tar";
 import * as actionUtils from "../src/utils/actionUtils";
 import * as testUtils from "../src/utils/testUtils";
-// import * as pathUtils from "../src/utils/pathUtils";
 
 jest.mock("../src/cacheHttpClient");
 jest.mock("../src/tar");
 jest.mock("../src/utils/actionUtils");
-// jest.mock("../src/utils/pathUtils");
 
 beforeAll(() => {
-    // jest.spyOn(pathUtils, "expandPaths").mockImplementation(filePaths => {
-    //     return filePaths.map(x => path.resolve(x));
-    // });
-
     jest.spyOn(actionUtils, "isExactKeyMatch").mockImplementation(
         (key, cacheResult) => {
             const actualUtils = jest.requireActual("../src/utils/actionUtils");

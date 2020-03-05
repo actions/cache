@@ -1,5 +1,6 @@
 import * as core from "@actions/core";
 import * as io from "@actions/io";
+import * as glob from "@actions/glob";
 import * as fs from "fs";
 import * as path from "path";
 import * as uuidV4 from "uuid/v4";
@@ -79,6 +80,19 @@ export function getCacheState(): ArtifactCacheEntry | undefined {
 export function logWarning(message: string): void {
     const warningPrefix = "[warning]";
     core.info(`${warningPrefix}${message}`);
+}
+
+export async function expandPaths(patterns: string[]): Promise<string[]> {
+    const paths: string[] = [];
+    const workspace = process.env["GITHUB_WORKSPACE"] ?? process.cwd();
+
+    const globber = await glob.create(patterns.join("\n"));
+    const files = await globber.glob();
+
+    paths.push(...files);
+
+    // Convert paths to relative paths here?
+    return paths.map(x => path.relative(workspace, x));
 }
 
 export function getSupportedEvents(): string[] {
