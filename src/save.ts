@@ -43,10 +43,14 @@ async function run(): Promise<void> {
             return;
         }
         core.debug(`Cache ID: ${cacheId}`);
-        const cachePath = utils.resolvePath(
-            core.getInput(Inputs.Path, { required: true })
-        );
-        core.debug(`Cache Path: ${cachePath}`);
+        const cachePaths = core
+            .getInput(Inputs.Path)
+            .split("\n")
+            .filter(x => x !== "")
+            .map(x => utils.resolvePath(x));
+
+        core.debug("Cache Paths:");
+        core.debug(`${JSON.stringify(cachePaths)}`);
 
         const archivePath = path.join(
             await utils.createTempDirectory(),
@@ -54,7 +58,7 @@ async function run(): Promise<void> {
         );
         core.debug(`Archive Path: ${archivePath}`);
 
-        await createTar(archivePath, cachePath);
+        await createTar(archivePath, cachePaths);
 
         const fileSizeLimit = 5 * 1024 * 1024 * 1024; // 5GB per repo limit
         const archiveFileSize = utils.getArchiveFileSize(archivePath);

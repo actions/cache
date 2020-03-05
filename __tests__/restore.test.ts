@@ -59,7 +59,8 @@ test("restore with invalid event outputs warning", async () => {
 test("restore with no path should fail", async () => {
     const failedMock = jest.spyOn(core, "setFailed");
     await run();
-    expect(failedMock).toHaveBeenCalledWith(
+    // TODO: this shouldn't be necessary if tarball contains entries relative to workspace
+    expect(failedMock).not.toHaveBeenCalledWith(
         "Input required and not supplied: path"
     );
 });
@@ -201,7 +202,6 @@ test("restore with restore keys and no cache found", async () => {
 
 test("restore with cache found", async () => {
     const key = "node-test";
-    const cachePath = path.resolve("node_modules");
     testUtils.setInputs({
         path: "node_modules",
         key
@@ -255,7 +255,7 @@ test("restore with cache found", async () => {
     expect(getArchiveFileSizeMock).toHaveBeenCalledWith(archivePath);
 
     expect(extractTarMock).toHaveBeenCalledTimes(1);
-    expect(extractTarMock).toHaveBeenCalledWith(archivePath, cachePath);
+    expect(extractTarMock).toHaveBeenCalledWith(archivePath);
 
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(true);
@@ -266,7 +266,6 @@ test("restore with cache found", async () => {
 
 test("restore with a pull request event and cache found", async () => {
     const key = "node-test";
-    const cachePath = path.resolve("node_modules");
     testUtils.setInputs({
         path: "node_modules",
         key
@@ -323,7 +322,7 @@ test("restore with a pull request event and cache found", async () => {
     expect(infoMock).toHaveBeenCalledWith(`Cache Size: ~60 MB (62915000 B)`);
 
     expect(extractTarMock).toHaveBeenCalledTimes(1);
-    expect(extractTarMock).toHaveBeenCalledWith(archivePath, cachePath);
+    expect(extractTarMock).toHaveBeenCalledWith(archivePath);
 
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(true);
@@ -335,7 +334,6 @@ test("restore with a pull request event and cache found", async () => {
 test("restore with cache found for restore key", async () => {
     const key = "node-test";
     const restoreKey = "node-";
-    const cachePath = path.resolve("node_modules");
     testUtils.setInputs({
         path: "node_modules",
         key,
@@ -391,7 +389,7 @@ test("restore with cache found for restore key", async () => {
     expect(infoMock).toHaveBeenCalledWith(`Cache Size: ~0 MB (142 B)`);
 
     expect(extractTarMock).toHaveBeenCalledTimes(1);
-    expect(extractTarMock).toHaveBeenCalledWith(archivePath, cachePath);
+    expect(extractTarMock).toHaveBeenCalledWith(archivePath);
 
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);

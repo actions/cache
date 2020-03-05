@@ -19,10 +19,10 @@ async function run(): Promise<void> {
             return;
         }
 
-        const cachePath = utils.resolvePath(
-            core.getInput(Inputs.Path, { required: true })
-        );
-        core.debug(`Cache Path: ${cachePath}`);
+        // const cachePath = utils.resolvePath(
+        //     core.getInput(Inputs.Path, { required: true })
+        // );
+        // core.debug(`Cache Path: ${cachePath}`);
 
         const primaryKey = core.getInput(Inputs.Key, { required: true });
         core.saveState(State.CacheKey, primaryKey);
@@ -87,7 +87,7 @@ async function run(): Promise<void> {
                 )} MB (${archiveFileSize} B)`
             );
 
-            await extractTar(archivePath, cachePath);
+            await extractTar(archivePath);
 
             const isExactKeyMatch = utils.isExactKeyMatch(
                 primaryKey,

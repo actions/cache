@@ -9,6 +9,12 @@ beforeAll(() => {
     jest.spyOn(io, "which").mockImplementation(tool => {
         return Promise.resolve(tool);
     });
+
+    process.env["GITHUB_WORKSPACE"] = process.cwd();
+});
+
+afterAll(() => {
+    process.env["GITHUB_WORKSPACE"] = undefined;
 });
 
 test("extract tar", async () => {
@@ -16,10 +22,11 @@ test("extract tar", async () => {
     const execMock = jest.spyOn(exec, "exec");
 
     const archivePath = "cache.tar";
-    const targetDirectory = "~/.npm/cache";
-    await tar.extractTar(archivePath, targetDirectory);
+    const workspace = process.env["GITHUB_WORKSPACE"];
 
-    expect(mkdirMock).toHaveBeenCalledWith(targetDirectory);
+    await tar.extractTar(archivePath);
+
+    expect(mkdirMock).toHaveBeenCalledWith(workspace);
 
     const IS_WINDOWS = process.platform === "win32";
     const tarPath = IS_WINDOWS
@@ -30,8 +37,9 @@ test("extract tar", async () => {
         "-xz",
         "-f",
         archivePath,
+        "-P",
         "-C",
-        targetDirectory
+        workspace
     ]);
 });
 
@@ -39,8 +47,10 @@ test("create tar", async () => {
     const execMock = jest.spyOn(exec, "exec");
 
     const archivePath = "cache.tar";
-    const sourceDirectory = "~/.npm/cache";
-    await tar.createTar(archivePath, sourceDirectory);
+    const workspace = process.env["GITHUB_WORKSPACE"];
+    const sourceDirectories = ["~/.npm/cache", `${workspace}/dist`];
+
+    await tar.createTar(archivePath, sourceDirectories);
 
     const IS_WINDOWS = process.platform === "win32";
     const tarPath = IS_WINDOWS
@@ -52,7 +62,7 @@ test("create tar", async () => {
         "-f",
         archivePath,
         "-C",
-        sourceDirectory,
-        "."
+        workspace,
+        sourceDirectories.join(" ")
     ]);
 });

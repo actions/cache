@@ -159,10 +159,11 @@ test("save with missing input outputs warning", async () => {
 
     await run();
 
-    expect(logWarningMock).toHaveBeenCalledWith(
+    // TODO: this shouldn't be necessary if tarball contains entries relative to workspace
+    expect(logWarningMock).not.toHaveBeenCalledWith(
         "Input required and not supplied: path"
     );
-    expect(logWarningMock).toHaveBeenCalledTimes(1);
+    expect(logWarningMock).toHaveBeenCalledTimes(0);
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
@@ -189,7 +190,7 @@ test("save with large cache outputs warning", async () => {
         });
 
     const inputPath = "node_modules";
-    const cachePath = path.resolve(inputPath);
+    const cachePaths = [path.resolve(inputPath)];
     testUtils.setInput(Inputs.Path, inputPath);
 
     const createTarMock = jest.spyOn(tar, "createTar");
@@ -204,7 +205,7 @@ test("save with large cache outputs warning", async () => {
     const archivePath = path.join("/foo/bar", "cache.tgz");
 
     expect(createTarMock).toHaveBeenCalledTimes(1);
-    expect(createTarMock).toHaveBeenCalledWith(archivePath, cachePath);
+    expect(createTarMock).toHaveBeenCalledWith(archivePath, cachePaths);
 
     expect(logWarningMock).toHaveBeenCalledTimes(1);
     expect(logWarningMock).toHaveBeenCalledWith(
@@ -288,7 +289,7 @@ test("save with server error outputs warning", async () => {
         });
 
     const inputPath = "node_modules";
-    const cachePath = path.resolve(inputPath);
+    const cachePaths = [path.resolve(inputPath)];
     testUtils.setInput(Inputs.Path, inputPath);
 
     const cacheId = 4;
@@ -314,7 +315,7 @@ test("save with server error outputs warning", async () => {
     const archivePath = path.join("/foo/bar", "cache.tgz");
 
     expect(createTarMock).toHaveBeenCalledTimes(1);
-    expect(createTarMock).toHaveBeenCalledWith(archivePath, cachePath);
+    expect(createTarMock).toHaveBeenCalledWith(archivePath, cachePaths);
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
     expect(saveCacheMock).toHaveBeenCalledWith(cacheId, archivePath);
@@ -347,7 +348,7 @@ test("save with valid inputs uploads a cache", async () => {
         });
 
     const inputPath = "node_modules";
-    const cachePath = path.resolve(inputPath);
+    const cachePaths = [path.resolve(inputPath)];
     testUtils.setInput(Inputs.Path, inputPath);
 
     const cacheId = 4;
@@ -369,7 +370,7 @@ test("save with valid inputs uploads a cache", async () => {
     const archivePath = path.join("/foo/bar", "cache.tgz");
 
     expect(createTarMock).toHaveBeenCalledTimes(1);
-    expect(createTarMock).toHaveBeenCalledWith(archivePath, cachePath);
+    expect(createTarMock).toHaveBeenCalledWith(archivePath, cachePaths);
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
     expect(saveCacheMock).toHaveBeenCalledWith(cacheId, archivePath);

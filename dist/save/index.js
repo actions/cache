@@ -2749,11 +2749,16 @@ function run() {
                 return;
             }
             core.debug(`Cache ID: ${cacheId}`);
-            const cachePath = utils.resolvePath(core.getInput(constants_1.Inputs.Path, { required: true }));
-            core.debug(`Cache Path: ${cachePath}`);
+            const cachePaths = core
+                .getInput(constants_1.Inputs.Path, { required: false })
+                .split("\n")
+                .filter(x => x !== "")
+                .map(x => utils.resolvePath(x));
+            core.debug("Cache Paths:");
+            core.debug(`${JSON.stringify(cachePaths)}`);
             const archivePath = path.join(yield utils.createTempDirectory(), "cache.tgz");
             core.debug(`Archive Path: ${archivePath}`);
-            yield tar_1.createTar(archivePath, cachePath);
+            yield tar_1.createTar(archivePath, cachePaths);
             const fileSizeLimit = 5 * 1024 * 1024 * 1024; // 5GB per repo limit
             const archiveFileSize = utils.getArchiveFileSize(archivePath);
             core.debug(`File Size: ${archiveFileSize}`);
@@ -2785,6 +2790,7 @@ var Inputs;
 (function (Inputs) {
     Inputs["Key"] = "key";
     Inputs["Path"] = "path";
+    Inputs["Paths"] = "paths";
     Inputs["RestoreKeys"] = "restore-keys";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
@@ -2940,18 +2946,31 @@ function execTar(args) {
         }
     });
 }
-function extractTar(archivePath, targetDirectory) {
+function getWorkingDirectory() {
+    var _a;
+    return _a = process.env.GITHUB_WORKSPACE, (_a !== null && _a !== void 0 ? _a : process.cwd());
+}
+function extractTar(archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
         // Create directory to extract tar into
-        yield io.mkdirP(targetDirectory);
-        const args = ["-xz", "-f", archivePath, "-C", targetDirectory];
+        const workingDirectory = getWorkingDirectory();
+        yield io.mkdirP(workingDirectory);
+        const args = ["-xz", "-f", archivePath, "-P", "-C", workingDirectory];
         yield execTar(args);
     });
 }
 exports.extractTar = extractTar;
-function createTar(archivePath, sourceDirectory) {
+function createTar(archivePath, sourceDirectories) {
     return __awaiter(this, void 0, void 0, function* () {
-        const args = ["-cz", "-f", archivePath, "-C", sourceDirectory, "."];
+        const workingDirectory = getWorkingDirectory();
+        const args = [
+            "-cz",
+            "-f",
+            archivePath,
+            "-C",
+            workingDirectory,
+            sourceDirectories.join(" ")
+        ];
         yield execTar(args);
     });
 }

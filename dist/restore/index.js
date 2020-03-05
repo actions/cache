@@ -2704,6 +2704,7 @@ var Inputs;
 (function (Inputs) {
     Inputs["Key"] = "key";
     Inputs["Path"] = "path";
+    Inputs["Paths"] = "paths";
     Inputs["RestoreKeys"] = "restore-keys";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
@@ -2802,8 +2803,10 @@ function run() {
                     .join(", ")} events are supported at this time.`);
                 return;
             }
-            const cachePath = utils.resolvePath(core.getInput(constants_1.Inputs.Path, { required: true }));
-            core.debug(`Cache Path: ${cachePath}`);
+            // const cachePath = utils.resolvePath(
+            //     core.getInput(Inputs.Path, { required: true })
+            // );
+            // core.debug(`Cache Path: ${cachePath}`);
             const primaryKey = core.getInput(constants_1.Inputs.Key, { required: true });
             core.saveState(constants_1.State.CacheKey, primaryKey);
             const restoreKeys = core
@@ -2831,7 +2834,7 @@ function run() {
             try {
                 const cacheEntry = yield cacheHttpClient.getCacheEntry(keys);
                 if (!((_a = cacheEntry) === null || _a === void 0 ? void 0 : _a.archiveLocation)) {
-                    core.info(`Cache not found for input keys: ${keys.join(", ")}.`);
+                    core.info(`Cache not found for input keys: ${keys.join(", ")}`);
                     return;
                 }
                 const archivePath = path.join(yield utils.createTempDirectory(), "cache.tgz");
@@ -2842,7 +2845,7 @@ function run() {
                 yield cacheHttpClient.downloadCache(cacheEntry.archiveLocation, archivePath);
                 const archiveFileSize = utils.getArchiveFileSize(archivePath);
                 core.info(`Cache Size: ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B)`);
-                yield tar_1.extractTar(archivePath, cachePath);
+                yield tar_1.extractTar(archivePath);
                 const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheEntry);
                 utils.setCacheHitOutput(isExactKeyMatch);
                 core.info(`Cache restored from key: ${cacheEntry && cacheEntry.cacheKey}`);
@@ -2959,18 +2962,31 @@ function execTar(args) {
         }
     });
 }
-function extractTar(archivePath, targetDirectory) {
+function getWorkingDirectory() {
+    var _a;
+    return _a = process.env.GITHUB_WORKSPACE, (_a !== null && _a !== void 0 ? _a : process.cwd());
+}
+function extractTar(archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
         // Create directory to extract tar into
-        yield io.mkdirP(targetDirectory);
-        const args = ["-xz", "-f", archivePath, "-C", targetDirectory];
+        const workingDirectory = getWorkingDirectory();
+        yield io.mkdirP(workingDirectory);
+        const args = ["-xz", "-f", archivePath, "-P", "-C", workingDirectory];
         yield execTar(args);
     });
 }
 exports.extractTar = extractTar;
-function createTar(archivePath, sourceDirectory) {
+function createTar(archivePath, sourceDirectories) {
     return __awaiter(this, void 0, void 0, function* () {
-        const args = ["-cz", "-f", archivePath, "-C", sourceDirectory, "."];
+        const workingDirectory = getWorkingDirectory();
+        const args = [
+            "-cz",
+            "-f",
+            archivePath,
+            "-C",
+            workingDirectory,
+            sourceDirectories.join(" ")
+        ];
         yield execTar(args);
     });
 }

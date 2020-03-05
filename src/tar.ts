@@ -28,20 +28,30 @@ async function execTar(args: string[]): Promise<void> {
     }
 }
 
-export async function extractTar(
-    archivePath: string,
-    targetDirectory: string
-): Promise<void> {
+function getWorkingDirectory(): string {
+    return process.env["GITHUB_WORKSPACE"] ?? process.cwd();
+}
+
+export async function extractTar(archivePath: string): Promise<void> {
     // Create directory to extract tar into
-    await io.mkdirP(targetDirectory);
-    const args = ["-xz", "-f", archivePath, "-C", targetDirectory];
+    const workingDirectory = getWorkingDirectory();
+    await io.mkdirP(workingDirectory);
+    const args = ["-xz", "-f", archivePath, "-P", "-C", workingDirectory];
     await execTar(args);
 }
 
 export async function createTar(
     archivePath: string,
-    sourceDirectory: string
+    sourceDirectories: string[]
 ): Promise<void> {
-    const args = ["-cz", "-f", archivePath, "-C", sourceDirectory, "."];
+    const workingDirectory = getWorkingDirectory();
+    const args = [
+        "-cz",
+        "-f",
+        archivePath,
+        "-C",
+        workingDirectory,
+        sourceDirectories.join(" ")
+    ];
     await execTar(args);
 }
