@@ -27,10 +27,12 @@
     "@actions/exec": "^1.0.1",
     "@actions/http-client": "^1.0.6",
     "@actions/io": "^1.0.1",
+    "minimatch": "^3.0.4",
     "uuid": "^3.3.3"
   },
   "devDependencies": {
     "@types/jest": "^24.0.13",
+    "@types/minimatch": "^3.0.3",
     "@types/nock": "^11.1.0",
     "@types/node": "^12.0.4",
     "@types/uuid": "^3.4.5",

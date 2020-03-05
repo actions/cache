@@ -44,6 +44,7 @@ export async function createTar(
     archivePath: string,
     sourceDirectories: string[]
 ): Promise<void> {
+    // TODO: will want to stream sourceDirectories into tar
     const workingDirectory = getWorkingDirectory();
     const args = [
         "-cz",

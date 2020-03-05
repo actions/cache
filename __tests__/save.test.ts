@@ -7,11 +7,13 @@ import run from "../src/save";
 import * as tar from "../src/tar";
 import * as actionUtils from "../src/utils/actionUtils";
 import * as testUtils from "../src/utils/testUtils";
+import * as pathUtils from "../src/utils/pathUtils";
 
 jest.mock("@actions/core");
 jest.mock("../src/cacheHttpClient");
 jest.mock("../src/tar");
 jest.mock("../src/utils/actionUtils");
+jest.mock("../src/utils/pathUtils");
 
 beforeAll(() => {
     jest.spyOn(core, "getInput").mockImplementation((name, options) => {
@@ -40,8 +42,8 @@ beforeAll(() => {
         return actualUtils.getSupportedEvents();
     });
 
-    jest.spyOn(actionUtils, "resolvePath").mockImplementation(filePath => {
-        return path.resolve(filePath);
+    jest.spyOn(pathUtils, "expandPaths").mockImplementation(filePaths => {
+        return filePaths.map(x => path.resolve(x));
     });
 
     jest.spyOn(actionUtils, "createTempDirectory").mockImplementation(() => {

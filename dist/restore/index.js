@@ -1649,7 +1649,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const io = __importStar(__webpack_require__(1));
 const fs = __importStar(__webpack_require__(747));
-const os = __importStar(__webpack_require__(87));
 const path = __importStar(__webpack_require__(622));
 const uuidV4 = __importStar(__webpack_require__(826));
 const constants_1 = __webpack_require__(694);
@@ -1720,17 +1719,6 @@ function logWarning(message) {
     core.info(`${warningPrefix}${message}`);
 }
 exports.logWarning = logWarning;
-function resolvePath(filePath) {
-    if (filePath[0] === "~") {
-        const home = os.homedir();
-        if (!home) {
-            throw new Error("Unable to resolve `~` to HOME");
-        }
-        return path.join(home, filePath.slice(1));
-    }
-    return path.resolve(filePath);
-}
-exports.resolvePath = resolvePath;
 function getSupportedEvents() {
     return [constants_1.Events.Push, constants_1.Events.PullRequest];
 }
@@ -2704,7 +2692,6 @@ var Inputs;
 (function (Inputs) {
     Inputs["Key"] = "key";
     Inputs["Path"] = "path";
-    Inputs["Paths"] = "paths";
     Inputs["RestoreKeys"] = "restore-keys";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
@@ -2803,10 +2790,6 @@ function run() {
                     .join(", ")} events are supported at this time.`);
                 return;
             }
-            // const cachePath = utils.resolvePath(
-            //     core.getInput(Inputs.Path, { required: true })
-            // );
-            // core.debug(`Cache Path: ${cachePath}`);
             const primaryKey = core.getInput(constants_1.Inputs.Key, { required: true });
             core.saveState(constants_1.State.CacheKey, primaryKey);
             const restoreKeys = core
@@ -2964,7 +2947,7 @@ function execTar(args) {
 }
 function getWorkingDirectory() {
     var _a;
-    return _a = process.env.GITHUB_WORKSPACE, (_a !== null && _a !== void 0 ? _a : process.cwd());
+    return _a = process.env["GITHUB_WORKSPACE"], (_a !== null && _a !== void 0 ? _a : process.cwd());
 }
 function extractTar(archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -2978,6 +2961,7 @@ function extractTar(archivePath) {
 exports.extractTar = extractTar;
 function createTar(archivePath, sourceDirectories) {
     return __awaiter(this, void 0, void 0, function* () {
+        // TODO: will want to stream sourceDirectories into tar
         const workingDirectory = getWorkingDirectory();
         const args = [
             "-cz",

@@ -1,5 +1,4 @@
 import * as core from "@actions/core";
-import * as os from "os";
 import * as path from "path";
 
 import { Events, Outputs, State } from "../src/constants";
@@ -179,42 +178,6 @@ test("isValidEvent returns false for unknown event", () => {
     const isValidEvent = actionUtils.isValidEvent();
 
     expect(isValidEvent).toBe(false);
-});
-
-test("resolvePath with no ~ in path", () => {
-    const filePath = ".cache/yarn";
-
-    const resolvedPath = actionUtils.resolvePath(filePath);
-
-    const expectedPath = path.resolve(filePath);
-    expect(resolvedPath).toBe(expectedPath);
-});
-
-test("resolvePath with ~ in path", () => {
-    const filePath = "~/.cache/yarn";
-
-    const homedir = jest.requireActual("os").homedir();
-    const homedirMock = jest.spyOn(os, "homedir");
-    homedirMock.mockImplementation(() => {
-        return homedir;
-    });
-
-    const resolvedPath = actionUtils.resolvePath(filePath);
-
-    const expectedPath = path.join(homedir, ".cache/yarn");
-    expect(resolvedPath).toBe(expectedPath);
-});
-
-test("resolvePath with home not found", () => {
-    const filePath = "~/.cache/yarn";
-    const homedirMock = jest.spyOn(os, "homedir");
-    homedirMock.mockImplementation(() => {
-        return "";
-    });
-
-    expect(() => actionUtils.resolvePath(filePath)).toThrow(
-        "Unable to resolve `~` to HOME"
-    );
 });
 
 test("isValidEvent returns true for push event", () => {

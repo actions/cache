@@ -4,6 +4,7 @@ import * as cacheHttpClient from "./cacheHttpClient";
 import { Events, Inputs, State } from "./constants";
 import { createTar } from "./tar";
 import * as utils from "./utils/actionUtils";
+import * as pathUtils from "./utils/pathUtils";
 
 async function run(): Promise<void> {
     try {
@@ -43,11 +44,12 @@ async function run(): Promise<void> {
             return;
         }
         core.debug(`Cache ID: ${cacheId}`);
-        const cachePaths = core
-            .getInput(Inputs.Path)
-            .split("\n")
-            .filter(x => x !== "")
-            .map(x => utils.resolvePath(x));
+        const cachePaths = pathUtils.expandPaths(
+            core
+                .getInput(Inputs.Path)
+                .split("\n")
+                .filter(x => x !== "")
+        );
 
         core.debug("Cache Paths:");
         core.debug(`${JSON.stringify(cachePaths)}`);

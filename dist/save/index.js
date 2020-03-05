@@ -1649,7 +1649,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const io = __importStar(__webpack_require__(1));
 const fs = __importStar(__webpack_require__(747));
-const os = __importStar(__webpack_require__(87));
 const path = __importStar(__webpack_require__(622));
 const uuidV4 = __importStar(__webpack_require__(826));
 const constants_1 = __webpack_require__(694);
@@ -1720,17 +1719,6 @@ function logWarning(message) {
     core.info(`${warningPrefix}${message}`);
 }
 exports.logWarning = logWarning;
-function resolvePath(filePath) {
-    if (filePath[0] === "~") {
-        const home = os.homedir();
-        if (!home) {
-            throw new Error("Unable to resolve `~` to HOME");
-        }
-        return path.join(home, filePath.slice(1));
-    }
-    return path.resolve(filePath);
-}
-exports.resolvePath = resolvePath;
 function getSupportedEvents() {
     return [constants_1.Events.Push, constants_1.Events.PullRequest];
 }
@@ -2722,6 +2710,7 @@ const cacheHttpClient = __importStar(__webpack_require__(154));
 const constants_1 = __webpack_require__(694);
 const tar_1 = __webpack_require__(943);
 const utils = __importStar(__webpack_require__(443));
+const pathUtils = __importStar(__webpack_require__(914));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -2749,11 +2738,10 @@ function run() {
                 return;
             }
             core.debug(`Cache ID: ${cacheId}`);
-            const cachePaths = core
-                .getInput(constants_1.Inputs.Path, { required: false })
+            const cachePaths = pathUtils.expandPaths(core
+                .getInput(constants_1.Inputs.Path)
                 .split("\n")
-                .filter(x => x !== "")
-                .map(x => utils.resolvePath(x));
+                .filter(x => x !== ""));
             core.debug("Cache Paths:");
             core.debug(`${JSON.stringify(cachePaths)}`);
             const archivePath = path.join(yield utils.createTempDirectory(), "cache.tgz");
@@ -2790,7 +2778,6 @@ var Inputs;
 (function (Inputs) {
     Inputs["Key"] = "key";
     Inputs["Path"] = "path";
-    Inputs["Paths"] = "paths";
     Inputs["RestoreKeys"] = "restore-keys";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
@@ -2893,6 +2880,67 @@ module.exports = require("url");
 
 /***/ }),
 
+/***/ 914:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const os = __importStar(__webpack_require__(87));
+const path = __importStar(__webpack_require__(622));
+const globCharacters = ["*", "?", "[", "]"];
+function resolvePath(filePath) {
+    if (filePath[0] === "~") {
+        const home = os.homedir();
+        if (!home) {
+            throw new Error("Unable to resolve `~` to HOME");
+        }
+        return path.join(home, filePath.slice(1));
+    }
+    return path.resolve(filePath);
+}
+exports.resolvePath = resolvePath;
+function isMinimatchPattern(pattern) {
+    if (globCharacters.some(x => pattern.includes(x))) {
+        return true;
+    }
+    return false;
+}
+exports.isMinimatchPattern = isMinimatchPattern;
+function matchDirectories(pattern, workspace) {
+    const directories = path;
+}
+exports.matchDirectories = matchDirectories;
+function expandPaths(filePaths) {
+    const paths = [];
+    const workspace = process.env["GITHUB_WORKSPACE"];
+    for (const filePath of filePaths) {
+        if (isMinimatchPattern(filePath)) {
+            paths.push(filePath);
+        }
+        else if (filePath[0] === "~") {
+            const home = os.homedir();
+            if (!home) {
+                throw new Error("Unable to resolve `~` to HOME");
+            }
+            paths.push(path.join(home, filePath.slice(1)));
+        }
+        paths.push(path.resolve(filePath));
+    }
+    return paths;
+}
+exports.expandPaths = expandPaths;
+
+
+/***/ }),
+
 /***/ 943:
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -2948,7 +2996,7 @@ function execTar(args) {
 }
 function getWorkingDirectory() {
     var _a;
-    return _a = process.env.GITHUB_WORKSPACE, (_a !== null && _a !== void 0 ? _a : process.cwd());
+    return _a = process.env["GITHUB_WORKSPACE"], (_a !== null && _a !== void 0 ? _a : process.cwd());
 }
 function extractTar(archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -2962,6 +3010,7 @@ function extractTar(archivePath) {
 exports.extractTar = extractTar;
 function createTar(archivePath, sourceDirectories) {
     return __awaiter(this, void 0, void 0, function* () {
+        // TODO: will want to stream sourceDirectories into tar
         const workingDirectory = getWorkingDirectory();
         const args = [
             "-cz",

@@ -1,7 +1,6 @@
 import * as core from "@actions/core";
 import * as io from "@actions/io";
 import * as fs from "fs";
-import * as os from "os";
 import * as path from "path";
 import * as uuidV4 from "uuid/v4";
 
@@ -80,18 +79,6 @@ export function getCacheState(): ArtifactCacheEntry | undefined {
 export function logWarning(message: string): void {
     const warningPrefix = "[warning]";
     core.info(`${warningPrefix}${message}`);
-}
-
-export function resolvePath(filePath: string): string {
-    if (filePath[0] === "~") {
-        const home = os.homedir();
-        if (!home) {
-            throw new Error("Unable to resolve `~` to HOME");
-        }
-        return path.join(home, filePath.slice(1));
-    }
-
-    return path.resolve(filePath);
 }
 
 export function getSupportedEvents(): string[] {

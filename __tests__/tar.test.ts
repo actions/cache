@@ -14,7 +14,7 @@ beforeAll(() => {
 });
 
 afterAll(() => {
-    process.env["GITHUB_WORKSPACE"] = undefined;
+    delete process.env["GITHUB_WORKSPACE"];
 });
 
 test("extract tar", async () => {
