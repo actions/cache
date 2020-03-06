@@ -48,7 +48,7 @@ export async function createTar(
     archiveFolder: string,
     sourceDirectories: string[]
 ): Promise<void> {
-    // TODO: will want to stream sourceDirectories into tar
+    // Write source directories to manifest.txt to avoid command length limits
     const manifestFilename = "manifest.txt";
     writeFileSync(
         path.join(archiveFolder, manifestFilename),

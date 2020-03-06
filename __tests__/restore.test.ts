@@ -55,7 +55,7 @@ test("restore with invalid event outputs warning", async () => {
 test("restore with no path should fail", async () => {
     const failedMock = jest.spyOn(core, "setFailed");
     await run();
-    // TODO: this shouldn't be necessary if tarball contains entries relative to workspace
+    // this input isn't necessary for restore b/c tarball contains entries relative to workspace
     expect(failedMock).not.toHaveBeenCalledWith(
         "Input required and not supplied: path"
     );

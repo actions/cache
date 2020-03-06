@@ -4963,7 +4963,7 @@ function extractTar(archivePath) {
 exports.extractTar = extractTar;
 function createTar(archiveFolder, sourceDirectories) {
     return __awaiter(this, void 0, void 0, function* () {
-        // TODO: will want to stream sourceDirectories into tar
+        // Write source directories to manifest.txt to avoid command length limits
         const manifestFilename = "manifest.txt";
         fs_1.writeFileSync(path.join(archiveFolder, manifestFilename), sourceDirectories.join("\n"));
         const workingDirectory = getWorkingDirectory();

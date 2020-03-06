@@ -1,7 +1,8 @@
 import * as core from "@actions/core";
-import * as glob from "@actions/glob";
+import * as io from "@actions/io";
 import * as os from "os";
 import * as path from "path";
+import { promises as fs } from "fs";
 
 import { Events, Outputs, State } from "../src/constants";
 import { ArtifactCacheEntry } from "../src/contracts";
@@ -10,8 +11,17 @@ import * as actionUtils from "../src/utils/actionUtils";
 jest.mock("@actions/core");
 jest.mock("os");
 
+function getTempDir(): string {
+    return path.join(__dirname, "_temp", "actionUtils");
+}
+
 afterEach(() => {
     delete process.env[Events.Key];
+});
+
+afterAll(async () => {
+    delete process.env["GITHUB_WORKSPACE"];
+    await io.rmRF(getTempDir());
 });
 
 test("getArchiveFileSize returns file size", () => {
@@ -183,13 +193,34 @@ test("isValidEvent returns false for unknown event", () => {
 });
 
 test("resolvePaths with no ~ in path", async () => {
-    // TODO: these test paths will need to exist
-    const filePath = ".cache/yarn";
+    const filePath = ".cache";
 
-    const resolvedPath = await actionUtils.resolvePaths([filePath]);
+    // Create the following layout:
+    //   cwd
+    //   cwd/.cache
+    //   cwd/.cache/file.txt
 
-    const expectedPath = [path.resolve(filePath)];
-    expect(resolvedPath).toStrictEqual(expectedPath);
+    const root = path.join(getTempDir(), "no-tilde");
+    // tarball entries will be relative to workspace
+    process.env["GITHUB_WORKSPACE"] = root;
+
+    await fs.mkdir(root, { recursive: true });
+    const cache = path.join(root, ".cache");
+    await fs.mkdir(cache, { recursive: true });
+    await fs.writeFile(path.join(cache, "file.txt"), "cached");
+
+    const originalCwd = process.cwd();
+
+    try {
+        process.chdir(root);
+
+        const resolvedPath = await actionUtils.resolvePaths([filePath]);
+
+        const expectedPath = [filePath];
+        expect(resolvedPath).toStrictEqual(expectedPath);
+    } finally {
+        process.chdir(originalCwd);
+    }
 });
 
 test("resolvePaths with ~ in path", async () => {
@@ -201,24 +232,85 @@ test("resolvePaths with ~ in path", async () => {
         return homedir;
     });
 
+    const root = getTempDir();
+    process.env["GITHUB_WORKSPACE"] = root;
+
     const resolvedPath = await actionUtils.resolvePaths([filePath]);
 
-    const expectedPath = [path.join(homedir, ".cache/yarn")];
+    const expectedPath = [
+        path.relative(root, path.join(homedir, ".cache/yarn"))
+    ];
     expect(resolvedPath).toStrictEqual(expectedPath);
 });
 
-test("resolvePaths with home not found", () => {
+test("resolvePaths with home not found", async () => {
     const filePath = "~/.cache/yarn";
     const homedirMock = jest.spyOn(os, "homedir");
     homedirMock.mockImplementation(() => {
         return "";
     });
-    // const globMock = jest.spyOn(glob, "homedir");
-    // globMock.mockImplementation(() => "");
 
-    expect(async () => await actionUtils.resolvePaths([filePath])).toThrow(
-        "Unable to resolve `~` to HOME"
+    await expect(actionUtils.resolvePaths([filePath])).rejects.toThrow(
+        "Unable to determine HOME directory"
     );
+});
+
+test("resolvePaths inclusion pattern returns found", async () => {
+    const pattern = "*.ts";
+    // Create the following layout:
+    //   inclusion-patterns
+    //   inclusion-patterns/miss.txt
+    //   inclusion-patterns/test.ts
+
+    const root = path.join(getTempDir(), "inclusion-patterns");
+    // tarball entries will be relative to workspace
+    process.env["GITHUB_WORKSPACE"] = root;
+
+    await fs.mkdir(root, { recursive: true });
+    await fs.writeFile(path.join(root, "miss.txt"), "no match");
+    await fs.writeFile(path.join(root, "test.ts"), "match");
+
+    const originalCwd = process.cwd();
+
+    try {
+        process.chdir(root);
+
+        const resolvedPath = await actionUtils.resolvePaths([pattern]);
+
+        const expectedPath = ["test.ts"];
+        expect(resolvedPath).toStrictEqual(expectedPath);
+    } finally {
+        process.chdir(originalCwd);
+    }
+});
+
+test("resolvePaths exclusion pattern returns not found", async () => {
+    const patterns = ["*.ts", "!test.ts"];
+    // Create the following layout:
+    //   exclusion-patterns
+    //   exclusion-patterns/miss.txt
+    //   exclusion-patterns/test.ts
+
+    const root = path.join(getTempDir(), "exclusion-patterns");
+    // tarball entries will be relative to workspace
+    process.env["GITHUB_WORKSPACE"] = root;
+
+    await fs.mkdir(root, { recursive: true });
+    await fs.writeFile(path.join(root, "miss.txt"), "no match");
+    await fs.writeFile(path.join(root, "test.ts"), "no match");
+
+    const originalCwd = process.cwd();
+
+    try {
+        process.chdir(root);
+
+        const resolvedPath = await actionUtils.resolvePaths(patterns);
+
+        const expectedPath = [];
+        expect(resolvedPath).toStrictEqual(expectedPath);
+    } finally {
+        process.chdir(originalCwd);
+    }
 });
 
 test("isValidEvent returns true for push event", () => {
