@@ -174,7 +174,7 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
     if [ -d "docker-cache" ]; then
       cat docker-cache/x* > my-image.tar
       docker load < my-image.tar
-      rm -fr docker-cache
+      rm -rf docker-cache
     fi
 - name: Build image
   if: steps.cache.outputs.cache-hit != 'true'
