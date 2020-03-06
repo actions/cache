@@ -60,6 +60,7 @@ Every programming language and framework has its own way of caching.
 
 See [Examples](examples.md) for a list of `actions/cache` implementations for use with:
 
+- [C++ - Boost](./examples.md#c---boost)
 - [C# - Nuget](./examples.md#c---nuget)
 - [Elixir - Mix](./examples.md#elixir---mix)
 - [Go - Modules](./examples.md#go---modules)

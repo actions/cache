@@ -1,6 +1,7 @@
 # Examples
 
 - [Examples](#examples)
+  - [C++ - Boost](#c---boost)
   - [C# - NuGet](#c---nuget)
   - [Elixir - Mix](#elixir---mix)
   - [Go - Modules](#go---modules)
@@ -27,6 +28,40 @@
   - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
   - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
   - [Swift - Swift Package Manager](#swift---swift-package-manager)
+
+## C++ -Boost
+
+Downloading, building and installing some boost libraries:
+
+```yaml
+- name: Cache Boost
+  id: cache-boost
+  uses: actions/cache@v1
+  with:
+    path: boost_1_72_0/installdir
+    key: ${{ runner.os }}-boost_1_72_0-fs-system-test
+- name: Install Boost
+  if: steps.cache-boost.outputs.cache-hit != 'true'
+  run: |
+    wget https://dl.bintray.com/boostorg/release/1.72.0/source/boost_1_72_0.tar.gz
+    tar -zxf boost_1_72_0.tar.gz
+    cd boost_1_72_0
+    mkdir -p installdir
+    ./bootstrap.sh --prefix=./installdir --with-libraries=filesystem,system,test
+    ./b2 install
+```
+
+In this example, only a subset is built, to speed up compilation and reduce footprint.
+See `./bootstrap.sh --show-libraries` for the complete set of libraries.
+
+To be used the just installed boost in conjuction with CMake:
+
+```yaml
+cd boost_1_72_0/installdir
+BOOST_ROOT=$(pwd)
+cd ../../
+cmake -DBOOST_ROOT=${BOOST_ROOT} ....
+```
 
 ## C# - NuGet
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
