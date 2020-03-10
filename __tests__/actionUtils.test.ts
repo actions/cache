@@ -1,4 +1,5 @@
 import * as core from "@actions/core";
+import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
@@ -233,4 +234,16 @@ test("isValidEvent returns true for pull request event", () => {
     const isValidEvent = actionUtils.isValidEvent();
 
     expect(isValidEvent).toBe(true);
+});
+
+test("unlinkFile unlinks file", async () => {
+    const testDirectory = fs.mkdtempSync("unlinkFileTest");
+    const testFile = path.join(testDirectory, "test.txt");
+    fs.writeFileSync(testFile, "hello world");
+
+    await actionUtils.unlinkFile(testFile);
+
+    expect(fs.existsSync(testFile)).toBe(false);
+
+    fs.rmdirSync(testDirectory);
 });

@@ -1651,6 +1651,7 @@ const io = __importStar(__webpack_require__(1));
 const fs = __importStar(__webpack_require__(747));
 const os = __importStar(__webpack_require__(87));
 const path = __importStar(__webpack_require__(622));
+const util = __importStar(__webpack_require__(669));
 const uuidV4 = __importStar(__webpack_require__(826));
 const constants_1 = __webpack_require__(694);
 // From https://github.com/actions/toolkit/blob/master/packages/tool-cache/src/tool-cache.ts#L23
@@ -1743,6 +1744,10 @@ function isValidEvent() {
     return getSupportedEvents().includes(githubEvent);
 }
 exports.isValidEvent = isValidEvent;
+function unlinkFile(path) {
+    return util.promisify(fs.unlink)(path);
+}
+exports.unlinkFile = unlinkFile;
 
 
 /***/ }),
@@ -2831,18 +2836,29 @@ function run() {
             try {
                 const cacheEntry = yield cacheHttpClient.getCacheEntry(keys);
                 if (!((_a = cacheEntry) === null || _a === void 0 ? void 0 : _a.archiveLocation)) {
-                    core.info(`Cache not found for input keys: ${keys.join(", ")}.`);
+                    core.info(`Cache not found for input keys: ${keys.join(", ")}`);
                     return;
                 }
                 const archivePath = path.join(yield utils.createTempDirectory(), "cache.tgz");
                 core.debug(`Archive Path: ${archivePath}`);
                 // Store the cache result
                 utils.setCacheState(cacheEntry);
-                // Download the cache from the cache entry
-                yield cacheHttpClient.downloadCache(cacheEntry.archiveLocation, archivePath);
-                const archiveFileSize = utils.getArchiveFileSize(archivePath);
-                core.info(`Cache Size: ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B)`);
-                yield tar_1.extractTar(archivePath, cachePath);
+                try {
+                    // Download the cache from the cache entry
+                    yield cacheHttpClient.downloadCache(cacheEntry.archiveLocation, archivePath);
+                    const archiveFileSize = utils.getArchiveFileSize(archivePath);
+                    core.info(`Cache Size: ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B)`);
+                    yield tar_1.extractTar(archivePath, cachePath);
+                }
+                finally {
+                    // Try to delete the archive to save space
+                    try {
+                        yield utils.unlinkFile(archivePath);
+                    }
+                    catch (error) {
+                        core.debug(`Failed to delete archive: ${error}`);
+                    }
+                }
                 const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheEntry);
                 utils.setCacheHitOutput(isExactKeyMatch);
                 core.info(`Cache restored from key: ${cacheEntry && cacheEntry.cacheKey}`);
