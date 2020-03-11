@@ -98,13 +98,15 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
     key: ${{ runner.os }}-${{ matrix.ghc }}-dist-newstyle
 ```
 
-## Java - Gradle
+## Java/Kotlin - Gradle
 
 ```yaml
 - uses: actions/cache@v1
   with:
     path: ~/.gradle/caches
     key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+  # Use the following for kotlin DSL
+  # key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts') }} 
     restore-keys: |
       ${{ runner.os }}-gradle-
 ```
