@@ -225,7 +225,6 @@ test("resolvePaths with no ~ in path", async () => {
 });
 
 test("resolvePaths with ~ in path", async () => {
-    // const filePath = "~/.cache/yarn";
     const cacheDir = uuid();
     const filePath = `~/${cacheDir}`;
     // Create the following layout:
