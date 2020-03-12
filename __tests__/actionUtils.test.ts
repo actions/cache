@@ -7,6 +7,7 @@ import { promises as fs } from "fs";
 import { Events, Outputs, State } from "../src/constants";
 import { ArtifactCacheEntry } from "../src/contracts";
 import * as actionUtils from "../src/utils/actionUtils";
+import uuid = require("uuid");
 
 jest.mock("@actions/core");
 jest.mock("os");
@@ -224,7 +225,12 @@ test("resolvePaths with no ~ in path", async () => {
 });
 
 test("resolvePaths with ~ in path", async () => {
-    const filePath = "~/.cache/yarn";
+    // const filePath = "~/.cache/yarn";
+    const cacheDir = uuid();
+    const filePath = `~/${cacheDir}`;
+    // Create the following layout:
+    //   ~/uuid
+    //   ~/uuid/file.txt
 
     const homedir = jest.requireActual("os").homedir();
     const homedirMock = jest.spyOn(os, "homedir");
@@ -232,15 +238,21 @@ test("resolvePaths with ~ in path", async () => {
         return homedir;
     });
 
+    const target = path.join(homedir, cacheDir);
+    await fs.mkdir(target, { recursive: true });
+    await fs.writeFile(path.join(target, "file.txt"), "cached");
+
     const root = getTempDir();
     process.env["GITHUB_WORKSPACE"] = root;
 
-    const resolvedPath = await actionUtils.resolvePaths([filePath]);
+    try {
+        const resolvedPath = await actionUtils.resolvePaths([filePath]);
 
-    const expectedPath = [
-        path.relative(root, path.join(homedir, ".cache/yarn"))
-    ];
-    expect(resolvedPath).toStrictEqual(expectedPath);
+        const expectedPath = [path.relative(root, target)];
+        expect(resolvedPath).toStrictEqual(expectedPath);
+    } finally {
+        await io.rmRF(target);
+    }
 });
 
 test("resolvePaths with home not found", async () => {
