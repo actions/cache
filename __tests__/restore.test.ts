@@ -241,7 +241,7 @@ test("restore with cache found", async () => {
     await run();
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(getCacheMock).toHaveBeenCalledWith([key]);
+    expect(getCacheMock).toHaveBeenCalledWith();
     expect(setCacheStateMock).toHaveBeenCalledWith(cacheEntry);
     expect(createTempDirectoryMock).toHaveBeenCalledTimes(1);
     expect(downloadCacheMock).toHaveBeenCalledWith(
@@ -307,7 +307,7 @@ test("restore with a pull request event and cache found", async () => {
     await run();
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(getCacheMock).toHaveBeenCalledWith([key]);
+    expect(getCacheMock).toHaveBeenCalledWith();
     expect(setCacheStateMock).toHaveBeenCalledWith(cacheEntry);
     expect(createTempDirectoryMock).toHaveBeenCalledTimes(1);
     expect(downloadCacheMock).toHaveBeenCalledWith(
@@ -374,7 +374,7 @@ test("restore with cache found for restore key", async () => {
     await run();
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(getCacheMock).toHaveBeenCalledWith([key, restoreKey]);
+    expect(getCacheMock).toHaveBeenCalledWith();
     expect(setCacheStateMock).toHaveBeenCalledWith(cacheEntry);
     expect(createTempDirectoryMock).toHaveBeenCalledTimes(1);
     expect(downloadCacheMock).toHaveBeenCalledWith(

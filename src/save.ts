@@ -45,7 +45,7 @@ async function run(): Promise<void> {
         core.debug(`Cache ID: ${cacheId}`);
         const cachePaths = await utils.resolvePaths(
             core
-                .getInput(Inputs.Path)
+                .getInput(Inputs.Path, { required: true })
                 .split("\n")
                 .filter(x => x !== "")
         );

@@ -161,11 +161,10 @@ test("save with missing input outputs warning", async () => {
 
     await run();
 
-    // TODO: this shouldn't be necessary if tarball contains entries relative to workspace
-    expect(logWarningMock).not.toHaveBeenCalledWith(
+    expect(logWarningMock).toHaveBeenCalledWith(
         "Input required and not supplied: path"
     );
-    expect(logWarningMock).toHaveBeenCalledTimes(0);
+    expect(logWarningMock).toHaveBeenCalledTimes(1);
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 

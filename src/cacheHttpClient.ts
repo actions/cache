@@ -1,5 +1,6 @@
 import * as core from "@actions/core";
 import * as fs from "fs";
+import * as crypto from "crypto";
 import { BearerCredentialHandler } from "@actions/http-client/auth";
 import { HttpClient, HttpCodes } from "@actions/http-client";
 import {
@@ -14,6 +15,9 @@ import {
     ReserveCacheResponse
 } from "./contracts";
 import * as utils from "./utils/actionUtils";
+import { Inputs } from "./constants";
+
+const versionSalt = "1.0";
 
 function isSuccessStatusCode(statusCode?: number): boolean {
     if (!statusCode) {
@@ -77,11 +81,25 @@ function createHttpClient(): HttpClient {
     );
 }
 
-export async function getCacheEntry(
-    keys: string[]
-): Promise<ArtifactCacheEntry | null> {
+function getCacheVersion(): string {
+    // Add salt to cache version to support breaking changes in cache entry
+    const components = [
+        core.getInput(Inputs.Key),
+        core.getInput(Inputs.RestoreKeys),
+        core.getInput(Inputs.Path),
+        versionSalt
+    ];
+
+    return crypto
+        .createHash("sha256")
+        .update(components.join("|"))
+        .digest("hex");
+}
+
+export async function getCacheEntry(): Promise<ArtifactCacheEntry | null> {
     const httpClient = createHttpClient();
-    const resource = `cache?keys=${encodeURIComponent(keys.join(","))}`;
+    const version = getCacheVersion();
+    const resource = `cache?version=${version}`;
 
     const response = await httpClient.getJson<ArtifactCacheEntry>(
         getCacheApiUrl(resource)
@@ -129,9 +147,11 @@ export async function downloadCache(
 // Reserve Cache
 export async function reserveCache(key: string): Promise<number> {
     const httpClient = createHttpClient();
+    const version = getCacheVersion();
 
     const reserveCacheRequest: ReserveCacheRequest = {
-        key
+        key,
+        version
     };
     const response = await httpClient.postJson<ReserveCacheResponse>(
         getCacheApiUrl("caches"),

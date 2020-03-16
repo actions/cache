@@ -2183,9 +2183,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const fs = __importStar(__webpack_require__(747));
+const crypto = __importStar(__webpack_require__(417));
 const auth_1 = __webpack_require__(226);
 const http_client_1 = __webpack_require__(539);
 const utils = __importStar(__webpack_require__(443));
+const constants_1 = __webpack_require__(694);
+const versionSalt = "1.0";
 function isSuccessStatusCode(statusCode) {
     if (!statusCode) {
         return false;
@@ -2231,11 +2234,25 @@ function createHttpClient() {
     const bearerCredentialHandler = new auth_1.BearerCredentialHandler(token);
     return new http_client_1.HttpClient("actions/cache", [bearerCredentialHandler], getRequestOptions());
 }
-function getCacheEntry(keys) {
+function getCacheVersion() {
+    // Add salt to cache version to support breaking changes in cache entry
+    const components = [
+        core.getInput(constants_1.Inputs.Key),
+        core.getInput(constants_1.Inputs.RestoreKeys),
+        core.getInput(constants_1.Inputs.Path),
+        versionSalt
+    ];
+    return crypto
+        .createHash("sha256")
+        .update(components.join("|"))
+        .digest("hex");
+}
+function getCacheEntry() {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
         const httpClient = createHttpClient();
-        const resource = `cache?keys=${encodeURIComponent(keys.join(","))}`;
+        const version = getCacheVersion();
+        const resource = `cache?version=${version}`;
         const response = yield httpClient.getJson(getCacheApiUrl(resource));
         if (response.statusCode === 204) {
             return null;
@@ -2278,8 +2295,10 @@ function reserveCache(key) {
     var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function* () {
         const httpClient = createHttpClient();
+        const version = getCacheVersion();
         const reserveCacheRequest = {
-            key
+            key,
+            version
         };
         const response = yield httpClient.postJson(getCacheApiUrl("caches"), reserveCacheRequest);
         return _c = (_b = (_a = response) === null || _a === void 0 ? void 0 : _a.result) === null || _b === void 0 ? void 0 : _b.cacheId, (_c !== null && _c !== void 0 ? _c : -1);
@@ -4568,7 +4587,7 @@ function run() {
                 }
             }
             try {
-                const cacheEntry = yield cacheHttpClient.getCacheEntry(keys);
+                const cacheEntry = yield cacheHttpClient.getCacheEntry();
                 if (!((_a = cacheEntry) === null || _a === void 0 ? void 0 : _a.archiveLocation)) {
                     core.info(`Cache not found for input keys: ${keys.join(", ")}`);
                     return;
