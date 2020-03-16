@@ -2237,9 +2237,9 @@ function createHttpClient() {
 function getCacheVersion() {
     // Add salt to cache version to support breaking changes in cache entry
     const components = [
-        core.getInput(constants_1.Inputs.Key),
-        core.getInput(constants_1.Inputs.RestoreKeys),
-        core.getInput(constants_1.Inputs.Path),
+        core.getInput(constants_1.Inputs.Key, { required: true }),
+        core.getInput(constants_1.Inputs.RestoreKeys, { required: false }),
+        core.getInput(constants_1.Inputs.Path, { required: true }),
         versionSalt
     ];
     return crypto
@@ -2247,6 +2247,7 @@ function getCacheVersion() {
         .update(components.join("|"))
         .digest("hex");
 }
+exports.getCacheVersion = getCacheVersion;
 function getCacheEntry() {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {

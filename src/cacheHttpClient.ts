@@ -81,12 +81,12 @@ function createHttpClient(): HttpClient {
     );
 }
 
-function getCacheVersion(): string {
+export function getCacheVersion(): string {
     // Add salt to cache version to support breaking changes in cache entry
     const components = [
-        core.getInput(Inputs.Key),
-        core.getInput(Inputs.RestoreKeys),
-        core.getInput(Inputs.Path),
+        core.getInput(Inputs.Key, { required: true }),
+        core.getInput(Inputs.RestoreKeys, { required: false }),
+        core.getInput(Inputs.Path, { required: true }),
         versionSalt
     ];
 
