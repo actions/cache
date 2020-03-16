@@ -84,8 +84,6 @@ function createHttpClient(): HttpClient {
 export function getCacheVersion(): string {
     // Add salt to cache version to support breaking changes in cache entry
     const components = [
-        core.getInput(Inputs.Key, { required: true }),
-        core.getInput(Inputs.RestoreKeys, { required: false }),
         core.getInput(Inputs.Path, { required: true }),
         versionSalt
     ];
@@ -96,10 +94,14 @@ export function getCacheVersion(): string {
         .digest("hex");
 }
 
-export async function getCacheEntry(): Promise<ArtifactCacheEntry | null> {
+export async function getCacheEntry(
+    keys: string[]
+): Promise<ArtifactCacheEntry | null> {
     const httpClient = createHttpClient();
     const version = getCacheVersion();
-    const resource = `cache?version=${version}`;
+    const resource = `cache?keys=${encodeURIComponent(
+        keys.join(",")
+    )}&version=${version}`;
 
     const response = await httpClient.getJson<ArtifactCacheEntry>(
         getCacheApiUrl(resource)

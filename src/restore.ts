@@ -54,7 +54,7 @@ async function run(): Promise<void> {
         }
 
         try {
-            const cacheEntry = await cacheHttpClient.getCacheEntry();
+            const cacheEntry = await cacheHttpClient.getCacheEntry(keys);
             if (!cacheEntry?.archiveLocation) {
                 core.info(`Cache not found for input keys: ${keys.join(", ")}`);
                 return;

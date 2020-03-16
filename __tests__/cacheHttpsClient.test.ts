@@ -1,34 +1,18 @@
 import * as testUtils from "../src/utils/testUtils";
 import { getCacheVersion } from "../src/cacheHttpClient";
+import { Inputs } from "../src/constants";
 
 afterEach(() => {
     testUtils.clearInputs();
 });
 
-test("getCacheVersion with no restore keys returns version", async () => {
-    testUtils.setInputs({
-        path: "node-test",
-        key: "node_modules"
-    });
+test("getCacheVersion with path input returns version", async () => {
+    testUtils.setInput(Inputs.Path, "node_modules");
 
     const result = getCacheVersion();
 
     expect(result).toEqual(
-        "ee9d5dc2e8e2df8e32f62c367796abefc134790584015d8e1207523c9085e87e"
-    );
-});
-
-test("getCacheVersion with restore keys returns version", async () => {
-    testUtils.setInputs({
-        path: "node-test",
-        key: "node_modules",
-        restoreKeys: ["node-", "node"]
-    });
-
-    const result = getCacheVersion();
-
-    expect(result).toEqual(
-        "b8596b1e42c34a25be7b43c7b91892ed3ba81cba1e075365f408b35dbfabb61b"
+        "b3e0c6cb5ecf32614eeb2997d905b9c297046d7cbf69062698f25b14b4cb0985"
     );
 });
 

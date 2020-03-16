@@ -2237,8 +2237,6 @@ function createHttpClient() {
 function getCacheVersion() {
     // Add salt to cache version to support breaking changes in cache entry
     const components = [
-        core.getInput(constants_1.Inputs.Key, { required: true }),
-        core.getInput(constants_1.Inputs.RestoreKeys, { required: false }),
         core.getInput(constants_1.Inputs.Path, { required: true }),
         versionSalt
     ];
@@ -2248,12 +2246,12 @@ function getCacheVersion() {
         .digest("hex");
 }
 exports.getCacheVersion = getCacheVersion;
-function getCacheEntry() {
+function getCacheEntry(keys) {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
         const httpClient = createHttpClient();
         const version = getCacheVersion();
-        const resource = `cache?version=${version}`;
+        const resource = `cache?keys=${encodeURIComponent(keys.join(","))}&version=${version}`;
         const response = yield httpClient.getJson(getCacheApiUrl(resource));
         if (response.statusCode === 204) {
             return null;
