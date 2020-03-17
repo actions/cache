@@ -1,5 +1,6 @@
 import * as exec from "@actions/exec";
 import * as io from "@actions/io";
+
 import * as tar from "../src/tar";
 
 jest.mock("@actions/exec");

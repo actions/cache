@@ -1,12 +1,13 @@
 import * as core from "@actions/core";
-import * as fs from "fs";
-import { BearerCredentialHandler } from "@actions/http-client/auth";
 import { HttpClient, HttpCodes } from "@actions/http-client";
+import { BearerCredentialHandler } from "@actions/http-client/auth";
 import {
     IHttpClientResponse,
     IRequestOptions,
     ITypedResponse
 } from "@actions/http-client/interfaces";
+import * as fs from "fs";
+
 import {
     ArtifactCacheEntry,
     CommitCacheRequest,
