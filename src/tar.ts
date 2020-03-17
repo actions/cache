@@ -1,8 +1,8 @@
+import { exec } from "@actions/exec";
 import * as io from "@actions/io";
+import { existsSync, writeFileSync } from "fs";
 import * as path from "path";
 import { CacheFilename } from "./constants";
-import { exec } from "@actions/exec";
-import { existsSync, writeFileSync } from "fs";
 
 async function getTarPath(): Promise<string> {
     // Explicitly use BSD Tar on Windows
@@ -20,8 +20,6 @@ async function execTar(args: string[], cwd?: string): Promise<void> {
     try {
         await exec(`"${await getTarPath()}"`, args, { cwd: cwd });
     } catch (error) {
-        console.log("error", error);
-
         const IS_WINDOWS = process.platform === "win32";
         if (IS_WINDOWS) {
             throw new Error(
