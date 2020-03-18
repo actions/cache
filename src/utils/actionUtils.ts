@@ -3,6 +3,7 @@ import * as io from "@actions/io";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import * as util from "util";
 import * as uuidV4 from "uuid/v4";
 
 import { Events, Outputs, State } from "../constants";
@@ -104,4 +105,8 @@ export function getSupportedEvents(): string[] {
 export function isValidEvent(): boolean {
     const githubEvent = process.env[Events.Key] || "";
     return getSupportedEvents().includes(githubEvent);
+}
+
+export function unlinkFile(path: fs.PathLike): Promise<void> {
+    return util.promisify(fs.unlink)(path);
 }

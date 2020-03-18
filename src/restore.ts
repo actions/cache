@@ -75,20 +75,29 @@ async function run(): Promise<void> {
             // Store the cache result
             utils.setCacheState(cacheEntry);
 
-            // Download the cache from the cache entry
-            await cacheHttpClient.downloadCache(
-                cacheEntry.archiveLocation,
-                archivePath
-            );
+            try {
+                // Download the cache from the cache entry
+                await cacheHttpClient.downloadCache(
+                    cacheEntry.archiveLocation,
+                    archivePath
+                );
 
-            const archiveFileSize = utils.getArchiveFileSize(archivePath);
-            core.info(
-                `Cache Size: ~${Math.round(
-                    archiveFileSize / (1024 * 1024)
-                )} MB (${archiveFileSize} B)`
-            );
+                const archiveFileSize = utils.getArchiveFileSize(archivePath);
+                core.info(
+                    `Cache Size: ~${Math.round(
+                        archiveFileSize / (1024 * 1024)
+                    )} MB (${archiveFileSize} B)`
+                );
 
-            await extractTar(archivePath, cachePath);
+                await extractTar(archivePath, cachePath);
+            } finally {
+                // Try to delete the archive to save space
+                try {
+                    await utils.unlinkFile(archivePath);
+                } catch (error) {
+                    core.debug(`Failed to delete archive: ${error}`);
+                }
+            }
 
             const isExactKeyMatch = utils.isExactKeyMatch(
                 primaryKey,

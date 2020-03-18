@@ -1651,6 +1651,7 @@ const io = __importStar(__webpack_require__(1));
 const fs = __importStar(__webpack_require__(747));
 const os = __importStar(__webpack_require__(87));
 const path = __importStar(__webpack_require__(622));
+const util = __importStar(__webpack_require__(669));
 const uuidV4 = __importStar(__webpack_require__(826));
 const constants_1 = __webpack_require__(694);
 // From https://github.com/actions/toolkit/blob/master/packages/tool-cache/src/tool-cache.ts#L23
@@ -1743,6 +1744,10 @@ function isValidEvent() {
     return getSupportedEvents().includes(githubEvent);
 }
 exports.isValidEvent = isValidEvent;
+function unlinkFile(path) {
+    return util.promisify(fs.unlink)(path);
+}
+exports.unlinkFile = unlinkFile;
 
 
 /***/ }),
