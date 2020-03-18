@@ -104,7 +104,7 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 - uses: actions/cache@v1
   with:
     path: ~/.gradle/caches
-    key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+    key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
     restore-keys: |
       ${{ runner.os }}-gradle-
 ```
