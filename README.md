@@ -90,7 +90,7 @@ Using the `cache-hit` output, subsequent steps (such as install or build) can be
 Example:
 ```yaml
 steps:
-  - uses: actions/checkout@v1
+  - uses: actions/checkout@v2
 
   - uses: actions/cache@v1
     id: cache
