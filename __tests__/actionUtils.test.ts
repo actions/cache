@@ -350,9 +350,8 @@ test("unlinkFile unlinks file", async () => {
 
     await actionUtils.unlinkFile(testFile);
 
-    await expect(fs.stat(testFile)).rejects.toThrow(
-        `ENOENT: no such file or directory, stat '${testFile}'`
-    );
+    // This should throw as testFile should not exist
+    await expect(fs.stat(testFile)).rejects.toThrow();
 
     await fs.rmdir(testDirectory);
 });
