@@ -3,8 +3,8 @@ import * as io from "@actions/io";
 import { promises as fs } from "fs";
 import * as path from "path";
 
-import * as tar from "../src/tar";
 import { CacheFilename } from "../src/constants";
+import * as tar from "../src/tar";
 
 jest.mock("@actions/exec");
 jest.mock("@actions/io");

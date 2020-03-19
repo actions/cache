@@ -1,6 +1,6 @@
-import * as testUtils from "../src/utils/testUtils";
 import { getCacheVersion } from "../src/cacheHttpClient";
 import { Inputs } from "../src/constants";
+import * as testUtils from "../src/utils/testUtils";
 
 afterEach(() => {
     testUtils.clearInputs();

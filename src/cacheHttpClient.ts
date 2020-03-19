@@ -1,6 +1,4 @@
 import * as core from "@actions/core";
-import * as fs from "fs";
-import * as crypto from "crypto";
 import { HttpClient, HttpCodes } from "@actions/http-client";
 import { BearerCredentialHandler } from "@actions/http-client/auth";
 import {
@@ -8,7 +6,10 @@ import {
     IRequestOptions,
     ITypedResponse
 } from "@actions/http-client/interfaces";
+import * as crypto from "crypto";
+import * as fs from "fs";
 
+import { Inputs } from "./constants";
 import {
     ArtifactCacheEntry,
     CommitCacheRequest,
@@ -16,7 +17,6 @@ import {
     ReserveCacheResponse
 } from "./contracts";
 import * as utils from "./utils/actionUtils";
-import { Inputs } from "./constants";
 
 const versionSalt = "1.0";
 

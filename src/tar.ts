@@ -2,6 +2,7 @@ import { exec } from "@actions/exec";
 import * as io from "@actions/io";
 import { existsSync, writeFileSync } from "fs";
 import * as path from "path";
+
 import { CacheFilename } from "./constants";
 
 async function getTarPath(): Promise<string> {

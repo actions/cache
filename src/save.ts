@@ -2,7 +2,7 @@ import * as core from "@actions/core";
 import * as path from "path";
 
 import * as cacheHttpClient from "./cacheHttpClient";
-import { Events, Inputs, State, CacheFilename } from "./constants";
+import { CacheFilename, Events, Inputs, State } from "./constants";
 import { createTar } from "./tar";
 import * as utils from "./utils/actionUtils";
 
