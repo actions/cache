@@ -1,8 +1,7 @@
 import * as core from "@actions/core";
-import * as io from "@actions/io";
 import * as glob from "@actions/glob";
+import * as io from "@actions/io";
 import * as fs from "fs";
-import * as os from "os";
 import * as path from "path";
 import * as util from "util";
 import * as uuidV4 from "uuid/v4";
