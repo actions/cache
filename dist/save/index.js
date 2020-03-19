@@ -2184,8 +2184,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const fs = __importStar(__webpack_require__(747));
 const crypto = __importStar(__webpack_require__(417));
-const auth_1 = __webpack_require__(226);
 const http_client_1 = __webpack_require__(539);
+const auth_1 = __webpack_require__(226);
 const utils = __importStar(__webpack_require__(443));
 const constants_1 = __webpack_require__(694);
 const versionSalt = "1.0";
@@ -3189,6 +3189,7 @@ const io = __importStar(__webpack_require__(1));
 const glob = __importStar(__webpack_require__(281));
 const fs = __importStar(__webpack_require__(747));
 const path = __importStar(__webpack_require__(622));
+const util = __importStar(__webpack_require__(669));
 const uuidV4 = __importStar(__webpack_require__(826));
 const constants_1 = __webpack_require__(694);
 // From https://github.com/actions/toolkit/blob/master/packages/tool-cache/src/tool-cache.ts#L23
@@ -3299,6 +3300,10 @@ function isValidEvent() {
     return getSupportedEvents().includes(githubEvent);
 }
 exports.isValidEvent = isValidEvent;
+function unlinkFile(path) {
+    return util.promisify(fs.unlink)(path);
+}
+exports.unlinkFile = unlinkFile;
 
 
 /***/ }),
@@ -4931,11 +4936,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const exec_1 = __webpack_require__(986);
 const io = __importStar(__webpack_require__(1));
+const fs_1 = __webpack_require__(747);
 const path = __importStar(__webpack_require__(622));
 const constants_1 = __webpack_require__(694);
-const exec_1 = __webpack_require__(986);
-const fs_1 = __webpack_require__(747);
 function getTarPath() {
     return __awaiter(this, void 0, void 0, function* () {
         // Explicitly use BSD Tar on Windows
@@ -4956,7 +4961,6 @@ function execTar(args, cwd) {
             yield exec_1.exec(`"${yield getTarPath()}"`, args, { cwd: cwd });
         }
         catch (error) {
-            console.log("error", error);
             const IS_WINDOWS = process.platform === "win32";
             if (IS_WINDOWS) {
                 throw new Error(`Tar failed with error: ${(_a = error) === null || _a === void 0 ? void 0 : _a.message}. Ensure BSD tar is installed and on the PATH.`);

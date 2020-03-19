@@ -1,5 +1,6 @@
 import * as core from "@actions/core";
 import * as path from "path";
+
 import * as cacheHttpClient from "../src/cacheHttpClient";
 import { Events, Inputs } from "../src/constants";
 import { ArtifactCacheEntry } from "../src/contracts";
@@ -236,6 +237,7 @@ test("restore with cache found", async () => {
         .mockReturnValue(fileSize);
 
     const extractTarMock = jest.spyOn(tar, "extractTar");
+    const unlinkFileMock = jest.spyOn(actionUtils, "unlinkFile");
     const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
 
     await run();
@@ -252,6 +254,9 @@ test("restore with cache found", async () => {
 
     expect(extractTarMock).toHaveBeenCalledTimes(1);
     expect(extractTarMock).toHaveBeenCalledWith(archivePath);
+
+    expect(unlinkFileMock).toHaveBeenCalledTimes(1);
+    expect(unlinkFileMock).toHaveBeenCalledWith(archivePath);
 
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(true);

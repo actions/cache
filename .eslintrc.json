@@ -12,5 +12,12 @@
     "plugin:prettier/recommended",
     "prettier/@typescript-eslint"
   ],
-  "plugins": ["@typescript-eslint", "jest"]
+  "plugins": ["@typescript-eslint", "simple-import-sort", "jest"],
+  "rules": {
+    "import/first": "error",
+    "import/newline-after-import": "error",
+    "import/no-duplicates": "error",
+    "simple-import-sort/sort": "error",
+    "sort-imports": "off"
+  }
 }
