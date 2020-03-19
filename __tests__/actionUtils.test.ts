@@ -343,13 +343,15 @@ test("isValidEvent returns true for pull request event", () => {
 });
 
 test("unlinkFile unlinks file", async () => {
-    const testDirectory = fs.mkdtempSync("unlinkFileTest");
+    const testDirectory = await fs.mkdtemp("unlinkFileTest");
     const testFile = path.join(testDirectory, "test.txt");
-    fs.writeFileSync(testFile, "hello world");
+    await fs.writeFile(testFile, "hello world");
 
     await actionUtils.unlinkFile(testFile);
 
-    expect(fs.existsSync(testFile)).toBe(false);
+    await expect(fs.stat(testFile)).rejects.toThrow(
+        `ENOENT: no such file or directory, stat '${testFile}'`
+    );
 
-    fs.rmdirSync(testDirectory);
+    await fs.rmdir(testDirectory);
 });
