@@ -140,10 +140,14 @@ For npm, cache files are stored in `~/.npm` on Posix, or `%AppData%/npm-cache` o
 ### Windows
 
 ```yaml
+- name: Get npm cache directory
+  id: npm-cache
+  run: |
+    echo "::set-output name=dir::$(npm config get cache)"
 - uses: actions/cache@v1
   with:
-    path: ~\AppData\Roaming\npm-cache
-    key: ${{ runner.os }}-node-${{ hashFiles('**\package-lock.json') }}
+    path: ${{ steps.npm-cache.outputs.dir }}
+    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
     restore-keys: |
       ${{ runner.os }}-node-
 ```
