@@ -185,7 +185,7 @@ The yarn cache directory will depend on your operating system and version of `ya
 
 ```yaml
 - name: restore lerna
-  uses: actions/cache@v3
+  uses: actions/cache@v2
    with:
      path: |
        node_modules
