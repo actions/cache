@@ -12,6 +12,7 @@
     - [Windows](#windows)
     - [Using multiple systems and `npm config`](#using-multiple-systems-and-npm-config)
   - [Node - Yarn](#node---yarn)
+  - [Node - Lerna](#node---lerna)
   - [OCaml/Reason - esy](#ocamlreason---esy)
   - [PHP - Composer](#php---composer)
   - [Python - pip](#python---pip)
@@ -182,6 +183,18 @@ The yarn cache directory will depend on your operating system and version of `ya
     key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
     restore-keys: |
       ${{ runner.os }}-yarn-
+```
+
+## Node - Lerna
+
+```yaml
+- name: restore lerna
+  uses: actions/cache@v2
+   with:
+     path: |
+       node_modules
+        */*/node_modules
+     key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
 ```
 
 ## OCaml/Reason - esy

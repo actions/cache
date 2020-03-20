@@ -6,8 +6,10 @@ import {
     IRequestOptions,
     ITypedResponse
 } from "@actions/http-client/interfaces";
+import * as crypto from "crypto";
 import * as fs from "fs";
 
+import { Inputs } from "./constants";
 import {
     ArtifactCacheEntry,
     CommitCacheRequest,
@@ -15,6 +17,8 @@ import {
     ReserveCacheResponse
 } from "./contracts";
 import * as utils from "./utils/actionUtils";
+
+const versionSalt = "1.0";
 
 function isSuccessStatusCode(statusCode?: number): boolean {
     if (!statusCode) {
@@ -78,11 +82,27 @@ function createHttpClient(): HttpClient {
     );
 }
 
+export function getCacheVersion(): string {
+    // Add salt to cache version to support breaking changes in cache entry
+    const components = [
+        core.getInput(Inputs.Path, { required: true }),
+        versionSalt
+    ];
+
+    return crypto
+        .createHash("sha256")
+        .update(components.join("|"))
+        .digest("hex");
+}
+
 export async function getCacheEntry(
     keys: string[]
 ): Promise<ArtifactCacheEntry | null> {
     const httpClient = createHttpClient();
-    const resource = `cache?keys=${encodeURIComponent(keys.join(","))}`;
+    const version = getCacheVersion();
+    const resource = `cache?keys=${encodeURIComponent(
+        keys.join(",")
+    )}&version=${version}`;
 
     const response = await httpClient.getJson<ArtifactCacheEntry>(
         getCacheApiUrl(resource)
@@ -130,9 +150,11 @@ export async function downloadCache(
 // Reserve Cache
 export async function reserveCache(key: string): Promise<number> {
     const httpClient = createHttpClient();
+    const version = getCacheVersion();
 
     const reserveCacheRequest: ReserveCacheRequest = {
-        key
+        key,
+        version
     };
     const response = await httpClient.postJson<ReserveCacheResponse>(
         getCacheApiUrl("caches"),

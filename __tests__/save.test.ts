@@ -2,7 +2,7 @@ import * as core from "@actions/core";
 import * as path from "path";
 
 import * as cacheHttpClient from "../src/cacheHttpClient";
-import { Events, Inputs } from "../src/constants";
+import { CacheFilename, Events, Inputs } from "../src/constants";
 import { ArtifactCacheEntry } from "../src/contracts";
 import run from "../src/save";
 import * as tar from "../src/tar";
@@ -41,9 +41,11 @@ beforeAll(() => {
         return actualUtils.getSupportedEvents();
     });
 
-    jest.spyOn(actionUtils, "resolvePath").mockImplementation(filePath => {
-        return path.resolve(filePath);
-    });
+    jest.spyOn(actionUtils, "resolvePaths").mockImplementation(
+        async filePaths => {
+            return filePaths.map(x => path.resolve(x));
+        }
+    );
 
     jest.spyOn(actionUtils, "createTempDirectory").mockImplementation(() => {
         return Promise.resolve("/foo/bar");
@@ -190,7 +192,7 @@ test("save with large cache outputs warning", async () => {
         });
 
     const inputPath = "node_modules";
-    const cachePath = path.resolve(inputPath);
+    const cachePaths = [path.resolve(inputPath)];
     testUtils.setInput(Inputs.Path, inputPath);
 
     const createTarMock = jest.spyOn(tar, "createTar");
@@ -202,10 +204,10 @@ test("save with large cache outputs warning", async () => {
 
     await run();
 
-    const archivePath = path.join("/foo/bar", "cache.tgz");
+    const archiveFolder = "/foo/bar";
 
     expect(createTarMock).toHaveBeenCalledTimes(1);
-    expect(createTarMock).toHaveBeenCalledWith(archivePath, cachePath);
+    expect(createTarMock).toHaveBeenCalledWith(archiveFolder, cachePaths);
 
     expect(logWarningMock).toHaveBeenCalledTimes(1);
     expect(logWarningMock).toHaveBeenCalledWith(
@@ -289,7 +291,7 @@ test("save with server error outputs warning", async () => {
         });
 
     const inputPath = "node_modules";
-    const cachePath = path.resolve(inputPath);
+    const cachePaths = [path.resolve(inputPath)];
     testUtils.setInput(Inputs.Path, inputPath);
 
     const cacheId = 4;
@@ -312,13 +314,14 @@ test("save with server error outputs warning", async () => {
     expect(reserveCacheMock).toHaveBeenCalledTimes(1);
     expect(reserveCacheMock).toHaveBeenCalledWith(primaryKey);
 
-    const archivePath = path.join("/foo/bar", "cache.tgz");
+    const archiveFolder = "/foo/bar";
+    const archiveFile = path.join(archiveFolder, CacheFilename);
 
     expect(createTarMock).toHaveBeenCalledTimes(1);
-    expect(createTarMock).toHaveBeenCalledWith(archivePath, cachePath);
+    expect(createTarMock).toHaveBeenCalledWith(archiveFolder, cachePaths);
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith(cacheId, archivePath);
+    expect(saveCacheMock).toHaveBeenCalledWith(cacheId, archiveFile);
 
     expect(logWarningMock).toHaveBeenCalledTimes(1);
     expect(logWarningMock).toHaveBeenCalledWith("HTTP Error Occurred");
@@ -348,7 +351,7 @@ test("save with valid inputs uploads a cache", async () => {
         });
 
     const inputPath = "node_modules";
-    const cachePath = path.resolve(inputPath);
+    const cachePaths = [path.resolve(inputPath)];
     testUtils.setInput(Inputs.Path, inputPath);
 
     const cacheId = 4;
@@ -367,13 +370,14 @@ test("save with valid inputs uploads a cache", async () => {
     expect(reserveCacheMock).toHaveBeenCalledTimes(1);
     expect(reserveCacheMock).toHaveBeenCalledWith(primaryKey);
 
-    const archivePath = path.join("/foo/bar", "cache.tgz");
+    const archiveFolder = "/foo/bar";
+    const archiveFile = path.join(archiveFolder, CacheFilename);
 
     expect(createTarMock).toHaveBeenCalledTimes(1);
-    expect(createTarMock).toHaveBeenCalledWith(archivePath, cachePath);
+    expect(createTarMock).toHaveBeenCalledWith(archiveFolder, cachePaths);
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith(cacheId, archivePath);
+    expect(saveCacheMock).toHaveBeenCalledWith(cacheId, archiveFile);
 
     expect(failedMock).toHaveBeenCalledTimes(0);
 });

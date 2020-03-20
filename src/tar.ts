@@ -1,6 +1,9 @@
 import { exec } from "@actions/exec";
 import * as io from "@actions/io";
-import { existsSync } from "fs";
+import { existsSync, writeFileSync } from "fs";
+import * as path from "path";
+
+import { CacheFilename } from "./constants";
 
 async function getTarPath(): Promise<string> {
     // Explicitly use BSD Tar on Windows
@@ -14,9 +17,9 @@ async function getTarPath(): Promise<string> {
     return await io.which("tar", true);
 }
 
-async function execTar(args: string[]): Promise<void> {
+async function execTar(args: string[], cwd?: string): Promise<void> {
     try {
-        await exec(`"${await getTarPath()}"`, args);
+        await exec(`"${await getTarPath()}"`, args, { cwd: cwd });
     } catch (error) {
         const IS_WINDOWS = process.platform === "win32";
         if (IS_WINDOWS) {
@@ -28,20 +31,38 @@ async function execTar(args: string[]): Promise<void> {
     }
 }
 
-export async function extractTar(
-    archivePath: string,
-    targetDirectory: string
-): Promise<void> {
+function getWorkingDirectory(): string {
+    return process.env["GITHUB_WORKSPACE"] ?? process.cwd();
+}
+
+export async function extractTar(archivePath: string): Promise<void> {
     // Create directory to extract tar into
-    await io.mkdirP(targetDirectory);
-    const args = ["-xz", "-f", archivePath, "-C", targetDirectory];
+    const workingDirectory = getWorkingDirectory();
+    await io.mkdirP(workingDirectory);
+    const args = ["-xz", "-f", archivePath, "-P", "-C", workingDirectory];
     await execTar(args);
 }
 
 export async function createTar(
-    archivePath: string,
-    sourceDirectory: string
+    archiveFolder: string,
+    sourceDirectories: string[]
 ): Promise<void> {
-    const args = ["-cz", "-f", archivePath, "-C", sourceDirectory, "."];
-    await execTar(args);
+    // Write source directories to manifest.txt to avoid command length limits
+    const manifestFilename = "manifest.txt";
+    writeFileSync(
+        path.join(archiveFolder, manifestFilename),
+        sourceDirectories.join("\n")
+    );
+
+    const workingDirectory = getWorkingDirectory();
+    const args = [
+        "-cz",
+        "-f",
+        CacheFilename,
+        "-C",
+        workingDirectory,
+        "--files-from",
+        manifestFilename
+    ];
+    await execTar(args, archiveFolder);
 }

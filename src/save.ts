@@ -2,7 +2,7 @@ import * as core from "@actions/core";
 import * as path from "path";
 
 import * as cacheHttpClient from "./cacheHttpClient";
-import { Events, Inputs, State } from "./constants";
+import { CacheFilename, Events, Inputs, State } from "./constants";
 import { createTar } from "./tar";
 import * as utils from "./utils/actionUtils";
 
@@ -44,18 +44,21 @@ async function run(): Promise<void> {
             return;
         }
         core.debug(`Cache ID: ${cacheId}`);
-        const cachePath = utils.resolvePath(
-            core.getInput(Inputs.Path, { required: true })
+        const cachePaths = await utils.resolvePaths(
+            core
+                .getInput(Inputs.Path, { required: true })
+                .split("\n")
+                .filter(x => x !== "")
         );
-        core.debug(`Cache Path: ${cachePath}`);
 
-        const archivePath = path.join(
-            await utils.createTempDirectory(),
-            "cache.tgz"
-        );
+        core.debug("Cache Paths:");
+        core.debug(`${JSON.stringify(cachePaths)}`);
+
+        const archiveFolder = await utils.createTempDirectory();
+        const archivePath = path.join(archiveFolder, CacheFilename);
         core.debug(`Archive Path: ${archivePath}`);
 
-        await createTar(archivePath, cachePath);
+        await createTar(archiveFolder, cachePaths);
 
         const fileSizeLimit = 5 * 1024 * 1024 * 1024; // 5GB per repo limit
         const archiveFileSize = utils.getArchiveFileSize(archivePath);
