@@ -3,12 +3,11 @@ import * as io from "@actions/io";
 import { promises as fs } from "fs";
 import * as os from "os";
 import * as path from "path";
+import { v4 as uuidv4 } from "uuid";
 
 import { Events, Outputs, State } from "../src/constants";
 import { ArtifactCacheEntry } from "../src/contracts";
 import * as actionUtils from "../src/utils/actionUtils";
-
-import uuid = require("uuid");
 
 jest.mock("@actions/core");
 jest.mock("os");
@@ -226,7 +225,7 @@ test("resolvePaths with no ~ in path", async () => {
 });
 
 test("resolvePaths with ~ in path", async () => {
-    const cacheDir = uuid();
+    const cacheDir = uuidv4();
     const filePath = `~/${cacheDir}`;
     // Create the following layout:
     //   ~/uuid
