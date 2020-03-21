@@ -23,8 +23,8 @@ fi
 
 # Verify file content
 content="$(cat $file)"
-echo "File content:\n$content"
-if [ -z "$(echo $content | grep --fixed-strings "$prefix $GITHUB_RUN_ID")" ]; then
+printf "File content:\n%s\n" "$content"
+if ! echo "$content" | grep --fixed-strings "$prefix $GITHUB_RUN_ID"; then
   echo "Unexpected file content"
   exit 1
 fi

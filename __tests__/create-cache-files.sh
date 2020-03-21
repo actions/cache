@@ -8,4 +8,4 @@ if [ -z "$prefix" ]; then
 fi
 
 mkdir test-cache
-echo "$prefix $GITHUB_RUN_ID" > test-cache/test-file.txt
+echo "$prefix $GITHUB_RUN_ID" >test-cache/test-file.txt
