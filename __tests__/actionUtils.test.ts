@@ -317,7 +317,7 @@ test("resolvePaths exclusion pattern returns not found", async () => {
 
         const resolvedPath = await actionUtils.resolvePaths(patterns);
 
-        const expectedPath = [];
+        const expectedPath: string[] = [];
         expect(resolvedPath).toStrictEqual(expectedPath);
     } finally {
         process.chdir(originalCwd);
