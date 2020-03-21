@@ -16,9 +16,9 @@ jobs:
   # Build and unit test
   build:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
-      fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
@@ -27,7 +27,7 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: '12.x'
-    - name: Determine npm cache directory
+    - name: Get npm cache directory
       id: npm-cache
       run: |
         echo "::set-output name=dir::$(npm config get cache)"
@@ -85,7 +85,7 @@ jobs:
   test-proxy-save:
     runs-on: ubuntu-latest
     container:
-      image: ubuntu:latest
+      image: imbsky/zstd:latest
       options: --dns 127.0.0.1
     services:
       squid-proxy:
@@ -108,7 +108,7 @@ jobs:
     needs: test-proxy-save
     runs-on: ubuntu-latest
     container:
-      image: ubuntu:latest
+      image: imbsky/zstd:latest
       options: --dns 127.0.0.1
     services:
       squid-proxy:
