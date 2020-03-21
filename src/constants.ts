@@ -20,3 +20,5 @@ export enum Events {
 }
 
 export const CacheFilename = "cache.tar.zst";
+
+export const ManifestFilename = "manifest.txt";

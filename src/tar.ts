@@ -3,7 +3,7 @@ import * as io from "@actions/io";
 import { existsSync, writeFileSync } from "fs";
 import * as path from "path";
 
-import { CacheFilename } from "./constants";
+import { CacheFilename, ManifestFilename } from "./constants";
 
 async function getTarPath(): Promise<string> {
     // Explicitly use BSD Tar on Windows
@@ -56,9 +56,8 @@ export async function createTar(
     sourceDirectories: string[]
 ): Promise<void> {
     // Write source directories to manifest.txt to avoid command length limits
-    const manifestFilename = "manifest.txt";
     writeFileSync(
-        path.join(archiveFolder, manifestFilename),
+        path.join(archiveFolder, ManifestFilename),
         sourceDirectories.join("\n")
     );
 
@@ -71,7 +70,7 @@ export async function createTar(
         "-C",
         workingDirectory,
         "--files-from",
-        manifestFilename
+        ManifestFilename
     ];
     await execTar(args, archiveFolder);
 }

@@ -3,7 +3,7 @@ import * as io from "@actions/io";
 import { promises as fs } from "fs";
 import * as path from "path";
 
-import { CacheFilename } from "../src/constants";
+import { CacheFilename, ManifestFilename } from "../src/constants";
 import * as tar from "../src/tar";
 
 jest.mock("@actions/exec");
@@ -32,11 +32,11 @@ test("extract tar", async () => {
     const execMock = jest.spyOn(exec, "exec");
 
     const archivePath = "cache.tar";
-    const workspace = process.env["GITHUB_WORKSPACE"];
+    const workingDirectory = process.env["GITHUB_WORKSPACE"];
 
     await tar.extractTar(archivePath);
 
-    expect(mkdirMock).toHaveBeenCalledWith(workspace);
+    expect(mkdirMock).toHaveBeenCalledWith(workingDirectory);
 
     const IS_WINDOWS = process.platform === "win32";
     const tarPath = IS_WINDOWS
@@ -52,7 +52,7 @@ test("extract tar", async () => {
             archivePath,
             "-P",
             "-C",
-            workspace
+            workingDirectory
         ],
         { cwd: undefined }
     );
@@ -62,8 +62,8 @@ test("create tar", async () => {
     const execMock = jest.spyOn(exec, "exec");
 
     const archiveFolder = getTempDir();
-    const workspace = process.env["GITHUB_WORKSPACE"];
-    const sourceDirectories = ["~/.npm/cache", `${workspace}/dist`];
+    const workingDirectory = process.env["GITHUB_WORKSPACE"];
+    const sourceDirectories = ["~/.npm/cache", `${workingDirectory}/dist`];
 
     await fs.mkdir(archiveFolder, { recursive: true });
 
@@ -83,12 +83,10 @@ test("create tar", async () => {
             "-cf",
             CacheFilename,
             "-C",
-            workspace,
+            workingDirectory,
             "--files-from",
-            "manifest.txt"
+            ManifestFilename
         ],
-        {
-            cwd: archiveFolder
-        }
+        { cwd: archiveFolder }
     );
 });
