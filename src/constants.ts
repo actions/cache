@@ -19,4 +19,4 @@ export enum Events {
     PullRequest = "pull_request"
 }
 
-export const CacheFilename = "cache.tgz";
+export const CacheFilename = "cache.tar.zst";

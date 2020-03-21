@@ -2,7 +2,7 @@ import * as core from "@actions/core";
 import * as path from "path";
 
 import * as cacheHttpClient from "./cacheHttpClient";
-import { Events, Inputs, State } from "./constants";
+import { CacheFilename, Events, Inputs, State } from "./constants";
 import { extractTar } from "./tar";
 import * as utils from "./utils/actionUtils";
 
@@ -63,7 +63,7 @@ async function run(): Promise<void> {
 
             const archivePath = path.join(
                 await utils.createTempDirectory(),
-                "cache.tgz"
+                CacheFilename
             );
             core.debug(`Archive Path: ${archivePath}`);
 

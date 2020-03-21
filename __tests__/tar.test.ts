@@ -45,7 +45,15 @@ test("extract tar", async () => {
     expect(execMock).toHaveBeenCalledTimes(1);
     expect(execMock).toHaveBeenCalledWith(
         `"${tarPath}"`,
-        ["-xz", "-f", archivePath, "-P", "-C", workspace],
+        [
+            "--use-compress-program",
+            "zstd --long=31 -d",
+            "-xf",
+            archivePath,
+            "-P",
+            "-C",
+            workspace
+        ],
         { cwd: undefined }
     );
 });
@@ -70,8 +78,9 @@ test("create tar", async () => {
     expect(execMock).toHaveBeenCalledWith(
         `"${tarPath}"`,
         [
-            "-cz",
-            "-f",
+            "--use-compress-program",
+            "zstd -T0 --long=31",
+            "-cf",
             CacheFilename,
             "-C",
             workspace,

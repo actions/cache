@@ -2,7 +2,7 @@ import * as core from "@actions/core";
 import * as path from "path";
 
 import * as cacheHttpClient from "../src/cacheHttpClient";
-import { Events, Inputs } from "../src/constants";
+import { CacheFilename, Events, Inputs } from "../src/constants";
 import { ArtifactCacheEntry } from "../src/contracts";
 import run from "../src/restore";
 import * as tar from "../src/tar";
@@ -227,7 +227,7 @@ test("restore with cache found", async () => {
         return Promise.resolve(tempPath);
     });
 
-    const archivePath = path.join(tempPath, "cache.tgz");
+    const archivePath = path.join(tempPath, CacheFilename);
     const setCacheStateMock = jest.spyOn(actionUtils, "setCacheState");
     const downloadCacheMock = jest.spyOn(cacheHttpClient, "downloadCache");
 
@@ -297,7 +297,7 @@ test("restore with a pull request event and cache found", async () => {
         return Promise.resolve(tempPath);
     });
 
-    const archivePath = path.join(tempPath, "cache.tgz");
+    const archivePath = path.join(tempPath, CacheFilename);
     const setCacheStateMock = jest.spyOn(actionUtils, "setCacheState");
     const downloadCacheMock = jest.spyOn(cacheHttpClient, "downloadCache");
 
@@ -364,7 +364,7 @@ test("restore with cache found for restore key", async () => {
         return Promise.resolve(tempPath);
     });
 
-    const archivePath = path.join(tempPath, "cache.tgz");
+    const archivePath = path.join(tempPath, CacheFilename);
     const setCacheStateMock = jest.spyOn(actionUtils, "setCacheState");
     const downloadCacheMock = jest.spyOn(cacheHttpClient, "downloadCache");
 
