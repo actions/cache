@@ -358,6 +358,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const os = __webpack_require__(87);
 const events = __webpack_require__(614);
 const child = __webpack_require__(129);
+const path = __webpack_require__(622);
+const io = __webpack_require__(1);
+const ioUtil = __webpack_require__(672);
 /* eslint-disable @typescript-eslint/unbound-method */
 const IS_WINDOWS = process.platform === 'win32';
 /*
@@ -703,6 +706,16 @@ class ToolRunner extends events.EventEmitter {
      */
     exec() {
         return __awaiter(this, void 0, void 0, function* () {
+            // root the tool path if it is unrooted and contains relative pathing
+            if (!ioUtil.isRooted(this.toolPath) &&
+                (this.toolPath.includes('/') ||
+                    (IS_WINDOWS && this.toolPath.includes('\\')))) {
+                // prefer options.cwd if it is specified, however options.cwd may also need to be rooted
+                this.toolPath = path.resolve(process.cwd(), this.options.cwd || process.cwd(), this.toolPath);
+            }
+            // if the tool is only a file name, then resolve it from the PATH
+            // otherwise verify it exists (add extension on Windows if necessary)
+            this.toolPath = yield io.which(this.toolPath, true);
             return new Promise((resolve, reject) => {
                 this._debug(`exec tool: ${this.toolPath}`);
                 this._debug('arguments:');
@@ -925,6 +938,52 @@ class ExecState extends events.EventEmitter {
 /***/ (function(module) {
 
 module.exports = require("tls");
+
+/***/ }),
+
+/***/ 62:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+Object.defineProperty(exports, "v1", {
+  enumerable: true,
+  get: function () {
+    return _v.default;
+  }
+});
+Object.defineProperty(exports, "v3", {
+  enumerable: true,
+  get: function () {
+    return _v2.default;
+  }
+});
+Object.defineProperty(exports, "v4", {
+  enumerable: true,
+  get: function () {
+    return _v3.default;
+  }
+});
+Object.defineProperty(exports, "v5", {
+  enumerable: true,
+  get: function () {
+    return _v4.default;
+  }
+});
+
+var _v = _interopRequireDefault(__webpack_require__(893));
+
+var _v2 = _interopRequireDefault(__webpack_require__(209));
+
+var _v3 = _interopRequireDefault(__webpack_require__(733));
+
+var _v4 = _interopRequireDefault(__webpack_require__(384));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /***/ }),
 
@@ -1872,21 +1931,6 @@ module.exports = require("child_process");
 
 /***/ }),
 
-/***/ 139:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-// Unique ID creation requires a high quality random # generator.  In node.js
-// this is pretty straight-forward - we use the crypto API.
-
-var crypto = __webpack_require__(417);
-
-module.exports = function nodeRNG() {
-  return crypto.randomBytes(16);
-};
-
-
-/***/ }),
-
 /***/ 141:
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -2182,12 +2226,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
-const fs = __importStar(__webpack_require__(747));
-const crypto = __importStar(__webpack_require__(417));
 const http_client_1 = __webpack_require__(539);
 const auth_1 = __webpack_require__(226);
-const utils = __importStar(__webpack_require__(443));
+const crypto = __importStar(__webpack_require__(417));
+const fs = __importStar(__webpack_require__(747));
 const constants_1 = __webpack_require__(694);
+const utils = __importStar(__webpack_require__(443));
 const versionSalt = "1.0";
 function isSuccessStatusCode(statusCode) {
     if (!statusCode) {
@@ -2247,7 +2291,6 @@ function getCacheVersion() {
 }
 exports.getCacheVersion = getCacheVersion;
 function getCacheEntry(keys) {
-    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         const httpClient = createHttpClient();
         const version = getCacheVersion();
@@ -2260,7 +2303,7 @@ function getCacheEntry(keys) {
             throw new Error(`Cache service responded with ${response.statusCode}`);
         }
         const cacheResult = response.result;
-        const cacheDownloadUrl = (_a = cacheResult) === null || _a === void 0 ? void 0 : _a.archiveLocation;
+        const cacheDownloadUrl = cacheResult === null || cacheResult === void 0 ? void 0 : cacheResult.archiveLocation;
         if (!cacheDownloadUrl) {
             throw new Error("Cache not found.");
         }
@@ -2291,7 +2334,7 @@ function downloadCache(archiveLocation, archivePath) {
 exports.downloadCache = downloadCache;
 // Reserve Cache
 function reserveCache(key) {
-    var _a, _b, _c;
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         const httpClient = createHttpClient();
         const version = getCacheVersion();
@@ -2300,7 +2343,7 @@ function reserveCache(key) {
             version
         };
         const response = yield httpClient.postJson(getCacheApiUrl("caches"), reserveCacheRequest);
-        return _c = (_b = (_a = response) === null || _a === void 0 ? void 0 : _a.result) === null || _b === void 0 ? void 0 : _b.cacheId, (_c !== null && _c !== void 0 ? _c : -1);
+        return (_b = (_a = response === null || response === void 0 ? void 0 : response.result) === null || _a === void 0 ? void 0 : _a.cacheId) !== null && _b !== void 0 ? _b : -1;
     });
 }
 exports.reserveCache = reserveCache;
@@ -2352,8 +2395,8 @@ function uploadFile(httpClient, cacheId, archivePath) {
         const fileSize = fs.statSync(archivePath).size;
         const resourceUrl = getCacheApiUrl(`caches/${cacheId.toString()}`);
         const fd = fs.openSync(archivePath, "r");
-        const concurrency = (_a = parseEnvNumber("CACHE_UPLOAD_CONCURRENCY"), (_a !== null && _a !== void 0 ? _a : 4)); // # of HTTP requests in parallel
-        const MAX_CHUNK_SIZE = (_b = parseEnvNumber("CACHE_UPLOAD_CHUNK_SIZE"), (_b !== null && _b !== void 0 ? _b : 32 * 1024 * 1024)); // 32 MB Chunks
+        const concurrency = (_a = parseEnvNumber("CACHE_UPLOAD_CONCURRENCY")) !== null && _a !== void 0 ? _a : 4; // # of HTTP requests in parallel
+        const MAX_CHUNK_SIZE = (_b = parseEnvNumber("CACHE_UPLOAD_CHUNK_SIZE")) !== null && _b !== void 0 ? _b : 32 * 1024 * 1024; // 32 MB Chunks
         core.debug(`Concurrency: ${concurrency} and Chunk Size: ${MAX_CHUNK_SIZE}`);
         const parallelUploads = [...new Array(concurrency).keys()];
         core.debug("Awaiting all uploads");
@@ -2407,10 +2450,110 @@ exports.saveCache = saveCache;
 
 /***/ }),
 
+/***/ 209:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _v = _interopRequireDefault(__webpack_require__(212));
+
+var _md = _interopRequireDefault(__webpack_require__(803));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const v3 = (0, _v.default)('v3', 0x30, _md.default);
+var _default = v3;
+exports.default = _default;
+module.exports = exports.default;
+
+/***/ }),
+
 /***/ 211:
 /***/ (function(module) {
 
 module.exports = require("https");
+
+/***/ }),
+
+/***/ 212:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = _default;
+exports.URL = exports.DNS = void 0;
+
+var _bytesToUuid = _interopRequireDefault(__webpack_require__(390));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function uuidToBytes(uuid) {
+  // Note: We assume we're being passed a valid uuid string
+  var bytes = [];
+  uuid.replace(/[a-fA-F0-9]{2}/g, function (hex) {
+    bytes.push(parseInt(hex, 16));
+  });
+  return bytes;
+}
+
+function stringToBytes(str) {
+  str = unescape(encodeURIComponent(str)); // UTF8 escape
+
+  var bytes = new Array(str.length);
+
+  for (var i = 0; i < str.length; i++) {
+    bytes[i] = str.charCodeAt(i);
+  }
+
+  return bytes;
+}
+
+const DNS = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+exports.DNS = DNS;
+const URL = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
+exports.URL = URL;
+
+function _default(name, version, hashfunc) {
+  var generateUUID = function (value, namespace, buf, offset) {
+    var off = buf && offset || 0;
+    if (typeof value == 'string') value = stringToBytes(value);
+    if (typeof namespace == 'string') namespace = uuidToBytes(namespace);
+    if (!Array.isArray(value)) throw TypeError('value must be an array of bytes');
+    if (!Array.isArray(namespace) || namespace.length !== 16) throw TypeError('namespace must be uuid string or an Array of 16 byte values'); // Per 4.3
+
+    var bytes = hashfunc(namespace.concat(value));
+    bytes[6] = bytes[6] & 0x0f | version;
+    bytes[8] = bytes[8] & 0x3f | 0x80;
+
+    if (buf) {
+      for (var idx = 0; idx < 16; ++idx) {
+        buf[off + idx] = bytes[idx];
+      }
+    }
+
+    return buf || (0, _bytesToUuid.default)(bytes);
+  }; // Function#name is not settable on some platforms (#270)
+
+
+  try {
+    generateUUID.name = name;
+  } catch (err) {} // For CommonJS default export support
+
+
+  generateUUID.DNS = DNS;
+  generateUUID.URL = URL;
+  return generateUUID;
+}
 
 /***/ }),
 
@@ -3067,6 +3210,64 @@ exports.Path = Path;
 
 /***/ }),
 
+/***/ 384:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _v = _interopRequireDefault(__webpack_require__(212));
+
+var _sha = _interopRequireDefault(__webpack_require__(498));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const v5 = (0, _v.default)('v5', 0x50, _sha.default);
+var _default = v5;
+exports.default = _default;
+module.exports = exports.default;
+
+/***/ }),
+
+/***/ 390:
+/***/ (function(module, exports) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+/**
+ * Convert array of 16 byte values to UUID string format of the form:
+ * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+ */
+var byteToHex = [];
+
+for (var i = 0; i < 256; ++i) {
+  byteToHex[i] = (i + 0x100).toString(16).substr(1);
+}
+
+function bytesToUuid(buf, offset) {
+  var i = offset || 0;
+  var bth = byteToHex; // join used to fix memory issue caused by concatenation: https://bugs.chromium.org/p/v8/issues/detail?id=3175#c4
+
+  return [bth[buf[i++]], bth[buf[i++]], bth[buf[i++]], bth[buf[i++]], '-', bth[buf[i++]], bth[buf[i++]], '-', bth[buf[i++]], bth[buf[i++]], '-', bth[buf[i++]], bth[buf[i++]], '-', bth[buf[i++]], bth[buf[i++]], bth[buf[i++]], bth[buf[i++]], bth[buf[i++]], bth[buf[i++]]].join('');
+}
+
+var _default = bytesToUuid;
+exports.default = _default;
+module.exports = exports.default;
+
+/***/ }),
+
 /***/ 413:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -3087,17 +3288,24 @@ module.exports = require("crypto");
 
 "use strict";
 
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const os = __webpack_require__(87);
+const os = __importStar(__webpack_require__(87));
 /**
  * Commands
  *
  * Command Format:
- *   ##[name key=value;key=value]message
+ *   ::name key=value,key=value::message
  *
  * Examples:
- *   ##[warning]This is the user warning message
- *   ##[set-secret name=mypassword]definitelyNotAPassword!
+ *   ::warning::This is the message
+ *   ::set-env name=MY_VAR::some value
  */
 function issueCommand(command, properties, message) {
     const cmd = new Command(command, properties, message);
@@ -3122,34 +3330,39 @@ class Command {
         let cmdStr = CMD_STRING + this.command;
         if (this.properties && Object.keys(this.properties).length > 0) {
             cmdStr += ' ';
+            let first = true;
             for (const key in this.properties) {
                 if (this.properties.hasOwnProperty(key)) {
                     const val = this.properties[key];
                     if (val) {
-                        // safely append the val - avoid blowing up when attempting to
-                        // call .replace() if message is not a string for some reason
-                        cmdStr += `${key}=${escape(`${val || ''}`)},`;
+                        if (first) {
+                            first = false;
+                        }
+                        else {
+                            cmdStr += ',';
+                        }
+                        cmdStr += `${key}=${escapeProperty(val)}`;
                     }
                 }
             }
         }
-        cmdStr += CMD_STRING;
-        // safely append the message - avoid blowing up when attempting to
-        // call .replace() if message is not a string for some reason
-        const message = `${this.message || ''}`;
-        cmdStr += escapeData(message);
+        cmdStr += `${CMD_STRING}${escapeData(this.message)}`;
         return cmdStr;
     }
 }
 function escapeData(s) {
-    return s.replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+    return (s || '')
+        .replace(/%/g, '%25')
+        .replace(/\r/g, '%0D')
+        .replace(/\n/g, '%0A');
 }
-function escape(s) {
-    return s
+function escapeProperty(s) {
+    return (s || '')
+        .replace(/%/g, '%25')
         .replace(/\r/g, '%0D')
         .replace(/\n/g, '%0A')
-        .replace(/]/g, '%5D')
-        .replace(/;/g, '%3B');
+        .replace(/:/g, '%3A')
+        .replace(/,/g, '%2C');
 }
 //# sourceMappingURL=command.js.map
 
@@ -3185,12 +3398,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
-const io = __importStar(__webpack_require__(1));
 const glob = __importStar(__webpack_require__(281));
+const io = __importStar(__webpack_require__(1));
 const fs = __importStar(__webpack_require__(747));
 const path = __importStar(__webpack_require__(622));
 const util = __importStar(__webpack_require__(669));
-const uuidV4 = __importStar(__webpack_require__(826));
+const uuid_1 = __webpack_require__(62);
 const constants_1 = __webpack_require__(694);
 // From https://github.com/actions/toolkit/blob/master/packages/tool-cache/src/tool-cache.ts#L23
 function createTempDirectory() {
@@ -3213,7 +3426,7 @@ function createTempDirectory() {
             }
             tempDirectory = path.join(baseLocation, "actions", "temp");
         }
-        const dest = path.join(tempDirectory, uuidV4.default());
+        const dest = path.join(tempDirectory, uuid_1.v4());
         yield io.mkdirP(dest);
         return dest;
     });
@@ -3264,7 +3477,7 @@ function resolvePaths(patterns) {
     var _b;
     return __awaiter(this, void 0, void 0, function* () {
         const paths = [];
-        const workspace = (_b = process.env["GITHUB_WORKSPACE"], (_b !== null && _b !== void 0 ? _b : process.cwd()));
+        const workspace = (_b = process.env["GITHUB_WORKSPACE"]) !== null && _b !== void 0 ? _b : process.cwd();
         const globber = yield glob.create(patterns.join("\n"), {
             implicitDescendants: false
         });
@@ -3322,10 +3535,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const command_1 = __webpack_require__(431);
-const os = __webpack_require__(87);
-const path = __webpack_require__(622);
+const os = __importStar(__webpack_require__(87));
+const path = __importStar(__webpack_require__(622));
 /**
  * The code to exit an action
  */
@@ -3411,6 +3631,13 @@ exports.setFailed = setFailed;
 //-----------------------------------------------------------------------
 // Logging Commands
 //-----------------------------------------------------------------------
+/**
+ * Gets whether Actions Step Debug is on or not
+ */
+function isDebug() {
+    return process.env['RUNNER_DEBUG'] === '1';
+}
+exports.isDebug = isDebug;
 /**
  * Writes debug message to user log
  * @param message debug message
@@ -3507,6 +3734,37 @@ function getState(name) {
 }
 exports.getState = getState;
 //# sourceMappingURL=core.js.map
+
+/***/ }),
+
+/***/ 498:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _crypto = _interopRequireDefault(__webpack_require__(417));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function sha1(bytes) {
+  if (Array.isArray(bytes)) {
+    bytes = Buffer.from(bytes);
+  } else if (typeof bytes === 'string') {
+    bytes = Buffer.from(bytes, 'utf8');
+  }
+
+  return _crypto.default.createHash('sha1').update(bytes).digest();
+}
+
+var _default = sha1;
+exports.default = _default;
+module.exports = exports.default;
 
 /***/ }),
 
@@ -4467,38 +4725,8 @@ var Events;
     Events["Push"] = "push";
     Events["PullRequest"] = "pull_request";
 })(Events = exports.Events || (exports.Events = {}));
-exports.CacheFilename = "cache.tgz";
-
-
-/***/ }),
-
-/***/ 722:
-/***/ (function(module) {
-
-/**
- * Convert array of 16 byte values to UUID string format of the form:
- * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
- */
-var byteToHex = [];
-for (var i = 0; i < 256; ++i) {
-  byteToHex[i] = (i + 0x100).toString(16).substr(1);
-}
-
-function bytesToUuid(buf, offset) {
-  var i = offset || 0;
-  var bth = byteToHex;
-  // join used to fix memory issue caused by concatenation: https://bugs.chromium.org/p/v8/issues/detail?id=3175#c4
-  return ([bth[buf[i++]], bth[buf[i++]], 
-	bth[buf[i++]], bth[buf[i++]], '-',
-	bth[buf[i++]], bth[buf[i++]], '-',
-	bth[buf[i++]], bth[buf[i++]], '-',
-	bth[buf[i++]], bth[buf[i++]], '-',
-	bth[buf[i++]], bth[buf[i++]],
-	bth[buf[i++]], bth[buf[i++]],
-	bth[buf[i++]], bth[buf[i++]]]).join('');
-}
-
-module.exports = bytesToUuid;
+exports.CacheFilename = "cache.tar.zst";
+exports.ManifestFilename = "manifest.txt";
 
 
 /***/ }),
@@ -4517,6 +4745,54 @@ class SearchState {
 }
 exports.SearchState = SearchState;
 //# sourceMappingURL=internal-search-state.js.map
+
+/***/ }),
+
+/***/ 733:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _rng = _interopRequireDefault(__webpack_require__(844));
+
+var _bytesToUuid = _interopRequireDefault(__webpack_require__(390));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function v4(options, buf, offset) {
+  var i = buf && offset || 0;
+
+  if (typeof options == 'string') {
+    buf = options === 'binary' ? new Array(16) : null;
+    options = null;
+  }
+
+  options = options || {};
+
+  var rnds = options.random || (options.rng || _rng.default)(); // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+
+
+  rnds[6] = rnds[6] & 0x0f | 0x40;
+  rnds[8] = rnds[8] & 0x3f | 0x80; // Copy bytes to buffer, if provided
+
+  if (buf) {
+    for (var ii = 0; ii < 16; ++ii) {
+      buf[i + ii] = rnds[ii];
+    }
+  }
+
+  return buf || (0, _bytesToUuid.default)(rnds);
+}
+
+var _default = v4;
+exports.default = _default;
+module.exports = exports.default;
 
 /***/ }),
 
@@ -4556,7 +4832,6 @@ const constants_1 = __webpack_require__(694);
 const tar_1 = __webpack_require__(943);
 const utils = __importStar(__webpack_require__(443));
 function run() {
-    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             // Validate inputs, this can cause task failure
@@ -4592,11 +4867,11 @@ function run() {
             }
             try {
                 const cacheEntry = yield cacheHttpClient.getCacheEntry(keys);
-                if (!((_a = cacheEntry) === null || _a === void 0 ? void 0 : _a.archiveLocation)) {
+                if (!(cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.archiveLocation)) {
                     core.info(`Cache not found for input keys: ${keys.join(", ")}`);
                     return;
                 }
-                const archivePath = path.join(yield utils.createTempDirectory(), "cache.tgz");
+                const archivePath = path.join(yield utils.createTempDirectory(), constants_1.CacheFilename);
                 core.debug(`Archive Path: ${archivePath}`);
                 // Store the cache result
                 utils.setCacheState(cacheEntry);
@@ -4636,39 +4911,34 @@ exports.default = run;
 
 /***/ }),
 
-/***/ 826:
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ 803:
+/***/ (function(module, exports, __webpack_require__) {
 
-var rng = __webpack_require__(139);
-var bytesToUuid = __webpack_require__(722);
+"use strict";
 
-function v4(options, buf, offset) {
-  var i = buf && offset || 0;
 
-  if (typeof(options) == 'string') {
-    buf = options === 'binary' ? new Array(16) : null;
-    options = null;
-  }
-  options = options || {};
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
 
-  var rnds = options.random || (options.rng || rng)();
+var _crypto = _interopRequireDefault(__webpack_require__(417));
 
-  // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
-  rnds[6] = (rnds[6] & 0x0f) | 0x40;
-  rnds[8] = (rnds[8] & 0x3f) | 0x80;
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-  // Copy bytes to buffer, if provided
-  if (buf) {
-    for (var ii = 0; ii < 16; ++ii) {
-      buf[i + ii] = rnds[ii];
-    }
+function md5(bytes) {
+  if (Array.isArray(bytes)) {
+    bytes = Buffer.from(bytes);
+  } else if (typeof bytes === 'string') {
+    bytes = Buffer.from(bytes, 'utf8');
   }
 
-  return buf || bytesToUuid(rnds);
+  return _crypto.default.createHash('md5').update(bytes).digest();
 }
 
-module.exports = v4;
-
+var _default = md5;
+exports.default = _default;
+module.exports = exports.default;
 
 /***/ }),
 
@@ -4676,6 +4946,144 @@ module.exports = v4;
 /***/ (function(module) {
 
 module.exports = require("url");
+
+/***/ }),
+
+/***/ 844:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = rng;
+
+var _crypto = _interopRequireDefault(__webpack_require__(417));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function rng() {
+  return _crypto.default.randomBytes(16);
+}
+
+module.exports = exports.default;
+
+/***/ }),
+
+/***/ 893:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _rng = _interopRequireDefault(__webpack_require__(844));
+
+var _bytesToUuid = _interopRequireDefault(__webpack_require__(390));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// **`v1()` - Generate time-based UUID**
+//
+// Inspired by https://github.com/LiosK/UUID.js
+// and http://docs.python.org/library/uuid.html
+var _nodeId;
+
+var _clockseq; // Previous uuid creation time
+
+
+var _lastMSecs = 0;
+var _lastNSecs = 0; // See https://github.com/uuidjs/uuid for API details
+
+function v1(options, buf, offset) {
+  var i = buf && offset || 0;
+  var b = buf || [];
+  options = options || {};
+  var node = options.node || _nodeId;
+  var clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq; // node and clockseq need to be initialized to random values if they're not
+  // specified.  We do this lazily to minimize issues related to insufficient
+  // system entropy.  See #189
+
+  if (node == null || clockseq == null) {
+    var seedBytes = options.random || (options.rng || _rng.default)();
+
+    if (node == null) {
+      // Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
+      node = _nodeId = [seedBytes[0] | 0x01, seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]];
+    }
+
+    if (clockseq == null) {
+      // Per 4.2.2, randomize (14 bit) clockseq
+      clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 0x3fff;
+    }
+  } // UUID timestamps are 100 nano-second units since the Gregorian epoch,
+  // (1582-10-15 00:00).  JSNumbers aren't precise enough for this, so
+  // time is handled internally as 'msecs' (integer milliseconds) and 'nsecs'
+  // (100-nanoseconds offset from msecs) since unix epoch, 1970-01-01 00:00.
+
+
+  var msecs = options.msecs !== undefined ? options.msecs : new Date().getTime(); // Per 4.2.1.2, use count of uuid's generated during the current clock
+  // cycle to simulate higher resolution clock
+
+  var nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1; // Time since last uuid creation (in msecs)
+
+  var dt = msecs - _lastMSecs + (nsecs - _lastNSecs) / 10000; // Per 4.2.1.2, Bump clockseq on clock regression
+
+  if (dt < 0 && options.clockseq === undefined) {
+    clockseq = clockseq + 1 & 0x3fff;
+  } // Reset nsecs if clock regresses (new clockseq) or we've moved onto a new
+  // time interval
+
+
+  if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === undefined) {
+    nsecs = 0;
+  } // Per 4.2.1.2 Throw error if too many uuids are requested
+
+
+  if (nsecs >= 10000) {
+    throw new Error("uuid.v1(): Can't create more than 10M uuids/sec");
+  }
+
+  _lastMSecs = msecs;
+  _lastNSecs = nsecs;
+  _clockseq = clockseq; // Per 4.1.4 - Convert from unix epoch to Gregorian epoch
+
+  msecs += 12219292800000; // `time_low`
+
+  var tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
+  b[i++] = tl >>> 24 & 0xff;
+  b[i++] = tl >>> 16 & 0xff;
+  b[i++] = tl >>> 8 & 0xff;
+  b[i++] = tl & 0xff; // `time_mid`
+
+  var tmh = msecs / 0x100000000 * 10000 & 0xfffffff;
+  b[i++] = tmh >>> 8 & 0xff;
+  b[i++] = tmh & 0xff; // `time_high_and_version`
+
+  b[i++] = tmh >>> 24 & 0xf | 0x10; // include version
+
+  b[i++] = tmh >>> 16 & 0xff; // `clock_seq_hi_and_reserved` (Per 4.2.2 - include variant)
+
+  b[i++] = clockseq >>> 8 | 0x80; // `clock_seq_low`
+
+  b[i++] = clockseq & 0xff; // `node`
+
+  for (var n = 0; n < 6; ++n) {
+    b[i + n] = node[n];
+  }
+
+  return buf ? buf : (0, _bytesToUuid.default)(b);
+}
+
+var _default = v1;
+exports.default = _default;
+module.exports = exports.default;
 
 /***/ }),
 
@@ -4978,7 +5386,6 @@ function getTarPath() {
     });
 }
 function execTar(args, cwd) {
-    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             yield exec_1.exec(`"${yield getTarPath()}"`, args, { cwd: cwd });
@@ -4986,22 +5393,30 @@ function execTar(args, cwd) {
         catch (error) {
             const IS_WINDOWS = process.platform === "win32";
             if (IS_WINDOWS) {
-                throw new Error(`Tar failed with error: ${(_a = error) === null || _a === void 0 ? void 0 : _a.message}. Ensure BSD tar is installed and on the PATH.`);
+                throw new Error(`Tar failed with error: ${error === null || error === void 0 ? void 0 : error.message}. Ensure BSD tar is installed and on the PATH.`);
             }
-            throw new Error(`Tar failed with error: ${(_b = error) === null || _b === void 0 ? void 0 : _b.message}`);
+            throw new Error(`Tar failed with error: ${error === null || error === void 0 ? void 0 : error.message}`);
         }
     });
 }
 function getWorkingDirectory() {
     var _a;
-    return _a = process.env["GITHUB_WORKSPACE"], (_a !== null && _a !== void 0 ? _a : process.cwd());
+    return (_a = process.env["GITHUB_WORKSPACE"]) !== null && _a !== void 0 ? _a : process.cwd();
 }
 function extractTar(archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
         // Create directory to extract tar into
         const workingDirectory = getWorkingDirectory();
         yield io.mkdirP(workingDirectory);
-        const args = ["-xz", "-f", archivePath, "-P", "-C", workingDirectory];
+        const args = [
+            "--use-compress-program",
+            "zstd --long=31 -d",
+            "-xf",
+            archivePath,
+            "-P",
+            "-C",
+            workingDirectory
+        ];
         yield execTar(args);
     });
 }
@@ -5009,17 +5424,17 @@ exports.extractTar = extractTar;
 function createTar(archiveFolder, sourceDirectories) {
     return __awaiter(this, void 0, void 0, function* () {
         // Write source directories to manifest.txt to avoid command length limits
-        const manifestFilename = "manifest.txt";
-        fs_1.writeFileSync(path.join(archiveFolder, manifestFilename), sourceDirectories.join("\n"));
+        fs_1.writeFileSync(path.join(archiveFolder, constants_1.ManifestFilename), sourceDirectories.join("\n"));
         const workingDirectory = getWorkingDirectory();
         const args = [
-            "-cz",
-            "-f",
+            "--use-compress-program",
+            "zstd -T0 --long=31",
+            "-cf",
             constants_1.CacheFilename,
             "-C",
             workingDirectory,
             "--files-from",
-            manifestFilename
+            constants_1.ManifestFilename
         ];
         yield execTar(args, archiveFolder);
     });
