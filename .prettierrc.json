@@ -7,6 +7,8 @@
   "trailingComma": "es5",
   "bracketSpacing": true,
   "arrowParens": "always",
+  "proseWrap": "preserve",
+  "endOfLine": "lf",
   "overrides": [
     {
       "files": "*.ts",
