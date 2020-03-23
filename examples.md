@@ -218,7 +218,7 @@ Esy allows you to export built dependencies and import pre-built dependencies.
     ...(Build job)...
 
     # Re-export dependencies if anything has changed or if it is the first time
-    - name: Setting dependency cache 
+    - name: Setting dependency cache
       run: |
         esy export-dependencies
       if: steps.restore-cache.outputs.cache-hit != 'true'
@@ -376,7 +376,15 @@ When dependencies are installed later in the workflow, we must specify the same 
 
 ## Rust - Cargo
 
+The following example is for Linux. For Windows, rust replace `~/.cargo` by `C:\Rust\.cargo`.
+Also, do forget to change `**/Cargo.lock` to `**/Cargo.toml` if your project uses the former.
+See [Cargo.toml vs Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html) for more information.
+Note, on Windows, you should also use forward slash ``**/Cargo.lock`` instead of backslash ``**\Cargo.lock``.
 ```yaml
+# Necessary for now for the cargo cache:
+# https://github.com/actions/cache/issues/133#issuecomment-599102035
+- name: Fix ~/.cargo directory permissions
+  run: sudo chown -R $(whoami):$(id -ng) ~/.cargo/
 - name: Cache cargo registry
   uses: actions/cache@v1
   with:
