@@ -26,7 +26,7 @@ async function run(): Promise<void> {
         const restoreKeys = core
             .getInput(Inputs.RestoreKeys)
             .split("\n")
-            .filter(x => x !== "");
+            .filter((x) => x !== "");
         const keys = [primaryKey, ...restoreKeys];
 
         core.debug("Resolved Keys:");

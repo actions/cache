@@ -42,8 +42,8 @@ beforeAll(() => {
     });
 
     jest.spyOn(actionUtils, "resolvePaths").mockImplementation(
-        async filePaths => {
-            return filePaths.map(x => path.resolve(x));
+        async (filePaths) => {
+            return filePaths.map((x) => path.resolve(x));
         }
     );
 
@@ -81,7 +81,7 @@ test("save with no primary key in state outputs warning", async () => {
         cacheKey: "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43",
         scope: "refs/heads/master",
         creationTime: "2019-11-13T19:18:02+00:00",
-        archiveLocation: "www.actionscache.test/download"
+        archiveLocation: "www.actionscache.test/download",
     };
 
     jest.spyOn(core, "getState")
@@ -112,7 +112,7 @@ test("save with exact match returns early", async () => {
         cacheKey: primaryKey,
         scope: "refs/heads/master",
         creationTime: "2019-11-13T19:18:02+00:00",
-        archiveLocation: "www.actionscache.test/download"
+        archiveLocation: "www.actionscache.test/download",
     };
 
     jest.spyOn(core, "getState")
@@ -147,7 +147,7 @@ test("save with missing input outputs warning", async () => {
         cacheKey: "Linux-node-",
         scope: "refs/heads/master",
         creationTime: "2019-11-13T19:18:02+00:00",
-        archiveLocation: "www.actionscache.test/download"
+        archiveLocation: "www.actionscache.test/download",
     };
 
     jest.spyOn(core, "getState")
@@ -178,7 +178,7 @@ test("save with large cache outputs warning", async () => {
         cacheKey: "Linux-node-",
         scope: "refs/heads/master",
         creationTime: "2019-11-13T19:18:02+00:00",
-        archiveLocation: "www.actionscache.test/download"
+        archiveLocation: "www.actionscache.test/download",
     };
 
     jest.spyOn(core, "getState")
@@ -227,7 +227,7 @@ test("save with reserve cache failure outputs warning", async () => {
         cacheKey: "Linux-node-",
         scope: "refs/heads/master",
         creationTime: "2019-11-13T19:18:02+00:00",
-        archiveLocation: "www.actionscache.test/download"
+        archiveLocation: "www.actionscache.test/download",
     };
 
     jest.spyOn(core, "getState")
@@ -277,7 +277,7 @@ test("save with server error outputs warning", async () => {
         cacheKey: "Linux-node-",
         scope: "refs/heads/master",
         creationTime: "2019-11-13T19:18:02+00:00",
-        archiveLocation: "www.actionscache.test/download"
+        archiveLocation: "www.actionscache.test/download",
     };
 
     jest.spyOn(core, "getState")
@@ -337,7 +337,7 @@ test("save with valid inputs uploads a cache", async () => {
         cacheKey: "Linux-node-",
         scope: "refs/heads/master",
         creationTime: "2019-11-13T19:18:02+00:00",
-        archiveLocation: "www.actionscache.test/download"
+        archiveLocation: "www.actionscache.test/download",
     };
 
     jest.spyOn(core, "getState")

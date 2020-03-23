@@ -47,7 +47,7 @@ export function isExactKeyMatch(
         cacheResult &&
         cacheResult.cacheKey &&
         cacheResult.cacheKey.localeCompare(key, undefined, {
-            sensitivity: "accent"
+            sensitivity: "accent",
         }) === 0
     );
 }
@@ -88,7 +88,7 @@ export async function resolvePaths(patterns: string[]): Promise<string[]> {
     const paths: string[] = [];
     const workspace = process.env["GITHUB_WORKSPACE"] ?? process.cwd();
     const globber = await glob.create(patterns.join("\n"), {
-        implicitDescendants: false
+        implicitDescendants: false,
     });
 
     for await (const file of globber.globGenerator()) {

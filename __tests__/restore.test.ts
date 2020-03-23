@@ -73,11 +73,11 @@ test("restore with no key", async () => {
 
 test("restore with too many keys should fail", async () => {
     const key = "node-test";
-    const restoreKeys = [...Array(20).keys()].map(x => x.toString());
+    const restoreKeys = [...Array(20).keys()].map((x) => x.toString());
     testUtils.setInputs({
         path: "node_modules",
         key,
-        restoreKeys
+        restoreKeys,
     });
     const failedMock = jest.spyOn(core, "setFailed");
     await run();
@@ -90,7 +90,7 @@ test("restore with large key should fail", async () => {
     const key = "foo".repeat(512); // Over the 512 character limit
     testUtils.setInputs({
         path: "node_modules",
-        key
+        key,
     });
     const failedMock = jest.spyOn(core, "setFailed");
     await run();
@@ -103,7 +103,7 @@ test("restore with invalid key should fail", async () => {
     const key = "comma,comma";
     testUtils.setInputs({
         path: "node_modules",
-        key
+        key,
     });
     const failedMock = jest.spyOn(core, "setFailed");
     await run();
@@ -116,7 +116,7 @@ test("restore with no cache found", async () => {
     const key = "node-test";
     testUtils.setInputs({
         path: "node_modules",
-        key
+        key,
     });
 
     const infoMock = jest.spyOn(core, "info");
@@ -142,7 +142,7 @@ test("restore with server error should fail", async () => {
     const key = "node-test";
     testUtils.setInputs({
         path: "node_modules",
-        key
+        key,
     });
 
     const logWarningMock = jest.spyOn(actionUtils, "logWarning");
@@ -175,7 +175,7 @@ test("restore with restore keys and no cache found", async () => {
     testUtils.setInputs({
         path: "node_modules",
         key,
-        restoreKeys: [restoreKey]
+        restoreKeys: [restoreKey],
     });
 
     const infoMock = jest.spyOn(core, "info");
@@ -201,7 +201,7 @@ test("restore with cache found", async () => {
     const key = "node-test";
     testUtils.setInputs({
         path: "node_modules",
-        key
+        key,
     });
 
     const infoMock = jest.spyOn(core, "info");
@@ -211,7 +211,7 @@ test("restore with cache found", async () => {
     const cacheEntry: ArtifactCacheEntry = {
         cacheKey: key,
         scope: "refs/heads/master",
-        archiveLocation: "www.actionscache.test/download"
+        archiveLocation: "www.actionscache.test/download",
     };
     const getCacheMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
     getCacheMock.mockImplementation(() => {
@@ -269,7 +269,7 @@ test("restore with a pull request event and cache found", async () => {
     const key = "node-test";
     testUtils.setInputs({
         path: "node_modules",
-        key
+        key,
     });
 
     process.env[Events.Key] = Events.PullRequest;
@@ -281,7 +281,7 @@ test("restore with a pull request event and cache found", async () => {
     const cacheEntry: ArtifactCacheEntry = {
         cacheKey: key,
         scope: "refs/heads/master",
-        archiveLocation: "www.actionscache.test/download"
+        archiveLocation: "www.actionscache.test/download",
     };
     const getCacheMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
     getCacheMock.mockImplementation(() => {
@@ -338,7 +338,7 @@ test("restore with cache found for restore key", async () => {
     testUtils.setInputs({
         path: "node_modules",
         key,
-        restoreKeys: [restoreKey]
+        restoreKeys: [restoreKey],
     });
 
     const infoMock = jest.spyOn(core, "info");
@@ -348,7 +348,7 @@ test("restore with cache found for restore key", async () => {
     const cacheEntry: ArtifactCacheEntry = {
         cacheKey: restoreKey,
         scope: "refs/heads/master",
-        archiveLocation: "www.actionscache.test/download"
+        archiveLocation: "www.actionscache.test/download",
     };
     const getCacheMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
     getCacheMock.mockImplementation(() => {

@@ -51,7 +51,7 @@ test("isExactKeyMatch with empty cache entry returns false", () => {
 test("isExactKeyMatch with different keys returns false", () => {
     const key = "linux-rust";
     const cacheEntry: ArtifactCacheEntry = {
-        cacheKey: "linux-"
+        cacheKey: "linux-",
     };
 
     expect(actionUtils.isExactKeyMatch(key, cacheEntry)).toBe(false);
@@ -60,7 +60,7 @@ test("isExactKeyMatch with different keys returns false", () => {
 test("isExactKeyMatch with different key accents returns false", () => {
     const key = "linux-áccent";
     const cacheEntry: ArtifactCacheEntry = {
-        cacheKey: "linux-accent"
+        cacheKey: "linux-accent",
     };
 
     expect(actionUtils.isExactKeyMatch(key, cacheEntry)).toBe(false);
@@ -69,7 +69,7 @@ test("isExactKeyMatch with different key accents returns false", () => {
 test("isExactKeyMatch with same key returns true", () => {
     const key = "linux-rust";
     const cacheEntry: ArtifactCacheEntry = {
-        cacheKey: "linux-rust"
+        cacheKey: "linux-rust",
     };
 
     expect(actionUtils.isExactKeyMatch(key, cacheEntry)).toBe(true);
@@ -78,7 +78,7 @@ test("isExactKeyMatch with same key returns true", () => {
 test("isExactKeyMatch with same key and different casing returns true", () => {
     const key = "linux-rust";
     const cacheEntry: ArtifactCacheEntry = {
-        cacheKey: "LINUX-RUST"
+        cacheKey: "LINUX-RUST",
     };
 
     expect(actionUtils.isExactKeyMatch(key, cacheEntry)).toBe(true);
@@ -102,7 +102,7 @@ test("setOutputAndState with undefined entry to set cache-hit output", () => {
 test("setOutputAndState with exact match to set cache-hit output and state", () => {
     const key = "linux-rust";
     const cacheEntry: ArtifactCacheEntry = {
-        cacheKey: "linux-rust"
+        cacheKey: "linux-rust",
     };
 
     const setOutputMock = jest.spyOn(core, "setOutput");
@@ -123,7 +123,7 @@ test("setOutputAndState with exact match to set cache-hit output and state", () 
 test("setOutputAndState with no exact match to set cache-hit output and state", () => {
     const key = "linux-rust";
     const cacheEntry: ArtifactCacheEntry = {
-        cacheKey: "linux-rust-bb828da54c148048dd17899ba9fda624811cfb43"
+        cacheKey: "linux-rust-bb828da54c148048dd17899ba9fda624811cfb43",
     };
 
     const setOutputMock = jest.spyOn(core, "setOutput");
@@ -160,7 +160,7 @@ test("getCacheState with valid state", () => {
         cacheKey: "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43",
         scope: "refs/heads/master",
         creationTime: "2019-11-13T19:18:02+00:00",
-        archiveLocation: "www.actionscache.test/download"
+        archiveLocation: "www.actionscache.test/download",
     };
     const getStateMock = jest.spyOn(core, "getState");
     getStateMock.mockImplementation(() => {

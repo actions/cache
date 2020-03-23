@@ -62,7 +62,7 @@ export async function createTar(
         "-C",
         workingDirectory,
         "--files-from",
-        manifestFilename
+        manifestFilename,
     ];
     await execTar(args, archiveFolder);
 }

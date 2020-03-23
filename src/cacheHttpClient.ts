@@ -4,7 +4,7 @@ import { BearerCredentialHandler } from "@actions/http-client/auth";
 import {
     IHttpClientResponse,
     IRequestOptions,
-    ITypedResponse
+    ITypedResponse,
 } from "@actions/http-client/interfaces";
 import * as crypto from "crypto";
 import * as fs from "fs";
@@ -14,7 +14,7 @@ import {
     ArtifactCacheEntry,
     CommitCacheRequest,
     ReserveCacheRequest,
-    ReserveCacheResponse
+    ReserveCacheResponse,
 } from "./contracts";
 import * as utils from "./utils/actionUtils";
 
@@ -34,7 +34,7 @@ function isRetryableStatusCode(statusCode?: number): boolean {
     const retryableStatusCodes = [
         HttpCodes.BadGateway,
         HttpCodes.ServiceUnavailable,
-        HttpCodes.GatewayTimeout
+        HttpCodes.GatewayTimeout,
     ];
     return retryableStatusCodes.includes(statusCode);
 }
@@ -64,8 +64,8 @@ function createAcceptHeader(type: string, apiVersion: string): string {
 function getRequestOptions(): IRequestOptions {
     const requestOptions: IRequestOptions = {
         headers: {
-            Accept: createAcceptHeader("application/json", "6.0-preview.1")
-        }
+            Accept: createAcceptHeader("application/json", "6.0-preview.1"),
+        },
     };
 
     return requestOptions;
@@ -86,7 +86,7 @@ export function getCacheVersion(): string {
     // Add salt to cache version to support breaking changes in cache entry
     const components = [
         core.getInput(Inputs.Path, { required: true }),
-        versionSalt
+        versionSalt,
     ];
 
     return crypto
@@ -130,7 +130,7 @@ async function pipeResponseToStream(
     response: IHttpClientResponse,
     stream: NodeJS.WritableStream
 ): Promise<void> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
         response.message.pipe(stream).on("close", () => {
             resolve();
         });
@@ -154,7 +154,7 @@ export async function reserveCache(key: string): Promise<number> {
 
     const reserveCacheRequest: ReserveCacheRequest = {
         key,
-        version
+        version,
     };
     const response = await httpClient.postJson<ReserveCacheResponse>(
         getCacheApiUrl("caches"),
@@ -180,16 +180,16 @@ async function uploadChunk(
     end: number
 ): Promise<void> {
     core.debug(
-        `Uploading chunk of size ${end -
-            start +
-            1} bytes at offset ${start} with content range: ${getContentRange(
+        `Uploading chunk of size ${
+            end - start + 1
+        } bytes at offset ${start} with content range: ${getContentRange(
             start,
             end
         )}`
     );
     const additionalHeaders = {
         "Content-Type": "application/octet-stream",
-        "Content-Range": getContentRange(start, end)
+        "Content-Range": getContentRange(start, end),
     };
 
     const uploadChunkRequest = async (): Promise<IHttpClientResponse> => {
@@ -263,7 +263,7 @@ async function uploadFile(
                         fd,
                         start,
                         end,
-                        autoClose: false
+                        autoClose: false,
                     });
 
                     await uploadChunk(

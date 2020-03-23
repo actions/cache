@@ -48,7 +48,7 @@ async function run(): Promise<void> {
             core
                 .getInput(Inputs.Path, { required: true })
                 .split("\n")
-                .filter(x => x !== "")
+                .filter((x) => x !== "")
         );
 
         core.debug("Cache Paths:");

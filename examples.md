@@ -30,6 +30,7 @@
   - [Swift - Swift Package Manager](#swift---swift-package-manager)
 
 ## C# - NuGet
+
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
 
 ```yaml
@@ -43,7 +44,9 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 
 Depending on the environment, huge packages might be pre-installed in the global cache folder.
 If you do not want to include them, consider to move the cache folder like below.
->Note: This workflow does not work for projects that require files to be placed in user profile package folder
+
+> Note: This workflow does not work for projects that require files to be placed in user profile package folder
+
 ```yaml
 env:
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
@@ -57,6 +60,7 @@ steps:
 ```
 
 ## Elixir - Mix
+
 ```yaml
 - uses: actions/cache@v1
   with:
@@ -125,7 +129,7 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 
 For npm, cache files are stored in `~/.npm` on Posix, or `%AppData%/npm-cache` on Windows. See https://docs.npmjs.com/cli/cache#cache
 
->Note: It is not recommended to cache `node_modules`, as it can break across Node versions and won't work with `npm ci`
+> Note: It is not recommended to cache `node_modules`, as it can break across Node versions and won't work with `npm ci`
 
 ### macOS and Ubuntu
 
@@ -169,6 +173,7 @@ For npm, cache files are stored in `~/.npm` on Posix, or `%AppData%/npm-cache` o
 ```
 
 ## Node - Yarn
+
 The yarn cache directory will depend on your operating system and version of `yarn`. See https://yarnpkg.com/lang/en/docs/cli/cache/ for more info.
 
 ```yaml
@@ -198,7 +203,9 @@ The yarn cache directory will depend on your operating system and version of `ya
 ```
 
 ## OCaml/Reason - esy
+
 Esy allows you to export built dependencies and import pre-built dependencies.
+
 ```yaml
     - name: Restore Cache
       id: restore-cache
@@ -218,12 +225,11 @@ Esy allows you to export built dependencies and import pre-built dependencies.
     ...(Build job)...
 
     # Re-export dependencies if anything has changed or if it is the first time
-    - name: Setting dependency cache 
+    - name: Setting dependency cache
       run: |
         esy export-dependencies
       if: steps.restore-cache.outputs.cache-hit != 'true'
 ```
-
 
 ## PHP - Composer
 
@@ -245,11 +251,13 @@ Esy allows you to export built dependencies and import pre-built dependencies.
 For pip, the cache directory will vary by OS. See https://pip.pypa.io/en/stable/reference/pip_install/#caching
 
 Locations:
- - Ubuntu: `~/.cache/pip`
- - Windows: `~\AppData\Local\pip\Cache`
- - macOS: `~/Library/Caches/pip`
+
+- Ubuntu: `~/.cache/pip`
+- Windows: `~\AppData\Local\pip\Cache`
+- macOS: `~/Library/Caches/pip`
 
 ### Simple example
+
 ```yaml
 - uses: actions/cache@v1
   with:
@@ -292,6 +300,7 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
 ### Using a script to get cache location
 
 > Note: This uses an internal pip API and may not always work
+
 ```yaml
 - name: Get pip cache
    id: pip-cache
@@ -311,11 +320,13 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
 For renv, the cache directory will vary by OS. Look at https://rstudio.github.io/renv/articles/renv.html#cache
 
 Locations:
- - Ubuntu: `~/.local/share/renv`
- - macOS: `~/Library/Application Support/renv`
- - Windows: `%LOCALAPPDATA%/renv`
+
+- Ubuntu: `~/.local/share/renv`
+- macOS: `~/Library/Application Support/renv`
+- Windows: `%LOCALAPPDATA%/renv`
 
 ### Simple example
+
 ```yaml
 - uses: actions/cache@v1
   with:
@@ -365,6 +376,7 @@ Replace `~/.local/share/renv` with the correct `path` if not using Ubuntu.
     restore-keys: |
       ${{ runner.os }}-gems-
 ```
+
 When dependencies are installed later in the workflow, we must specify the same path for the bundler.
 
 ```yaml

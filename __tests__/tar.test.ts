@@ -14,7 +14,7 @@ function getTempDir(): string {
 }
 
 beforeAll(async () => {
-    jest.spyOn(io, "which").mockImplementation(tool => {
+    jest.spyOn(io, "which").mockImplementation((tool) => {
         return Promise.resolve(tool);
     });
 
@@ -76,10 +76,10 @@ test("create tar", async () => {
             "-C",
             workspace,
             "--files-from",
-            "manifest.txt"
+            "manifest.txt",
         ],
         {
-            cwd: archiveFolder
+            cwd: archiveFolder,
         }
     );
 });

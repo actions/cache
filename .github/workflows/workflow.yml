@@ -5,12 +5,12 @@ on:
     branches:
       - master
     paths-ignore:
-      - '**.md'
+      - "**.md"
   push:
     branches:
       - master
     paths-ignore:
-      - '**.md'
+      - "**.md"
 
 jobs:
   # Build and unit test
@@ -21,30 +21,30 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Setup Node.js
-      uses: actions/setup-node@v1
-      with:
-        node-version: '12.x'
-    - name: Determine npm cache directory
-      id: npm-cache
-      run: |
-        echo "::set-output name=dir::$(npm config get cache)"
-    - name: Restore npm cache
-      uses: actions/cache@v1
-      with:
-        path: ${{ steps.npm-cache.outputs.dir }}
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
-    - run: npm ci
-    - name: Prettier Format Check
-      run: npm run format-check
-    - name: ESLint Check
-      run: npm run lint
-    - name: Build & Test
-      run: npm run test
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
+      - name: Determine npm cache directory
+        id: npm-cache
+        run: |
+          echo "::set-output name=dir::$(npm config get cache)"
+      - name: Restore npm cache
+        uses: actions/cache@v1
+        with:
+          path: ${{ steps.npm-cache.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - run: npm ci
+      - name: Prettier Format Check
+        run: npm run format-check
+      - name: ESLint Check
+        run: npm run lint
+      - name: Build & Test
+        run: npm run test
 
   # End to end save and restore
   test-save:
@@ -53,16 +53,16 @@ jobs:
         os: [ubuntu-latest, windows-latest, macOS-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Generate files
-      shell: bash
-      run: __tests__/create-cache-files.sh ${{ runner.os }}
-    - name: Save cache
-      uses: ./
-      with:
-        key: test-${{ runner.os }}-${{ github.run_id }}
-        path: test-cache
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Generate files
+        shell: bash
+        run: __tests__/create-cache-files.sh ${{ runner.os }}
+      - name: Save cache
+        uses: ./
+        with:
+          key: test-${{ runner.os }}-${{ github.run_id }}
+          path: test-cache
   test-restore:
     needs: test-save
     strategy:
@@ -70,16 +70,16 @@ jobs:
         os: [ubuntu-latest, windows-latest, macOS-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Restore cache
-      uses: ./
-      with:
-        key: test-${{ runner.os }}-${{ github.run_id }}
-        path: test-cache
-    - name: Verify cache
-      shell: bash
-      run: __tests__/verify-cache-files.sh ${{ runner.os }}
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Restore cache
+        uses: ./
+        with:
+          key: test-${{ runner.os }}-${{ github.run_id }}
+          path: test-cache
+      - name: Verify cache
+        shell: bash
+        run: __tests__/verify-cache-files.sh ${{ runner.os }}
 
   # End to end with proxy
   test-proxy-save:
@@ -95,15 +95,15 @@ jobs:
     env:
       https_proxy: http://squid-proxy:3128
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Generate files
-      run: __tests__/create-cache-files.sh proxy
-    - name: Save cache
-      uses: ./
-      with:
-        key: test-proxy-${{ github.run_id }}
-        path: test-cache
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Generate files
+        run: __tests__/create-cache-files.sh proxy
+      - name: Save cache
+        uses: ./
+        with:
+          key: test-proxy-${{ github.run_id }}
+          path: test-cache
   test-proxy-restore:
     needs: test-proxy-save
     runs-on: ubuntu-latest
@@ -118,12 +118,12 @@ jobs:
     env:
       https_proxy: http://squid-proxy:3128
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Restore cache
-      uses: ./
-      with:
-        key: test-proxy-${{ github.run_id }}
-        path: test-cache
-    - name: Verify cache
-      run: __tests__/verify-cache-files.sh proxy
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Restore cache
+        uses: ./
+        with:
+          key: test-proxy-${{ github.run_id }}
+          path: test-cache
+      - name: Verify cache
+        run: __tests__/verify-cache-files.sh proxy
