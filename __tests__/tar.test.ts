@@ -70,6 +70,7 @@ test("create tar", async () => {
     expect(execMock).toHaveBeenCalledWith(
         `"${tarPath}"`,
         [
+            "--posix",
             "-cz",
             "-f",
             CacheFilename,
