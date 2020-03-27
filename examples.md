@@ -379,7 +379,7 @@ When dependencies are installed later in the workflow, we must specify the same 
 The following example is for Linux. For Windows, rust replace `~/.cargo` by `C:\Rust\.cargo`.
 Also, do forget to change `**/Cargo.lock` to `**/Cargo.toml` if your project uses the former.
 See [Cargo.toml vs Cargo.lock](https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html) for more information.
-Note, on Windows, you should also use forward slash ``**/Cargo.lock`` instead of backslash ``**\Cargo.lock``.
+Note, on Windows, you can also use forward slash ``**/Cargo.lock`` instead of backslash ``**\Cargo.lock``.
 ```yaml
 # Necessary for now for the cargo cache:
 # https://github.com/actions/cache/issues/133#issuecomment-599102035
