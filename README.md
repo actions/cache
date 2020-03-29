@@ -64,6 +64,7 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 - [Elixir - Mix](./examples.md#elixir---mix)
 - [Go - Modules](./examples.md#go---modules)
 - [Haskell - Cabal](./examples.md#haskell---cabal)
+- [Haskell - Stack](./examples.md#haskell---stack)
 - [Java - Gradle](./examples.md#java---gradle)
 - [Java - Maven](./examples.md#java---maven)
 - [Node - npm](./examples.md#node---npm)
