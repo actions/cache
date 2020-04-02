@@ -11,8 +11,8 @@
     - [macOS and Ubuntu](#macos-and-ubuntu)
     - [Windows](#windows)
     - [Using multiple systems and `npm config`](#using-multiple-systems-and-npm-config)
-  - [Node - Yarn](#node---yarn)
   - [Node - Lerna](#node---lerna)
+  - [Node - Yarn](#node---yarn)
   - [OCaml/Reason - esy](#ocamlreason---esy)
   - [PHP - Composer](#php---composer)
   - [Python - pip](#python---pip)
@@ -168,6 +168,19 @@ For npm, cache files are stored in `~/.npm` on Posix, or `%AppData%/npm-cache` o
       ${{ runner.os }}-node-
 ```
 
+## Node - Lerna
+
+>Note this example uses the new multi-paths feature and is only available at `master`
+```yaml
+- name: restore lerna
+  uses: actions/cache@master
+   with:
+     path: |
+       node_modules
+        */*/node_modules
+     key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
+```
+
 ## Node - Yarn
 The yarn cache directory will depend on your operating system and version of `yarn`. See https://yarnpkg.com/lang/en/docs/cli/cache/ for more info.
 
@@ -183,18 +196,6 @@ The yarn cache directory will depend on your operating system and version of `ya
     key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
     restore-keys: |
       ${{ runner.os }}-yarn-
-```
-
-## Node - Lerna
-
-```yaml
-- name: restore lerna
-  uses: actions/cache@v2
-   with:
-     path: |
-       node_modules
-        */*/node_modules
-     key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
 ```
 
 ## OCaml/Reason - esy

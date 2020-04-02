@@ -67,6 +67,7 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 - [Java - Gradle](./examples.md#java---gradle)
 - [Java - Maven](./examples.md#java---maven)
 - [Node - npm](./examples.md#node---npm)
+- [Node - Lerna](./examples.md#node---lerna)
 - [Node - Yarn](./examples.md#node---yarn)
 - [OCaml/Reason - esy](./examples.md##ocamlreason---esy)
 - [PHP - Composer](./examples.md#php---composer)
