@@ -174,11 +174,11 @@ For npm, cache files are stored in `~/.npm` on Posix, or `%AppData%/npm-cache` o
 ```yaml
 - name: restore lerna
   uses: actions/cache@master
-   with:
-     path: |
-       node_modules
-        */*/node_modules
-     key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
+  with:
+    path: |
+      node_modules
+      */*/node_modules
+    key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
 ```
 
 ## Node - Yarn
