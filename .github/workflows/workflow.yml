@@ -51,23 +51,30 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
+      fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Generate files
+    - name: Generate files in working directory
       shell: bash
-      run: __tests__/create-cache-files.sh ${{ runner.os }}
+      run: __tests__/create-cache-files.sh ${{ runner.os }} test-cache
+    - name: Generate files outside working directory
+      shell: bash
+      run: __tests__/create-cache-files.sh ${{ runner.os }} ~/test-cache
     - name: Save cache
       uses: ./
       with:
         key: test-${{ runner.os }}-${{ github.run_id }}
-        path: test-cache
+        path: |
+          test-cache
+          ~/test-cache
   test-restore:
     needs: test-save
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
+      fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
@@ -76,10 +83,15 @@ jobs:
       uses: ./
       with:
         key: test-${{ runner.os }}-${{ github.run_id }}
-        path: test-cache
-    - name: Verify cache
+        path: |
+          test-cache
+          ~/test-cache
+    - name: Verify cache files in working directory
       shell: bash
-      run: __tests__/verify-cache-files.sh ${{ runner.os }}
+      run: __tests__/verify-cache-files.sh ${{ runner.os }} test-cache
+    - name: Verify cache files outside working directory
+      shell: bash
+      run: __tests__/verify-cache-files.sh ${{ runner.os }} ~/test-cache
 
   # End to end with proxy
   test-proxy-save:
@@ -98,7 +110,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Generate files
-      run: __tests__/create-cache-files.sh proxy
+      run: __tests__/create-cache-files.sh proxy test-cache
     - name: Save cache
       uses: ./
       with:
@@ -126,4 +138,4 @@ jobs:
         key: test-proxy-${{ github.run_id }}
         path: test-cache
     - name: Verify cache
-      run: __tests__/verify-cache-files.sh proxy
+      run: __tests__/verify-cache-files.sh proxy test-cache
