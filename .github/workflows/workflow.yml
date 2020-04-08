@@ -47,7 +47,7 @@ jobs:
       run: npm run test
 
   # End to end save and restore
-  test-save-relative:
+  test-save:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
@@ -63,8 +63,8 @@ jobs:
       with:
         key: test-${{ runner.os }}-${{ github.run_id }}
         path: test-cache
-  test-restore-relative:
-    needs: test-save-relative
+  test-restore:
+    needs: test-save
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
@@ -82,7 +82,7 @@ jobs:
       run: __tests__/verify-cache-files.sh ${{ runner.os }} test-cache
 
   # End to end save and restore with relative paths
-  test-save:
+  test-save-relative:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
@@ -98,8 +98,8 @@ jobs:
       with:
         key: test-relative-${{ runner.os }}-${{ github.run_id }}
         path: ~test-cache
-  test-restore:
-    needs: test-save
+  test-restore-relative:
+    needs: test-save-relative
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
