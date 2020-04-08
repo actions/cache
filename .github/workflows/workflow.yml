@@ -56,14 +56,19 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Generate files
+    - name: Generate files in working directory
       shell: bash
       run: __tests__/create-cache-files.sh ${{ runner.os }} test-cache
+    - name: Generate files outside working directory
+      shell: bash
+      run: __tests__/create-cache-files.sh ${{ runner.os }} ~/test-cache
     - name: Save cache
       uses: ./
       with:
         key: test-${{ runner.os }}-${{ github.run_id }}
-        path: test-cache
+        path: |
+          test-cache
+          ~/test-cache
   test-restore:
     needs: test-save
     strategy:
@@ -78,45 +83,13 @@ jobs:
       uses: ./
       with:
         key: test-${{ runner.os }}-${{ github.run_id }}
-        path: test-cache
-    - name: Verify cache
+        path: |
+          test-cache
+          ~/test-cache
+    - name: Verify cache files in working directory
       shell: bash
       run: __tests__/verify-cache-files.sh ${{ runner.os }} test-cache
-
-  # End to end save and restore with relative paths
-  test-save-relative:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Generate files
-      shell: bash
-      run: __tests__/create-cache-files.sh ${{ runner.os }} ~/test-cache
-    - name: Save cache
-      uses: ./
-      with:
-        key: test-relative-${{ runner.os }}-${{ github.run_id }}
-        path: ~test-cache
-  test-restore-relative:
-    needs: test-save-relative
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Restore cache
-      uses: ./
-      with:
-        key: test-relative-${{ runner.os }}-${{ github.run_id }}
-        path: ~test-cache
-    - name: Verify cache
+    - name: Verify cache files outside working directory
       shell: bash
       run: __tests__/verify-cache-files.sh ${{ runner.os }} ~/test-cache
 
