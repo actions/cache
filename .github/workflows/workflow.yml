@@ -47,7 +47,7 @@ jobs:
       run: npm run test
 
   # End to end save and restore
-  test-save:
+  test-save-relative:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
@@ -63,8 +63,8 @@ jobs:
       with:
         key: test-${{ runner.os }}-${{ github.run_id }}
         path: test-cache
-  test-restore:
-    needs: test-save
+  test-restore-relative:
+    needs: test-save-relative
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
