@@ -7,5 +7,11 @@ if [ -z "$prefix" ]; then
   exit 1
 fi
 
-mkdir test-cache
-echo "$prefix $GITHUB_RUN_ID" > test-cache/test-file.txt
+path="$2"
+if [ -z "$path" ]; then
+  echo "Must supply path argument"
+  exit 1
+fi
+
+mkdir -p $path
+echo "$prefix $GITHUB_RUN_ID" > $path/test-file.txt
