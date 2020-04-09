@@ -4959,12 +4959,30 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const core = __importStar(__webpack_require__(470));
 const exec_1 = __webpack_require__(986);
 const io = __importStar(__webpack_require__(1));
 const fs_1 = __webpack_require__(747);
 const path = __importStar(__webpack_require__(622));
 const constants_1 = __webpack_require__(694);
-function getTarPath() {
+function isGnuTar() {
+    return __awaiter(this, void 0, void 0, function* () {
+        core.debug("Checking tar --version");
+        let versionOutput = "";
+        yield exec_1.exec("tar --version", [], {
+            ignoreReturnCode: true,
+            silent: true,
+            listeners: {
+                stdout: (data) => (versionOutput += data.toString()),
+                stderr: (data) => (versionOutput += data.toString())
+            }
+        });
+        core.debug(versionOutput.trim());
+        return versionOutput.toUpperCase().includes("GNU TAR");
+    });
+}
+exports.isGnuTar = isGnuTar;
+function getTarPath(args) {
     return __awaiter(this, void 0, void 0, function* () {
         // Explicitly use BSD Tar on Windows
         const IS_WINDOWS = process.platform === "win32";
@@ -4973,22 +4991,21 @@ function getTarPath() {
             if (fs_1.existsSync(systemTar)) {
                 return systemTar;
             }
+            else if (isGnuTar()) {
+                args.push("--force-local");
+            }
         }
         return yield io.which("tar", true);
     });
 }
 function execTar(args, cwd) {
-    var _a, _b;
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            yield exec_1.exec(`"${yield getTarPath()}"`, args, { cwd: cwd });
+            yield exec_1.exec(`"${yield getTarPath(args)}"`, args, { cwd: cwd });
         }
         catch (error) {
-            const IS_WINDOWS = process.platform === "win32";
-            if (IS_WINDOWS) {
-                throw new Error(`Tar failed with error: ${(_a = error) === null || _a === void 0 ? void 0 : _a.message}. Ensure BSD tar is installed and on the PATH.`);
-            }
-            throw new Error(`Tar failed with error: ${(_b = error) === null || _b === void 0 ? void 0 : _b.message}`);
+            throw new Error(`Tar failed with error: ${(_a = error) === null || _a === void 0 ? void 0 : _a.message}`);
         }
     });
 }
@@ -4997,16 +5014,25 @@ function getWorkingDirectory() {
     return _a = process.env["GITHUB_WORKSPACE"], (_a !== null && _a !== void 0 ? _a : process.cwd());
 }
 function extractTar(archivePath) {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         // Create directory to extract tar into
         const workingDirectory = getWorkingDirectory();
         yield io.mkdirP(workingDirectory);
-        const args = ["-xz", "-f", archivePath, "-P", "-C", workingDirectory];
+        const args = [
+            "-xz",
+            "-f",
+            (_a = archivePath) === null || _a === void 0 ? void 0 : _a.replace(/\\/g, "/"),
+            "-P",
+            "-C",
+            (_b = workingDirectory) === null || _b === void 0 ? void 0 : _b.replace(/\\/g, "/")
+        ];
         yield execTar(args);
     });
 }
 exports.extractTar = extractTar;
 function createTar(archiveFolder, sourceDirectories) {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         // Write source directories to manifest.txt to avoid command length limits
         const manifestFilename = "manifest.txt";
@@ -5015,10 +5041,14 @@ function createTar(archiveFolder, sourceDirectories) {
         const args = [
             "-cz",
             "-f",
+<<<<<<< HEAD
             constants_1.CacheFilename,
             "-P",
+=======
+            (_a = constants_1.CacheFilename) === null || _a === void 0 ? void 0 : _a.replace(/\\/g, "/"),
+>>>>>>> Fallback to GNU tar if BSD tar is unavailable
             "-C",
-            workingDirectory,
+            (_b = workingDirectory) === null || _b === void 0 ? void 0 : _b.replace(/\\/g, "/"),
             "--files-from",
             manifestFilename
         ];

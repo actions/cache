@@ -1,3 +1,4 @@
+import * as core from "@actions/core";
 import { exec } from "@actions/exec";
 import * as io from "@actions/io";
 import { existsSync, writeFileSync } from "fs";
@@ -5,13 +6,32 @@ import * as path from "path";
 
 import { CacheFilename } from "./constants";
 
-async function getTarPath(): Promise<string> {
+export async function isGnuTar(): Promise<boolean> {
+    core.debug("Checking tar --version");
+    let versionOutput = "";
+    await exec("tar --version", [], {
+        ignoreReturnCode: true,
+        silent: true,
+        listeners: {
+            stdout: (data: Buffer): string =>
+                (versionOutput += data.toString()),
+            stderr: (data: Buffer): string => (versionOutput += data.toString())
+        }
+    });
+
+    core.debug(versionOutput.trim());
+    return versionOutput.toUpperCase().includes("GNU TAR");
+}
+
+async function getTarPath(args: string[]): Promise<string> {
     // Explicitly use BSD Tar on Windows
     const IS_WINDOWS = process.platform === "win32";
     if (IS_WINDOWS) {
         const systemTar = `${process.env["windir"]}\\System32\\tar.exe`;
         if (existsSync(systemTar)) {
             return systemTar;
+        } else if (isGnuTar()) {
+            args.push("--force-local");
         }
     }
     return await io.which("tar", true);
@@ -19,14 +39,8 @@ async function getTarPath(): Promise<string> {
 
 async function execTar(args: string[], cwd?: string): Promise<void> {
     try {
-        await exec(`"${await getTarPath()}"`, args, { cwd: cwd });
+        await exec(`"${await getTarPath(args)}"`, args, { cwd: cwd });
     } catch (error) {
-        const IS_WINDOWS = process.platform === "win32";
-        if (IS_WINDOWS) {
-            throw new Error(
-                `Tar failed with error: ${error?.message}. Ensure BSD tar is installed and on the PATH.`
-            );
-        }
         throw new Error(`Tar failed with error: ${error?.message}`);
     }
 }
@@ -39,7 +53,14 @@ export async function extractTar(archivePath: string): Promise<void> {
     // Create directory to extract tar into
     const workingDirectory = getWorkingDirectory();
     await io.mkdirP(workingDirectory);
-    const args = ["-xz", "-f", archivePath, "-P", "-C", workingDirectory];
+    const args = [
+        "-xz",
+        "-f",
+        archivePath?.replace(/\\/g, "/"),
+        "-P",
+        "-C",
+        workingDirectory?.replace(/\\/g, "/")
+    ];
     await execTar(args);
 }
 
@@ -58,10 +79,10 @@ export async function createTar(
     const args = [
         "-cz",
         "-f",
-        CacheFilename,
+        CacheFilename?.replace(/\\/g, "/"),
         "-P",
         "-C",
-        workingDirectory,
+        workingDirectory?.replace(/\\/g, "/"),
         "--files-from",
         manifestFilename
     ];
