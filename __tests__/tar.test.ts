@@ -1,5 +1,7 @@
 import * as exec from "@actions/exec";
 import * as io from "@actions/io";
+import * as fs from "fs";
+import * as path from "path";
 import * as tar from "../src/tar";
 
 jest.mock("@actions/exec");
@@ -11,17 +13,19 @@ beforeAll(() => {
     });
 });
 
-test("extract tar", async () => {
+test("extract BSD tar", async () => {
     const mkdirMock = jest.spyOn(io, "mkdirP");
     const execMock = jest.spyOn(exec, "exec");
 
-    const archivePath = "cache.tar";
+    const IS_WINDOWS = process.platform === "win32";
+    const archivePath = IS_WINDOWS
+        ? `${process.env["windir"]}\\fakepath\\cache.tar`
+        : "cache.tar";
     const targetDirectory = "~/.npm/cache";
     await tar.extractTar(archivePath, targetDirectory);
 
     expect(mkdirMock).toHaveBeenCalledWith(targetDirectory);
 
-    const IS_WINDOWS = process.platform === "win32";
     const tarPath = IS_WINDOWS
         ? `${process.env["windir"]}\\System32\\tar.exe`
         : "tar";
@@ -29,13 +33,48 @@ test("extract tar", async () => {
     expect(execMock).toHaveBeenCalledWith(`"${tarPath}"`, [
         "-xz",
         "-f",
-        archivePath,
+        archivePath?.replace(/\\/g, "/"),
         "-C",
-        targetDirectory
+        targetDirectory?.replace(/\\/g, "/"),
     ]);
 });
 
-test("create tar", async () => {
+test("extract GNU tar", async () => {
+    const IS_WINDOWS = process.platform === "win32";
+    if (IS_WINDOWS) {
+        jest.mock("fs");
+
+        const execMock = jest.spyOn(exec, "exec");
+        const existsSyncMock = jest
+            .spyOn(fs, "existsSync")
+            .mockReturnValue(false);
+        const isGnuTarMock = jest
+            .spyOn(tar, "isGnuTar")
+            .mockReturnValue(Promise.resolve(true));
+        const archivePath = `${process.env["windir"]}\\fakepath\\cache.tar`;
+        const targetDirectory = "~/.npm/cache";
+
+        await tar.extractTar(archivePath, targetDirectory);
+
+        expect(existsSyncMock).toHaveBeenCalledTimes(1);
+        expect(isGnuTarMock).toHaveBeenCalledTimes(1);
+        expect(execMock).toHaveBeenCalledTimes(2);
+        expect(execMock).toHaveBeenLastCalledWith(
+            "tar",
+            [
+                "-xz",
+                "-f",
+                archivePath?.replace(/\\/g, "/"),
+                "-C",
+                targetDirectory?.replace(/\\/g, "/"),
+                "--force-local"
+            ],
+            { cwd: undefined }
+        );
+    }
+});
+
+test("create BSD tar", async () => {
     const execMock = jest.spyOn(exec, "exec");
 
     const archivePath = "cache.tar";
@@ -50,9 +89,9 @@ test("create tar", async () => {
     expect(execMock).toHaveBeenCalledWith(`"${tarPath}"`, [
         "-cz",
         "-f",
-        archivePath,
+        archivePath?.replace(/\\/g, "/"),
         "-C",
-        sourceDirectory,
+        sourceDirectory?.replace(/\\/g, "/"),
         "."
     ]);
 });
