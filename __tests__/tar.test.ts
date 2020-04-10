@@ -96,7 +96,7 @@ test("create BSD tar", async () => {
     const workspace = process.env["GITHUB_WORKSPACE"];
     const sourceDirectories = ["~/.npm/cache", `${workspace}/dist`];
 
-    await fs.mkdir(archiveFolder, () => void { recursive: true });
+    await fs.promises.mkdir(archiveFolder, { recursive: true });
 
     await tar.createTar(archiveFolder, sourceDirectories);
 
