@@ -5041,12 +5041,8 @@ function createTar(archiveFolder, sourceDirectories) {
         const args = [
             "-cz",
             "-f",
-<<<<<<< HEAD
-            constants_1.CacheFilename,
-            "-P",
-=======
             (_a = constants_1.CacheFilename) === null || _a === void 0 ? void 0 : _a.replace(/\\/g, "/"),
->>>>>>> Fallback to GNU tar if BSD tar is unavailable
+            "-P",
             "-C",
             (_b = workingDirectory) === null || _b === void 0 ? void 0 : _b.replace(/\\/g, "/"),
             "--files-from",
