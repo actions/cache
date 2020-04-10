@@ -1,10 +1,11 @@
 import * as exec from "@actions/exec";
 import * as io from "@actions/io";
-import * as fs from "fs";
 import * as path from "path";
 
 import { CacheFilename } from "../src/constants";
 import * as tar from "../src/tar";
+
+import fs = require("fs");
 
 jest.mock("@actions/exec");
 jest.mock("@actions/io");
@@ -62,25 +63,18 @@ test("extract BSD tar", async () => {
 test("extract GNU tar", async () => {
     const IS_WINDOWS = process.platform === "win32";
     if (IS_WINDOWS) {
-        jest.mock("fs");
+        jest.spyOn(fs, "existsSync").mockReturnValueOnce(false);
+        jest.spyOn(tar, "isGnuTar").mockReturnValue(Promise.resolve(true));
 
         const execMock = jest.spyOn(exec, "exec");
-        const existsSyncMock = jest
-            .spyOn(fs, "existsSync")
-            .mockReturnValue(false);
-        const isGnuTarMock = jest
-            .spyOn(tar, "isGnuTar")
-            .mockReturnValue(Promise.resolve(true));
         const archivePath = `${process.env["windir"]}\\fakepath\\cache.tar`;
         const workspace = process.env["GITHUB_WORKSPACE"];
 
         await tar.extractTar(archivePath);
 
-        expect(existsSyncMock).toHaveBeenCalledTimes(1);
-        expect(isGnuTarMock).toHaveBeenCalledTimes(1);
         expect(execMock).toHaveBeenCalledTimes(2);
         expect(execMock).toHaveBeenLastCalledWith(
-            "tar",
+            `"tar"`,
             [
                 "-xz",
                 "-f",
