@@ -180,9 +180,9 @@ async function uploadChunk(
     end: number
 ): Promise<void> {
     core.debug(
-        `Uploading chunk of size ${end -
-            start +
-            1} bytes at offset ${start} with content range: ${getContentRange(
+        `Uploading chunk of size ${
+            end - start + 1
+        } bytes at offset ${start} with content range: ${getContentRange(
             start,
             end
         )}`
