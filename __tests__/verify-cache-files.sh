@@ -7,12 +7,6 @@ if [ -z "$prefix" ]; then
   exit 1
 fi
 
-path="$2"
-if [ -z "$path" ]; then
-  echo "Must specify path argument"
-  exit 1
-fi
-
 # Sanity check GITHUB_RUN_ID defined
 if [ -z "$GITHUB_RUN_ID" ]; then
   echo "GITHUB_RUN_ID not defined"
@@ -20,7 +14,7 @@ if [ -z "$GITHUB_RUN_ID" ]; then
 fi
 
 # Verify file exists
-file="$path/test-file.txt"
+file="test-cache/test-file.txt"
 echo "Checking for $file"
 if [ ! -e $file ]; then
   echo "File does not exist"

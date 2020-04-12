@@ -59,7 +59,6 @@ export async function createTar(
         "-cz",
         "-f",
         CacheFilename,
-        "-P",
         "-C",
         workingDirectory,
         "--files-from",
