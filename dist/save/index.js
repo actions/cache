@@ -2182,12 +2182,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
+const fs = __importStar(__webpack_require__(747));
+const crypto = __importStar(__webpack_require__(417));
 const http_client_1 = __webpack_require__(539);
 const auth_1 = __webpack_require__(226);
-const crypto = __importStar(__webpack_require__(417));
-const fs = __importStar(__webpack_require__(747));
-const constants_1 = __webpack_require__(694);
 const utils = __importStar(__webpack_require__(443));
+const constants_1 = __webpack_require__(694);
 const versionSalt = "1.0";
 function isSuccessStatusCode(statusCode) {
     if (!statusCode) {
@@ -3185,8 +3185,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
-const glob = __importStar(__webpack_require__(281));
 const io = __importStar(__webpack_require__(1));
+const glob = __importStar(__webpack_require__(281));
 const fs = __importStar(__webpack_require__(747));
 const path = __importStar(__webpack_require__(622));
 const util = __importStar(__webpack_require__(669));
@@ -4993,7 +4993,6 @@ function createTar(archiveFolder, sourceDirectories) {
             "-cz",
             "-f",
             constants_1.CacheFilename,
-            "-P",
             "-C",
             workingDirectory,
             "--files-from",

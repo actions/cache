@@ -73,7 +73,6 @@ test("create tar", async () => {
             "-cz",
             "-f",
             CacheFilename,
-            "-P",
             "-C",
             workspace,
             "--files-from",
