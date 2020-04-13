@@ -5014,7 +5014,6 @@ function getWorkingDirectory() {
     return _a = process.env["GITHUB_WORKSPACE"], (_a !== null && _a !== void 0 ? _a : process.cwd());
 }
 function extractTar(archivePath) {
-    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         // Create directory to extract tar into
         const workingDirectory = getWorkingDirectory();
@@ -5022,17 +5021,16 @@ function extractTar(archivePath) {
         const args = [
             "-xz",
             "-f",
-            (_a = archivePath) === null || _a === void 0 ? void 0 : _a.replace(/\\/g, "/"),
+            archivePath.replace(new RegExp("\\" + path.sep, "g"), "/"),
             "-P",
             "-C",
-            (_b = workingDirectory) === null || _b === void 0 ? void 0 : _b.replace(/\\/g, "/")
+            workingDirectory.replace(new RegExp("\\" + path.sep, "g"), "/")
         ];
         yield execTar(args);
     });
 }
 exports.extractTar = extractTar;
 function createTar(archiveFolder, sourceDirectories) {
-    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         // Write source directories to manifest.txt to avoid command length limits
         const manifestFilename = "manifest.txt";
@@ -5041,10 +5039,10 @@ function createTar(archiveFolder, sourceDirectories) {
         const args = [
             "-cz",
             "-f",
-            (_a = constants_1.CacheFilename) === null || _a === void 0 ? void 0 : _a.replace(/\\/g, "/"),
+            constants_1.CacheFilename.replace(new RegExp("\\" + path.sep, "g"), "/"),
             "-P",
             "-C",
-            (_b = workingDirectory) === null || _b === void 0 ? void 0 : _b.replace(/\\/g, "/"),
+            workingDirectory.replace(new RegExp("\\" + path.sep, "g"), "/"),
             "--files-from",
             manifestFilename
         ];

@@ -51,10 +51,10 @@ test("extract BSD tar", async () => {
         [
             "-xz",
             "-f",
-            archivePath?.replace(/\\/g, "/"),
+            IS_WINDOWS ? archivePath.replace(/\\/g, "/") : archivePath,
             "-P",
             "-C",
-            workspace?.replace(/\\/g, "/")
+            IS_WINDOWS ? workspace?.replace(/\\/g, "/") : workspace
         ],
         { cwd: undefined }
     );
@@ -78,7 +78,7 @@ test("extract GNU tar", async () => {
             [
                 "-xz",
                 "-f",
-                archivePath?.replace(/\\/g, "/"),
+                archivePath.replace(/\\/g, "/"),
                 "-P",
                 "-C",
                 workspace?.replace(/\\/g, "/"),
@@ -111,10 +111,10 @@ test("create BSD tar", async () => {
         [
             "-cz",
             "-f",
-            CacheFilename?.replace(/\\/g, "/"),
+            IS_WINDOWS ? CacheFilename.replace(/\\/g, "/") : CacheFilename,
             "-P",
             "-C",
-            workspace?.replace(/\\/g, "/"),
+            IS_WINDOWS ? workspace?.replace(/\\/g, "/") : workspace,
             "--files-from",
             "manifest.txt"
         ],

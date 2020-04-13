@@ -56,10 +56,10 @@ export async function extractTar(archivePath: string): Promise<void> {
     const args = [
         "-xz",
         "-f",
-        archivePath?.replace(/\\/g, "/"),
+        archivePath.replace(new RegExp("\\" + path.sep, "g"), "/"),
         "-P",
         "-C",
-        workingDirectory?.replace(/\\/g, "/")
+        workingDirectory.replace(new RegExp("\\" + path.sep, "g"), "/")
     ];
     await execTar(args);
 }
@@ -79,10 +79,10 @@ export async function createTar(
     const args = [
         "-cz",
         "-f",
-        CacheFilename?.replace(/\\/g, "/"),
+        CacheFilename.replace(new RegExp("\\" + path.sep, "g"), "/"),
         "-P",
         "-C",
-        workingDirectory?.replace(/\\/g, "/"),
+        workingDirectory.replace(new RegExp("\\" + path.sep, "g"), "/"),
         "--files-from",
         manifestFilename
     ];
