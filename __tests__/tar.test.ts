@@ -1,6 +1,5 @@
 import * as exec from "@actions/exec";
 import * as io from "@actions/io";
-import * as path from "path";
 import * as tar from "../src/tar";
 
 import fs = require("fs");
@@ -34,9 +33,9 @@ test("extract BSD tar", async () => {
     expect(execMock).toHaveBeenCalledWith(`"${tarPath}"`, [
         "-xz",
         "-f",
-        archivePath?.replace(/\\/g, "/"),
+        IS_WINDOWS ? archivePath.replace(/\\/g, "/") : archivePath,
         "-C",
-        targetDirectory?.replace(/\\/g, "/"),
+        IS_WINDOWS ? targetDirectory?.replace(/\\/g, "/") : targetDirectory
     ]);
 });
 
@@ -53,18 +52,14 @@ test("extract GNU tar", async () => {
         await tar.extractTar(archivePath, targetDirectory);
 
         expect(execMock).toHaveBeenCalledTimes(2);
-        expect(execMock).toHaveBeenLastCalledWith(
-            `"tar"`,
-            [
-                "-xz",
-                "-f",
-                archivePath?.replace(/\\/g, "/"),
-                "-C",
-                targetDirectory?.replace(/\\/g, "/"),
-                "--force-local"
-            ],
-            { cwd: undefined }
-        );
+        expect(execMock).toHaveBeenLastCalledWith(`"tar"`, [
+            "-xz",
+            "-f",
+            archivePath.replace(/\\/g, "/"),
+            "-C",
+            targetDirectory?.replace(/\\/g, "/"),
+            "--force-local"
+        ]);
     }
 });
 
@@ -83,9 +78,9 @@ test("create BSD tar", async () => {
     expect(execMock).toHaveBeenCalledWith(`"${tarPath}"`, [
         "-cz",
         "-f",
-        archivePath?.replace(/\\/g, "/"),
+        IS_WINDOWS ? archivePath.replace(/\\/g, "/") : archivePath,
         "-C",
-        sourceDirectory?.replace(/\\/g, "/"),
+        IS_WINDOWS ? sourceDirectory?.replace(/\\/g, "/") : sourceDirectory,
         "."
     ]);
 });

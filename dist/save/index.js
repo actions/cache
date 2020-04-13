@@ -2913,30 +2913,7 @@ const core = __importStar(__webpack_require__(470));
 const exec_1 = __webpack_require__(986);
 const io = __importStar(__webpack_require__(1));
 const fs_1 = __webpack_require__(747);
-<<<<<<< HEAD
 function getTarPath() {
-=======
-const path = __importStar(__webpack_require__(622));
-const constants_1 = __webpack_require__(694);
-function isGnuTar() {
-    return __awaiter(this, void 0, void 0, function* () {
-        core.debug("Checking tar --version");
-        let versionOutput = "";
-        yield exec_1.exec("tar --version", [], {
-            ignoreReturnCode: true,
-            silent: true,
-            listeners: {
-                stdout: (data) => (versionOutput += data.toString()),
-                stderr: (data) => (versionOutput += data.toString())
-            }
-        });
-        core.debug(versionOutput.trim());
-        return versionOutput.toUpperCase().includes("GNU TAR");
-    });
-}
-exports.isGnuTar = isGnuTar;
-function getTarPath(args) {
->>>>>>> 4fa017f... Fallback to GNU tar if BSD tar is unavailable
     return __awaiter(this, void 0, void 0, function* () {
         // Explicitly use BSD Tar on Windows
         const IS_WINDOWS = process.platform === "win32";
@@ -2952,80 +2929,30 @@ function getTarPath(args) {
         return yield io.which("tar", true);
     });
 }
-<<<<<<< HEAD
 function execTar(args) {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             yield exec_1.exec(`"${yield getTarPath()}"`, args);
-=======
-function execTar(args, cwd) {
-    var _a;
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            yield exec_1.exec(`"${yield getTarPath(args)}"`, args, { cwd: cwd });
->>>>>>> 4fa017f... Fallback to GNU tar if BSD tar is unavailable
         }
         catch (error) {
             throw new Error(`Tar failed with error: ${(_a = error) === null || _a === void 0 ? void 0 : _a.message}`);
         }
     });
 }
-<<<<<<< HEAD
 function extractTar(archivePath, targetDirectory) {
     return __awaiter(this, void 0, void 0, function* () {
         // Create directory to extract tar into
         yield io.mkdirP(targetDirectory);
         const args = ["-xz", "-f", archivePath, "-C", targetDirectory];
-=======
-function getWorkingDirectory() {
-    var _a;
-    return _a = process.env["GITHUB_WORKSPACE"], (_a !== null && _a !== void 0 ? _a : process.cwd());
-}
-function extractTar(archivePath) {
-    var _a, _b;
-    return __awaiter(this, void 0, void 0, function* () {
-        // Create directory to extract tar into
-        const workingDirectory = getWorkingDirectory();
-        yield io.mkdirP(workingDirectory);
-        const args = [
-            "-xz",
-            "-f",
-            (_a = archivePath) === null || _a === void 0 ? void 0 : _a.replace(/\\/g, "/"),
-            "-P",
-            "-C",
-            (_b = workingDirectory) === null || _b === void 0 ? void 0 : _b.replace(/\\/g, "/")
-        ];
->>>>>>> 4fa017f... Fallback to GNU tar if BSD tar is unavailable
         yield execTar(args);
     });
 }
 exports.extractTar = extractTar;
-<<<<<<< HEAD
 function createTar(archivePath, sourceDirectory) {
     return __awaiter(this, void 0, void 0, function* () {
         const args = ["-cz", "-f", archivePath, "-C", sourceDirectory, "."];
         yield execTar(args);
-=======
-function createTar(archiveFolder, sourceDirectories) {
-    var _a, _b;
-    return __awaiter(this, void 0, void 0, function* () {
-        // Write source directories to manifest.txt to avoid command length limits
-        const manifestFilename = "manifest.txt";
-        fs_1.writeFileSync(path.join(archiveFolder, manifestFilename), sourceDirectories.join("\n"));
-        const workingDirectory = getWorkingDirectory();
-        const args = [
-            "-cz",
-            "-f",
-            (_a = constants_1.CacheFilename) === null || _a === void 0 ? void 0 : _a.replace(/\\/g, "/"),
-            "-P",
-            "-C",
-            (_b = workingDirectory) === null || _b === void 0 ? void 0 : _b.replace(/\\/g, "/"),
-            "--files-from",
-            manifestFilename
-        ];
-        yield execTar(args, archiveFolder);
->>>>>>> 4fa017f... Fallback to GNU tar if BSD tar is unavailable
     });
 }
 exports.createTar = createTar;

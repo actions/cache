@@ -28,7 +28,7 @@ async function getTarPath(args: string[]): Promise<string> {
         const systemTar = `${process.env["windir"]}\\System32\\tar.exe`;
         if (existsSync(systemTar)) {
             return systemTar;
-        } else if (isGnuTar()) {
+        } else if (await isGnuTar()) {
             args.push("--force-local");
         }
     }
@@ -52,9 +52,9 @@ export async function extractTar(
     const args = [
         "-xz",
         "-f",
-        archivePath?.replace(/\\/g, "/"),
+        archivePath.replace(new RegExp("\\" + path.sep, "g"), "/"),
         "-C",
-        targetDirectory?.replace(/\\/g, "/")
+        targetDirectory.replace(new RegExp("\\" + path.sep, "g"), "/")
     ];
     await execTar(args);
 }
@@ -66,9 +66,9 @@ export async function createTar(
     const args = [
         "-cz",
         "-f",
-        archivePath?.replace(/\\/g, "/"),
+        archivePath.replace(new RegExp("\\" + path.sep, "g"), "/"),
         "-C",
-        sourceDirectory?.replace(/\\/g, "/"),
+        sourceDirectory.replace(new RegExp("\\" + path.sep, "g"), "/"),
         "."
     ];
     await execTar(args);
