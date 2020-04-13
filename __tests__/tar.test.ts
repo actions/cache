@@ -1,10 +1,11 @@
 import * as exec from "@actions/exec";
 import * as io from "@actions/io";
-import { promises as fs } from "fs";
 import * as path from "path";
 
 import { CacheFilename } from "../src/constants";
 import * as tar from "../src/tar";
+
+import fs = require("fs");
 
 jest.mock("@actions/exec");
 jest.mock("@actions/io");
@@ -27,37 +28,75 @@ afterAll(async () => {
     await jest.requireActual("@actions/io").rmRF(getTempDir());
 });
 
-test("extract tar", async () => {
+test("extract BSD tar", async () => {
     const mkdirMock = jest.spyOn(io, "mkdirP");
     const execMock = jest.spyOn(exec, "exec");
 
-    const archivePath = "cache.tar";
+    const IS_WINDOWS = process.platform === "win32";
+    const archivePath = IS_WINDOWS
+        ? `${process.env["windir"]}\\fakepath\\cache.tar`
+        : "cache.tar";
     const workspace = process.env["GITHUB_WORKSPACE"];
 
     await tar.extractTar(archivePath);
 
     expect(mkdirMock).toHaveBeenCalledWith(workspace);
 
-    const IS_WINDOWS = process.platform === "win32";
     const tarPath = IS_WINDOWS
         ? `${process.env["windir"]}\\System32\\tar.exe`
         : "tar";
     expect(execMock).toHaveBeenCalledTimes(1);
     expect(execMock).toHaveBeenCalledWith(
         `"${tarPath}"`,
-        ["-xz", "-f", archivePath, "-P", "-C", workspace],
+        [
+            "-xz",
+            "-f",
+            IS_WINDOWS ? archivePath.replace(/\\/g, "/") : archivePath,
+            "-P",
+            "-C",
+            IS_WINDOWS ? workspace?.replace(/\\/g, "/") : workspace
+        ],
         { cwd: undefined }
     );
 });
 
-test("create tar", async () => {
+test("extract GNU tar", async () => {
+    const IS_WINDOWS = process.platform === "win32";
+    if (IS_WINDOWS) {
+        jest.spyOn(fs, "existsSync").mockReturnValueOnce(false);
+        jest.spyOn(tar, "isGnuTar").mockReturnValue(Promise.resolve(true));
+
+        const execMock = jest.spyOn(exec, "exec");
+        const archivePath = `${process.env["windir"]}\\fakepath\\cache.tar`;
+        const workspace = process.env["GITHUB_WORKSPACE"];
+
+        await tar.extractTar(archivePath);
+
+        expect(execMock).toHaveBeenCalledTimes(2);
+        expect(execMock).toHaveBeenLastCalledWith(
+            `"tar"`,
+            [
+                "-xz",
+                "-f",
+                archivePath.replace(/\\/g, "/"),
+                "-P",
+                "-C",
+                workspace?.replace(/\\/g, "/"),
+                "--force-local"
+            ],
+            { cwd: undefined }
+        );
+    }
+});
+
+test("create BSD tar", async () => {
     const execMock = jest.spyOn(exec, "exec");
 
     const archiveFolder = getTempDir();
     const workspace = process.env["GITHUB_WORKSPACE"];
     const sourceDirectories = ["~/.npm/cache", `${workspace}/dist`];
 
-    await fs.mkdir(archiveFolder, { recursive: true });
+    await fs.promises.mkdir(archiveFolder, { recursive: true });
 
     await tar.createTar(archiveFolder, sourceDirectories);
 
@@ -72,10 +111,10 @@ test("create tar", async () => {
         [
             "-cz",
             "-f",
-            CacheFilename,
+            IS_WINDOWS ? CacheFilename.replace(/\\/g, "/") : CacheFilename,
             "-P",
             "-C",
-            workspace,
+            IS_WINDOWS ? workspace?.replace(/\\/g, "/") : workspace,
             "--files-from",
             "manifest.txt"
         ],
