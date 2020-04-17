@@ -4,7 +4,7 @@ import { promises as fs } from "fs";
 import * as os from "os";
 import * as path from "path";
 
-import { Events, Outputs, State } from "../src/constants";
+import { Events, Outputs, RefKey, State } from "../src/constants";
 import { ArtifactCacheEntry } from "../src/contracts";
 import * as actionUtils from "../src/utils/actionUtils";
 
@@ -19,6 +19,7 @@ function getTempDir(): string {
 
 afterEach(() => {
     delete process.env[Events.Key];
+    delete process.env[RefKey];
 });
 
 afterAll(async () => {
@@ -185,7 +186,7 @@ test("logWarning logs a message with a warning prefix", () => {
     expect(infoMock).toHaveBeenCalledWith(`[warning]${message}`);
 });
 
-test("isValidEvent returns false for unknown event", () => {
+test("isValidEvent returns false for event that does not have a branch or tag", () => {
     const event = "foo";
     process.env[Events.Key] = event;
 
@@ -325,18 +326,10 @@ test("resolvePaths exclusion pattern returns not found", async () => {
     }
 });
 
-test("isValidEvent returns true for push event", () => {
+test("isValidEvent returns true for event that has a ref", () => {
     const event = Events.Push;
     process.env[Events.Key] = event;
-
-    const isValidEvent = actionUtils.isValidEvent();
-
-    expect(isValidEvent).toBe(true);
-});
-
-test("isValidEvent returns true for pull request event", () => {
-    const event = Events.PullRequest;
-    process.env[Events.Key] = event;
+    process.env[RefKey] = "ref/heads/feature";
 
     const isValidEvent = actionUtils.isValidEvent();
 

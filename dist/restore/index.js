@@ -3306,16 +3306,10 @@ function resolvePaths(patterns) {
     });
 }
 exports.resolvePaths = resolvePaths;
-function getSupportedEvents() {
-    return [constants_1.Events.Push, constants_1.Events.PullRequest];
-}
-exports.getSupportedEvents = getSupportedEvents;
-// Currently the cache token is only authorized for push and pull_request events
-// All other events will fail when reading and saving the cache
+// Cache token authorized for all events that are tied to a ref
 // See GitHub Context https://help.github.com/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions#github-context
 function isValidEvent() {
-    const githubEvent = process.env[constants_1.Events.Key] || "";
-    return getSupportedEvents().includes(githubEvent);
+    return constants_1.RefKey in process.env;
 }
 exports.isValidEvent = isValidEvent;
 function unlinkFile(path) {
@@ -4560,6 +4554,7 @@ var Events;
     Events["Push"] = "push";
     Events["PullRequest"] = "pull_request";
 })(Events = exports.Events || (exports.Events = {}));
+<<<<<<< HEAD
 var CacheFilename;
 (function (CacheFilename) {
     CacheFilename["Gzip"] = "cache.tgz";
@@ -4574,6 +4569,10 @@ var CompressionMethod;
 // over the socket during this period, the socket is destroyed and the download
 // is aborted.
 exports.SocketTimeout = 5000;
+=======
+exports.RefKey = "GITHUB_REF";
+exports.CacheFilename = "cache.tgz";
+>>>>>>> Allow all events to access cache
 
 
 /***/ }),
@@ -4667,9 +4666,7 @@ function run() {
         try {
             // Validate inputs, this can cause task failure
             if (!utils.isValidEvent()) {
-                utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported. Only ${utils
-                    .getSupportedEvents()
-                    .join(", ")} events are supported at this time.`);
+                utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
                 return;
             }
             const primaryKey = core.getInput(constants_1.Inputs.Key, { required: true });

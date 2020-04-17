@@ -12,9 +12,7 @@ async function run(): Promise<void> {
             utils.logWarning(
                 `Event Validation Error: The event type ${
                     process.env[Events.Key]
-                } is not supported. Only ${utils
-                    .getSupportedEvents()
-                    .join(", ")} events are supported at this time.`
+                } is not supported because it's not tied to a branch or tag ref.`
             );
             return;
         }

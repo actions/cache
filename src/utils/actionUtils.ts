@@ -7,13 +7,17 @@ import * as path from "path";
 import * as util from "util";
 import * as uuidV4 from "uuid/v4";
 
+<<<<<<< HEAD
 import {
     CacheFilename,
     CompressionMethod,
-    Events,
     Outputs,
+    RefKey,
     State
 } from "../constants";
+=======
+import { Outputs, RefKey, State } from "../constants";
+>>>>>>> Allow all events to access cache
 import { ArtifactCacheEntry } from "../contracts";
 
 // From https://github.com/actions/toolkit/blob/master/packages/tool-cache/src/tool-cache.ts#L23
@@ -108,16 +112,10 @@ export async function resolvePaths(patterns: string[]): Promise<string[]> {
     return paths;
 }
 
-export function getSupportedEvents(): string[] {
-    return [Events.Push, Events.PullRequest];
-}
-
-// Currently the cache token is only authorized for push and pull_request events
-// All other events will fail when reading and saving the cache
+// Cache token authorized for all events that are tied to a ref
 // See GitHub Context https://help.github.com/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions#github-context
 export function isValidEvent(): boolean {
-    const githubEvent = process.env[Events.Key] || "";
-    return getSupportedEvents().includes(githubEvent);
+    return RefKey in process.env;
 }
 
 export function unlinkFile(path: fs.PathLike): Promise<void> {
