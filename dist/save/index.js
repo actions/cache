@@ -3309,7 +3309,7 @@ exports.resolvePaths = resolvePaths;
 // Cache token authorized for all events that are tied to a ref
 // See GitHub Context https://help.github.com/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions#github-context
 function isValidEvent() {
-    return constants_1.RefKey in process.env;
+    return constants_1.RefKey in process.env && Boolean(process.env[constants_1.RefKey]);
 }
 exports.isValidEvent = isValidEvent;
 function unlinkFile(path) {

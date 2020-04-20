@@ -115,7 +115,7 @@ export async function resolvePaths(patterns: string[]): Promise<string[]> {
 // Cache token authorized for all events that are tied to a ref
 // See GitHub Context https://help.github.com/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions#github-context
 export function isValidEvent(): boolean {
-    return RefKey in process.env;
+    return RefKey in process.env && Boolean(process.env[RefKey]);
 }
 
 export function unlinkFile(path: fs.PathLike): Promise<void> {
