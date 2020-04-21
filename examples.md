@@ -198,6 +198,20 @@ The yarn cache directory will depend on your operating system and version of `ya
       ${{ runner.os }}-yarn-
 ```
 
+## Node - Typescript
+Enable typescript incremantal build by passing flag  `--incremental` and location of incremental build info is controlled by flag `--tsBuildInfoFile`
+More info in https://www.typescriptlang.org/docs/handbook/compiler-options.html
+
+```yaml
+    - uses: actions/cache@v1
+      id: tsbuild-cache
+      with:
+        path: buildcache.tsbuildinfo #the file you mention when build the project by passing parameter tsBuildInfoFile
+        key: ${{ runner.os }}-tsbuild
+        restore-keys: |
+          ${{ runner.os }}-tsbuild
+```
+
 ## OCaml/Reason - esy
 Esy allows you to export built dependencies and import pre-built dependencies.
 ```yaml
