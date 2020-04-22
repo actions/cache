@@ -11,9 +11,10 @@ import * as fs from "fs";
 import * as stream from "stream";
 import * as util from "util";
 
-import { Inputs, SocketTimeout } from "./constants";
+import { CompressionMethod, Inputs, SocketTimeout } from "./constants";
 import {
     ArtifactCacheEntry,
+    CacheOptions,
     CommitCacheRequest,
     ReserveCacheRequest,
     ReserveCacheResponse
@@ -84,12 +85,13 @@ function createHttpClient(): HttpClient {
     );
 }
 
-export function getCacheVersion(): string {
+export function getCacheVersion(compressionMethod?: CompressionMethod): string {
     // Add salt to cache version to support breaking changes in cache entry
-    const components = [
-        core.getInput(Inputs.Path, { required: true }),
-        versionSalt
-    ];
+    const components = [core.getInput(Inputs.Path, { required: true })].concat(
+        compressionMethod == CompressionMethod.Zstd
+            ? [compressionMethod, versionSalt]
+            : versionSalt
+    );
 
     return crypto
         .createHash("sha256")
@@ -98,10 +100,11 @@ export function getCacheVersion(): string {
 }
 
 export async function getCacheEntry(
-    keys: string[]
+    keys: string[],
+    options?: CacheOptions
 ): Promise<ArtifactCacheEntry | null> {
     const httpClient = createHttpClient();
-    const version = getCacheVersion();
+    const version = getCacheVersion(options?.compressionMethod);
     const resource = `cache?keys=${encodeURIComponent(
         keys.join(",")
     )}&version=${version}`;
@@ -173,9 +176,12 @@ export async function downloadCache(
 }
 
 // Reserve Cache
-export async function reserveCache(key: string): Promise<number> {
+export async function reserveCache(
+    key: string,
+    options?: CacheOptions
+): Promise<number> {
     const httpClient = createHttpClient();
-    const version = getCacheVersion();
+    const version = getCacheVersion(options?.compressionMethod);
 
     const reserveCacheRequest: ReserveCacheRequest = {
         key,

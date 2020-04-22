@@ -2236,23 +2236,22 @@ function createHttpClient() {
     const bearerCredentialHandler = new auth_1.BearerCredentialHandler(token);
     return new http_client_1.HttpClient("actions/cache", [bearerCredentialHandler], getRequestOptions());
 }
-function getCacheVersion() {
+function getCacheVersion(compressionMethod) {
     // Add salt to cache version to support breaking changes in cache entry
-    const components = [
-        core.getInput(constants_1.Inputs.Path, { required: true }),
-        versionSalt
-    ];
+    const components = [core.getInput(constants_1.Inputs.Path, { required: true })].concat(compressionMethod == constants_1.CompressionMethod.Zstd
+        ? [compressionMethod, versionSalt]
+        : versionSalt);
     return crypto
         .createHash("sha256")
         .update(components.join("|"))
         .digest("hex");
 }
 exports.getCacheVersion = getCacheVersion;
-function getCacheEntry(keys) {
-    var _a;
+function getCacheEntry(keys, options) {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         const httpClient = createHttpClient();
-        const version = getCacheVersion();
+        const version = getCacheVersion((_a = options) === null || _a === void 0 ? void 0 : _a.compressionMethod);
         const resource = `cache?keys=${encodeURIComponent(keys.join(","))}&version=${version}`;
         const response = yield httpClient.getJson(getCacheApiUrl(resource));
         if (response.statusCode === 204) {
@@ -2262,7 +2261,7 @@ function getCacheEntry(keys) {
             throw new Error(`Cache service responded with ${response.statusCode}`);
         }
         const cacheResult = response.result;
-        const cacheDownloadUrl = (_a = cacheResult) === null || _a === void 0 ? void 0 : _a.archiveLocation;
+        const cacheDownloadUrl = (_b = cacheResult) === null || _b === void 0 ? void 0 : _b.archiveLocation;
         if (!cacheDownloadUrl) {
             throw new Error("Cache not found.");
         }
@@ -2306,17 +2305,17 @@ function downloadCache(archiveLocation, archivePath) {
 }
 exports.downloadCache = downloadCache;
 // Reserve Cache
-function reserveCache(key) {
-    var _a, _b, _c;
+function reserveCache(key, options) {
+    var _a, _b, _c, _d;
     return __awaiter(this, void 0, void 0, function* () {
         const httpClient = createHttpClient();
-        const version = getCacheVersion();
+        const version = getCacheVersion((_a = options) === null || _a === void 0 ? void 0 : _a.compressionMethod);
         const reserveCacheRequest = {
             key,
             version
         };
         const response = yield httpClient.postJson(getCacheApiUrl("caches"), reserveCacheRequest);
-        return _c = (_b = (_a = response) === null || _a === void 0 ? void 0 : _a.result) === null || _b === void 0 ? void 0 : _b.cacheId, (_c !== null && _c !== void 0 ? _c : -1);
+        return _d = (_c = (_b = response) === null || _b === void 0 ? void 0 : _b.result) === null || _c === void 0 ? void 0 : _c.cacheId, (_d !== null && _d !== void 0 ? _d : -1);
     });
 }
 exports.reserveCache = reserveCache;
@@ -3201,6 +3200,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
+const exec = __importStar(__webpack_require__(986));
 const glob = __importStar(__webpack_require__(281));
 const io = __importStar(__webpack_require__(1));
 const fs = __importStar(__webpack_require__(747));
@@ -3320,6 +3320,50 @@ function unlinkFile(path) {
     return util.promisify(fs.unlink)(path);
 }
 exports.unlinkFile = unlinkFile;
+function checkVersion(app) {
+    return __awaiter(this, void 0, void 0, function* () {
+        core.debug(`Checking ${app} --version`);
+        let versionOutput = "";
+        try {
+            yield exec.exec(`${app} --version`, [], {
+                ignoreReturnCode: true,
+                silent: true,
+                listeners: {
+                    stdout: (data) => (versionOutput += data.toString()),
+                    stderr: (data) => (versionOutput += data.toString())
+                }
+            });
+        }
+        catch (err) {
+            core.debug(err.message);
+        }
+        versionOutput = versionOutput.trim();
+        core.debug(versionOutput);
+        return versionOutput;
+    });
+}
+function getCompressionMethod() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const versionOutput = yield checkVersion("zstd");
+        return versionOutput.toLowerCase().includes("zstd command line interface")
+            ? constants_1.CompressionMethod.Zstd
+            : constants_1.CompressionMethod.Gzip;
+    });
+}
+exports.getCompressionMethod = getCompressionMethod;
+function getCacheFileName(compressionMethod) {
+    return compressionMethod == constants_1.CompressionMethod.Zstd
+        ? constants_1.CacheFilename.Zstd
+        : constants_1.CacheFilename.Gzip;
+}
+exports.getCacheFileName = getCacheFileName;
+function useGnuTar() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const versionOutput = yield checkVersion("tar");
+        return versionOutput.toLowerCase().includes("gnu tar");
+    });
+}
+exports.useGnuTar = useGnuTar;
 
 
 /***/ }),
@@ -3599,12 +3643,6 @@ class HttpClientResponse {
             this.message.on('data', (chunk) => {
                 output = Buffer.concat([output, chunk]);
             });
-            this.message.on('aborted', () => {
-                reject("Request was aborted or closed prematurely");
-            });
-            this.message.on('timeout', (socket) => {
-                reject("Request timed out");
-            });
             this.message.on('end', () => {
                 resolve(output.toString());
             });
@@ -3726,7 +3764,6 @@ class HttpClient {
         let response;
         while (numTries < maxTries) {
             response = await this.requestRaw(info, data);
-
             // Check if it's an authentication challenge
             if (response && response.message && response.message.statusCode === HttpCodes.Unauthorized) {
                 let authenticationHandler;
@@ -4511,8 +4548,11 @@ function run() {
                 core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
                 return;
             }
+            const compressionMethod = yield utils.getCompressionMethod();
             core.debug("Reserving Cache");
-            const cacheId = yield cacheHttpClient.reserveCache(primaryKey);
+            const cacheId = yield cacheHttpClient.reserveCache(primaryKey, {
+                compressionMethod: compressionMethod
+            });
             if (cacheId == -1) {
                 core.info(`Unable to reserve cache with key ${primaryKey}, another job may be creating this cache.`);
                 return;
@@ -4525,9 +4565,9 @@ function run() {
             core.debug("Cache Paths:");
             core.debug(`${JSON.stringify(cachePaths)}`);
             const archiveFolder = yield utils.createTempDirectory();
-            const archivePath = path.join(archiveFolder, constants_1.CacheFilename);
+            const archivePath = path.join(archiveFolder, utils.getCacheFileName(compressionMethod));
             core.debug(`Archive Path: ${archivePath}`);
-            yield tar_1.createTar(archiveFolder, cachePaths);
+            yield tar_1.createTar(archiveFolder, cachePaths, compressionMethod);
             const fileSizeLimit = 5 * 1024 * 1024 * 1024; // 5GB per repo limit
             const archiveFileSize = utils.getArchiveFileSize(archivePath);
             core.debug(`File Size: ${archiveFileSize}`);
@@ -4576,7 +4616,16 @@ var Events;
     Events["Push"] = "push";
     Events["PullRequest"] = "pull_request";
 })(Events = exports.Events || (exports.Events = {}));
-exports.CacheFilename = "cache.tgz";
+var CacheFilename;
+(function (CacheFilename) {
+    CacheFilename["Gzip"] = "cache.tgz";
+    CacheFilename["Zstd"] = "cache.tzst";
+})(CacheFilename = exports.CacheFilename || (exports.CacheFilename = {}));
+var CompressionMethod;
+(function (CompressionMethod) {
+    CompressionMethod["Gzip"] = "gzip";
+    CompressionMethod["Zstd"] = "zstd";
+})(CompressionMethod = exports.CompressionMethod || (exports.CompressionMethod = {}));
 // Socket timeout in milliseconds during download.  If no traffic is received
 // over the socket during this period, the socket is destroyed and the download
 // is aborted.
@@ -4970,29 +5019,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const core = __importStar(__webpack_require__(470));
 const exec_1 = __webpack_require__(986);
 const io = __importStar(__webpack_require__(1));
 const fs_1 = __webpack_require__(747);
 const path = __importStar(__webpack_require__(622));
 const constants_1 = __webpack_require__(694);
-function isGnuTar() {
-    return __awaiter(this, void 0, void 0, function* () {
-        core.debug("Checking tar --version");
-        let versionOutput = "";
-        yield exec_1.exec("tar --version", [], {
-            ignoreReturnCode: true,
-            silent: true,
-            listeners: {
-                stdout: (data) => (versionOutput += data.toString()),
-                stderr: (data) => (versionOutput += data.toString())
-            }
-        });
-        core.debug(versionOutput.trim());
-        return versionOutput.toUpperCase().includes("GNU TAR");
-    });
-}
-exports.isGnuTar = isGnuTar;
+const utils = __importStar(__webpack_require__(443));
 function getTarPath(args) {
     return __awaiter(this, void 0, void 0, function* () {
         // Explicitly use BSD Tar on Windows
@@ -5002,7 +5034,7 @@ function getTarPath(args) {
             if (fs_1.existsSync(systemTar)) {
                 return systemTar;
             }
-            else if (isGnuTar()) {
+            else if (yield utils.useGnuTar()) {
                 args.push("--force-local");
             }
         }
@@ -5013,7 +5045,7 @@ function execTar(args, cwd) {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            yield exec_1.exec(`"${yield getTarPath(args)}"`, args, { cwd: cwd });
+            yield exec_1.exec(`${yield getTarPath(args)}`, args, { cwd: cwd });
         }
         catch (error) {
             throw new Error(`Tar failed with error: ${(_a = error) === null || _a === void 0 ? void 0 : _a.message}`);
@@ -5024,14 +5056,16 @@ function getWorkingDirectory() {
     var _a;
     return _a = process.env["GITHUB_WORKSPACE"], (_a !== null && _a !== void 0 ? _a : process.cwd());
 }
-function extractTar(archivePath) {
+function extractTar(archivePath, compressionMethod) {
     return __awaiter(this, void 0, void 0, function* () {
         // Create directory to extract tar into
         const workingDirectory = getWorkingDirectory();
         yield io.mkdirP(workingDirectory);
         const args = [
-            "-xz",
-            "-f",
+            ...(compressionMethod == constants_1.CompressionMethod.Zstd
+                ? ["--use-compress-program", "zstd -d"]
+                : ["-z"]),
+            "-xf",
             archivePath.replace(new RegExp("\\" + path.sep, "g"), "/"),
             "-P",
             "-C",
@@ -5041,16 +5075,20 @@ function extractTar(archivePath) {
     });
 }
 exports.extractTar = extractTar;
-function createTar(archiveFolder, sourceDirectories) {
+function createTar(archiveFolder, sourceDirectories, compressionMethod) {
     return __awaiter(this, void 0, void 0, function* () {
         // Write source directories to manifest.txt to avoid command length limits
         const manifestFilename = "manifest.txt";
+        const cacheFileName = utils.getCacheFileName(compressionMethod);
         fs_1.writeFileSync(path.join(archiveFolder, manifestFilename), sourceDirectories.join("\n"));
+        // -T#: Compress using # working thread. If # is 0, attempt to detect and use the number of physical CPU cores.
         const workingDirectory = getWorkingDirectory();
         const args = [
-            "-cz",
-            "-f",
-            constants_1.CacheFilename.replace(new RegExp("\\" + path.sep, "g"), "/"),
+            ...(compressionMethod == constants_1.CompressionMethod.Zstd
+                ? ["--use-compress-program", "zstd -T0"]
+                : ["-z"]),
+            "-cf",
+            cacheFileName.replace(new RegExp("\\" + path.sep, "g"), "/"),
             "-P",
             "-C",
             workingDirectory.replace(new RegExp("\\" + path.sep, "g"), "/"),

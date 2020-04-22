@@ -2,7 +2,7 @@ import * as core from "@actions/core";
 import * as path from "path";
 
 import * as cacheHttpClient from "./cacheHttpClient";
-import { CacheFilename, Events, Inputs, State } from "./constants";
+import { Events, Inputs, State } from "./constants";
 import { createTar } from "./tar";
 import * as utils from "./utils/actionUtils";
 
@@ -35,8 +35,12 @@ async function run(): Promise<void> {
             return;
         }
 
+        const compressionMethod = await utils.getCompressionMethod();
+
         core.debug("Reserving Cache");
-        const cacheId = await cacheHttpClient.reserveCache(primaryKey);
+        const cacheId = await cacheHttpClient.reserveCache(primaryKey, {
+            compressionMethod: compressionMethod
+        });
         if (cacheId == -1) {
             core.info(
                 `Unable to reserve cache with key ${primaryKey}, another job may be creating this cache.`
@@ -55,10 +59,14 @@ async function run(): Promise<void> {
         core.debug(`${JSON.stringify(cachePaths)}`);
 
         const archiveFolder = await utils.createTempDirectory();
-        const archivePath = path.join(archiveFolder, CacheFilename);
+        const archivePath = path.join(
+            archiveFolder,
+            utils.getCacheFileName(compressionMethod)
+        );
+
         core.debug(`Archive Path: ${archivePath}`);
 
-        await createTar(archiveFolder, cachePaths);
+        await createTar(archiveFolder, cachePaths, compressionMethod);
 
         const fileSizeLimit = 5 * 1024 * 1024 * 1024; // 5GB per repo limit
         const archiveFileSize = utils.getArchiveFileSize(archivePath);

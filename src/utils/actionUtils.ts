@@ -1,4 +1,5 @@
 import * as core from "@actions/core";
+import * as exec from "@actions/exec";
 import * as glob from "@actions/glob";
 import * as io from "@actions/io";
 import * as fs from "fs";
@@ -6,7 +7,13 @@ import * as path from "path";
 import * as util from "util";
 import * as uuidV4 from "uuid/v4";
 
-import { Events, Outputs, State } from "../constants";
+import {
+    CacheFilename,
+    CompressionMethod,
+    Events,
+    Outputs,
+    State
+} from "../constants";
 import { ArtifactCacheEntry } from "../contracts";
 
 // From https://github.com/actions/toolkit/blob/master/packages/tool-cache/src/tool-cache.ts#L23
@@ -115,4 +122,45 @@ export function isValidEvent(): boolean {
 
 export function unlinkFile(path: fs.PathLike): Promise<void> {
     return util.promisify(fs.unlink)(path);
+}
+
+async function checkVersion(app: string): Promise<string> {
+    core.debug(`Checking ${app} --version`);
+    let versionOutput = "";
+    try {
+        await exec.exec(`${app} --version`, [], {
+            ignoreReturnCode: true,
+            silent: true,
+            listeners: {
+                stdout: (data: Buffer): string =>
+                    (versionOutput += data.toString()),
+                stderr: (data: Buffer): string =>
+                    (versionOutput += data.toString())
+            }
+        });
+    } catch (err) {
+        core.debug(err.message);
+    }
+
+    versionOutput = versionOutput.trim();
+    core.debug(versionOutput);
+    return versionOutput;
+}
+
+export async function getCompressionMethod(): Promise<CompressionMethod> {
+    const versionOutput = await checkVersion("zstd");
+    return versionOutput.toLowerCase().includes("zstd command line interface")
+        ? CompressionMethod.Zstd
+        : CompressionMethod.Gzip;
+}
+
+export function getCacheFileName(compressionMethod: CompressionMethod): string {
+    return compressionMethod == CompressionMethod.Zstd
+        ? CacheFilename.Zstd
+        : CacheFilename.Gzip;
+}
+
+export async function useGnuTar(): Promise<boolean> {
+    const versionOutput = await checkVersion("tar");
+    return versionOutput.toLowerCase().includes("gnu tar");
 }
