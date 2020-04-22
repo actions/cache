@@ -156,7 +156,7 @@ export async function downloadCache(
     await pipeResponseToStream(downloadResponse, stream);
 
     // Validate download size.
-    var contentLengthHeader =
+    const contentLengthHeader =
         downloadResponse.message.headers["content-length"];
 
     if (contentLengthHeader) {
