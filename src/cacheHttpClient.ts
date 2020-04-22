@@ -9,7 +9,7 @@ import {
 import * as crypto from "crypto";
 import * as fs from "fs";
 
-import { Inputs } from "./constants";
+import { Inputs, SocketTimeout } from "./constants";
 import {
     ArtifactCacheEntry,
     CommitCacheRequest,
@@ -144,7 +144,33 @@ export async function downloadCache(
     const stream = fs.createWriteStream(archivePath);
     const httpClient = new HttpClient("actions/cache");
     const downloadResponse = await httpClient.get(archiveLocation);
+
+    // Abort download if no traffic received over the socket.
+    downloadResponse.message.socket.setTimeout(SocketTimeout, () => {
+        downloadResponse.message.destroy();
+        core.debug(
+            `Aborting download, socket timed out after ${SocketTimeout} ms`
+        );
+    });
+
     await pipeResponseToStream(downloadResponse, stream);
+
+    // Validate download size.
+    var contentLengthHeader =
+        downloadResponse.message.headers["content-length"];
+
+    if (contentLengthHeader) {
+        const expectedLength = parseInt(contentLengthHeader);
+        const actualLength = utils.getArchiveFileSize(archivePath);
+
+        if (actualLength != expectedLength) {
+            throw new Error(
+                `Incomplete download. Expected file size: ${expectedLength}, actual file size: ${actualLength}`
+            );
+        }
+    } else {
+        core.debug("Unable to validate download, no Content-Length header");
+    }
 }
 
 // Reserve Cache

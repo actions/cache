@@ -20,3 +20,5 @@ export enum Events {
 }
 
 export const CacheFilename = "cache.tgz";
+
+export const SocketTimeout = 5000;
