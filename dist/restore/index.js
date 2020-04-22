@@ -1256,6 +1256,7 @@ const fs = __importStar(__webpack_require__(747));
 const auth_1 = __webpack_require__(226);
 const http_client_1 = __webpack_require__(539);
 const utils = __importStar(__webpack_require__(443));
+const constants_1 = __webpack_require__(694);
 function isSuccessStatusCode(statusCode) {
     if (!statusCode) {
         return false;
@@ -1339,7 +1340,24 @@ function downloadCache(archiveLocation, archivePath) {
         const stream = fs.createWriteStream(archivePath);
         const httpClient = new http_client_1.HttpClient("actions/cache");
         const downloadResponse = yield httpClient.get(archiveLocation);
+        // Abort download if no traffic received over the socket.
+        downloadResponse.message.socket.setTimeout(constants_1.SocketTimeout, () => {
+            downloadResponse.message.destroy();
+            core.debug(`Aborting download, socket timed out after ${constants_1.SocketTimeout} ms`);
+        });
         yield pipeResponseToStream(downloadResponse, stream);
+        // Validate download size.
+        const contentLengthHeader = downloadResponse.message.headers["content-length"];
+        if (contentLengthHeader) {
+            const expectedLength = parseInt(contentLengthHeader);
+            const actualLength = utils.getArchiveFileSize(archivePath);
+            if (actualLength != expectedLength) {
+                throw new Error(`Incomplete download. Expected file size: ${expectedLength}, actual file size: ${actualLength}`);
+            }
+        }
+        else {
+            core.debug("Unable to validate download, no Content-Length header");
+        }
     });
 }
 exports.downloadCache = downloadCache;
@@ -1647,6 +1665,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
+<<<<<<< HEAD
+=======
+const glob = __importStar(__webpack_require__(281));
+>>>>>>> 9bb13c7... Fix lint issue, build .js files
 const io = __importStar(__webpack_require__(1));
 const fs = __importStar(__webpack_require__(747));
 const os = __importStar(__webpack_require__(87));
@@ -2022,6 +2044,12 @@ class HttpClientResponse {
             this.message.on('data', (chunk) => {
                 output = Buffer.concat([output, chunk]);
             });
+            this.message.on('aborted', () => {
+                reject("Request was aborted or closed prematurely");
+            });
+            this.message.on('timeout', (socket) => {
+                reject("Request timed out");
+            });
             this.message.on('end', () => {
                 resolve(output.toString());
             });
@@ -2143,6 +2171,7 @@ class HttpClient {
         let response;
         while (numTries < maxTries) {
             response = await this.requestRaw(info, data);
+
             // Check if it's an authentication challenge
             if (response && response.message && response.message.statusCode === HttpCodes.Unauthorized) {
                 let authenticationHandler;
@@ -2721,6 +2750,7 @@ var Events;
     Events["Push"] = "push";
     Events["PullRequest"] = "pull_request";
 })(Events = exports.Events || (exports.Events = {}));
+exports.SocketTimeout = 5000;
 
 
 /***/ }),
