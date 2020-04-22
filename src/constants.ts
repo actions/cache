@@ -18,3 +18,5 @@ export enum Events {
     Push = "push",
     PullRequest = "pull_request"
 }
+
+export const SocketTimeout = 5000;
