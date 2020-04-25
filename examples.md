@@ -388,11 +388,16 @@ When dependencies are installed later in the workflow, we must specify the same 
   with:
     path: ~/.cargo/git
     key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+- name: Get rustc commit hash
+  id: cargo-target-cache
+  run: |
+    echo "::set-output name=rust_hash::$(rustc -Vv | grep commit-hash | awk '{print $2}')"
+  shell: bash
 - name: Cache cargo build
   uses: actions/cache@v1
   with:
     path: target
-    key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+    key: ${{ runner.os }}-cargo-build-target-${{ steps.cargo-target-cache.outputs.rust_hash }}-${{ hashFiles('**/Cargo.lock') }}
 ```
 
 ## Scala - SBT
