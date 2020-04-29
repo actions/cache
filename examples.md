@@ -18,6 +18,7 @@
   - [Python - pip](#python---pip)
     - [Simple example](#simple-example)
     - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow)
+    - [Using pip to get cache location](#using-pip-to-get-cache-location)
     - [Using a script to get cache location](#using-a-script-to-get-cache-location)
   - [R - renv](#r---renv)
     - [Simple example](#simple-example-1)
@@ -285,6 +286,25 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
   if: startsWith(runner.os, 'Windows')
   with:
     path: ~\AppData\Local\pip\Cache
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    restore-keys: |
+      ${{ runner.os }}-pip-
+```
+
+### Using pip to get cache location
+
+> Note: This requires pip 20.1+
+```yaml
+- name: Get pip cache dir
+  id: pip-cache
+  run: |
+    python -m pip install -U "pip>=20.1"
+    echo "::set-output name=dir::$(pip cache dir)"
+
+- name: pip cache
+  uses: actions/cache@v1
+  with:
+    path: ${{ steps.pip-cache.outputs.dir }}
     key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
     restore-keys: |
       ${{ runner.os }}-pip-
