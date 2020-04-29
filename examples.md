@@ -18,6 +18,7 @@
   - [Python - pip](#python---pip)
     - [Simple example](#simple-example)
     - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow)
+    - [Using pip to get cache location](#using-pip-to-get-cache-location)
     - [Using a script to get cache location](#using-a-script-to-get-cache-location)
   - [R - renv](#r---renv)
     - [Simple example](#simple-example-1)
@@ -290,14 +291,32 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
       ${{ runner.os }}-pip-
 ```
 
+### Using pip to get cache location
+
+> Note: This requires pip 20.1+
+```yaml
+- name: Get pip cache dir
+  id: pip-cache
+  run: |
+    echo "::set-output name=dir::$(pip cache dir)"
+
+- name: pip cache
+  uses: actions/cache@v1
+  with:
+    path: ${{ steps.pip-cache.outputs.dir }}
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    restore-keys: |
+      ${{ runner.os }}-pip-
+```
+
 ### Using a script to get cache location
 
 > Note: This uses an internal pip API and may not always work
 ```yaml
-- name: Get pip cache
-   id: pip-cache
-   run: |
-     python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
+- name: Get pip cache dir
+ id: pip-cache
+ run: |
+   python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
 
 - uses: actions/cache@v1
   with:
