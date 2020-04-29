@@ -298,7 +298,6 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
 - name: Get pip cache dir
   id: pip-cache
   run: |
-    python -m pip install -U "pip>=20.1"
     echo "::set-output name=dir::$(pip cache dir)"
 
 - name: pip cache
