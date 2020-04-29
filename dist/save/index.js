@@ -2285,7 +2285,24 @@ function downloadCache(archiveLocation, archivePath) {
         const stream = fs.createWriteStream(archivePath);
         const httpClient = new http_client_1.HttpClient("actions/cache");
         const downloadResponse = yield httpClient.get(archiveLocation);
+        // Abort download if no traffic received over the socket.
+        downloadResponse.message.socket.setTimeout(constants_1.SocketTimeout, () => {
+            downloadResponse.message.destroy();
+            core.debug(`Aborting download, socket timed out after ${constants_1.SocketTimeout} ms`);
+        });
         yield pipeResponseToStream(downloadResponse, stream);
+        // Validate download size.
+        const contentLengthHeader = downloadResponse.message.headers["content-length"];
+        if (contentLengthHeader) {
+            const expectedLength = parseInt(contentLengthHeader);
+            const actualLength = utils.getArchiveFileSize(archivePath);
+            if (actualLength != expectedLength) {
+                throw new Error(`Incomplete download. Expected file size: ${expectedLength}, actual file size: ${actualLength}`);
+            }
+        }
+        else {
+            core.debug("Unable to validate download, no Content-Length header");
+        }
     });
 }
 exports.downloadCache = downloadCache;
@@ -3583,6 +3600,12 @@ class HttpClientResponse {
             this.message.on('data', (chunk) => {
                 output = Buffer.concat([output, chunk]);
             });
+            this.message.on('aborted', () => {
+                reject("Request was aborted or closed prematurely");
+            });
+            this.message.on('timeout', (socket) => {
+                reject("Request timed out");
+            });
             this.message.on('end', () => {
                 resolve(output.toString());
             });
@@ -3704,6 +3727,7 @@ class HttpClient {
         let response;
         while (numTries < maxTries) {
             response = await this.requestRaw(info, data);
+
             // Check if it's an authentication challenge
             if (response && response.message && response.message.statusCode === HttpCodes.Unauthorized) {
                 let authenticationHandler;
@@ -4554,6 +4578,10 @@ var Events;
     Events["PullRequest"] = "pull_request";
 })(Events = exports.Events || (exports.Events = {}));
 exports.CacheFilename = "cache.tgz";
+// Socket timeout in milliseconds during download.  If no traffic is received
+// over the socket during this period, the socket is destroyed and the download
+// is aborted.
+exports.SocketTimeout = 5000;
 
 
 /***/ }),
