@@ -8,6 +8,8 @@ import {
 } from "@actions/http-client/interfaces";
 import * as crypto from "crypto";
 import * as fs from "fs";
+import * as stream from "stream";
+import * as util from "util";
 
 import { Inputs, SocketTimeout } from "./constants";
 import {
@@ -128,13 +130,10 @@ export async function getCacheEntry(
 
 async function pipeResponseToStream(
     response: IHttpClientResponse,
-    stream: NodeJS.WritableStream
+    output: NodeJS.WritableStream
 ): Promise<void> {
-    return new Promise(resolve => {
-        response.message.pipe(stream).on("close", () => {
-            resolve();
-        });
-    });
+    const pipeline = util.promisify(stream.pipeline);
+    await pipeline(response.message, output);
 }
 
 export async function downloadCache(
