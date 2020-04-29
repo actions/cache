@@ -294,10 +294,10 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
 
 > Note: This uses an internal pip API and may not always work
 ```yaml
-- name: Get pip cache
-   id: pip-cache
-   run: |
-     python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
+- name: Get pip cache dir
+ id: pip-cache
+ run: |
+   python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
 
 - uses: actions/cache@v1
   with:
