@@ -1255,6 +1255,9 @@ const core = __importStar(__webpack_require__(470));
 const fs = __importStar(__webpack_require__(747));
 const auth_1 = __webpack_require__(226);
 const http_client_1 = __webpack_require__(539);
+const stream = __importStar(__webpack_require__(794));
+const util = __importStar(__webpack_require__(669));
+const constants_1 = __webpack_require__(694);
 const utils = __importStar(__webpack_require__(443));
 function isSuccessStatusCode(statusCode) {
     if (!statusCode) {
@@ -1325,13 +1328,10 @@ function getCacheEntry(keys) {
     });
 }
 exports.getCacheEntry = getCacheEntry;
-function pipeResponseToStream(response, stream) {
+function pipeResponseToStream(response, output) {
     return __awaiter(this, void 0, void 0, function* () {
-        return new Promise(resolve => {
-            response.message.pipe(stream).on("close", () => {
-                resolve();
-            });
-        });
+        const pipeline = util.promisify(stream.pipeline);
+        yield pipeline(response.message, output);
     });
 }
 function downloadCache(archiveLocation, archivePath) {
@@ -1664,10 +1664,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
-<<<<<<< HEAD
-=======
-const glob = __importStar(__webpack_require__(281));
->>>>>>> 9bb13c7... Fix lint issue, build .js files
 const io = __importStar(__webpack_require__(1));
 const fs = __importStar(__webpack_require__(747));
 const os = __importStar(__webpack_require__(87));
@@ -2873,6 +2869,13 @@ module.exports = bytesToUuid;
 /***/ (function(module) {
 
 module.exports = require("fs");
+
+/***/ }),
+
+/***/ 794:
+/***/ (function(module) {
+
+module.exports = require("stream");
 
 /***/ }),
 
