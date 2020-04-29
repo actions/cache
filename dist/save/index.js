@@ -2186,6 +2186,8 @@ const http_client_1 = __webpack_require__(539);
 const auth_1 = __webpack_require__(226);
 const crypto = __importStar(__webpack_require__(417));
 const fs = __importStar(__webpack_require__(747));
+const stream = __importStar(__webpack_require__(794));
+const util = __importStar(__webpack_require__(669));
 const constants_1 = __webpack_require__(694);
 const utils = __importStar(__webpack_require__(443));
 const versionSalt = "1.0";
@@ -2271,13 +2273,10 @@ function getCacheEntry(keys) {
     });
 }
 exports.getCacheEntry = getCacheEntry;
-function pipeResponseToStream(response, stream) {
+function pipeResponseToStream(response, output) {
     return __awaiter(this, void 0, void 0, function* () {
-        return new Promise(resolve => {
-            response.message.pipe(stream).on("close", () => {
-                resolve();
-            });
-        });
+        const pipeline = util.promisify(stream.pipeline);
+        yield pipeline(response.message, output);
     });
 }
 function downloadCache(archiveLocation, archivePath) {
@@ -4638,6 +4637,13 @@ exports.SearchState = SearchState;
 /***/ (function(module) {
 
 module.exports = require("fs");
+
+/***/ }),
+
+/***/ 794:
+/***/ (function(module) {
+
+module.exports = require("stream");
 
 /***/ }),
 
