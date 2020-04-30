@@ -12,6 +12,7 @@ jest.mock("@actions/exec");
 jest.mock("@actions/io");
 
 const IS_WINDOWS = process.platform === "win32";
+const IS_64OS = process.platform != "win32" || process.arch === "x64";
 
 function getTempDir(): string {
     return path.join(__dirname, "_temp", "tar");
@@ -46,12 +47,13 @@ test("zstd extract tar", async () => {
     const tarPath = IS_WINDOWS
         ? `${process.env["windir"]}\\System32\\tar.exe`
         : "tar";
+    const zstdOptions = IS_64OS ? "zstd -d --long=31" : "zstd -d --long=30";
     expect(execMock).toHaveBeenCalledTimes(1);
     expect(execMock).toHaveBeenCalledWith(
-        `${tarPath}`,
+        `"${tarPath}"`,
         [
             "--use-compress-program",
-            "zstd -d",
+            zstdOptions,
             "-xf",
             IS_WINDOWS ? archivePath.replace(/\\/g, "/") : archivePath,
             "-P",
@@ -78,7 +80,7 @@ test("gzip extract tar", async () => {
         : "tar";
     expect(execMock).toHaveBeenCalledTimes(1);
     expect(execMock).toHaveBeenCalledWith(
-        `${tarPath}`,
+        `"${tarPath}"`,
         [
             "-z",
             "-xf",
@@ -107,7 +109,7 @@ test("gzip extract GNU tar on windows", async () => {
         expect(isGnuMock).toHaveBeenCalledTimes(1);
         expect(execMock).toHaveBeenCalledTimes(1);
         expect(execMock).toHaveBeenCalledWith(
-            `tar`,
+            `"tar"`,
             [
                 "-z",
                 "-xf",
@@ -140,13 +142,14 @@ test("zstd create tar", async () => {
     const tarPath = IS_WINDOWS
         ? `${process.env["windir"]}\\System32\\tar.exe`
         : "tar";
+    const zstdOptions = IS_64OS ? "zstd -T0 --long=31" : "zstd -T0 --long=30";
 
     expect(execMock).toHaveBeenCalledTimes(1);
     expect(execMock).toHaveBeenCalledWith(
-        `${tarPath}`,
+        `"${tarPath}"`,
         [
             "--use-compress-program",
-            "zstd -T0",
+            zstdOptions,
             "-cf",
             IS_WINDOWS
                 ? CacheFilename.Zstd.replace(/\\/g, "/")
@@ -184,7 +187,7 @@ test("gzip create tar", async () => {
 
     expect(execMock).toHaveBeenCalledTimes(1);
     expect(execMock).toHaveBeenCalledWith(
-        `${tarPath}`,
+        `"${tarPath}"`,
         [
             "-z",
             "-cf",

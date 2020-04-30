@@ -86,12 +86,12 @@ function createHttpClient(): HttpClient {
 }
 
 export function getCacheVersion(compressionMethod?: CompressionMethod): string {
-    // Add salt to cache version to support breaking changes in cache entry
     const components = [core.getInput(Inputs.Path, { required: true })].concat(
-        compressionMethod == CompressionMethod.Zstd
-            ? [compressionMethod, versionSalt]
-            : versionSalt
+        compressionMethod == CompressionMethod.Zstd ? [compressionMethod] : []
     );
+
+    // Add salt to cache version to support breaking changes in cache entry
+    components.push(versionSalt);
 
     return crypto
         .createHash("sha256")

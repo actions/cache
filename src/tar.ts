@@ -22,7 +22,7 @@ async function getTarPath(args: string[]): Promise<string> {
 
 async function execTar(args: string[], cwd?: string): Promise<void> {
     try {
-        await exec(`${await getTarPath(args)}`, args, { cwd: cwd });
+        await exec(`"${await getTarPath(args)}"`, args, { cwd: cwd });
     } catch (error) {
         throw new Error(`Tar failed with error: ${error?.message}`);
     }
@@ -32,6 +32,10 @@ function getWorkingDirectory(): string {
     return process.env["GITHUB_WORKSPACE"] ?? process.cwd();
 }
 
+function isOS64(): boolean {
+    return process.platform != "win32" || process.arch === "x64";
+}
+
 export async function extractTar(
     archivePath: string,
     compressionMethod: CompressionMethod
@@ -39,9 +43,14 @@ export async function extractTar(
     // Create directory to extract tar into
     const workingDirectory = getWorkingDirectory();
     await io.mkdirP(workingDirectory);
+    // --d: Decompress.
+    // --long=#: Enables long distance matching with # bits. Maximum is 30 (1GB) on 32-bit OS and 31 (2GB) on 64-bit.
     const args = [
         ...(compressionMethod == CompressionMethod.Zstd
-            ? ["--use-compress-program", "zstd -d"]
+            ? [
+                  "--use-compress-program",
+                  isOS64() ? "zstd -d --long=31" : "zstd -d --long=30"
+              ]
             : ["-z"]),
         "-xf",
         archivePath.replace(new RegExp("\\" + path.sep, "g"), "/"),
@@ -65,10 +74,14 @@ export async function createTar(
         sourceDirectories.join("\n")
     );
     // -T#: Compress using # working thread. If # is 0, attempt to detect and use the number of physical CPU cores.
+    // --long=#: Enables long distance matching with # bits. Maximum is 30 (1GB) on 32-bit OS and 31 (2GB) on 64-bit.
     const workingDirectory = getWorkingDirectory();
     const args = [
         ...(compressionMethod == CompressionMethod.Zstd
-            ? ["--use-compress-program", "zstd -T0"]
+            ? [
+                  "--use-compress-program",
+                  isOS64() ? "zstd -T0 --long=31" : "zstd -T0 --long=30"
+              ]
             : ["-z"]),
         "-cf",
         cacheFileName.replace(new RegExp("\\" + path.sep, "g"), "/"),

@@ -124,7 +124,7 @@ export function unlinkFile(path: fs.PathLike): Promise<void> {
     return util.promisify(fs.unlink)(path);
 }
 
-async function checkVersion(app: string): Promise<string> {
+async function getVersion(app: string): Promise<string> {
     core.debug(`Checking ${app} --version`);
     let versionOutput = "";
     try {
@@ -148,7 +148,7 @@ async function checkVersion(app: string): Promise<string> {
 }
 
 export async function getCompressionMethod(): Promise<CompressionMethod> {
-    const versionOutput = await checkVersion("zstd");
+    const versionOutput = await getVersion("zstd");
     return versionOutput.toLowerCase().includes("zstd command line interface")
         ? CompressionMethod.Zstd
         : CompressionMethod.Gzip;
@@ -161,6 +161,6 @@ export function getCacheFileName(compressionMethod: CompressionMethod): string {
 }
 
 export async function useGnuTar(): Promise<boolean> {
-    const versionOutput = await checkVersion("tar");
+    const versionOutput = await getVersion("tar");
     return versionOutput.toLowerCase().includes("gnu tar");
 }

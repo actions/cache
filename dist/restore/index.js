@@ -2237,10 +2237,9 @@ function createHttpClient() {
     return new http_client_1.HttpClient("actions/cache", [bearerCredentialHandler], getRequestOptions());
 }
 function getCacheVersion(compressionMethod) {
+    const components = [core.getInput(constants_1.Inputs.Path, { required: true })].concat(compressionMethod == constants_1.CompressionMethod.Zstd ? [compressionMethod] : []);
     // Add salt to cache version to support breaking changes in cache entry
-    const components = [core.getInput(constants_1.Inputs.Path, { required: true })].concat(compressionMethod == constants_1.CompressionMethod.Zstd
-        ? [compressionMethod, versionSalt]
-        : versionSalt);
+    components.push(versionSalt);
     return crypto
         .createHash("sha256")
         .update(components.join("|"))
@@ -3320,7 +3319,7 @@ function unlinkFile(path) {
     return util.promisify(fs.unlink)(path);
 }
 exports.unlinkFile = unlinkFile;
-function checkVersion(app) {
+function getVersion(app) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Checking ${app} --version`);
         let versionOutput = "";
@@ -3344,7 +3343,7 @@ function checkVersion(app) {
 }
 function getCompressionMethod() {
     return __awaiter(this, void 0, void 0, function* () {
-        const versionOutput = yield checkVersion("zstd");
+        const versionOutput = yield getVersion("zstd");
         return versionOutput.toLowerCase().includes("zstd command line interface")
             ? constants_1.CompressionMethod.Zstd
             : constants_1.CompressionMethod.Gzip;
@@ -3359,7 +3358,7 @@ function getCacheFileName(compressionMethod) {
 exports.getCacheFileName = getCacheFileName;
 function useGnuTar() {
     return __awaiter(this, void 0, void 0, function* () {
-        const versionOutput = yield checkVersion("tar");
+        const versionOutput = yield getVersion("tar");
         return versionOutput.toLowerCase().includes("gnu tar");
     });
 }
@@ -5068,7 +5067,7 @@ function execTar(args, cwd) {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            yield exec_1.exec(`${yield getTarPath(args)}`, args, { cwd: cwd });
+            yield exec_1.exec(`"${yield getTarPath(args)}"`, args, { cwd: cwd });
         }
         catch (error) {
             throw new Error(`Tar failed with error: ${(_a = error) === null || _a === void 0 ? void 0 : _a.message}`);
@@ -5079,14 +5078,22 @@ function getWorkingDirectory() {
     var _a;
     return _a = process.env["GITHUB_WORKSPACE"], (_a !== null && _a !== void 0 ? _a : process.cwd());
 }
+function isOS64() {
+    return process.platform != "win32" || process.arch === "x64";
+}
 function extractTar(archivePath, compressionMethod) {
     return __awaiter(this, void 0, void 0, function* () {
         // Create directory to extract tar into
         const workingDirectory = getWorkingDirectory();
         yield io.mkdirP(workingDirectory);
+        // --d: Decompress. 
+        // --long=#: Enables long distance matching with # bits. Maximum is 30 (1GB) on 32-bit OS and 31 (2GB) on 64-bit.
         const args = [
             ...(compressionMethod == constants_1.CompressionMethod.Zstd
-                ? ["--use-compress-program", "zstd -d"]
+                ? [
+                    "--use-compress-program",
+                    isOS64() ? "zstd -d --long=31" : "zstd -d --long=30"
+                ]
                 : ["-z"]),
             "-xf",
             archivePath.replace(new RegExp("\\" + path.sep, "g"), "/"),
@@ -5105,10 +5112,14 @@ function createTar(archiveFolder, sourceDirectories, compressionMethod) {
         const cacheFileName = utils.getCacheFileName(compressionMethod);
         fs_1.writeFileSync(path.join(archiveFolder, manifestFilename), sourceDirectories.join("\n"));
         // -T#: Compress using # working thread. If # is 0, attempt to detect and use the number of physical CPU cores.
+        // --long=#: Enables long distance matching with # bits. Maximum is 30 (1GB) on 32-bit OS and 31 (2GB) on 64-bit.
         const workingDirectory = getWorkingDirectory();
         const args = [
             ...(compressionMethod == constants_1.CompressionMethod.Zstd
-                ? ["--use-compress-program", "zstd -T0"]
+                ? [
+                    "--use-compress-program",
+                    isOS64() ? "zstd -T0 --long=31" : "zstd -T0 --long=30"
+                ]
                 : ["-z"]),
             "-cf",
             cacheFileName.replace(new RegExp("\\" + path.sep, "g"), "/"),
