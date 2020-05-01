@@ -381,17 +381,15 @@ Replace `~/.local/share/renv` with the correct `path` if not using Ubuntu.
 - uses: actions/cache@v1
   with:
     path: vendor/bundle
-    key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+    key: ${{ runner.os }}-gems-${{ hashFiles('.ruby-version') }}-${{ hashFiles('**/Gemfile.lock') }}
     restore-keys: |
-      ${{ runner.os }}-gems-
+      ${{ runner.os }}-gems-${{ hashFiles('.ruby-version') }}-
 ```
-When dependencies are installed later in the workflow, we must specify the same path for the bundler.
+When dependencies are installed later use the `--deployment` flag which tells bundler to install gems to `vendor/bundle`, and sets other options optimized for a CI workflow.
 
 ```yaml
 - name: Bundle install
-  run: |
-    bundle config path vendor/bundle
-    bundle install --jobs 4 --retry 3
+  run: bundle install --deployment --jobs 4 --retry 3
 ```
 
 ## Rust - Cargo
