@@ -5078,22 +5078,17 @@ function getWorkingDirectory() {
     var _a;
     return _a = process.env["GITHUB_WORKSPACE"], (_a !== null && _a !== void 0 ? _a : process.cwd());
 }
-function isOS64() {
-    return process.platform != "win32" || process.arch === "x64";
-}
 function extractTar(archivePath, compressionMethod) {
     return __awaiter(this, void 0, void 0, function* () {
         // Create directory to extract tar into
         const workingDirectory = getWorkingDirectory();
         yield io.mkdirP(workingDirectory);
-        // --d: Decompress. 
+        // --d: Decompress.
         // --long=#: Enables long distance matching with # bits. Maximum is 30 (1GB) on 32-bit OS and 31 (2GB) on 64-bit.
+        // Using 30 here because we also support 32-bit self-hosted runners.
         const args = [
             ...(compressionMethod == constants_1.CompressionMethod.Zstd
-                ? [
-                    "--use-compress-program",
-                    isOS64() ? "zstd -d --long=31" : "zstd -d --long=30"
-                ]
+                ? ["--use-compress-program", "zstd -d --long=30"]
                 : ["-z"]),
             "-xf",
             archivePath.replace(new RegExp("\\" + path.sep, "g"), "/"),
@@ -5113,13 +5108,11 @@ function createTar(archiveFolder, sourceDirectories, compressionMethod) {
         fs_1.writeFileSync(path.join(archiveFolder, manifestFilename), sourceDirectories.join("\n"));
         // -T#: Compress using # working thread. If # is 0, attempt to detect and use the number of physical CPU cores.
         // --long=#: Enables long distance matching with # bits. Maximum is 30 (1GB) on 32-bit OS and 31 (2GB) on 64-bit.
+        // Using 30 here because we also support 32-bit self-hosted runners.
         const workingDirectory = getWorkingDirectory();
         const args = [
             ...(compressionMethod == constants_1.CompressionMethod.Zstd
-                ? [
-                    "--use-compress-program",
-                    isOS64() ? "zstd -T0 --long=31" : "zstd -T0 --long=30"
-                ]
+                ? ["--use-compress-program", "zstd -T0 --long=30"]
                 : ["-z"]),
             "-cf",
             cacheFileName.replace(new RegExp("\\" + path.sep, "g"), "/"),
