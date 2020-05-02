@@ -7,5 +7,12 @@
     "trailingComma": "none",
     "bracketSpacing": true,
     "arrowParens": "avoid",
-    "parser": "typescript"
+    "overrides": [
+        {
+            "files": "**/*.md",
+            "options": {
+                "tabWidth": 2
+            }
+        }
+    ]
 }
