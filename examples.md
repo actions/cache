@@ -385,7 +385,13 @@ Replace `~/.local/share/renv` with the correct `path` if not using Ubuntu.
     restore-keys: |
       ${{ runner.os }}-gems-
 ```
-When dependencies are installed later in the workflow, we must specify the same path for the bundler.
+When dependencies are installed later in the workflow, we must use the `--deployment` flag to install gems to `vendor/bundle`.
+
+```yaml
+- name: Bundle install
+  run: bundle install --deployment --jobs 4 --retry 3
+```
+If you don’t want to run Bundler in deployment mode, you can instead use `bundle config`.
 
 ```yaml
 - name: Bundle install
