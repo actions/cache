@@ -1,27 +1,10 @@
-import * as core from "@actions/core";
 import { exec } from "@actions/exec";
 import * as io from "@actions/io";
 import { existsSync, writeFileSync } from "fs";
 import * as path from "path";
 
-import { CacheFilename } from "./constants";
-
-export async function isGnuTar(): Promise<boolean> {
-    core.debug("Checking tar --version");
-    let versionOutput = "";
-    await exec("tar --version", [], {
-        ignoreReturnCode: true,
-        silent: true,
-        listeners: {
-            stdout: (data: Buffer): string =>
-                (versionOutput += data.toString()),
-            stderr: (data: Buffer): string => (versionOutput += data.toString())
-        }
-    });
-
-    core.debug(versionOutput.trim());
-    return versionOutput.toUpperCase().includes("GNU TAR");
-}
+import { CompressionMethod } from "./constants";
+import * as utils from "./utils/actionUtils";
 
 async function getTarPath(args: string[]): Promise<string> {
     // Explicitly use BSD Tar on Windows
@@ -30,7 +13,7 @@ async function getTarPath(args: string[]): Promise<string> {
         const systemTar = `${process.env["windir"]}\\System32\\tar.exe`;
         if (existsSync(systemTar)) {
             return systemTar;
-        } else if (isGnuTar()) {
+        } else if (await utils.useGnuTar()) {
             args.push("--force-local");
         }
     }
@@ -49,13 +32,21 @@ function getWorkingDirectory(): string {
     return process.env["GITHUB_WORKSPACE"] ?? process.cwd();
 }
 
-export async function extractTar(archivePath: string): Promise<void> {
+export async function extractTar(
+    archivePath: string,
+    compressionMethod: CompressionMethod
+): Promise<void> {
     // Create directory to extract tar into
     const workingDirectory = getWorkingDirectory();
     await io.mkdirP(workingDirectory);
+    // --d: Decompress.
+    // --long=#: Enables long distance matching with # bits. Maximum is 30 (1GB) on 32-bit OS and 31 (2GB) on 64-bit.
+    // Using 30 here because we also support 32-bit self-hosted runners.
     const args = [
-        "-xz",
-        "-f",
+        ...(compressionMethod == CompressionMethod.Zstd
+            ? ["--use-compress-program", "zstd -d --long=30"]
+            : ["-z"]),
+        "-xf",
         archivePath.replace(new RegExp("\\" + path.sep, "g"), "/"),
         "-P",
         "-C",
@@ -66,20 +57,26 @@ export async function extractTar(archivePath: string): Promise<void> {
 
 export async function createTar(
     archiveFolder: string,
-    sourceDirectories: string[]
+    sourceDirectories: string[],
+    compressionMethod: CompressionMethod
 ): Promise<void> {
     // Write source directories to manifest.txt to avoid command length limits
     const manifestFilename = "manifest.txt";
+    const cacheFileName = utils.getCacheFileName(compressionMethod);
     writeFileSync(
         path.join(archiveFolder, manifestFilename),
         sourceDirectories.join("\n")
     );
-
+    // -T#: Compress using # working thread. If # is 0, attempt to detect and use the number of physical CPU cores.
+    // --long=#: Enables long distance matching with # bits. Maximum is 30 (1GB) on 32-bit OS and 31 (2GB) on 64-bit.
+    // Using 30 here because we also support 32-bit self-hosted runners.
     const workingDirectory = getWorkingDirectory();
     const args = [
-        "-cz",
-        "-f",
-        CacheFilename.replace(new RegExp("\\" + path.sep, "g"), "/"),
+        ...(compressionMethod == CompressionMethod.Zstd
+            ? ["--use-compress-program", "zstd -T0 --long=30"]
+            : ["-z"]),
+        "-cf",
+        cacheFileName.replace(new RegExp("\\" + path.sep, "g"), "/"),
         "-P",
         "-C",
         workingDirectory.replace(new RegExp("\\" + path.sep, "g"), "/"),

@@ -2,13 +2,16 @@ import * as exec from "@actions/exec";
 import * as io from "@actions/io";
 import * as path from "path";
 
-import { CacheFilename } from "../src/constants";
+import { CacheFilename, CompressionMethod } from "../src/constants";
 import * as tar from "../src/tar";
+import * as utils from "../src/utils/actionUtils";
 
 import fs = require("fs");
 
 jest.mock("@actions/exec");
 jest.mock("@actions/io");
+
+const IS_WINDOWS = process.platform === "win32";
 
 function getTempDir(): string {
     return path.join(__dirname, "_temp", "tar");
@@ -28,20 +31,18 @@ afterAll(async () => {
     await jest.requireActual("@actions/io").rmRF(getTempDir());
 });
 
-test("extract BSD tar", async () => {
+test("zstd extract tar", async () => {
     const mkdirMock = jest.spyOn(io, "mkdirP");
     const execMock = jest.spyOn(exec, "exec");
 
-    const IS_WINDOWS = process.platform === "win32";
     const archivePath = IS_WINDOWS
         ? `${process.env["windir"]}\\fakepath\\cache.tar`
         : "cache.tar";
     const workspace = process.env["GITHUB_WORKSPACE"];
 
-    await tar.extractTar(archivePath);
+    await tar.extractTar(archivePath, CompressionMethod.Zstd);
 
     expect(mkdirMock).toHaveBeenCalledWith(workspace);
-
     const tarPath = IS_WINDOWS
         ? `${process.env["windir"]}\\System32\\tar.exe`
         : "tar";
@@ -49,8 +50,9 @@ test("extract BSD tar", async () => {
     expect(execMock).toHaveBeenCalledWith(
         `"${tarPath}"`,
         [
-            "-xz",
-            "-f",
+            "--use-compress-program",
+            "zstd -d --long=30",
+            "-xf",
             IS_WINDOWS ? archivePath.replace(/\\/g, "/") : archivePath,
             "-P",
             "-C",
@@ -60,24 +62,55 @@ test("extract BSD tar", async () => {
     );
 });
 
-test("extract GNU tar", async () => {
-    const IS_WINDOWS = process.platform === "win32";
+test("gzip extract tar", async () => {
+    const mkdirMock = jest.spyOn(io, "mkdirP");
+    const execMock = jest.spyOn(exec, "exec");
+    const archivePath = IS_WINDOWS
+        ? `${process.env["windir"]}\\fakepath\\cache.tar`
+        : "cache.tar";
+    const workspace = process.env["GITHUB_WORKSPACE"];
+
+    await tar.extractTar(archivePath, CompressionMethod.Gzip);
+
+    expect(mkdirMock).toHaveBeenCalledWith(workspace);
+    const tarPath = IS_WINDOWS
+        ? `${process.env["windir"]}\\System32\\tar.exe`
+        : "tar";
+    expect(execMock).toHaveBeenCalledTimes(1);
+    expect(execMock).toHaveBeenCalledWith(
+        `"${tarPath}"`,
+        [
+            "-z",
+            "-xf",
+            IS_WINDOWS ? archivePath.replace(/\\/g, "/") : archivePath,
+            "-P",
+            "-C",
+            IS_WINDOWS ? workspace?.replace(/\\/g, "/") : workspace
+        ],
+        { cwd: undefined }
+    );
+});
+
+test("gzip extract GNU tar on windows", async () => {
     if (IS_WINDOWS) {
         jest.spyOn(fs, "existsSync").mockReturnValueOnce(false);
-        jest.spyOn(tar, "isGnuTar").mockReturnValue(Promise.resolve(true));
 
+        const isGnuMock = jest
+            .spyOn(utils, "useGnuTar")
+            .mockReturnValue(Promise.resolve(true));
         const execMock = jest.spyOn(exec, "exec");
         const archivePath = `${process.env["windir"]}\\fakepath\\cache.tar`;
         const workspace = process.env["GITHUB_WORKSPACE"];
 
-        await tar.extractTar(archivePath);
+        await tar.extractTar(archivePath, CompressionMethod.Gzip);
 
-        expect(execMock).toHaveBeenCalledTimes(2);
-        expect(execMock).toHaveBeenLastCalledWith(
+        expect(isGnuMock).toHaveBeenCalledTimes(1);
+        expect(execMock).toHaveBeenCalledTimes(1);
+        expect(execMock).toHaveBeenCalledWith(
             `"tar"`,
             [
-                "-xz",
-                "-f",
+                "-z",
+                "-xf",
                 archivePath.replace(/\\/g, "/"),
                 "-P",
                 "-C",
@@ -89,7 +122,7 @@ test("extract GNU tar", async () => {
     }
 });
 
-test("create BSD tar", async () => {
+test("zstd create tar", async () => {
     const execMock = jest.spyOn(exec, "exec");
 
     const archiveFolder = getTempDir();
@@ -98,9 +131,12 @@ test("create BSD tar", async () => {
 
     await fs.promises.mkdir(archiveFolder, { recursive: true });
 
-    await tar.createTar(archiveFolder, sourceDirectories);
+    await tar.createTar(
+        archiveFolder,
+        sourceDirectories,
+        CompressionMethod.Zstd
+    );
 
-    const IS_WINDOWS = process.platform === "win32";
     const tarPath = IS_WINDOWS
         ? `${process.env["windir"]}\\System32\\tar.exe`
         : "tar";
@@ -109,9 +145,52 @@ test("create BSD tar", async () => {
     expect(execMock).toHaveBeenCalledWith(
         `"${tarPath}"`,
         [
-            "-cz",
-            "-f",
-            IS_WINDOWS ? CacheFilename.replace(/\\/g, "/") : CacheFilename,
+            "--use-compress-program",
+            "zstd -T0 --long=30",
+            "-cf",
+            IS_WINDOWS
+                ? CacheFilename.Zstd.replace(/\\/g, "/")
+                : CacheFilename.Zstd,
+            "-P",
+            "-C",
+            IS_WINDOWS ? workspace?.replace(/\\/g, "/") : workspace,
+            "--files-from",
+            "manifest.txt"
+        ],
+        {
+            cwd: archiveFolder
+        }
+    );
+});
+
+test("gzip create tar", async () => {
+    const execMock = jest.spyOn(exec, "exec");
+
+    const archiveFolder = getTempDir();
+    const workspace = process.env["GITHUB_WORKSPACE"];
+    const sourceDirectories = ["~/.npm/cache", `${workspace}/dist`];
+
+    await fs.promises.mkdir(archiveFolder, { recursive: true });
+
+    await tar.createTar(
+        archiveFolder,
+        sourceDirectories,
+        CompressionMethod.Gzip
+    );
+
+    const tarPath = IS_WINDOWS
+        ? `${process.env["windir"]}\\System32\\tar.exe`
+        : "tar";
+
+    expect(execMock).toHaveBeenCalledTimes(1);
+    expect(execMock).toHaveBeenCalledWith(
+        `"${tarPath}"`,
+        [
+            "-z",
+            "-cf",
+            IS_WINDOWS
+                ? CacheFilename.Gzip.replace(/\\/g, "/")
+                : CacheFilename.Gzip,
             "-P",
             "-C",
             IS_WINDOWS ? workspace?.replace(/\\/g, "/") : workspace,

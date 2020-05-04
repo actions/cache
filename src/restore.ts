@@ -54,8 +54,12 @@ async function run(): Promise<void> {
             }
         }
 
+        const compressionMethod = await utils.getCompressionMethod();
+
         try {
-            const cacheEntry = await cacheHttpClient.getCacheEntry(keys);
+            const cacheEntry = await cacheHttpClient.getCacheEntry(keys, {
+                compressionMethod: compressionMethod
+            });
             if (!cacheEntry?.archiveLocation) {
                 core.info(`Cache not found for input keys: ${keys.join(", ")}`);
                 return;
@@ -63,7 +67,7 @@ async function run(): Promise<void> {
 
             const archivePath = path.join(
                 await utils.createTempDirectory(),
-                "cache.tgz"
+                utils.getCacheFileName(compressionMethod)
             );
             core.debug(`Archive Path: ${archivePath}`);
 
@@ -84,7 +88,7 @@ async function run(): Promise<void> {
                     )} MB (${archiveFileSize} B)`
                 );
 
-                await extractTar(archivePath);
+                await extractTar(archivePath, compressionMethod);
             } finally {
                 // Try to delete the archive to save space
                 try {
