@@ -2403,22 +2403,20 @@ function uploadFile(httpClient, cacheId, archivePath) {
         core.debug("Awaiting all uploads");
         let offset = 0;
         try {
-            //        await Promise.all(
-            //            parallelUploads.map(async () => {
-            while (offset < fileSize) {
-                const chunkSize = Math.min(fileSize - offset, MAX_CHUNK_SIZE);
-                const start = offset;
-                const end = offset + chunkSize - 1;
-                offset += MAX_CHUNK_SIZE;
-                yield uploadChunk(httpClient, resourceUrl, () => fs.createReadStream(archivePath, {
-                    fd,
-                    start,
-                    end,
-                    autoClose: false
-                }), start, end);
-            }
-            //            })
-            //        );
+            yield Promise.all(parallelUploads.map(() => __awaiter(this, void 0, void 0, function* () {
+                while (offset < fileSize) {
+                    const chunkSize = Math.min(fileSize - offset, MAX_CHUNK_SIZE);
+                    const start = offset;
+                    const end = offset + chunkSize - 1;
+                    offset += MAX_CHUNK_SIZE;
+                    yield uploadChunk(httpClient, resourceUrl, () => fs.createReadStream(archivePath, {
+                        fd,
+                        start,
+                        end,
+                        autoClose: false
+                    }), start, end);
+                }
+            })));
         }
         finally {
             fs.closeSync(fd);
