@@ -3,6 +3,7 @@ import * as exec from "@actions/exec";
 import * as glob from "@actions/glob";
 import * as io from "@actions/io";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import * as util from "util";
 import * as uuidV4 from "uuid/v4";
@@ -148,6 +149,11 @@ async function getVersion(app: string): Promise<string> {
 }
 
 export async function getCompressionMethod(): Promise<CompressionMethod> {
+    // Disabling zstd on Windows due to https://github.com/actions/cache/issues/301
+    if (os.platform() === "win32") {
+        return CompressionMethod.Gzip;
+    }
+
     const versionOutput = await getVersion("zstd");
     return versionOutput.toLowerCase().includes("zstd command line interface")
         ? CompressionMethod.Zstd

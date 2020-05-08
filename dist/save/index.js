@@ -3231,6 +3231,7 @@ const core = __importStar(__webpack_require__(470));
 const exec = __importStar(__webpack_require__(986));
 const glob = __importStar(__webpack_require__(281));
 const io = __importStar(__webpack_require__(1));
+const os = __importStar(__webpack_require__(87));
 const fs = __importStar(__webpack_require__(747));
 const path = __importStar(__webpack_require__(622));
 const util = __importStar(__webpack_require__(669));
@@ -3372,6 +3373,10 @@ function getVersion(app) {
 }
 function getCompressionMethod() {
     return __awaiter(this, void 0, void 0, function* () {
+        // Disabling zstd on Windows due to https://github.com/actions/cache/issues/301
+        if (os.platform() === "win32") {
+            return constants_1.CompressionMethod.Gzip;
+        }
         const versionOutput = yield getVersion("zstd");
         return versionOutput.toLowerCase().includes("zstd command line interface")
             ? constants_1.CompressionMethod.Zstd
