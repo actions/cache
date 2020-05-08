@@ -2246,18 +2246,59 @@ function getCacheVersion(compressionMethod) {
         .digest("hex");
 }
 exports.getCacheVersion = getCacheVersion;
+function retry(name, method, getStatusCode, getReturnValue, isSuccessStatusCode, isRetryableStatusCode, maxAttempts = 2) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let response = undefined;
+        let statusCode = undefined;
+        let isRetryable = false;
+        let errorMessage = "";
+        let attempt = 1;
+        while (attempt <= maxAttempts) {
+            try {
+                response = yield method();
+                statusCode = getStatusCode(response);
+                if (isSuccessStatusCode(statusCode)) {
+                    return getReturnValue(response);
+                }
+                isRetryable = isRetryableStatusCode(statusCode);
+                errorMessage = `Cache service responded with ${statusCode}`;
+            }
+            catch (error) {
+                isRetryable = true;
+                errorMessage = error.message;
+            }
+            core.debug(`${name} - Attempt ${attempt} of ${maxAttempts} failed with error: ${errorMessage}`);
+            if (!isRetryable) {
+                core.debug(`${name} - Error is not retryable`);
+                break;
+            }
+            attempt++;
+        }
+        throw Error(`${name} failed: ${errorMessage}`);
+    });
+}
+exports.retry = retry;
+function retryTypedResponse(name, method, maxAttempts = 2) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield retry(name, method, (response) => response.statusCode, (response) => response, isSuccessStatusCode, isRetryableStatusCode, maxAttempts);
+    });
+}
+exports.retryTypedResponse = retryTypedResponse;
+function retryHttpClientResponse(name, method, maxAttempts = 2) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield retry(name, method, (response) => response.message.statusCode, (response) => response, isSuccessStatusCode, isRetryableStatusCode, maxAttempts);
+    });
+}
+exports.retryHttpClientResponse = retryHttpClientResponse;
 function getCacheEntry(keys, options) {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         const httpClient = createHttpClient();
         const version = getCacheVersion((_a = options) === null || _a === void 0 ? void 0 : _a.compressionMethod);
         const resource = `cache?keys=${encodeURIComponent(keys.join(","))}&version=${version}`;
-        const response = yield httpClient.getJson(getCacheApiUrl(resource));
+        const response = yield retryTypedResponse("getCacheEntry", () => httpClient.getJson(getCacheApiUrl(resource)));
         if (response.statusCode === 204) {
             return null;
-        }
-        if (!isSuccessStatusCode(response.statusCode)) {
-            throw new Error(`Cache service responded with ${response.statusCode}`);
         }
         const cacheResult = response.result;
         const cacheDownloadUrl = (_b = cacheResult) === null || _b === void 0 ? void 0 : _b.archiveLocation;
@@ -2326,7 +2367,7 @@ function getContentRange(start, end) {
     // Content-Range: bytes 0-199/*
     return `bytes ${start}-${end}/*`;
 }
-function uploadChunk(httpClient, resourceUrl, data, start, end) {
+function uploadChunk(httpClient, resourceUrl, openStream, start, end) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Uploading chunk of size ${end -
             start +
@@ -2336,20 +2377,9 @@ function uploadChunk(httpClient, resourceUrl, data, start, end) {
             "Content-Range": getContentRange(start, end)
         };
         const uploadChunkRequest = () => __awaiter(this, void 0, void 0, function* () {
-            return yield httpClient.sendStream("PATCH", resourceUrl, data, additionalHeaders);
+            return yield httpClient.sendStream("PATCH", resourceUrl, openStream(), additionalHeaders);
         });
-        const response = yield uploadChunkRequest();
-        if (isSuccessStatusCode(response.message.statusCode)) {
-            return;
-        }
-        if (isRetryableStatusCode(response.message.statusCode)) {
-            core.debug(`Received ${response.message.statusCode}, retrying chunk at offset ${start}.`);
-            const retryResponse = yield uploadChunkRequest();
-            if (isSuccessStatusCode(retryResponse.message.statusCode)) {
-                return;
-            }
-        }
-        throw new Error(`Cache service responded with ${response.message.statusCode} during chunk upload.`);
+        yield retryHttpClientResponse(`uploadChunk (start: ${start}, end: ${end})`, uploadChunkRequest);
     });
 }
 function parseEnvNumber(key) {
@@ -2379,13 +2409,12 @@ function uploadFile(httpClient, cacheId, archivePath) {
                     const start = offset;
                     const end = offset + chunkSize - 1;
                     offset += MAX_CHUNK_SIZE;
-                    const chunk = fs.createReadStream(archivePath, {
+                    yield uploadChunk(httpClient, resourceUrl, () => fs.createReadStream(archivePath, {
                         fd,
                         start,
                         end,
                         autoClose: false
-                    });
-                    yield uploadChunk(httpClient, resourceUrl, chunk, start, end);
+                    }), start, end);
                 }
             })));
         }
@@ -3642,6 +3671,12 @@ class HttpClientResponse {
             this.message.on('data', (chunk) => {
                 output = Buffer.concat([output, chunk]);
             });
+            this.message.on('aborted', () => {
+                reject("Request was aborted or closed prematurely");
+            });
+            this.message.on('timeout', (socket) => {
+                reject("Request timed out");
+            });
             this.message.on('end', () => {
                 resolve(output.toString());
             });
@@ -3763,6 +3798,7 @@ class HttpClient {
         let response;
         while (numTries < maxTries) {
             response = await this.requestRaw(info, data);
+
             // Check if it's an authentication challenge
             if (response && response.message && response.message.statusCode === HttpCodes.Unauthorized) {
                 let authenticationHandler;
@@ -3874,6 +3910,7 @@ class HttpClient {
         req.on('error', function (err) {
             // err has statusCode property
             // res should have headers
+            console.log(`Caught error on request: ${err}`);
             handleResult(err, null);
         });
         if (data && typeof (data) === 'string') {
