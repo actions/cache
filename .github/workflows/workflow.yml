@@ -51,7 +51,7 @@ jobs:
         npm run build
         if [ "$(git status --porcelain | wc -l)" -gt "0" ]; then
           echo "Detected uncommitted changes after build.  See status below:"
-          git status
+          git diff
           exit 1
         fi
         
