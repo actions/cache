@@ -342,8 +342,8 @@ async function uploadFile(
     let offset = 0;
 
     try {
-        await Promise.all(
-            parallelUploads.map(async () => {
+//        await Promise.all(
+//            parallelUploads.map(async () => {
                 while (offset < fileSize) {
                     const chunkSize = Math.min(
                         fileSize - offset,
@@ -367,8 +367,8 @@ async function uploadFile(
                         end
                     );
                 }
-            })
-        );
+//            })
+//        );
     } finally {
         fs.closeSync(fd);
     }
