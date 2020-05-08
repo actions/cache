@@ -295,12 +295,18 @@ async function uploadFile(
                         httpClient,
                         resourceUrl,
                         () =>
-                            fs.createReadStream(archivePath, {
-                                fd,
-                                start,
-                                end,
-                                autoClose: false
-                            }),
+                            fs
+                                .createReadStream(archivePath, {
+                                    fd,
+                                    start,
+                                    end,
+                                    autoClose: false
+                                })
+                                .on("error", error => {
+                                    throw new Error(
+                                        `Cache upload failed because file read failed with ${error.Message}`
+                                    );
+                                }),
                         start,
                         end
                     );

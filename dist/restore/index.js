@@ -2379,11 +2379,15 @@ function uploadFile(httpClient, cacheId, archivePath) {
                     const start = offset;
                     const end = offset + chunkSize - 1;
                     offset += MAX_CHUNK_SIZE;
-                    yield uploadChunk(httpClient, resourceUrl, () => fs.createReadStream(archivePath, {
+                    yield uploadChunk(httpClient, resourceUrl, () => fs
+                        .createReadStream(archivePath, {
                         fd,
                         start,
                         end,
                         autoClose: false
+                    })
+                        .on("error", error => {
+                        throw new Error(`Cache upload failed because file read failed with ${error.Message}`);
                     }), start, end);
                 }
             })));
