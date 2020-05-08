@@ -46,6 +46,7 @@ jobs:
     - name: Build & Test
       run: npm run test
     - name: Ensure dist/ folder is up-to-date
+      if: ${{ runner.os == 'Linux' }}
       shell: bash
       run: |
         npm run build
