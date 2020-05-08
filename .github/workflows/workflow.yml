@@ -46,6 +46,7 @@ jobs:
     - name: Build & Test
       run: npm run test
     - name: Ensure dist/ folder is up-to-date
+      shell: bash
       run: |
         npm run build
         if [ "$(git status --porcelain | wc -l)" -gt "0" ]; then
