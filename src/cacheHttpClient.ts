@@ -11,7 +11,7 @@ import * as fs from "fs";
 import * as stream from "stream";
 import * as util from "util";
 
-import { CompressionMethod, Inputs, SocketTimeout } from "./constants";
+import { CompressionMethod, DefaultSocketTimeout, Inputs } from "./constants";
 import {
     ArtifactCacheEntry,
     CacheOptions,
@@ -85,6 +85,14 @@ function createHttpClient(): HttpClient {
     );
 }
 
+function parseEnvNumber(key: string): number | undefined {
+    const value = Number(process.env[key]);
+    if (Number.isNaN(value) || value < 0) {
+        return undefined;
+    }
+    return value;
+}
+
 export function getCacheVersion(compressionMethod?: CompressionMethod): string {
     const components = [core.getInput(Inputs.Path, { required: true })].concat(
         compressionMethod == CompressionMethod.Zstd ? [compressionMethod] : []
@@ -148,10 +156,12 @@ export async function downloadCache(
     const downloadResponse = await httpClient.get(archiveLocation);
 
     // Abort download if no traffic received over the socket.
-    downloadResponse.message.socket.setTimeout(SocketTimeout, () => {
+    const socketTimeout =
+        parseEnvNumber("CACHE_SOCKET_TIMEOUT") ?? DefaultSocketTimeout;
+    downloadResponse.message.socket.setTimeout(socketTimeout, () => {
         downloadResponse.message.destroy();
         core.debug(
-            `Aborting download, socket timed out after ${SocketTimeout} ms`
+            `Aborting download, socket timed out after ${socketTimeout} ms`
         );
     });
 
@@ -250,14 +260,6 @@ async function uploadChunk(
     throw new Error(
         `Cache service responded with ${response.message.statusCode} during chunk upload.`
     );
-}
-
-function parseEnvNumber(key: string): number | undefined {
-    const value = Number(process.env[key]);
-    if (Number.isNaN(value) || value < 0) {
-        return undefined;
-    }
-    return value;
 }
 
 async function uploadFile(

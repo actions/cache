@@ -2236,6 +2236,13 @@ function createHttpClient() {
     const bearerCredentialHandler = new auth_1.BearerCredentialHandler(token);
     return new http_client_1.HttpClient("actions/cache", [bearerCredentialHandler], getRequestOptions());
 }
+function parseEnvNumber(key) {
+    const value = Number(process.env[key]);
+    if (Number.isNaN(value) || value < 0) {
+        return undefined;
+    }
+    return value;
+}
 function getCacheVersion(compressionMethod) {
     const components = [core.getInput(constants_1.Inputs.Path, { required: true })].concat(compressionMethod == constants_1.CompressionMethod.Zstd ? [compressionMethod] : []);
     // Add salt to cache version to support breaking changes in cache entry
@@ -2278,14 +2285,16 @@ function pipeResponseToStream(response, output) {
     });
 }
 function downloadCache(archiveLocation, archivePath) {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         const stream = fs.createWriteStream(archivePath);
         const httpClient = new http_client_1.HttpClient("actions/cache");
         const downloadResponse = yield httpClient.get(archiveLocation);
         // Abort download if no traffic received over the socket.
-        downloadResponse.message.socket.setTimeout(constants_1.SocketTimeout, () => {
+        const socketTimeout = (_a = parseEnvNumber("CACHE_SOCKET_TIMEOUT"), (_a !== null && _a !== void 0 ? _a : constants_1.DefaultSocketTimeout));
+        downloadResponse.message.socket.setTimeout(socketTimeout, () => {
             downloadResponse.message.destroy();
-            core.debug(`Aborting download, socket timed out after ${constants_1.SocketTimeout} ms`);
+            core.debug(`Aborting download, socket timed out after ${socketTimeout} ms`);
         });
         yield pipeResponseToStream(downloadResponse, stream);
         // Validate download size.
@@ -2351,13 +2360,6 @@ function uploadChunk(httpClient, resourceUrl, data, start, end) {
         }
         throw new Error(`Cache service responded with ${response.message.statusCode} during chunk upload.`);
     });
-}
-function parseEnvNumber(key) {
-    const value = Number(process.env[key]);
-    if (Number.isNaN(value) || value < 0) {
-        return undefined;
-    }
-    return value;
 }
 function uploadFile(httpClient, cacheId, archivePath) {
     var _a, _b;
@@ -3642,6 +3644,12 @@ class HttpClientResponse {
             this.message.on('data', (chunk) => {
                 output = Buffer.concat([output, chunk]);
             });
+            this.message.on('aborted', () => {
+                reject("Request was aborted or closed prematurely");
+            });
+            this.message.on('timeout', (socket) => {
+                reject("Request timed out");
+            });
             this.message.on('end', () => {
                 resolve(output.toString());
             });
@@ -3763,6 +3771,7 @@ class HttpClient {
         let response;
         while (numTries < maxTries) {
             response = await this.requestRaw(info, data);
+
             // Check if it's an authentication challenge
             if (response && response.message && response.message.statusCode === HttpCodes.Unauthorized) {
                 let authenticationHandler;
@@ -3874,6 +3883,7 @@ class HttpClient {
         req.on('error', function (err) {
             // err has statusCode property
             // res should have headers
+            console.log(`Caught error on request: ${err}`);
             handleResult(err, null);
         });
         if (data && typeof (data) === 'string') {
@@ -4628,7 +4638,7 @@ var CompressionMethod;
 // Socket timeout in milliseconds during download.  If no traffic is received
 // over the socket during this period, the socket is destroyed and the download
 // is aborted.
-exports.SocketTimeout = 5000;
+exports.DefaultSocketTimeout = 5000;
 
 
 /***/ }),
