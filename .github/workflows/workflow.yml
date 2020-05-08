@@ -45,6 +45,15 @@ jobs:
       run: npm run lint
     - name: Build & Test
       run: npm run test
+    - name: Ensure dist/ folder is up-to-date
+      run: |
+        npm run build
+        if [ "$(git status --porcelain | wc -l)" -gt "0" ]; then
+          echo "Detected uncommitted changes after build"
+          git status
+          exit 0
+        fi
+        
 
   # End to end save and restore
   test-save:
