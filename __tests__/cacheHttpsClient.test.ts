@@ -59,20 +59,17 @@ function handleResponse(
 
 async function testRetryExpectingResult(
     responses: Array<TestResponse>,
-    expectedResult: string
+    expectedResult: string | null
 ): Promise<void> {
     responses = responses.reverse(); // Reverse responses since we pop from end
 
     const actualResult = await retry(
         "test",
         () => handleResponse(responses.pop()),
-        (response: TestResponse) => response.statusCode,
-        (response: TestResponse) => response.result,
-        (statusCode: number) => statusCode === 200,
-        (statusCode: number) => statusCode === 503
+        (response: TestResponse) => response.statusCode
     );
 
-    expect(actualResult).toEqual(expectedResult);
+    expect(actualResult.result).toEqual(expectedResult);
 }
 
 async function testRetryExpectingError(
@@ -84,10 +81,7 @@ async function testRetryExpectingError(
         retry(
             "test",
             () => handleResponse(responses.pop()),
-            (response: TestResponse) => response.statusCode,
-            (response: TestResponse) => response.result,
-            (statusCode: number) => statusCode === 200,
-            (statusCode: number) => statusCode === 503
+            (response: TestResponse) => response.statusCode
         )
     ).rejects.toBeInstanceOf(Error);
 }
@@ -163,5 +157,21 @@ test("retry works after error", async () => {
             }
         ],
         "Ok"
+    );
+});
+
+test("retry returns after client error", async () => {
+    await testRetryExpectingResult(
+        [
+            {
+                statusCode: 400,
+                result: null
+            },
+            {
+                statusCode: 200,
+                result: "Ok"
+            }
+        ],
+        null
     );
 });

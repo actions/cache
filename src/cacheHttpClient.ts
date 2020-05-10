@@ -30,6 +30,13 @@ function isSuccessStatusCode(statusCode?: number): boolean {
     return statusCode >= 200 && statusCode < 300;
 }
 
+function isServerErrorStatusCode(statusCode?: number): boolean {
+    if (!statusCode) {
+        return true;
+    }
+    return statusCode >= 500;
+}
+
 function isRetryableStatusCode(statusCode?: number): boolean {
     if (!statusCode) {
         return false;
@@ -99,16 +106,13 @@ export function getCacheVersion(compressionMethod?: CompressionMethod): string {
         .digest("hex");
 }
 
-export async function retry<R, T>(
+export async function retry<T>(
     name: string,
-    method: () => Promise<R>,
-    getStatusCode: (R) => number | undefined,
-    getReturnValue: (R) => T,
-    isSuccessStatusCode: (number) => boolean,
-    isRetryableStatusCode: (number) => boolean,
+    method: () => Promise<T>,
+    getStatusCode: (T) => number | undefined,
     maxAttempts = 2
 ): Promise<T> {
-    let response: R | undefined = undefined;
+    let response: T | undefined = undefined;
     let statusCode: number | undefined = undefined;
     let isRetryable = false;
     let errorMessage = "";
@@ -119,8 +123,8 @@ export async function retry<R, T>(
             response = await method();
             statusCode = getStatusCode(response);
 
-            if (isSuccessStatusCode(statusCode)) {
-                return getReturnValue(response);
+            if (!isServerErrorStatusCode(statusCode)) {
+                return response;
             }
 
             isRetryable = isRetryableStatusCode(statusCode);
@@ -154,9 +158,6 @@ export async function retryTypedResponse<T>(
         name,
         method,
         (response: ITypedResponse<T>) => response.statusCode,
-        (response: ITypedResponse<T>) => response,
-        isSuccessStatusCode,
-        isRetryableStatusCode,
         maxAttempts
     );
 }
@@ -170,9 +171,6 @@ export async function retryHttpClientResponse<T>(
         name,
         method,
         (response: IHttpClientResponse) => response.message.statusCode,
-        (response: IHttpClientResponse) => response,
-        isSuccessStatusCode,
-        isRetryableStatusCode,
         maxAttempts
     );
 }
@@ -221,7 +219,10 @@ export async function downloadCache(
 ): Promise<void> {
     const stream = fs.createWriteStream(archivePath);
     const httpClient = new HttpClient("actions/cache");
-    const downloadResponse = await httpClient.get(archiveLocation);
+    const downloadResponse = await retryHttpClientResponse(
+        "downloadCache",
+        () => httpClient.get(archiveLocation)
+    );
 
     // Abort download if no traffic received over the socket.
     downloadResponse.message.socket.setTimeout(SocketTimeout, () => {
@@ -263,10 +264,13 @@ export async function reserveCache(
         key,
         version
     };
-    const response = await httpClient.postJson<ReserveCacheResponse>(
-        getCacheApiUrl("caches"),
-        reserveCacheRequest
+    const response = await retryTypedResponse("reserveCache", () =>
+        httpClient.postJson<ReserveCacheResponse>(
+            getCacheApiUrl("caches"),
+            reserveCacheRequest
+        )
     );
+
     return response?.result?.cacheId ?? -1;
 }
 
@@ -381,9 +385,11 @@ async function commitCache(
     filesize: number
 ): Promise<ITypedResponse<null>> {
     const commitCacheRequest: CommitCacheRequest = { size: filesize };
-    return await httpClient.postJson<null>(
-        getCacheApiUrl(`caches/${cacheId.toString()}`),
-        commitCacheRequest
+    return await retryTypedResponse("commitCache", () =>
+        httpClient.postJson<null>(
+            getCacheApiUrl(`caches/${cacheId.toString()}`),
+            commitCacheRequest
+        )
     );
 }
 
