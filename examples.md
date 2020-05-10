@@ -2,6 +2,7 @@
 
 - [Examples](#examples)
   - [C# - NuGet](#c---nuget)
+  - [D - DUB](#d---dub)
   - [Elixir - Mix](#elixir---mix)
   - [Go - Modules](#go---modules)
   - [Haskell - Cabal](#haskell---cabal)
@@ -55,6 +56,30 @@ steps:
       key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
       restore-keys: |
         ${{ runner.os }}-nuget-
+```
+
+## D - DUB
+
+### POSIX
+
+```yaml
+- uses: actions/cache@v1
+  with:
+    path: ~/.dub
+    key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
+    restore-keys: |
+      ${{ runner.os }}-dub-
+```
+
+### Windows
+
+```yaml
+- uses: actions/cache@v1
+  with:
+    path: ~\AppData\Local\dub
+    key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
+    restore-keys: |
+      ${{ runner.os }}-dub-
 ```
 
 ## Elixir - Mix
