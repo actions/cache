@@ -179,7 +179,7 @@ function getContentRange(start: number, end: number): string {
 async function uploadChunk(
     httpClient: HttpClient,
     resourceUrl: string,
-    data: NodeJS.ReadableStream,
+    openStream: () => NodeJS.ReadableStream,
     start: number,
     end: number
 ): Promise<void> {
@@ -200,7 +200,7 @@ async function uploadChunk(
         return await httpClient.sendStream(
             "PATCH",
             resourceUrl,
-            data,
+            openStream(),
             additionalHeaders
         );
     };
@@ -263,17 +263,17 @@ async function uploadFile(
                     const start = offset;
                     const end = offset + chunkSize - 1;
                     offset += MAX_CHUNK_SIZE;
-                    const chunk = fs.createReadStream(archivePath, {
-                        fd,
-                        start,
-                        end,
-                        autoClose: false
-                    });
 
                     await uploadChunk(
                         httpClient,
                         resourceUrl,
-                        chunk,
+                        () =>
+                            fs.createReadStream(archivePath, {
+                                fd,
+                                start,
+                                end,
+                                autoClose: false
+                            }),
                         start,
                         end
                     );
