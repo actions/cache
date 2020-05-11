@@ -16,7 +16,7 @@ Create a workflow `.yml` file in your repositories `.github/workflows` directory
 ### Inputs
 
 * `path` - A directory to store and save the cache
-* `key` - An explicit key for restoring and saving the cache
+* `key` - An explicit key for restoring and saving the cache.
 * `restore-keys` - An ordered list of keys to use for restoring the cache if no cache hit occurred for key
 
 ### Outputs
@@ -24,6 +24,11 @@ Create a workflow `.yml` file in your repositories `.github/workflows` directory
 * `cache-hit` - A boolean value to indicate an exact match was found for the key
 
 > See [Skipping steps based on cache-hit](#Skipping-steps-based-on-cache-hit) for info on using this output
+
+### Branch scope
+The cache is scoped to the key and branch. The default branch cache is available to other branches. 
+
+See https://help.github.com/en/actions/configuring-and-managing-workflows/caching-dependencies-to-speed-up-workflows#matching-a-cache-key for more info.
 
 ### Example workflow
 
