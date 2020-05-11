@@ -4554,7 +4554,6 @@ var Events;
     Events["Push"] = "push";
     Events["PullRequest"] = "pull_request";
 })(Events = exports.Events || (exports.Events = {}));
-<<<<<<< HEAD
 var CacheFilename;
 (function (CacheFilename) {
     CacheFilename["Gzip"] = "cache.tgz";
@@ -4569,10 +4568,7 @@ var CompressionMethod;
 // over the socket during this period, the socket is destroyed and the download
 // is aborted.
 exports.SocketTimeout = 5000;
-=======
 exports.RefKey = "GITHUB_REF";
-exports.CacheFilename = "cache.tgz";
->>>>>>> Allow all events to access cache
 
 
 /***/ }),

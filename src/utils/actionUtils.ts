@@ -7,7 +7,6 @@ import * as path from "path";
 import * as util from "util";
 import * as uuidV4 from "uuid/v4";
 
-<<<<<<< HEAD
 import {
     CacheFilename,
     CompressionMethod,
@@ -15,9 +14,6 @@ import {
     RefKey,
     State
 } from "../constants";
-=======
-import { Outputs, RefKey, State } from "../constants";
->>>>>>> Allow all events to access cache
 import { ArtifactCacheEntry } from "../contracts";
 
 // From https://github.com/actions/toolkit/blob/master/packages/tool-cache/src/tool-cache.ts#L23
