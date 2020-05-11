@@ -2326,7 +2326,7 @@ function getContentRange(start, end) {
     // Content-Range: bytes 0-199/*
     return `bytes ${start}-${end}/*`;
 }
-function uploadChunk(httpClient, resourceUrl, data, start, end) {
+function uploadChunk(httpClient, resourceUrl, openStream, start, end) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Uploading chunk of size ${end -
             start +
@@ -2336,7 +2336,7 @@ function uploadChunk(httpClient, resourceUrl, data, start, end) {
             "Content-Range": getContentRange(start, end)
         };
         const uploadChunkRequest = () => __awaiter(this, void 0, void 0, function* () {
-            return yield httpClient.sendStream("PATCH", resourceUrl, data, additionalHeaders);
+            return yield httpClient.sendStream("PATCH", resourceUrl, openStream(), additionalHeaders);
         });
         const response = yield uploadChunkRequest();
         if (isSuccessStatusCode(response.message.statusCode)) {
@@ -2379,13 +2379,12 @@ function uploadFile(httpClient, cacheId, archivePath) {
                     const start = offset;
                     const end = offset + chunkSize - 1;
                     offset += MAX_CHUNK_SIZE;
-                    const chunk = fs.createReadStream(archivePath, {
+                    yield uploadChunk(httpClient, resourceUrl, () => fs.createReadStream(archivePath, {
                         fd,
                         start,
                         end,
                         autoClose: false
-                    });
-                    yield uploadChunk(httpClient, resourceUrl, chunk, start, end);
+                    }), start, end);
                 }
             })));
         }
