@@ -2197,6 +2197,12 @@ function isSuccessStatusCode(statusCode) {
     }
     return statusCode >= 200 && statusCode < 300;
 }
+function isServerErrorStatusCode(statusCode) {
+    if (!statusCode) {
+        return true;
+    }
+    return statusCode >= 500;
+}
 function isRetryableStatusCode(statusCode) {
     if (!statusCode) {
         return false;
@@ -2246,13 +2252,57 @@ function getCacheVersion(compressionMethod) {
         .digest("hex");
 }
 exports.getCacheVersion = getCacheVersion;
+function retry(name, method, getStatusCode, maxAttempts = 2) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let response = undefined;
+        let statusCode = undefined;
+        let isRetryable = false;
+        let errorMessage = "";
+        let attempt = 1;
+        while (attempt <= maxAttempts) {
+            try {
+                response = yield method();
+                statusCode = getStatusCode(response);
+                if (!isServerErrorStatusCode(statusCode)) {
+                    return response;
+                }
+                isRetryable = isRetryableStatusCode(statusCode);
+                errorMessage = `Cache service responded with ${statusCode}`;
+            }
+            catch (error) {
+                isRetryable = true;
+                errorMessage = error.message;
+            }
+            core.debug(`${name} - Attempt ${attempt} of ${maxAttempts} failed with error: ${errorMessage}`);
+            if (!isRetryable) {
+                core.debug(`${name} - Error is not retryable`);
+                break;
+            }
+            attempt++;
+        }
+        throw Error(`${name} failed: ${errorMessage}`);
+    });
+}
+exports.retry = retry;
+function retryTypedResponse(name, method, maxAttempts = 2) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield retry(name, method, (response) => response.statusCode, maxAttempts);
+    });
+}
+exports.retryTypedResponse = retryTypedResponse;
+function retryHttpClientResponse(name, method, maxAttempts = 2) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield retry(name, method, (response) => response.message.statusCode, maxAttempts);
+    });
+}
+exports.retryHttpClientResponse = retryHttpClientResponse;
 function getCacheEntry(keys, options) {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         const httpClient = createHttpClient();
         const version = getCacheVersion((_a = options) === null || _a === void 0 ? void 0 : _a.compressionMethod);
         const resource = `cache?keys=${encodeURIComponent(keys.join(","))}&version=${version}`;
-        const response = yield httpClient.getJson(getCacheApiUrl(resource));
+        const response = yield retryTypedResponse("getCacheEntry", () => httpClient.getJson(getCacheApiUrl(resource)));
         if (response.statusCode === 204) {
             return null;
         }
@@ -2281,7 +2331,7 @@ function downloadCache(archiveLocation, archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
         const stream = fs.createWriteStream(archivePath);
         const httpClient = new http_client_1.HttpClient("actions/cache");
-        const downloadResponse = yield httpClient.get(archiveLocation);
+        const downloadResponse = yield retryHttpClientResponse("downloadCache", () => httpClient.get(archiveLocation));
         // Abort download if no traffic received over the socket.
         downloadResponse.message.socket.setTimeout(constants_1.SocketTimeout, () => {
             downloadResponse.message.destroy();
@@ -2313,7 +2363,7 @@ function reserveCache(key, options) {
             key,
             version
         };
-        const response = yield httpClient.postJson(getCacheApiUrl("caches"), reserveCacheRequest);
+        const response = yield retryTypedResponse("reserveCache", () => httpClient.postJson(getCacheApiUrl("caches"), reserveCacheRequest));
         return _d = (_c = (_b = response) === null || _b === void 0 ? void 0 : _b.result) === null || _c === void 0 ? void 0 : _c.cacheId, (_d !== null && _d !== void 0 ? _d : -1);
     });
 }
@@ -2335,21 +2385,7 @@ function uploadChunk(httpClient, resourceUrl, openStream, start, end) {
             "Content-Type": "application/octet-stream",
             "Content-Range": getContentRange(start, end)
         };
-        const uploadChunkRequest = () => __awaiter(this, void 0, void 0, function* () {
-            return yield httpClient.sendStream("PATCH", resourceUrl, openStream(), additionalHeaders);
-        });
-        const response = yield uploadChunkRequest();
-        if (isSuccessStatusCode(response.message.statusCode)) {
-            return;
-        }
-        if (isRetryableStatusCode(response.message.statusCode)) {
-            core.debug(`Received ${response.message.statusCode}, retrying chunk at offset ${start}.`);
-            const retryResponse = yield uploadChunkRequest();
-            if (isSuccessStatusCode(retryResponse.message.statusCode)) {
-                return;
-            }
-        }
-        throw new Error(`Cache service responded with ${response.message.statusCode} during chunk upload.`);
+        yield retryHttpClientResponse(`uploadChunk (start: ${start}, end: ${end})`, () => httpClient.sendStream("PATCH", resourceUrl, openStream(), additionalHeaders));
     });
 }
 function parseEnvNumber(key) {
@@ -2401,7 +2437,7 @@ function uploadFile(httpClient, cacheId, archivePath) {
 function commitCache(httpClient, cacheId, filesize) {
     return __awaiter(this, void 0, void 0, function* () {
         const commitCacheRequest = { size: filesize };
-        return yield httpClient.postJson(getCacheApiUrl(`caches/${cacheId.toString()}`), commitCacheRequest);
+        return yield retryTypedResponse("commitCache", () => httpClient.postJson(getCacheApiUrl(`caches/${cacheId.toString()}`), commitCacheRequest));
     });
 }
 function saveCache(cacheId, archivePath) {
