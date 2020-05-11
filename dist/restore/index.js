@@ -2376,7 +2376,7 @@ function getContentRange(start, end) {
     // Content-Range: bytes 0-199/*
     return `bytes ${start}-${end}/*`;
 }
-function uploadChunk(httpClient, resourceUrl, data, start, end) {
+function uploadChunk(httpClient, resourceUrl, openStream, start, end) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Uploading chunk of size ${end -
             start +
@@ -2385,7 +2385,7 @@ function uploadChunk(httpClient, resourceUrl, data, start, end) {
             "Content-Type": "application/octet-stream",
             "Content-Range": getContentRange(start, end)
         };
-        yield retryHttpClientResponse(`uploadChunk (start: ${start}, end: ${end})`, () => httpClient.sendStream("PATCH", resourceUrl, data, additionalHeaders));
+        yield retryHttpClientResponse(`uploadChunk (start: ${start}, end: ${end})`, () => httpClient.sendStream("PATCH", resourceUrl, openStream(), additionalHeaders));
     });
 }
 function parseEnvNumber(key) {
@@ -2415,13 +2415,12 @@ function uploadFile(httpClient, cacheId, archivePath) {
                     const start = offset;
                     const end = offset + chunkSize - 1;
                     offset += MAX_CHUNK_SIZE;
-                    const chunk = fs.createReadStream(archivePath, {
+                    yield uploadChunk(httpClient, resourceUrl, () => fs.createReadStream(archivePath, {
                         fd,
                         start,
                         end,
                         autoClose: false
-                    });
-                    yield uploadChunk(httpClient, resourceUrl, chunk, start, end);
+                    }), start, end);
                 }
             })));
         }
