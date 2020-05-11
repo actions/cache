@@ -16,7 +16,7 @@ Create a workflow `.yml` file in your repositories `.github/workflows` directory
 ### Inputs
 
 * `path` - A directory to store and save the cache
-* `key` - An explicit key for restoring and saving the cache.
+* `key` - An explicit key for restoring and saving the cache
 * `restore-keys` - An ordered list of keys to use for restoring the cache if no cache hit occurred for key
 
 ### Outputs
