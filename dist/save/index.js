@@ -2981,6 +2981,7 @@ const exec_1 = __webpack_require__(986);
 const io = __importStar(__webpack_require__(1));
 const fs_1 = __webpack_require__(747);
 const path = __importStar(__webpack_require__(622));
+const tar = __importStar(__webpack_require__(943));
 function isGnuTar() {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug("Checking tar --version");
@@ -3007,7 +3008,7 @@ function getTarPath(args) {
             if (fs_1.existsSync(systemTar)) {
                 return systemTar;
             }
-            else if (yield isGnuTar()) {
+            else if (yield tar.isGnuTar()) {
                 args.push("--force-local");
             }
         }

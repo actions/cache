@@ -3,6 +3,7 @@ import { exec } from "@actions/exec";
 import * as io from "@actions/io";
 import { existsSync } from "fs";
 import * as path from "path";
+import * as tar from "./tar";
 
 export async function isGnuTar(): Promise<boolean> {
     core.debug("Checking tar --version");
@@ -28,7 +29,7 @@ async function getTarPath(args: string[]): Promise<string> {
         const systemTar = `${process.env["windir"]}\\System32\\tar.exe`;
         if (existsSync(systemTar)) {
             return systemTar;
-        } else if (await isGnuTar()) {
+        } else if (await tar.isGnuTar()) {
             args.push("--force-local");
         }
     }

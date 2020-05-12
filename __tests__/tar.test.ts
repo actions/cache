@@ -51,7 +51,7 @@ test("extract GNU tar", async () => {
 
         await tar.extractTar(archivePath, targetDirectory);
 
-        expect(execMock).toHaveBeenCalledTimes(2);
+        expect(execMock).toHaveBeenCalledTimes(1);
         expect(execMock).toHaveBeenLastCalledWith(`"tar"`, [
             "-xz",
             "-f",
