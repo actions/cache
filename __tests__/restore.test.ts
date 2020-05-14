@@ -1,22 +1,11 @@
+import * as cache from "@actions/cache";
 import * as core from "@actions/core";
-import * as path from "path";
 
-import * as cacheHttpClient from "../src/cacheHttpClient";
-import {
-    CacheFilename,
-    CompressionMethod,
-    Events,
-    Inputs,
-    RefKey
-} from "../src/constants";
-import { ArtifactCacheEntry } from "../src/contracts";
+import { Events, Inputs, RefKey } from "../src/constants";
 import run from "../src/restore";
-import * as tar from "../src/tar";
 import * as actionUtils from "../src/utils/actionUtils";
 import * as testUtils from "../src/utils/testUtils";
 
-jest.mock("../src/cacheHttpClient");
-jest.mock("../src/tar");
 jest.mock("../src/utils/actionUtils");
 
 beforeAll(() => {
@@ -30,11 +19,6 @@ beforeAll(() => {
     jest.spyOn(actionUtils, "isValidEvent").mockImplementation(() => {
         const actualUtils = jest.requireActual("../src/utils/actionUtils");
         return actualUtils.isValidEvent();
-    });
-
-    jest.spyOn(actionUtils, "getCacheFileName").mockImplementation(cm => {
-        const actualUtils = jest.requireActual("../src/utils/actionUtils");
-        return actualUtils.getCacheFileName(cm);
     });
 });
 
@@ -64,7 +48,9 @@ test("restore with invalid event outputs warning", async () => {
 
 test("restore with no path should fail", async () => {
     const failedMock = jest.spyOn(core, "setFailed");
+    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
     await run();
+    expect(restoreCacheMock).toHaveBeenCalledTimes(0);
     // this input isn't necessary for restore b/c tarball contains entries relative to workspace
     expect(failedMock).not.toHaveBeenCalledWith(
         "Input required and not supplied: path"
@@ -74,70 +60,88 @@ test("restore with no path should fail", async () => {
 test("restore with no key", async () => {
     testUtils.setInput(Inputs.Path, "node_modules");
     const failedMock = jest.spyOn(core, "setFailed");
+    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
     await run();
+    expect(restoreCacheMock).toHaveBeenCalledTimes(0);
     expect(failedMock).toHaveBeenCalledWith(
         "Input required and not supplied: key"
     );
 });
 
 test("restore with too many keys should fail", async () => {
+    const path = "node_modules";
     const key = "node-test";
     const restoreKeys = [...Array(20).keys()].map(x => x.toString());
     testUtils.setInputs({
-        path: "node_modules",
+        path: path,
         key,
         restoreKeys
     });
     const failedMock = jest.spyOn(core, "setFailed");
+    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
     await run();
+    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
+    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, restoreKeys);
     expect(failedMock).toHaveBeenCalledWith(
         `Key Validation Error: Keys are limited to a maximum of 10.`
     );
 });
 
 test("restore with large key should fail", async () => {
+    const path = "node_modules";
     const key = "foo".repeat(512); // Over the 512 character limit
     testUtils.setInputs({
-        path: "node_modules",
+        path: path,
         key
     });
     const failedMock = jest.spyOn(core, "setFailed");
+    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
     await run();
+    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
+    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, []);
     expect(failedMock).toHaveBeenCalledWith(
         `Key Validation Error: ${key} cannot be larger than 512 characters.`
     );
 });
 
 test("restore with invalid key should fail", async () => {
+    const path = "node_modules";
     const key = "comma,comma";
     testUtils.setInputs({
-        path: "node_modules",
+        path: path,
         key
     });
     const failedMock = jest.spyOn(core, "setFailed");
+    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
     await run();
+    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
+    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, []);
     expect(failedMock).toHaveBeenCalledWith(
         `Key Validation Error: ${key} cannot contain commas.`
     );
 });
 
 test("restore with no cache found", async () => {
+    const path = "node_modules";
     const key = "node-test";
     testUtils.setInputs({
-        path: "node_modules",
+        path: path,
         key
     });
 
     const infoMock = jest.spyOn(core, "info");
     const failedMock = jest.spyOn(core, "setFailed");
     const stateMock = jest.spyOn(core, "saveState");
-
-    const clientMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
-    clientMock.mockImplementation(() => {
-        return Promise.resolve(null);
-    });
+    const restoreCacheMock = jest
+        .spyOn(cache, "restoreCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(undefined);
+        });
 
     await run();
+
+    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
+    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, []);
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
     expect(failedMock).toHaveBeenCalledTimes(0);
@@ -148,24 +152,27 @@ test("restore with no cache found", async () => {
 });
 
 test("restore with server error should fail", async () => {
+    const path = "node_modules";
     const key = "node-test";
     testUtils.setInputs({
-        path: "node_modules",
+        path: path,
         key
     });
 
     const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const failedMock = jest.spyOn(core, "setFailed");
     const stateMock = jest.spyOn(core, "saveState");
-
-    const clientMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
-    clientMock.mockImplementation(() => {
-        throw new Error("HTTP Error Occurred");
-    });
-
+    const restoreCacheMock = jest
+        .spyOn(cache, "restoreCache")
+        .mockImplementationOnce(() => {
+            throw new Error("HTTP Error Occurred");
+        });
     const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
 
     await run();
+
+    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
+    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, []);
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
 
@@ -179,10 +186,11 @@ test("restore with server error should fail", async () => {
 });
 
 test("restore with restore keys and no cache found", async () => {
+    const path = "node_modules";
     const key = "node-test";
     const restoreKey = "node-";
     testUtils.setInputs({
-        path: "node_modules",
+        path: path,
         key,
         restoreKeys: [restoreKey]
     });
@@ -190,13 +198,16 @@ test("restore with restore keys and no cache found", async () => {
     const infoMock = jest.spyOn(core, "info");
     const failedMock = jest.spyOn(core, "setFailed");
     const stateMock = jest.spyOn(core, "saveState");
-
-    const clientMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
-    clientMock.mockImplementation(() => {
-        return Promise.resolve(null);
-    });
+    const restoreCacheMock = jest
+        .spyOn(cache, "restoreCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(undefined);
+        });
 
     await run();
+
+    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
+    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, [restoreKey]);
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
     expect(failedMock).toHaveBeenCalledTimes(0);
@@ -206,161 +217,43 @@ test("restore with restore keys and no cache found", async () => {
     );
 });
 
-test("restore with gzip compressed cache found", async () => {
+test("restore with cache found for key", async () => {
+    const path = "node_modules";
     const key = "node-test";
     testUtils.setInputs({
-        path: "node_modules",
+        path: path,
         key
     });
 
     const infoMock = jest.spyOn(core, "info");
     const failedMock = jest.spyOn(core, "setFailed");
     const stateMock = jest.spyOn(core, "saveState");
-
-    const cacheEntry: ArtifactCacheEntry = {
-        cacheKey: key,
-        scope: "refs/heads/master",
-        archiveLocation: "www.actionscache.test/download"
-    };
-    const getCacheMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
-    getCacheMock.mockImplementation(() => {
-        return Promise.resolve(cacheEntry);
-    });
-    const tempPath = "/foo/bar";
-
-    const createTempDirectoryMock = jest.spyOn(
-        actionUtils,
-        "createTempDirectory"
-    );
-    createTempDirectoryMock.mockImplementation(() => {
-        return Promise.resolve(tempPath);
-    });
-
-    const archivePath = path.join(tempPath, CacheFilename.Gzip);
-    const setCacheStateMock = jest.spyOn(actionUtils, "setCacheState");
-    const downloadCacheMock = jest.spyOn(cacheHttpClient, "downloadCache");
-
-    const fileSize = 142;
-    const getArchiveFileSizeMock = jest
-        .spyOn(actionUtils, "getArchiveFileSize")
-        .mockReturnValue(fileSize);
-
-    const extractTarMock = jest.spyOn(tar, "extractTar");
-    const unlinkFileMock = jest.spyOn(actionUtils, "unlinkFile");
     const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
-
-    const compression = CompressionMethod.Gzip;
-    const getCompressionMock = jest
-        .spyOn(actionUtils, "getCompressionMethod")
-        .mockReturnValue(Promise.resolve(compression));
+    const restoreCacheMock = jest
+        .spyOn(cache, "restoreCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(key);
+        });
 
     await run();
 
+    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
+    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, []);
+
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(getCacheMock).toHaveBeenCalledWith([key], {
-        compressionMethod: compression
-    });
-    expect(setCacheStateMock).toHaveBeenCalledWith(cacheEntry);
-    expect(createTempDirectoryMock).toHaveBeenCalledTimes(1);
-    expect(downloadCacheMock).toHaveBeenCalledWith(
-        cacheEntry.archiveLocation,
-        archivePath
-    );
-    expect(getArchiveFileSizeMock).toHaveBeenCalledWith(archivePath);
-
-    expect(extractTarMock).toHaveBeenCalledTimes(1);
-    expect(extractTarMock).toHaveBeenCalledWith(archivePath, compression);
-
-    expect(unlinkFileMock).toHaveBeenCalledTimes(1);
-    expect(unlinkFileMock).toHaveBeenCalledWith(archivePath);
-
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(true);
 
     expect(infoMock).toHaveBeenCalledWith(`Cache restored from key: ${key}`);
     expect(failedMock).toHaveBeenCalledTimes(0);
-    expect(getCompressionMock).toHaveBeenCalledTimes(1);
-});
-
-test("restore with a pull request event and zstd compressed cache found", async () => {
-    const key = "node-test";
-    testUtils.setInputs({
-        path: "node_modules",
-        key
-    });
-
-    process.env[Events.Key] = Events.PullRequest;
-
-    const infoMock = jest.spyOn(core, "info");
-    const failedMock = jest.spyOn(core, "setFailed");
-    const stateMock = jest.spyOn(core, "saveState");
-
-    const cacheEntry: ArtifactCacheEntry = {
-        cacheKey: key,
-        scope: "refs/heads/master",
-        archiveLocation: "www.actionscache.test/download"
-    };
-    const getCacheMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
-    getCacheMock.mockImplementation(() => {
-        return Promise.resolve(cacheEntry);
-    });
-    const tempPath = "/foo/bar";
-
-    const createTempDirectoryMock = jest.spyOn(
-        actionUtils,
-        "createTempDirectory"
-    );
-    createTempDirectoryMock.mockImplementation(() => {
-        return Promise.resolve(tempPath);
-    });
-
-    const archivePath = path.join(tempPath, CacheFilename.Zstd);
-    const setCacheStateMock = jest.spyOn(actionUtils, "setCacheState");
-    const downloadCacheMock = jest.spyOn(cacheHttpClient, "downloadCache");
-
-    const fileSize = 62915000;
-    const getArchiveFileSizeMock = jest
-        .spyOn(actionUtils, "getArchiveFileSize")
-        .mockReturnValue(fileSize);
-
-    const extractTarMock = jest.spyOn(tar, "extractTar");
-    const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
-    const compression = CompressionMethod.Zstd;
-    const getCompressionMock = jest
-        .spyOn(actionUtils, "getCompressionMethod")
-        .mockReturnValue(Promise.resolve(compression));
-
-    await run();
-
-    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(getCacheMock).toHaveBeenCalledWith([key], {
-        compressionMethod: compression
-    });
-    expect(setCacheStateMock).toHaveBeenCalledWith(cacheEntry);
-    expect(createTempDirectoryMock).toHaveBeenCalledTimes(1);
-    expect(downloadCacheMock).toHaveBeenCalledWith(
-        cacheEntry.archiveLocation,
-        archivePath
-    );
-    expect(getArchiveFileSizeMock).toHaveBeenCalledWith(archivePath);
-    expect(infoMock).toHaveBeenCalledWith(`Cache Size: ~60 MB (62915000 B)`);
-
-    expect(extractTarMock).toHaveBeenCalledTimes(1);
-    expect(extractTarMock).toHaveBeenCalledWith(archivePath, compression);
-
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
-    expect(setCacheHitOutputMock).toHaveBeenCalledWith(true);
-
-    expect(infoMock).toHaveBeenCalledWith(`Cache restored from key: ${key}`);
-    expect(failedMock).toHaveBeenCalledTimes(0);
-    expect(getCompressionMock).toHaveBeenCalledTimes(1);
 });
 
 test("restore with cache found for restore key", async () => {
+    const path = "node_modules";
     const key = "node-test";
     const restoreKey = "node-";
     testUtils.setInputs({
-        path: "node_modules",
+        path: path,
         key,
         restoreKeys: [restoreKey]
     });
@@ -368,60 +261,19 @@ test("restore with cache found for restore key", async () => {
     const infoMock = jest.spyOn(core, "info");
     const failedMock = jest.spyOn(core, "setFailed");
     const stateMock = jest.spyOn(core, "saveState");
-
-    const cacheEntry: ArtifactCacheEntry = {
-        cacheKey: restoreKey,
-        scope: "refs/heads/master",
-        archiveLocation: "www.actionscache.test/download"
-    };
-    const getCacheMock = jest.spyOn(cacheHttpClient, "getCacheEntry");
-    getCacheMock.mockImplementation(() => {
-        return Promise.resolve(cacheEntry);
-    });
-    const tempPath = "/foo/bar";
-
-    const createTempDirectoryMock = jest.spyOn(
-        actionUtils,
-        "createTempDirectory"
-    );
-    createTempDirectoryMock.mockImplementation(() => {
-        return Promise.resolve(tempPath);
-    });
-
-    const archivePath = path.join(tempPath, CacheFilename.Zstd);
-    const setCacheStateMock = jest.spyOn(actionUtils, "setCacheState");
-    const downloadCacheMock = jest.spyOn(cacheHttpClient, "downloadCache");
-
-    const fileSize = 142;
-    const getArchiveFileSizeMock = jest
-        .spyOn(actionUtils, "getArchiveFileSize")
-        .mockReturnValue(fileSize);
-
-    const extractTarMock = jest.spyOn(tar, "extractTar");
     const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
-    const compression = CompressionMethod.Zstd;
-    const getCompressionMock = jest
-        .spyOn(actionUtils, "getCompressionMethod")
-        .mockReturnValue(Promise.resolve(compression));
+    const restoreCacheMock = jest
+        .spyOn(cache, "restoreCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(restoreKey);
+        });
 
     await run();
 
+    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
+    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, [restoreKey]);
+
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(getCacheMock).toHaveBeenCalledWith([key, restoreKey], {
-        compressionMethod: compression
-    });
-    expect(setCacheStateMock).toHaveBeenCalledWith(cacheEntry);
-    expect(createTempDirectoryMock).toHaveBeenCalledTimes(1);
-    expect(downloadCacheMock).toHaveBeenCalledWith(
-        cacheEntry.archiveLocation,
-        archivePath
-    );
-    expect(getArchiveFileSizeMock).toHaveBeenCalledWith(archivePath);
-    expect(infoMock).toHaveBeenCalledWith(`Cache Size: ~0 MB (142 B)`);
-
-    expect(extractTarMock).toHaveBeenCalledTimes(1);
-    expect(extractTarMock).toHaveBeenCalledWith(archivePath, compression);
-
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
 
@@ -429,5 +281,4 @@ test("restore with cache found for restore key", async () => {
         `Cache restored from key: ${restoreKey}`
     );
     expect(failedMock).toHaveBeenCalledTimes(0);
-    expect(getCompressionMock).toHaveBeenCalledTimes(1);
 });
