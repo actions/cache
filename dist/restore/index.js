@@ -1252,15 +1252,24 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
-const fs = __importStar(__webpack_require__(747));
-const auth_1 = __webpack_require__(226);
 const http_client_1 = __webpack_require__(539);
+const auth_1 = __webpack_require__(226);
+const fs = __importStar(__webpack_require__(747));
+const stream = __importStar(__webpack_require__(794));
+const util = __importStar(__webpack_require__(669));
+const constants_1 = __webpack_require__(694);
 const utils = __importStar(__webpack_require__(443));
 function isSuccessStatusCode(statusCode) {
     if (!statusCode) {
         return false;
     }
     return statusCode >= 200 && statusCode < 300;
+}
+function isServerErrorStatusCode(statusCode) {
+    if (!statusCode) {
+        return true;
+    }
+    return statusCode >= 500;
 }
 function isRetryableStatusCode(statusCode) {
     if (!statusCode) {
@@ -1301,12 +1310,56 @@ function createHttpClient() {
     const bearerCredentialHandler = new auth_1.BearerCredentialHandler(token);
     return new http_client_1.HttpClient("actions/cache", [bearerCredentialHandler], getRequestOptions());
 }
+function retry(name, method, getStatusCode, maxAttempts = 2) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let response = undefined;
+        let statusCode = undefined;
+        let isRetryable = false;
+        let errorMessage = "";
+        let attempt = 1;
+        while (attempt <= maxAttempts) {
+            try {
+                response = yield method();
+                statusCode = getStatusCode(response);
+                if (!isServerErrorStatusCode(statusCode)) {
+                    return response;
+                }
+                isRetryable = isRetryableStatusCode(statusCode);
+                errorMessage = `Cache service responded with ${statusCode}`;
+            }
+            catch (error) {
+                isRetryable = true;
+                errorMessage = error.message;
+            }
+            core.debug(`${name} - Attempt ${attempt} of ${maxAttempts} failed with error: ${errorMessage}`);
+            if (!isRetryable) {
+                core.debug(`${name} - Error is not retryable`);
+                break;
+            }
+            attempt++;
+        }
+        throw Error(`${name} failed: ${errorMessage}`);
+    });
+}
+exports.retry = retry;
+function retryTypedResponse(name, method, maxAttempts = 2) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield retry(name, method, (response) => response.statusCode, maxAttempts);
+    });
+}
+exports.retryTypedResponse = retryTypedResponse;
+function retryHttpClientResponse(name, method, maxAttempts = 2) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield retry(name, method, (response) => response.message.statusCode, maxAttempts);
+    });
+}
+exports.retryHttpClientResponse = retryHttpClientResponse;
 function getCacheEntry(keys) {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
         const httpClient = createHttpClient();
         const resource = `cache?keys=${encodeURIComponent(keys.join(","))}`;
-        const response = yield httpClient.getJson(getCacheApiUrl(resource));
+        const response = yield retryTypedResponse("getCacheEntry", () => httpClient.getJson(getCacheApiUrl(resource)));
         if (response.statusCode === 204) {
             return null;
         }
@@ -1325,21 +1378,35 @@ function getCacheEntry(keys) {
     });
 }
 exports.getCacheEntry = getCacheEntry;
-function pipeResponseToStream(response, stream) {
+function pipeResponseToStream(response, output) {
     return __awaiter(this, void 0, void 0, function* () {
-        return new Promise(resolve => {
-            response.message.pipe(stream).on("close", () => {
-                resolve();
-            });
-        });
+        const pipeline = util.promisify(stream.pipeline);
+        yield pipeline(response.message, output);
     });
 }
 function downloadCache(archiveLocation, archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
         const stream = fs.createWriteStream(archivePath);
         const httpClient = new http_client_1.HttpClient("actions/cache");
-        const downloadResponse = yield httpClient.get(archiveLocation);
+        const downloadResponse = yield retryHttpClientResponse("downloadCache", () => httpClient.get(archiveLocation));
+        // Abort download if no traffic received over the socket.
+        downloadResponse.message.socket.setTimeout(constants_1.SocketTimeout, () => {
+            downloadResponse.message.destroy();
+            core.debug(`Aborting download, socket timed out after ${constants_1.SocketTimeout} ms`);
+        });
         yield pipeResponseToStream(downloadResponse, stream);
+        // Validate download size.
+        const contentLengthHeader = downloadResponse.message.headers["content-length"];
+        if (contentLengthHeader) {
+            const expectedLength = parseInt(contentLengthHeader);
+            const actualLength = utils.getArchiveFileSize(archivePath);
+            if (actualLength != expectedLength) {
+                throw new Error(`Incomplete download. Expected file size: ${expectedLength}, actual file size: ${actualLength}`);
+            }
+        }
+        else {
+            core.debug("Unable to validate download, no Content-Length header");
+        }
     });
 }
 exports.downloadCache = downloadCache;
@@ -1351,7 +1418,7 @@ function reserveCache(key) {
         const reserveCacheRequest = {
             key
         };
-        const response = yield httpClient.postJson(getCacheApiUrl("caches"), reserveCacheRequest);
+        const response = yield retryTypedResponse("reserveCache", () => httpClient.postJson(getCacheApiUrl("caches"), reserveCacheRequest));
         return _c = (_b = (_a = response) === null || _a === void 0 ? void 0 : _a.result) === null || _b === void 0 ? void 0 : _b.cacheId, (_c !== null && _c !== void 0 ? _c : -1);
     });
 }
@@ -1364,7 +1431,7 @@ function getContentRange(start, end) {
     // Content-Range: bytes 0-199/*
     return `bytes ${start}-${end}/*`;
 }
-function uploadChunk(httpClient, resourceUrl, data, start, end) {
+function uploadChunk(httpClient, resourceUrl, openStream, start, end) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug(`Uploading chunk of size ${end -
             start +
@@ -1373,21 +1440,7 @@ function uploadChunk(httpClient, resourceUrl, data, start, end) {
             "Content-Type": "application/octet-stream",
             "Content-Range": getContentRange(start, end)
         };
-        const uploadChunkRequest = () => __awaiter(this, void 0, void 0, function* () {
-            return yield httpClient.sendStream("PATCH", resourceUrl, data, additionalHeaders);
-        });
-        const response = yield uploadChunkRequest();
-        if (isSuccessStatusCode(response.message.statusCode)) {
-            return;
-        }
-        if (isRetryableStatusCode(response.message.statusCode)) {
-            core.debug(`Received ${response.message.statusCode}, retrying chunk at offset ${start}.`);
-            const retryResponse = yield uploadChunkRequest();
-            if (isSuccessStatusCode(retryResponse.message.statusCode)) {
-                return;
-            }
-        }
-        throw new Error(`Cache service responded with ${response.message.statusCode} during chunk upload.`);
+        yield retryHttpClientResponse(`uploadChunk (start: ${start}, end: ${end})`, () => httpClient.sendStream("PATCH", resourceUrl, openStream(), additionalHeaders));
     });
 }
 function parseEnvNumber(key) {
@@ -1417,13 +1470,16 @@ function uploadFile(httpClient, cacheId, archivePath) {
                     const start = offset;
                     const end = offset + chunkSize - 1;
                     offset += MAX_CHUNK_SIZE;
-                    const chunk = fs.createReadStream(archivePath, {
+                    yield uploadChunk(httpClient, resourceUrl, () => fs
+                        .createReadStream(archivePath, {
                         fd,
                         start,
                         end,
                         autoClose: false
-                    });
-                    yield uploadChunk(httpClient, resourceUrl, chunk, start, end);
+                    })
+                        .on("error", error => {
+                        throw new Error(`Cache upload failed because file read failed with ${error.Message}`);
+                    }), start, end);
                 }
             })));
         }
@@ -1436,7 +1492,7 @@ function uploadFile(httpClient, cacheId, archivePath) {
 function commitCache(httpClient, cacheId, filesize) {
     return __awaiter(this, void 0, void 0, function* () {
         const commitCacheRequest = { size: filesize };
-        return yield httpClient.postJson(getCacheApiUrl(`caches/${cacheId.toString()}`), commitCacheRequest);
+        return yield retryTypedResponse("commitCache", () => httpClient.postJson(getCacheApiUrl(`caches/${cacheId.toString()}`), commitCacheRequest));
     });
 }
 function saveCache(cacheId, archivePath) {
@@ -2721,6 +2777,10 @@ var Events;
     Events["Push"] = "push";
     Events["PullRequest"] = "pull_request";
 })(Events = exports.Events || (exports.Events = {}));
+// Socket timeout in milliseconds during download.  If no traffic is received
+// over the socket during this period, the socket is destroyed and the download
+// is aborted.
+exports.SocketTimeout = 5000;
 
 
 /***/ }),
@@ -2863,6 +2923,13 @@ exports.default = run;
 
 /***/ }),
 
+/***/ 794:
+/***/ (function(module) {
+
+module.exports = require("stream");
+
+/***/ }),
+
 /***/ 826:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -2928,10 +2995,30 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const core = __importStar(__webpack_require__(470));
 const exec_1 = __webpack_require__(986);
 const io = __importStar(__webpack_require__(1));
 const fs_1 = __webpack_require__(747);
-function getTarPath() {
+const path = __importStar(__webpack_require__(622));
+const tar = __importStar(__webpack_require__(943));
+function isGnuTar() {
+    return __awaiter(this, void 0, void 0, function* () {
+        core.debug("Checking tar --version");
+        let versionOutput = "";
+        yield exec_1.exec("tar --version", [], {
+            ignoreReturnCode: true,
+            silent: true,
+            listeners: {
+                stdout: (data) => (versionOutput += data.toString()),
+                stderr: (data) => (versionOutput += data.toString())
+            }
+        });
+        core.debug(versionOutput.trim());
+        return versionOutput.toUpperCase().includes("GNU TAR");
+    });
+}
+exports.isGnuTar = isGnuTar;
+function getTarPath(args) {
     return __awaiter(this, void 0, void 0, function* () {
         // Explicitly use BSD Tar on Windows
         const IS_WINDOWS = process.platform === "win32";
@@ -2940,22 +3027,21 @@ function getTarPath() {
             if (fs_1.existsSync(systemTar)) {
                 return systemTar;
             }
+            else if (yield tar.isGnuTar()) {
+                args.push("--force-local");
+            }
         }
         return yield io.which("tar", true);
     });
 }
 function execTar(args) {
-    var _a, _b;
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            yield exec_1.exec(`"${yield getTarPath()}"`, args);
+            yield exec_1.exec(`"${yield getTarPath(args)}"`, args);
         }
         catch (error) {
-            const IS_WINDOWS = process.platform === "win32";
-            if (IS_WINDOWS) {
-                throw new Error(`Tar failed with error: ${(_a = error) === null || _a === void 0 ? void 0 : _a.message}. Ensure BSD tar is installed and on the PATH.`);
-            }
-            throw new Error(`Tar failed with error: ${(_b = error) === null || _b === void 0 ? void 0 : _b.message}`);
+            throw new Error(`Tar failed with error: ${(_a = error) === null || _a === void 0 ? void 0 : _a.message}`);
         }
     });
 }
@@ -2963,14 +3049,27 @@ function extractTar(archivePath, targetDirectory) {
     return __awaiter(this, void 0, void 0, function* () {
         // Create directory to extract tar into
         yield io.mkdirP(targetDirectory);
-        const args = ["-xz", "-f", archivePath, "-C", targetDirectory];
+        const args = [
+            "-xz",
+            "-f",
+            archivePath.replace(new RegExp("\\" + path.sep, "g"), "/"),
+            "-C",
+            targetDirectory.replace(new RegExp("\\" + path.sep, "g"), "/")
+        ];
         yield execTar(args);
     });
 }
 exports.extractTar = extractTar;
 function createTar(archivePath, sourceDirectory) {
     return __awaiter(this, void 0, void 0, function* () {
-        const args = ["-cz", "-f", archivePath, "-C", sourceDirectory, "."];
+        const args = [
+            "-cz",
+            "-f",
+            archivePath.replace(new RegExp("\\" + path.sep, "g"), "/"),
+            "-C",
+            sourceDirectory.replace(new RegExp("\\" + path.sep, "g"), "/"),
+            "."
+        ];
         yield execTar(args);
     });
 }

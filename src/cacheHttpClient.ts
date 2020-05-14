@@ -1,12 +1,16 @@
 import * as core from "@actions/core";
-import * as fs from "fs";
-import { BearerCredentialHandler } from "@actions/http-client/auth";
 import { HttpClient, HttpCodes } from "@actions/http-client";
+import { BearerCredentialHandler } from "@actions/http-client/auth";
 import {
     IHttpClientResponse,
     IRequestOptions,
     ITypedResponse
 } from "@actions/http-client/interfaces";
+import * as fs from "fs";
+import * as stream from "stream";
+import * as util from "util";
+
+import { SocketTimeout } from "./constants";
 import {
     ArtifactCacheEntry,
     CommitCacheRequest,
@@ -20,6 +24,13 @@ function isSuccessStatusCode(statusCode?: number): boolean {
         return false;
     }
     return statusCode >= 200 && statusCode < 300;
+}
+
+function isServerErrorStatusCode(statusCode?: number): boolean {
+    if (!statusCode) {
+        return true;
+    }
+    return statusCode >= 500;
 }
 
 function isRetryableStatusCode(statusCode?: number): boolean {
@@ -77,14 +88,83 @@ function createHttpClient(): HttpClient {
     );
 }
 
+export async function retry<T>(
+    name: string,
+    method: () => Promise<T>,
+    getStatusCode: (T) => number | undefined,
+    maxAttempts = 2
+): Promise<T> {
+    let response: T | undefined = undefined;
+    let statusCode: number | undefined = undefined;
+    let isRetryable = false;
+    let errorMessage = "";
+    let attempt = 1;
+
+    while (attempt <= maxAttempts) {
+        try {
+            response = await method();
+            statusCode = getStatusCode(response);
+
+            if (!isServerErrorStatusCode(statusCode)) {
+                return response;
+            }
+
+            isRetryable = isRetryableStatusCode(statusCode);
+            errorMessage = `Cache service responded with ${statusCode}`;
+        } catch (error) {
+            isRetryable = true;
+            errorMessage = error.message;
+        }
+
+        core.debug(
+            `${name} - Attempt ${attempt} of ${maxAttempts} failed with error: ${errorMessage}`
+        );
+
+        if (!isRetryable) {
+            core.debug(`${name} - Error is not retryable`);
+            break;
+        }
+
+        attempt++;
+    }
+
+    throw Error(`${name} failed: ${errorMessage}`);
+}
+
+export async function retryTypedResponse<T>(
+    name: string,
+    method: () => Promise<ITypedResponse<T>>,
+    maxAttempts = 2
+): Promise<ITypedResponse<T>> {
+    return await retry(
+        name,
+        method,
+        (response: ITypedResponse<T>) => response.statusCode,
+        maxAttempts
+    );
+}
+
+export async function retryHttpClientResponse<T>(
+    name: string,
+    method: () => Promise<IHttpClientResponse>,
+    maxAttempts = 2
+): Promise<IHttpClientResponse> {
+    return await retry(
+        name,
+        method,
+        (response: IHttpClientResponse) => response.message.statusCode,
+        maxAttempts
+    );
+}
+
 export async function getCacheEntry(
     keys: string[]
 ): Promise<ArtifactCacheEntry | null> {
     const httpClient = createHttpClient();
     const resource = `cache?keys=${encodeURIComponent(keys.join(","))}`;
 
-    const response = await httpClient.getJson<ArtifactCacheEntry>(
-        getCacheApiUrl(resource)
+    const response = await retryTypedResponse("getCacheEntry", () =>
+        httpClient.getJson<ArtifactCacheEntry>(getCacheApiUrl(resource))
     );
     if (response.statusCode === 204) {
         return null;
@@ -107,13 +187,10 @@ export async function getCacheEntry(
 
 async function pipeResponseToStream(
     response: IHttpClientResponse,
-    stream: NodeJS.WritableStream
+    output: NodeJS.WritableStream
 ): Promise<void> {
-    return new Promise(resolve => {
-        response.message.pipe(stream).on("close", () => {
-            resolve();
-        });
-    });
+    const pipeline = util.promisify(stream.pipeline);
+    await pipeline(response.message, output);
 }
 
 export async function downloadCache(
@@ -122,8 +199,37 @@ export async function downloadCache(
 ): Promise<void> {
     const stream = fs.createWriteStream(archivePath);
     const httpClient = new HttpClient("actions/cache");
-    const downloadResponse = await httpClient.get(archiveLocation);
+    const downloadResponse = await retryHttpClientResponse(
+        "downloadCache",
+        () => httpClient.get(archiveLocation)
+    );
+
+    // Abort download if no traffic received over the socket.
+    downloadResponse.message.socket.setTimeout(SocketTimeout, () => {
+        downloadResponse.message.destroy();
+        core.debug(
+            `Aborting download, socket timed out after ${SocketTimeout} ms`
+        );
+    });
+
     await pipeResponseToStream(downloadResponse, stream);
+
+    // Validate download size.
+    const contentLengthHeader =
+        downloadResponse.message.headers["content-length"];
+
+    if (contentLengthHeader) {
+        const expectedLength = parseInt(contentLengthHeader);
+        const actualLength = utils.getArchiveFileSize(archivePath);
+
+        if (actualLength != expectedLength) {
+            throw new Error(
+                `Incomplete download. Expected file size: ${expectedLength}, actual file size: ${actualLength}`
+            );
+        }
+    } else {
+        core.debug("Unable to validate download, no Content-Length header");
+    }
 }
 
 // Reserve Cache
@@ -133,9 +239,11 @@ export async function reserveCache(key: string): Promise<number> {
     const reserveCacheRequest: ReserveCacheRequest = {
         key
     };
-    const response = await httpClient.postJson<ReserveCacheResponse>(
-        getCacheApiUrl("caches"),
-        reserveCacheRequest
+    const response = await retryTypedResponse("reserveCache", () =>
+        httpClient.postJson<ReserveCacheResponse>(
+            getCacheApiUrl("caches"),
+            reserveCacheRequest
+        )
     );
     return response?.result?.cacheId ?? -1;
 }
@@ -152,7 +260,7 @@ function getContentRange(start: number, end: number): string {
 async function uploadChunk(
     httpClient: HttpClient,
     resourceUrl: string,
-    data: NodeJS.ReadableStream,
+    openStream: () => NodeJS.ReadableStream,
     start: number,
     end: number
 ): Promise<void> {
@@ -169,32 +277,15 @@ async function uploadChunk(
         "Content-Range": getContentRange(start, end)
     };
 
-    const uploadChunkRequest = async (): Promise<IHttpClientResponse> => {
-        return await httpClient.sendStream(
-            "PATCH",
-            resourceUrl,
-            data,
-            additionalHeaders
-        );
-    };
-
-    const response = await uploadChunkRequest();
-    if (isSuccessStatusCode(response.message.statusCode)) {
-        return;
-    }
-
-    if (isRetryableStatusCode(response.message.statusCode)) {
-        core.debug(
-            `Received ${response.message.statusCode}, retrying chunk at offset ${start}.`
-        );
-        const retryResponse = await uploadChunkRequest();
-        if (isSuccessStatusCode(retryResponse.message.statusCode)) {
-            return;
-        }
-    }
-
-    throw new Error(
-        `Cache service responded with ${response.message.statusCode} during chunk upload.`
+    await retryHttpClientResponse(
+        `uploadChunk (start: ${start}, end: ${end})`,
+        () =>
+            httpClient.sendStream(
+                "PATCH",
+                resourceUrl,
+                openStream(),
+                additionalHeaders
+            )
     );
 }
 
@@ -236,17 +327,23 @@ async function uploadFile(
                     const start = offset;
                     const end = offset + chunkSize - 1;
                     offset += MAX_CHUNK_SIZE;
-                    const chunk = fs.createReadStream(archivePath, {
-                        fd,
-                        start,
-                        end,
-                        autoClose: false
-                    });
 
                     await uploadChunk(
                         httpClient,
                         resourceUrl,
-                        chunk,
+                        () =>
+                            fs
+                                .createReadStream(archivePath, {
+                                    fd,
+                                    start,
+                                    end,
+                                    autoClose: false
+                                })
+                                .on("error", error => {
+                                    throw new Error(
+                                        `Cache upload failed because file read failed with ${error.Message}`
+                                    );
+                                }),
                         start,
                         end
                     );
@@ -265,9 +362,11 @@ async function commitCache(
     filesize: number
 ): Promise<ITypedResponse<null>> {
     const commitCacheRequest: CommitCacheRequest = { size: filesize };
-    return await httpClient.postJson<null>(
-        getCacheApiUrl(`caches/${cacheId.toString()}`),
-        commitCacheRequest
+    return await retryTypedResponse("commitCache", () =>
+        httpClient.postJson<null>(
+            getCacheApiUrl(`caches/${cacheId.toString()}`),
+            commitCacheRequest
+        )
     );
 }
 
