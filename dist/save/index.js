@@ -3345,16 +3345,10 @@ function resolvePaths(patterns) {
     });
 }
 exports.resolvePaths = resolvePaths;
-function getSupportedEvents() {
-    return [constants_1.Events.Push, constants_1.Events.PullRequest];
-}
-exports.getSupportedEvents = getSupportedEvents;
-// Currently the cache token is only authorized for push and pull_request events
-// All other events will fail when reading and saving the cache
+// Cache token authorized for all events that are tied to a ref
 // See GitHub Context https://help.github.com/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions#github-context
 function isValidEvent() {
-    const githubEvent = process.env[constants_1.Events.Key] || "";
-    return getSupportedEvents().includes(githubEvent);
+    return constants_1.RefKey in process.env && Boolean(process.env[constants_1.RefKey]);
 }
 exports.isValidEvent = isValidEvent;
 function unlinkFile(path) {
@@ -4604,9 +4598,7 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             if (!utils.isValidEvent()) {
-                utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported. Only ${utils
-                    .getSupportedEvents()
-                    .join(", ")} events are supported at this time.`);
+                utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
                 return;
             }
             const state = utils.getCacheState();
@@ -4702,6 +4694,7 @@ var CompressionMethod;
 // over the socket during this period, the socket is destroyed and the download
 // is aborted.
 exports.SocketTimeout = 5000;
+exports.RefKey = "GITHUB_REF";
 
 
 /***/ }),
