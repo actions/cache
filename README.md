@@ -25,10 +25,10 @@ Create a workflow `.yml` file in your repositories `.github/workflows` directory
 
 > See [Skipping steps based on cache-hit](#Skipping-steps-based-on-cache-hit) for info on using this output
 
-### Branch scope
+### Cache scopes
 The cache is scoped to the key and branch. The default branch cache is available to other branches. 
 
-See https://help.github.com/en/actions/configuring-and-managing-workflows/caching-dependencies-to-speed-up-workflows#matching-a-cache-key for more info.
+See [Matching a cache key](https://help.github.com/en/actions/configuring-and-managing-workflows/caching-dependencies-to-speed-up-workflows#matching-a-cache-key) for more info.
 
 ### Example workflow
 
@@ -86,6 +86,37 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 - [Swift, Objective-C - CocoaPods](./examples.md#swift-objective-c---cocoapods)
 - [Swift - Swift Package Manager](./examples.md#swift---swift-package-manager)
 
+## Creating a cache key
+
+A cache key can include any of the contexts, functions, literals, and operators supported by GitHub Actions.
+
+For example, using the [`hashFiles`](https://help.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#hashfiles) function allows you to create a new cache when dependencies change.
+
+```yaml
+  - uses: actions/cache@v1
+    with:
+      path: path/to/dependencies
+      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+```
+
+Additionally, you can use arbitrary command output in a cache key, such as a date or software version:
+
+```yaml
+  # http://man7.org/linux/man-pages/man1/date.1.html
+  - name: Get Date
+    id: get-date
+    run: |
+      echo "::set-output name=date::$(/bin/date -u "+%Y%m%d")"
+    shell: bash
+
+  - uses: actions/cache@v1
+    with:
+      path: path/to/dependencies
+      key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('**/lockfiles') }}
+```
+
+See [Using contexts to create cache keys](https://help.github.com/en/actions/configuring-and-managing-workflows/caching-dependencies-to-speed-up-workflows#using-contexts-to-create-cache-keys)
+
 ## Cache Limits
 
 A repository can have up to 5GB of caches. Once the 5GB limit is reached, older caches will be evicted based on when the cache was last accessed.  Caches that are not accessed within the last week will also be evicted.
@@ -113,7 +144,7 @@ steps:
 > Note: The `id` defined in `actions/cache` must match the `id` in the `if` statement (i.e. `steps.[ID].outputs.cache-hit`)
 
 ## Contributing
-We would love for you to contribute to `@actions/cache`, pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
+We would love for you to contribute to `actions/cache`, pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
 ## License
 The scripts and documentation in this project are released under the [MIT License](LICENSE)
