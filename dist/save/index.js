@@ -3345,10 +3345,16 @@ function resolvePaths(patterns) {
     });
 }
 exports.resolvePaths = resolvePaths;
-// Cache token authorized for all events that are tied to a ref
+// Cache token authorized for events where a reference is defined
 // See GitHub Context https://help.github.com/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions#github-context
 function isValidEvent() {
-    return constants_1.RefKey in process.env && Boolean(process.env[constants_1.RefKey]);
+    for (let i = 0; i < constants_1.RefKeys.length; i++) {
+        let refKey = constants_1.RefKeys[i];
+        if (refKey in process.env) {
+            return Boolean(process.env[refKey]);
+        }
+    }
+    return false;
 }
 exports.isValidEvent = isValidEvent;
 function unlinkFile(path) {
@@ -4694,7 +4700,10 @@ var CompressionMethod;
 // over the socket during this period, the socket is destroyed and the download
 // is aborted.
 exports.SocketTimeout = 5000;
-exports.RefKey = "GITHUB_REF";
+exports.RefKeys = [
+    "ACTIONS_CACHE_REF",
+    "GITHUB_REF",
+];
 
 
 /***/ }),

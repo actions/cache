@@ -11,7 +11,7 @@ import {
     CacheFilename,
     CompressionMethod,
     Outputs,
-    RefKey,
+    RefKeys,
     State
 } from "../constants";
 import { ArtifactCacheEntry } from "../contracts";
@@ -108,10 +108,18 @@ export async function resolvePaths(patterns: string[]): Promise<string[]> {
     return paths;
 }
 
-// Cache token authorized for all events that are tied to a ref
+// Cache token authorized for events where a reference is defined
 // See GitHub Context https://help.github.com/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions#github-context
 export function isValidEvent(): boolean {
-    return RefKey in process.env && Boolean(process.env[RefKey]);
+    for (let i = 0; i < RefKeys.length; i++) {
+        let refKey = RefKeys[i];
+
+        if (refKey in process.env) {
+            return Boolean(process.env[refKey])
+        }
+    }
+
+    return false;
 }
 
 export function unlinkFile(path: fs.PathLike): Promise<void> {

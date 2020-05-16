@@ -4,7 +4,7 @@ import { promises as fs } from "fs";
 import * as os from "os";
 import * as path from "path";
 
-import { Events, Outputs, RefKey, State } from "../src/constants";
+import { Events, Outputs, RefKeys, State } from "../src/constants";
 import { ArtifactCacheEntry } from "../src/contracts";
 import * as actionUtils from "../src/utils/actionUtils";
 
@@ -19,7 +19,8 @@ function getTempDir(): string {
 
 afterEach(() => {
     delete process.env[Events.Key];
-    delete process.env[RefKey];
+
+    RefKeys.forEach(refKey => delete process.env[refKey]);
 });
 
 afterAll(async () => {
@@ -326,15 +327,22 @@ test("resolvePaths exclusion pattern returns not found", async () => {
     }
 });
 
-test("isValidEvent returns true for event that has a ref", () => {
-    const event = Events.Push;
-    process.env[Events.Key] = event;
-    process.env[RefKey] = "ref/heads/feature";
-
-    const isValidEvent = actionUtils.isValidEvent();
-
-    expect(isValidEvent).toBe(true);
+const refKeySet = RefKeys.map(refKey => {
+    return [refKey];
 });
+
+test.each(refKeySet)(
+    "isValidEvent returns true for event that has a ref",
+    refKey => {
+        const event = Events.Push;
+        process.env[Events.Key] = event;
+        process.env[refKey] = "ref/heads/feature";
+
+        const isValidEvent = actionUtils.isValidEvent();
+
+        expect(isValidEvent).toBe(true);
+    }
+);
 
 test("unlinkFile unlinks file", async () => {
     const testDirectory = await fs.mkdtemp("unlinkFileTest");

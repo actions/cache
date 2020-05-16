@@ -34,4 +34,4 @@ export enum CompressionMethod {
 // is aborted.
 export const SocketTimeout = 5000;
 
-export const RefKey = "GITHUB_REF";
+export const RefKeys = ["ACTIONS_CACHE_REF", "GITHUB_REF"];
