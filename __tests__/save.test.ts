@@ -6,8 +6,7 @@ import {
     CacheFilename,
     CompressionMethod,
     Events,
-    Inputs,
-    RefKey
+    Inputs
 } from "../src/constants";
 import { ArtifactCacheEntry } from "../src/contracts";
 import run from "../src/save";
@@ -37,11 +36,6 @@ beforeAll(() => {
         }
     );
 
-    jest.spyOn(actionUtils, "isValidEvent").mockImplementation(() => {
-        const actualUtils = jest.requireActual("../src/utils/actionUtils");
-        return actualUtils.isValidEvent();
-    });
-
     jest.spyOn(actionUtils, "resolvePaths").mockImplementation(
         async filePaths => {
             return filePaths.map(x => path.resolve(x));
@@ -60,26 +54,11 @@ beforeAll(() => {
 
 beforeEach(() => {
     process.env[Events.Key] = Events.Push;
-    process.env[RefKey] = "refs/heads/feature-branch";
 });
 
 afterEach(() => {
     testUtils.clearInputs();
     delete process.env[Events.Key];
-    delete process.env[RefKey];
-});
-
-test("save with invalid event outputs warning", async () => {
-    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
-    const failedMock = jest.spyOn(core, "setFailed");
-    const invalidEvent = "commit_comment";
-    process.env[Events.Key] = invalidEvent;
-    delete process.env[RefKey];
-    await run();
-    expect(logWarningMock).toHaveBeenCalledWith(
-        `Event Validation Error: The event type ${invalidEvent} is not supported because it's not tied to a branch or tag ref.`
-    );
-    expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
 test("save with no primary key in state outputs warning", async () => {

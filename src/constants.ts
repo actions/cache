@@ -33,5 +33,3 @@ export enum CompressionMethod {
 // over the socket during this period, the socket is destroyed and the download
 // is aborted.
 export const SocketTimeout = 5000;
-
-export const RefKey = "GITHUB_REF";

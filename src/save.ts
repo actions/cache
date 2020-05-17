@@ -8,15 +8,6 @@ import * as utils from "./utils/actionUtils";
 
 async function run(): Promise<void> {
     try {
-        if (!utils.isValidEvent()) {
-            utils.logWarning(
-                `Event Validation Error: The event type ${
-                    process.env[Events.Key]
-                } is not supported because it's not tied to a branch or tag ref.`
-            );
-            return;
-        }
-
         const state = utils.getCacheState();
 
         // Inputs are re-evaluted before the post action, so we want the original key used for restore

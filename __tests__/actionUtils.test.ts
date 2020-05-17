@@ -4,7 +4,7 @@ import { promises as fs } from "fs";
 import * as os from "os";
 import * as path from "path";
 
-import { Events, Outputs, RefKey, State } from "../src/constants";
+import { Events, Outputs, State } from "../src/constants";
 import { ArtifactCacheEntry } from "../src/contracts";
 import * as actionUtils from "../src/utils/actionUtils";
 
@@ -19,7 +19,6 @@ function getTempDir(): string {
 
 afterEach(() => {
     delete process.env[Events.Key];
-    delete process.env[RefKey];
 });
 
 afterAll(async () => {
@@ -186,15 +185,6 @@ test("logWarning logs a message with a warning prefix", () => {
     expect(infoMock).toHaveBeenCalledWith(`[warning]${message}`);
 });
 
-test("isValidEvent returns false for event that does not have a branch or tag", () => {
-    const event = "foo";
-    process.env[Events.Key] = event;
-
-    const isValidEvent = actionUtils.isValidEvent();
-
-    expect(isValidEvent).toBe(false);
-});
-
 test("resolvePaths with no ~ in path", async () => {
     const filePath = ".cache";
 
@@ -324,16 +314,6 @@ test("resolvePaths exclusion pattern returns not found", async () => {
     } finally {
         process.chdir(originalCwd);
     }
-});
-
-test("isValidEvent returns true for event that has a ref", () => {
-    const event = Events.Push;
-    process.env[Events.Key] = event;
-    process.env[RefKey] = "ref/heads/feature";
-
-    const isValidEvent = actionUtils.isValidEvent();
-
-    expect(isValidEvent).toBe(true);
 });
 
 test("unlinkFile unlinks file", async () => {

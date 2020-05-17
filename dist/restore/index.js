@@ -3345,12 +3345,6 @@ function resolvePaths(patterns) {
     });
 }
 exports.resolvePaths = resolvePaths;
-// Cache token authorized for all events that are tied to a ref
-// See GitHub Context https://help.github.com/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions#github-context
-function isValidEvent() {
-    return constants_1.RefKey in process.env && Boolean(process.env[constants_1.RefKey]);
-}
-exports.isValidEvent = isValidEvent;
 function unlinkFile(path) {
     return util.promisify(fs.unlink)(path);
 }
@@ -4607,7 +4601,6 @@ var CompressionMethod;
 // over the socket during this period, the socket is destroyed and the download
 // is aborted.
 exports.SocketTimeout = 5000;
-exports.RefKey = "GITHUB_REF";
 
 
 /***/ }),
@@ -4699,11 +4692,6 @@ function run() {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            // Validate inputs, this can cause task failure
-            if (!utils.isValidEvent()) {
-                utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
-                return;
-            }
             const primaryKey = core.getInput(constants_1.Inputs.Key, { required: true });
             core.saveState(constants_1.State.CacheKey, primaryKey);
             const restoreKeys = core
