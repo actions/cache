@@ -79,7 +79,7 @@ test("setOutputAndState with exact match to set cache-hit output and state", () 
     expect(setOutputMock).toHaveBeenCalledWith(Outputs.CacheHit, "true");
     expect(setOutputMock).toHaveBeenCalledTimes(1);
 
-    expect(saveStateMock).toHaveBeenCalledWith(State.CacheResult, cacheKey);
+    expect(saveStateMock).toHaveBeenCalledWith(State.CacheMatchedKey, cacheKey);
     expect(saveStateMock).toHaveBeenCalledTimes(1);
 });
 
@@ -95,7 +95,7 @@ test("setOutputAndState with no exact match to set cache-hit output and state", 
     expect(setOutputMock).toHaveBeenCalledWith(Outputs.CacheHit, "false");
     expect(setOutputMock).toHaveBeenCalledTimes(1);
 
-    expect(saveStateMock).toHaveBeenCalledWith(State.CacheResult, cacheKey);
+    expect(saveStateMock).toHaveBeenCalledWith(State.CacheMatchedKey, cacheKey);
     expect(saveStateMock).toHaveBeenCalledTimes(1);
 });
 
@@ -109,7 +109,7 @@ test("getCacheState with no state returns undefined", () => {
 
     expect(state).toBe(undefined);
 
-    expect(getStateMock).toHaveBeenCalledWith(State.CacheResult);
+    expect(getStateMock).toHaveBeenCalledWith(State.CacheMatchedKey);
     expect(getStateMock).toHaveBeenCalledTimes(1);
 });
 
@@ -125,7 +125,7 @@ test("getCacheState with valid state", () => {
 
     expect(state).toEqual(cacheKey);
 
-    expect(getStateMock).toHaveBeenCalledWith(State.CacheResult);
+    expect(getStateMock).toHaveBeenCalledWith(State.CacheMatchedKey);
     expect(getStateMock).toHaveBeenCalledTimes(1);
 });
 

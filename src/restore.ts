@@ -17,7 +17,7 @@ async function run(): Promise<void> {
         }
 
         const primaryKey = core.getInput(Inputs.Key, { required: true });
-        core.saveState(State.CacheKey, primaryKey);
+        core.saveState(State.CachePrimaryKey, primaryKey);
 
         const restoreKeys = core
             .getInput(Inputs.RestoreKeys)
@@ -45,7 +45,7 @@ async function run(): Promise<void> {
                 return;
             }
 
-            // Store the cache result
+            // Store the matched cache key
             utils.setCacheState(cacheKey);
 
             const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
