@@ -1077,7 +1077,7 @@ function getVersion(app) {
 // Use zstandard if possible to maximize cache performance
 function getCompressionMethod() {
     return __awaiter(this, void 0, void 0, function* () {
-        if (process.platform === 'win32' && !isGnuTarInstalled()) {
+        if (process.platform === 'win32' && !(yield isGnuTarInstalled())) {
             // Disable zstd due to bug https://github.com/actions/cache/issues/301
             return constants_1.CompressionMethod.Gzip;
         }
