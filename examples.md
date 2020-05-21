@@ -427,6 +427,14 @@ When dependencies are installed later in the workflow, we must specify the same 
 
 ## Rust - Cargo
 
+### Simple end product build
+
+If `Cargo.lock` is checked into git, its hash can be used as a key
+to cache filesystem state suitable for the build. Use the `--locked` option
+with cargo build and test commands to ensure that the state cached at the
+post step corresponds to the contents of `Cargo.lock` that were hashed for
+the key.
+
 ```yaml
 - name: Cache cargo dependencies
   uses: actions/cache@v2
@@ -441,6 +449,91 @@ When dependencies are installed later in the workflow, we must specify the same 
   with:
     path: target
     key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+```
+
+### A separate job to fetch and cache the dependencies
+
+The files cached from `$CARGO_HOME` are platform-independent.
+If cargo build/test jobs are run on a matrix and `Cargo.lock` changes often,
+it might make sense to populate the cache with the matching state in one job,
+then reuse it in the matrix jobs.
+
+This example also uses a separate cache to avoid expensive syncs with the
+`crates.io-index` repository.
+
+```yaml
+jobs:
+  update-deps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - id: cargo-deps
+        name: Cache cargo dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+          key: cargo-deps-${{ hashFiles('**/Cargo.lock') }}
+
+      - if: ${{ steps.cargo-deps.outputs.cache-hit != 'true' }}
+        id: ls-crates-io-index
+        name: Get head commit hash of crates.io registry index
+        shell: bash
+        run: |
+          commit=$(
+            git ls-remote --heads https://github.com/rust-lang/crates.io-index.git master |
+            cut -f 1
+          )
+          echo "::set-output name=head::$commit"
+      - if: ${{ steps.cargo-deps.outputs.cache-hit != 'true' }}
+        name: Cache cargo registry index
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo/registry/index
+          key: cargo-index-${{ steps.ls-crates-io-index.outputs.head }}
+          restore-keys: cargo-index-
+
+      - if: ${{ steps.cargo-deps.outputs.cache-hit != 'true' }}
+        name: Fetch dependencies and update registry index
+        run: cargo fetch --locked
+
+  test:
+    needs: update-deps
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+
+      # https://github.com/actions/runner/issues/498
+      - if: ${{ runner.os == 'Windows' }}
+        name: Fix up Cargo.lock hash
+        shell: powershell
+        run: |
+          Get-ChildItem . -Recurse -Filter Cargo.lock |
+          Foreach-Object {
+            ((Get-Content $_.FullName) -join "`n") + "`n" |
+            Set-Content -NoNewline $_.FullName
+          }
+
+      - name: Restore cargo dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+          key: cargo-deps-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build and test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --locked
 ```
 
 ## Scala - SBT
