@@ -432,8 +432,9 @@ When dependencies are installed later in the workflow, we must specify the same 
   uses: actions/cache@v2
   with:
     path: |
-      ~/.cargo/registry
-      ~/.cargo/git
+      ~/.cargo/registry/index
+      ~/.cargo/registry/cache
+      ~/.cargo/git/db
     key: cargo-deps-${{ hashFiles('**/Cargo.lock') }}
 - name: Cache cargo build
   uses: actions/cache@v2
