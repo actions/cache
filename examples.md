@@ -251,7 +251,7 @@ Esy allows you to export built dependencies and import pre-built dependencies.
     ...(Build job)...
 
     # Re-export dependencies if anything has changed or if it is the first time
-    - name: Setting dependency cache 
+    - name: Setting dependency cache
       run: |
         esy export-dependencies
       if: steps.restore-cache.outputs.cache-hit != 'true'
@@ -428,13 +428,18 @@ When dependencies are installed later in the workflow, we must specify the same 
 ## Rust - Cargo
 
 ```yaml
-- uses: actions/cache@v2
+- name: Cache cargo dependencies
+  uses: actions/cache@v2
   with:
     path: |
       ~/.cargo/registry
       ~/.cargo/git
-      target
-    key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    key: cargo-deps-${{ hashFiles('**/Cargo.lock') }}
+- name: Cache cargo build
+  uses: actions/cache@v2
+  with:
+    path: target
+    key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
 ```
 
 ## Scala - SBT
