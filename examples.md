@@ -536,6 +536,103 @@ jobs:
           args: --locked
 ```
 
+### Testing a library
+
+Rust library projects typically [do not put][cargo-faq] `Cargo.lock` under
+version control. It can be generated with the `cargo generate-lockfile` command
+assisted by the registry index cache that is used and possibly updated
+for every workflow run. The same index cache is reused by the test jobs.
+
+[cargo-faq]: https://doc.rust-lang.org/cargo/faq.html#why-do-binaries-have-cargolock-in-version-control-but-not-libraries
+
+```yaml
+jobs:
+  update-deps:
+    runs-on: ubuntu-latest
+    outputs:
+      crates-io-index-head: ${{ steps.ls-crates-io-index.outputs.head }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - id: ls-crates-io-index
+        name: Get head commit hash of crates.io registry index
+        shell: bash
+        run: |
+          commit=$(
+            git ls-remote --heads https://github.com/rust-lang/crates.io-index.git master |
+            cut -f 1
+          )
+          echo "::set-output name=head::$commit"
+
+      - name: Cache cargo registry index
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo/registry/index
+          key: cargo-index-${{ steps.ls-crates-io-index.outputs.head }}
+          restore-keys: cargo-index-
+
+      - name: Generate Cargo.lock
+        run: cargo generate-lockfile
+
+      - id: cargo-deps
+        name: Cache dependency crates
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo/registry/cache
+          key: cargo-deps-${{ hashFiles('Cargo.lock') }}
+
+      - if: ${{ steps.cargo-deps.outputs.cache-hit != 'true' }}
+        name: Fetch dependencies
+        run: cargo fetch --locked
+
+      - name: Upload Cargo.lock
+        uses: actions/upload-artifact@v2
+        with:
+          name: lockfile
+          path: Cargo.lock
+
+  test:
+    needs: update-deps
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download Cargo.lock
+        uses: actions/download-artifact@v2
+        with:
+          name: lockfile
+
+      - name: Restore cargo registry index
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo/registry/index
+          key: cargo-index-${{ needs.update-deps.outputs.crates-io-index-head }}
+          # May miss on Windows:
+          # https://github.com/actions/cache/issues/330#issuecomment-637701649
+          restore-keys: cargo-index-
+
+      - name: Restore dependency crates
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo/registry/cache
+          key: cargo-deps-${{ hashFiles('Cargo.lock') }}
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --all-targets --locked
+
+      - name: Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --locked
+```
+
 ## Scala - SBT
 
 ```yaml
