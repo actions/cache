@@ -3,7 +3,7 @@ description: 'Cache artifacts like dependencies and build outputs to improve wor
 author: 'GitHub'
 inputs:
   path:
-    description: 'A directory to store and save the cache'
+    description: 'A list of files, directories, and wildcard patterns to cache and restore'
     required: true
   key:
     description: 'An explicit key for restoring and saving the cache'
