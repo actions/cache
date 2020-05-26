@@ -8,57 +8,27 @@ This action allows caching dependencies and build outputs to improve workflow ex
 
 See ["Caching dependencies to speed up workflows"](https://help.github.com/github/automating-your-workflow-with-github-actions/caching-dependencies-to-speed-up-workflows).
 
-## What's New in V2
+## What's New
 
-* Added support for caching multiple paths,
+* Added support for multiple paths, [glob patterns](https://github.com/actions/toolkit/tree/master/packages/glob), and single file caches. 
 
 ```yaml
-- name: Cache multiple relative paths
-  uses: actions/cache@v2
-  with:
-    path: |
-      node_modules
-      dist
-    key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
-```
-```yaml
-- name: Cache multiple absolute paths
+- name: Cache multiple paths
   uses: actions/cache@v2
   with:
     path: |
       ~/cache
-      /path/to/dependencies
-    key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
-```
-
-[glob patterns](https://github.com/actions/toolkit/tree/master/packages/glob), 
-
-```yaml
-- name: Cache using glob patterns
-  uses: actions/cache@v2
-  with:
-    path: |
-      **/*.ts
+      !~/cache/exclude
       **/node_modules
     key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
 ```
 
-and single file caches. 
-
-```yaml
-- name: Cache single file
-  uses: actions/cache@v2
-  with:
-    path: cache.tar
-    key: ${{ runner.os }}
-```
-
-* Increased perfomance and improved cache sizes using `zstd` compression
-> Note this feature is off for Windows runner that are using `bsdtar` (e.g., windows-latest hosted runner) due to a bug in ziping large random files with `bsdtar`
-* Allowed caching for all events with a ref
-> See [events that trigger workflow](https://help.github.com/en/actions/reference/events-that-trigger-workflows) for info on which events do not have a `GITHUB_REF`
+* Increased performance and improved cache sizes using `zstd` compression for Linux and macOS runners
+* Allowed caching for all events with a ref. See [events that trigger workflow](https://help.github.com/en/actions/reference/events-that-trigger-workflows) for info on which events do not have a `GITHUB_REF`
 * Released the [`@actions/cache`](https://github.com/actions/toolkit/tree/master/packages/cache) npm package to allow other actions to utilize caching
 * Added a best-effort cleanup step to delete the archive after extraction to reduce storage space
+
+Refer [here](https://github.com/actions/cache/blob/v1/README.md) for previous versions
 
 ## Usage
 
@@ -67,8 +37,7 @@ Create a workflow `.yml` file in your repositories `.github/workflows` directory
 
 ### Inputs
 
-* `path` - Directories to store and save the cache. Supports pattern matching, multipath and single file cache
-> See [`@actions/glob`](https://github.com/actions/toolkit/tree/master/packages/glob) for supported patterns. 
+* `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/master/packages/glob) for supported patterns. 
 * `key` - An explicit key for restoring and saving the cache
 * `restore-keys` - An ordered list of keys to use for restoring the cache if no cache hit occurred for key
 

@@ -44,7 +44,19 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 ```
 
 Depending on the environment, huge packages might be pre-installed in the global cache folder.
-If you do not want to include them, consider to move the cache folder like below.
+With `actions/cache@v2` you can now exclude unwanted packages with [exclude pattern](https://github.com/actions/toolkit/tree/master/packages/glob#exclude-patterns)
+```yaml
+- uses: actions/cache@v2
+  with:
+    path: | 
+      ~/.nuget/packages
+      !~/.nuget/packages/unwanted
+    key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+    restore-keys: |
+      ${{ runner.os }}-nuget-
+```
+
+Or you could move the cache folder like below.
 >Note: This workflow does not work for projects that require files to be placed in user profile package folder
 ```yaml
 env:
@@ -56,18 +68,6 @@ steps:
       key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
       restore-keys: |
         ${{ runner.os }}-nuget-
-```
-
-With `actions/cache@v2` you can now exclude unwanted packages with [exclude pattern](https://github.com/actions/toolkit/tree/master/packages/glob#exclude-patterns)
-```yaml
-- uses: actions/cache@v2
-  with:
-    path: | 
-      ~/.nuget/packages
-      !~/.nuget/packages/unwanted
-    key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-    restore-keys: |
-      ${{ runner.os }}-nuget-
 ```
 
 ## D - DUB
@@ -426,8 +426,7 @@ When dependencies are installed later in the workflow, we must specify the same 
 ## Rust - Cargo
 
 ```yaml
-- name: Cache cargo
-  uses: actions/cache@v2
+- uses: actions/cache@v2
   with:
     path: |
       ~/.cargo/registry
