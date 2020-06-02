@@ -20,6 +20,13 @@ beforeAll(() => {
         const actualUtils = jest.requireActual("../src/utils/actionUtils");
         return actualUtils.isValidEvent();
     });
+
+    jest.spyOn(actionUtils, "getInputAsArray").mockImplementation(
+        (name, options) => {
+            const actualUtils = jest.requireActual("../src/utils/actionUtils");
+            return actualUtils.getInputAsArray(name, options);
+        }
+    );
 });
 
 beforeEach(() => {

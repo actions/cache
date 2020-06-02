@@ -5306,7 +5306,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isValidEvent = exports.logWarning = exports.getCacheState = exports.setOutputAndState = exports.setCacheHitOutput = exports.setCacheState = exports.isExactKeyMatch = void 0;
+exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.getCacheState = exports.setOutputAndState = exports.setCacheHitOutput = exports.setCacheState = exports.isExactKeyMatch = void 0;
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(694);
 function isExactKeyMatch(key, cacheKey) {
@@ -5350,6 +5350,14 @@ function isValidEvent() {
     return constants_1.RefKey in process.env && Boolean(process.env[constants_1.RefKey]);
 }
 exports.isValidEvent = isValidEvent;
+function getInputAsArray(name, options) {
+    return core
+        .getInput(name, options)
+        .split("\n")
+        .map(s => s.trim())
+        .filter(x => x !== "");
+}
+exports.getInputAsArray = getInputAsArray;
 
 
 /***/ }),
@@ -6600,10 +6608,9 @@ function run() {
                 core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
                 return;
             }
-            const cachePaths = core
-                .getInput(constants_1.Inputs.Path, { required: true })
-                .split("\n")
-                .filter(x => x !== "");
+            const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
+                required: true
+            });
             try {
                 yield cache.saveCache(cachePaths, primaryKey);
             }

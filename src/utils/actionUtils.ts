@@ -45,3 +45,14 @@ export function logWarning(message: string): void {
 export function isValidEvent(): boolean {
     return RefKey in process.env && Boolean(process.env[RefKey]);
 }
+
+export function getInputAsArray(
+    name: string,
+    options?: core.InputOptions
+): string[] {
+    return core
+        .getInput(name, options)
+        .split("\n")
+        .map(s => s.trim())
+        .filter(x => x !== "");
+}

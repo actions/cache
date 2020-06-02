@@ -19,6 +19,14 @@ beforeAll(() => {
         return jest.requireActual("../src/utils/actionUtils").getCacheState();
     });
 
+    jest.spyOn(actionUtils, "getInputAsArray").mockImplementation(
+        (name, options) => {
+            return jest
+                .requireActual("../src/utils/actionUtils")
+                .getInputAsArray(name, options);
+        }
+    );
+
     jest.spyOn(actionUtils, "isExactKeyMatch").mockImplementation(
         (key, cacheResult) => {
             return jest

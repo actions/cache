@@ -2,8 +2,15 @@ import * as core from "@actions/core";
 
 import { Events, Outputs, RefKey, State } from "../src/constants";
 import * as actionUtils from "../src/utils/actionUtils";
+import * as testUtils from "../src/utils/testUtils";
 
 jest.mock("@actions/core");
+
+beforeAll(() => {
+    jest.spyOn(core, "getInput").mockImplementation((name, options) => {
+        return jest.requireActual("@actions/core").getInput(name, options);
+    });
+});
 
 afterEach(() => {
     delete process.env[Events.Key];
@@ -156,4 +163,34 @@ test("isValidEvent returns true for event that has a ref", () => {
     const isValidEvent = actionUtils.isValidEvent();
 
     expect(isValidEvent).toBe(true);
+});
+
+test("getInputAsArray returns empty array if not required and missing", () => {
+    expect(actionUtils.getInputAsArray("foo")).toEqual([]);
+});
+
+test("getInputAsArray throws error if required and missing", () => {
+    expect(() =>
+        actionUtils.getInputAsArray("foo", { required: true })
+    ).toThrowError();
+});
+
+test("getInputAsArray handles single line correctly", () => {
+    testUtils.setInput("foo", "bar");
+    expect(actionUtils.getInputAsArray("foo")).toEqual(["bar"]);
+});
+
+test("getInputAsArray handles multiple lines correctly", () => {
+    testUtils.setInput("foo", "bar\nbaz");
+    expect(actionUtils.getInputAsArray("foo")).toEqual(["bar", "baz"]);
+});
+
+test("getInputAsArray handles different new lines correctly", () => {
+    testUtils.setInput("foo", "bar\r\nbaz");
+    expect(actionUtils.getInputAsArray("foo")).toEqual(["bar", "baz"]);
+});
+
+test("getInputAsArray handles empty lines correctly", () => {
+    testUtils.setInput("foo", "\n\nbar\n\nbaz\n\n");
+    expect(actionUtils.getInputAsArray("foo")).toEqual(["bar", "baz"]);
 });

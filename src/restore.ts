@@ -19,15 +19,10 @@ async function run(): Promise<void> {
         const primaryKey = core.getInput(Inputs.Key, { required: true });
         core.saveState(State.CachePrimaryKey, primaryKey);
 
-        const restoreKeys = core
-            .getInput(Inputs.RestoreKeys)
-            .split("\n")
-            .filter(x => x !== "");
-
-        const cachePaths = core
-            .getInput(Inputs.Path, { required: true })
-            .split("\n")
-            .filter(x => x !== "");
+        const restoreKeys = utils.getInputAsArray(Inputs.RestoreKeys);
+        const cachePaths = utils.getInputAsArray(Inputs.Path, {
+            required: true
+        });
 
         try {
             const cacheKey = await cache.restoreCache(
