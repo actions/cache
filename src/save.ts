@@ -31,10 +31,9 @@ async function run(): Promise<void> {
             return;
         }
 
-        const cachePaths = core
-            .getInput(Inputs.Path, { required: true })
-            .split("\n")
-            .filter(x => x !== "");
+        const cachePaths = utils.getInputAsArray(Inputs.Path, {
+            required: true
+        });
 
         try {
             await cache.saveCache(cachePaths, primaryKey);
