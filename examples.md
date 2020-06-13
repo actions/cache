@@ -531,6 +531,8 @@ jobs:
 
       - name: Build and test
         uses: actions-rs/cargo@v1
+        env:
+          CARGO_INCREMENTAL: 0
         with:
           command: test
           args: --locked
@@ -597,6 +599,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    env:
+      CARGO_INCREMENTAL: 0
     steps:
       - uses: actions/checkout@v2
 
