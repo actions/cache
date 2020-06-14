@@ -25,16 +25,13 @@
   "dependencies": {
     "@actions/core": "^1.2.0",
     "@actions/exec": "^1.0.1",
-    "@actions/glob": "^0.1.0",
-    "@actions/http-client": "^1.0.6",
     "@actions/io": "^1.0.1",
-    "uuid": "^3.3.3"
+    "@actions/cache": "^0.2.1"
   },
   "devDependencies": {
     "@types/jest": "^24.0.13",
     "@types/nock": "^11.1.0",
     "@types/node": "^12.0.4",
-    "@types/uuid": "^3.4.5",
     "@typescript-eslint/eslint-plugin": "^2.7.0",
     "@typescript-eslint/parser": "^2.7.0",
     "@zeit/ncc": "^0.20.5",

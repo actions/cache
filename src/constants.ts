@@ -9,8 +9,8 @@ export enum Outputs {
 }
 
 export enum State {
-    CacheKey = "CACHE_KEY",
-    CacheResult = "CACHE_RESULT"
+    CachePrimaryKey = "CACHE_KEY",
+    CacheMatchedKey = "CACHE_RESULT"
 }
 
 export enum Events {
@@ -19,4 +19,4 @@ export enum Events {
     PullRequest = "pull_request"
 }
 
-export const CacheFilename = "cache.tgz";
+export const RefKey = "GITHUB_REF";

@@ -4,11 +4,13 @@ on:
   pull_request:
     branches:
       - master
+      - releases/**
     paths-ignore:
       - '**.md'
   push:
     branches:
       - master
+      - releases/**
     paths-ignore:
       - '**.md'
 
@@ -17,7 +19,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ubuntu-latest, ubuntu-16.04, windows-latest, macOS-latest]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -45,12 +47,23 @@ jobs:
       run: npm run lint
     - name: Build & Test
       run: npm run test
+    - name: Ensure dist/ folder is up-to-date
+      if: ${{ runner.os == 'Linux' }}
+      shell: bash
+      run: |
+        npm run build
+        if [ "$(git status --porcelain | wc -l)" -gt "0" ]; then
+          echo "Detected uncommitted changes after build.  See status below:"
+          git diff
+          exit 1
+        fi
+        
 
   # End to end save and restore
   test-save:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ubuntu-latest, ubuntu-16.04, windows-latest, macOS-latest]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -73,7 +86,7 @@ jobs:
     needs: test-save
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ubuntu-latest, ubuntu-16.04, windows-latest, macOS-latest]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:

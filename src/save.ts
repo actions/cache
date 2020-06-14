@@ -1,9 +1,7 @@
+import * as cache from "@actions/cache";
 import * as core from "@actions/core";
-import * as path from "path";
 
-import * as cacheHttpClient from "./cacheHttpClient";
-import { CacheFilename, Events, Inputs, State } from "./constants";
-import { createTar } from "./tar";
+import { Events, Inputs, State } from "./constants";
 import * as utils from "./utils/actionUtils";
 
 async function run(): Promise<void> {
@@ -12,9 +10,7 @@ async function run(): Promise<void> {
             utils.logWarning(
                 `Event Validation Error: The event type ${
                     process.env[Events.Key]
-                } is not supported. Only ${utils
-                    .getSupportedEvents()
-                    .join(", ")} events are supported at this time.`
+                } is not supported because it's not tied to a branch or tag ref.`
             );
             return;
         }
@@ -22,7 +18,7 @@ async function run(): Promise<void> {
         const state = utils.getCacheState();
 
         // Inputs are re-evaluted before the post action, so we want the original key used for restore
-        const primaryKey = core.getState(State.CacheKey);
+        const primaryKey = core.getState(State.CachePrimaryKey);
         if (!primaryKey) {
             utils.logWarning(`Error retrieving key from state.`);
             return;
@@ -35,45 +31,21 @@ async function run(): Promise<void> {
             return;
         }
 
-        core.debug("Reserving Cache");
-        const cacheId = await cacheHttpClient.reserveCache(primaryKey);
-        if (cacheId == -1) {
-            core.info(
-                `Unable to reserve cache with key ${primaryKey}, another job may be creating this cache.`
-            );
-            return;
+        const cachePaths = utils.getInputAsArray(Inputs.Path, {
+            required: true
+        });
+
+        try {
+            await cache.saveCache(cachePaths, primaryKey);
+        } catch (error) {
+            if (error.name === cache.ValidationError.name) {
+                throw error;
+            } else if (error.name === cache.ReserveCacheError.name) {
+                core.info(error.message);
+            } else {
+                utils.logWarning(error.message);
+            }
         }
-        core.debug(`Cache ID: ${cacheId}`);
-        const cachePaths = await utils.resolvePaths(
-            core
-                .getInput(Inputs.Path, { required: true })
-                .split("\n")
-                .filter(x => x !== "")
-        );
-
-        core.debug("Cache Paths:");
-        core.debug(`${JSON.stringify(cachePaths)}`);
-
-        const archiveFolder = await utils.createTempDirectory();
-        const archivePath = path.join(archiveFolder, CacheFilename);
-        core.debug(`Archive Path: ${archivePath}`);
-
-        await createTar(archiveFolder, cachePaths);
-
-        const fileSizeLimit = 5 * 1024 * 1024 * 1024; // 5GB per repo limit
-        const archiveFileSize = utils.getArchiveFileSize(archivePath);
-        core.debug(`File Size: ${archiveFileSize}`);
-        if (archiveFileSize > fileSizeLimit) {
-            utils.logWarning(
-                `Cache size of ~${Math.round(
-                    archiveFileSize / (1024 * 1024)
-                )} MB (${archiveFileSize} B) is over the 5GB limit, not saving cache.`
-            );
-            return;
-        }
-
-        core.debug(`Saving Cache (ID: ${cacheId})`);
-        await cacheHttpClient.saveCache(cacheId, archivePath);
     } catch (error) {
         utils.logWarning(error.message);
     }
