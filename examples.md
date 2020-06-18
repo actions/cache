@@ -120,8 +120,8 @@ steps:
 We cache the elements of the Cabal store separately, as the entirety of `~/.cabal` can grow very large for projects with many dependencies.
 
 ```yaml
-- uses: actions/cache@v2
-  name: Cache ~/.cabal/packages, ~/.cabal/store and dist-newstyle
+- name: Cache ~/.cabal/packages, ~/.cabal/store and dist-newstyle
+  uses: actions/cache@v2
   with:
     path: |
       ~/.cabal/packages
@@ -144,7 +144,8 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 ## Java - Maven
 
 ```yaml
-- uses: actions/cache@v2
+- name: Cache local Maven repository
+  uses: actions/cache@v2
   with:
     path: ~/.m2/repository
     key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
