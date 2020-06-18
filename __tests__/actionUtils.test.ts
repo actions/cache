@@ -194,3 +194,13 @@ test("getInputAsArray handles empty lines correctly", () => {
     testUtils.setInput("foo", "\n\nbar\n\nbaz\n\n");
     expect(actionUtils.getInputAsArray("foo")).toEqual(["bar", "baz"]);
 });
+
+test("getInputAsBoolean returns true if the value is set to 'true'", () => {
+    testUtils.setInput("foo", "true");
+    expect(actionUtils.getInputAsBoolean("foo")).toEqual(true);
+});
+
+test("getInputAsBoolean returns false if the value is set to anything else", () => {
+    testUtils.setInput("foo", "false");
+    expect(actionUtils.getInputAsBoolean("foo")).toEqual(false);
+});
