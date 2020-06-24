@@ -16,21 +16,25 @@ async function run(): Promise<void> {
         }
 
         const state = utils.getCacheState();
-        // Inputs are re-evaluated before the post action, so we want the original key used for restore
+
+        // Inputs are re-evaluted before the post action, so we want the original key used for restore
         const primaryKey = core.getState(State.CachePrimaryKey);
         if (!primaryKey) {
             utils.logWarning(`Error retrieving key from state.`);
             return;
         }
 
-        if (
-            utils.isExactKeyMatch(primaryKey, state) &&
-            !utils.getInputAsBoolean(Inputs.Update)
-        ) {
-            core.info(
-                `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
-            );
-            return;
+        if (utils.isExactKeyMatch(primaryKey, state)) {
+          if (core.getInput(Inputs.Update) === "true") {
+              core.info(
+                  `Cache hit occurred on the primary key ${primaryKey}, but updates were enabled, so updating cache.`
+              );
+          } else {
+              core.info(
+                  `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
+              );
+              return;
+          }
         }
 
         const cachePaths = utils.getInputAsArray(Inputs.Path, {

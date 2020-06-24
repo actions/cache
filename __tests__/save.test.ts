@@ -118,7 +118,8 @@ test("save with exact match returns early", async () => {
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
-test("save with exact match updates when configured", async () => {
+test("save with exact match and updates enabled updates the cache", async () => {
+    const infoMock = jest.spyOn(core, "info");
     const failedMock = jest.spyOn(core, "setFailed");
 
     const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
@@ -147,9 +148,11 @@ test("save with exact match updates when configured", async () => {
 
     await run();
 
+    expect(infoMock).toHaveBeenCalledWith(
+        `Cache hit occurred on the primary key ${primaryKey}, but updates were enabled, so updating cache.`
+    );
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
     expect(saveCacheMock).toHaveBeenCalledWith([inputPath], primaryKey);
-
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
