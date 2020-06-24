@@ -4,6 +4,7 @@
   - [C# - NuGet](#c---nuget)
   - [D - DUB](#d---dub)
   - [Elixir - Mix](#elixir---mix)
+  - [Git - Large File System](#git---large-file-system)
   - [Go - Modules](#go---modules)
   - [Haskell - Cabal](#haskell---cabal)
   - [Java - Gradle](#java---gradle)
@@ -102,6 +103,20 @@ steps:
     key: ${{ runner.os }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
     restore-keys: |
       ${{ runner.os }}-mix-
+```
+
+## Git - Large File System
+
+```yaml
+- uses: actions/checkout@v2
+- name: Get cache key of git-lfs files
+  id: git-lfs
+  run: echo "::set-output name=sha256::$(git lfs ls-files | openssl dgst -sha256)"
+- uses: actions/cache@v2
+  with:
+    path: .git/lfs
+    key: ${{ steps.git-lfs.outputs.sha256 }}
+- run: git lfs pull
 ```
 
 ## Go - Modules
