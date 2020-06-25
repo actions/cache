@@ -56,10 +56,3 @@ export function getInputAsArray(
         .map(s => s.trim())
         .filter(x => x !== "");
 }
-
-export function getInputAsBoolean(
-    name: string,
-    options?: core.InputOptions
-): boolean {
-    return core.getInput(name, options) === "true";
-}
