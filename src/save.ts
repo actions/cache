@@ -25,16 +25,16 @@ async function run(): Promise<void> {
         }
 
         if (utils.isExactKeyMatch(primaryKey, state)) {
-          if (core.getInput(Inputs.Update) === "true") {
-              core.info(
-                  `Cache hit occurred on the primary key ${primaryKey}, but updates were enabled, so updating cache.`
-              );
-          } else {
-              core.info(
-                  `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
-              );
-              return;
-          }
+            if (core.getInput(Inputs.Update) === "true") {
+                core.info(
+                    `Cache hit occurred on the primary key ${primaryKey}, but updates were enabled, so updating cache.`
+                );
+            } else {
+                core.info(
+                    `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
+                );
+                return;
+            }
         }
 
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
