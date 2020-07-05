@@ -6,6 +6,7 @@
   - [Elixir - Mix](#elixir---mix)
   - [Go - Modules](#go---modules)
   - [Haskell - Cabal](#haskell---cabal)
+  - [Haskell - Stack](#haskell---stack)
   - [Java - Gradle](#java---gradle)
   - [Java - Maven](#java---maven)
   - [Node - npm](#node---npm)
@@ -128,6 +129,19 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
       ~/.cabal/store
       dist-newstyle
     key: ${{ runner.os }}-${{ matrix.ghc }}
+```
+
+## Haskell - Stack
+
+```yaml
+- uses: actions/cache@v1
+  name: Cache ~/.stack
+  with:
+    path: ~/.stack
+    key: ${{ runner.os }}-stack-${{ hashFiles('**/stack.yaml.lock') }}-${{ hashFiles('**/package.yaml') }}
+    restore-keys: |
+      ${{ runner.os }}-stack-${{ hashFiles('**/stack.yaml.lock') }}-
+      ${{ runner.os }}-stack-
 ```
 
 ## Java - Gradle
