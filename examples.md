@@ -447,6 +447,7 @@ When dependencies are installed later in the workflow, we must specify the same 
     path: | 
       ~/.ivy2/cache
       ~/.sbt
+      ~/.cache/coursier/v1
     key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
 ```
 
