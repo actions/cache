@@ -5180,21 +5180,6 @@ const utils = __importStar(__webpack_require__(15));
 const constants_1 = __webpack_require__(931);
 function getTarPath(args, compressionMethod) {
     return __awaiter(this, void 0, void 0, function* () {
-        const IS_WINDOWS = process.platform === 'win32';
-        if (IS_WINDOWS) {
-            const systemTar = `${process.env['windir']}\\System32\\tar.exe`;
-            if (compressionMethod !== constants_1.CompressionMethod.Gzip) {
-                // We only use zstandard compression on windows when gnu tar is installed due to
-                // a bug with compressing large files with bsdtar + zstd
-                //args.push('--force-local');
-            }
-            else if (fs_1.existsSync(systemTar)) {
-                return systemTar;
-            }
-            else if (yield utils.isGnuTarInstalled()) {
-               // args.push('--force-local');
-            }
-        }
         return yield io.which('tar', true);
     });
 }
