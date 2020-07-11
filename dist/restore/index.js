@@ -5186,13 +5186,13 @@ function getTarPath(args, compressionMethod) {
             if (compressionMethod !== constants_1.CompressionMethod.Gzip) {
                 // We only use zstandard compression on windows when gnu tar is installed due to
                 // a bug with compressing large files with bsdtar + zstd
-                args.push('--force-local');
+                //args.push('--force-local');
             }
             else if (fs_1.existsSync(systemTar)) {
                 return systemTar;
             }
             else if (yield utils.isGnuTarInstalled()) {
-                args.push('--force-local');
+               // args.push('--force-local');
             }
         }
         return yield io.which('tar', true);
