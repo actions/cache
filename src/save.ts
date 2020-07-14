@@ -51,6 +51,6 @@ async function run(): Promise<void> {
     }
 }
 
-run();
+run().then(() => process.exit(0));
 
 export default run;
