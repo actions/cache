@@ -4,14 +4,12 @@ on:
   pull_request:
     branches:
       - main
-      - master
       - releases/**
     paths-ignore:
       - '**.md'
   push:
     branches:
       - main
-      - master
       - releases/**
     paths-ignore:
       - '**.md'
