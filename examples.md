@@ -136,7 +136,9 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 ```yaml
 - uses: actions/cache@v2
   with:
-    path: ~/.gradle/caches
+    path: |
+      ~/.gradle/caches
+      ~/.gradle/wrapper
     key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
     restore-keys: |
       ${{ runner.os }}-gradle-
