@@ -14,6 +14,7 @@
     - [Using multiple systems and `npm config`](#using-multiple-systems-and-npm-config)
   - [Node - Lerna](#node---lerna)
   - [Node - Yarn](#node---yarn)
+  - [Node - Yarn 2](#node---yarn-2)
   - [OCaml/Reason - esy](#ocamlreason---esy)
   - [PHP - Composer](#php---composer)
   - [Python - pip](#python---pip)
@@ -221,6 +222,24 @@ The yarn cache directory will depend on your operating system and version of `ya
 - name: Get yarn cache directory path
   id: yarn-cache-dir-path
   run: echo "::set-output name=dir::$(yarn cache dir)"
+
+- uses: actions/cache@v2
+  id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+  with:
+    path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+    key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-yarn-
+```
+
+
+## Node - Yarn 2
+The yarn 2 cache directory will depend on your config. See https://yarnpkg.com/configuration/yarnrc#cacheFolder for more info.
+
+```yaml
+- name: Get yarn cache directory path
+  id: yarn-cache-dir-path
+  run: echo "::set-output name=dir::$(yarn config get cacheFolder)"
 
 - uses: actions/cache@v2
   id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
