@@ -6877,7 +6877,7 @@ function run() {
         }
     });
 }
-run();
+run().then(() => process.exit());
 exports.default = run;
 
 
