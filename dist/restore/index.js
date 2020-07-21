@@ -1022,7 +1022,7 @@ const semver = __importStar(__webpack_require__(280));
 const util = __importStar(__webpack_require__(669));
 const uuid_1 = __webpack_require__(898);
 const constants_1 = __webpack_require__(931);
-// From https://github.com/actions/toolkit/blob/master/packages/tool-cache/src/tool-cache.ts#L23
+// From https://github.com/actions/toolkit/blob/main/packages/tool-cache/src/tool-cache.ts#L23
 function createTempDirectory() {
     return __awaiter(this, void 0, void 0, function* () {
         const IS_WINDOWS = process.platform === 'win32';
@@ -4444,9 +4444,10 @@ function downloadCacheStorageSDK(archiveLocation, archivePath, options) {
             try {
                 downloadProgress.startDisplayTimer();
                 while (!downloadProgress.isDone()) {
-                    const segmentSize = Math.min(maxSegmentSize, contentLength - downloadProgress.segmentOffset);
+                    const segmentStart = downloadProgress.segmentOffset + downloadProgress.segmentSize;
+                    const segmentSize = Math.min(maxSegmentSize, contentLength - segmentStart);
                     downloadProgress.nextSegment(segmentSize);
-                    const result = yield client.downloadToBuffer(downloadProgress.segmentOffset, segmentSize, {
+                    const result = yield client.downloadToBuffer(segmentStart, segmentSize, {
                         concurrency: options.downloadConcurrency,
                         onProgress: downloadProgress.onProgress()
                     });
