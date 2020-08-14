@@ -440,14 +440,89 @@ When dependencies are installed later in the workflow, we must specify the same 
 
 ## Scala - SBT
 
+SBT 1.2
 ```yaml
+- name: Cache SBT ivy cache
+  uses: actions/cache@v2
+  with:
+    path: ~/.ivy2/cache
+    key: ${{ runner.os }}-sbt-ivy-cache-${{ github.run_id }}
+    restore-keys: |
+      ${{ runner.os }}-sbt-ivy-cache-
 - name: Cache SBT
   uses: actions/cache@v2
   with:
-    path: | 
-      ~/.ivy2/cache
-      ~/.sbt
-    key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
+    path: ~/.sbt
+    key: ${{ runner.os }}-sbt-${{ github.run_id }}
+    restore-keys: |
+      ${{ runner.os }}-sbt-
+```
+
+SBT 1.3.0-1.3.10
+```yaml
+- name: Cache SBT ivy cache
+  uses: actions/cache@v2
+  with:
+    path: ~/.ivy2/cache
+    key: ${{ runner.os }}-sbt-ivy-cache-${{ github.run_id }}
+    restore-keys: |
+      ${{ runner.os }}-sbt-ivy-cache-
+- name: Cache SBT coursier cache
+  uses: actions/cache@v2
+  with:
+    path: ~/.coursier/cache
+    key: ${{ runner.os }}-sbt-coursier-cache-${{ github.run_id }}
+    restore-keys: |
+      ${{ runner.os }}-sbt-coursier-cache-
+- name: Cache SBT
+  uses: actions/cache@v2
+  with:
+    path: ~/.sbt
+    key: ${{ runner.os }}-sbt-${{ github.run_id }}
+    restore-keys: |
+      ${{ runner.os }}-sbt-
+```
+
+SBT 1.3.11+
+```yaml
+- name: Cache SBT ivy cache
+  uses: actions/cache@v2
+  with:
+    path: ~/.ivy2/cache
+    key: ${{ runner.os }}-sbt-ivy-cache-${{ github.run_id }}
+    restore-keys: |
+      ${{ runner.os }}-sbt-ivy-cache-
+- name: Cache SBT coursier cache (Linux)
+  uses: actions/cache@v2
+  if: startsWith(runner.os, 'Linux')
+  with:
+    path: ~/.cache/coursier/v1
+    key: ${{ runner.os }}-sbt-coursier-cache-${{ github.run_id }}
+    restore-keys: |
+      ${{ runner.os }}-sbt-coursier-cache-
+- name: Cache SBT coursier cache (macOS)
+  uses: actions/cache@v2
+  if: startsWith(runner.os, 'macOS')
+  with:
+    path: ~/Library/Caches/Coursier/v1
+    key: ${{ runner.os }}-sbt-coursier-cache-${{ github.run_id }}
+    restore-keys: |
+      ${{ runner.os }}-sbt-coursier-cache-
+- name: Cache SBT coursier cache (Windows)
+  uses: actions/cache@v2
+  if: startsWith(runner.os, 'Windows')
+  with:
+    path: ~\AppData\Local\Coursier\Cache\v1
+    key: ${{ runner.os }}-sbt-coursier-cache-${{ github.run_id }}
+    restore-keys: |
+      ${{ runner.os }}-sbt-coursier-cache-
+- name: Cache SBT
+  uses: actions/cache@v2
+  with:
+    path: ~/.sbt
+    key: ${{ runner.os }}-sbt-${{ github.run_id }}
+    restore-keys: |
+      ${{ runner.os }}-sbt-
 ```
 
 ## Swift, Objective-C - Carthage
