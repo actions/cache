@@ -142,6 +142,7 @@ Consider using [gradle-cache-action](https://github.com/burrunan/gradle-cache-ac
     path: |
       ~/.gradle/caches
       ~/.gradle/wrapper
+      !~/.gradle/wrapper/dists/**/gradle*.zip
     key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
     restore-keys: |
       ${{ runner.os }}-gradle-
