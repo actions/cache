@@ -22,6 +22,7 @@
     - [Multiple OSes in a workflow](#multiple-oss-in-a-workflow)
     - [Using pip to get cache location](#using-pip-to-get-cache-location)
     - [Using a script to get cache location](#using-a-script-to-get-cache-location)
+  - [Python - poetry](#python---poetry)
   - [R - renv](#r---renv)
     - [Simple example](#simple-example-1)
     - [Multiple OSes in a workflow](#multiple-oss-in-a-workflow-1)
@@ -302,7 +303,7 @@ For pip, the cache directory will vary by OS. See https://pip.pypa.io/en/stable/
 Locations:
  - Ubuntu: `~/.cache/pip`
  - Windows: `~\AppData\Local\pip\Cache`
- - macOS: `~/Library/Caches/pip`
+ - macOS: `~/Library/Caches/pip` 
 
 ### Simple example
 ```yaml
@@ -377,6 +378,17 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
     key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
     restore-keys: |
       ${{ runner.os }}-pip-
+```
+
+## Python - poetry
+
+```yaml
+- uses: actions/cache@v2
+  with:
+    path: ~/.cache/pypoetry
+    key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-poetry-
 ```
 
 ## R - renv
