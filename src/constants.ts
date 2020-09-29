@@ -1,7 +1,8 @@
 export enum Inputs {
     Key = "key",
     Path = "path",
-    RestoreKeys = "restore-keys"
+    RestoreKeys = "restore-keys",
+    OnlyCheckKey = "only-check-key"
 }
 
 export enum Outputs {

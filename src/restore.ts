@@ -1,4 +1,6 @@
 import * as cache from "@actions/cache";
+import { getCacheEntry } from "@actions/cache/lib/internal/cacheHttpClient";
+import { getCompressionMethod } from "@actions/cache/lib/internal/cacheUtils";
 import * as core from "@actions/core";
 
 import { Events, Inputs, State } from "./constants";
@@ -23,30 +25,48 @@ async function run(): Promise<void> {
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
             required: true
         });
+        const onlyCheck = utils.getInputAsBool(Inputs.OnlyCheckKey);
 
         try {
-            const cacheKey = await cache.restoreCache(
-                cachePaths,
-                primaryKey,
-                restoreKeys
-            );
-            if (!cacheKey) {
-                core.info(
-                    `Cache not found for input keys: ${[
-                        primaryKey,
-                        ...restoreKeys
-                    ].join(", ")}`
+            if (onlyCheck) {
+                const entry = await getCacheEntry([primaryKey], cachePaths, {
+                    compressionMethod: await getCompressionMethod()
+                });
+
+                if (entry && entry.archiveLocation) {
+                    core.info(`Cache found for key: ${primaryKey}`);
+                    utils.setCacheHitOutput(true);
+                } else {
+                    core.info(`Cache not found for key: ${primaryKey}`);
+                    utils.setCacheHitOutput(false);
+                }
+            } else {
+                const cacheKey = await cache.restoreCache(
+                    cachePaths,
+                    primaryKey,
+                    restoreKeys
                 );
-                return;
+                if (!cacheKey) {
+                    core.info(
+                        `Cache not found for input keys: ${[
+                            primaryKey,
+                            ...restoreKeys
+                        ].join(", ")}`
+                    );
+                    return;
+                }
+
+                // Store the matched cache key
+                utils.setCacheState(cacheKey);
+
+                const isExactKeyMatch = utils.isExactKeyMatch(
+                    primaryKey,
+                    cacheKey
+                );
+                utils.setCacheHitOutput(isExactKeyMatch);
+
+                core.info(`Cache restored from key: ${cacheKey}`);
             }
-
-            // Store the matched cache key
-            utils.setCacheState(cacheKey);
-
-            const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
-            utils.setCacheHitOutput(isExactKeyMatch);
-
-            core.info(`Cache restored from key: ${cacheKey}`);
         } catch (error) {
             if (error.name === cache.ValidationError.name) {
                 throw error;
