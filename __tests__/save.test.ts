@@ -91,6 +91,24 @@ test("save with no primary key in state outputs warning", async () => {
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
+test("save on GHES should no-op", async () => {
+    try {
+        process.env["GITHUB_SERVER_URL"] = "http://example.com";
+
+        const infoMock = jest.spyOn(core, "info");
+        const saveCacheMock = jest.spyOn(cache, "saveCache");
+
+        await run();
+
+        expect(saveCacheMock).toHaveBeenCalledTimes(0);
+        expect(infoMock).toHaveBeenCalledWith(
+            "Cache action is not supported on GHES"
+        );
+    } finally {
+        process.env["GITHUB_SERVER_URL"] = undefined;
+    }
+});
+
 test("save with exact match returns early", async () => {
     const infoMock = jest.spyOn(core, "info");
     const failedMock = jest.spyOn(core, "setFailed");

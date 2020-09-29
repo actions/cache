@@ -53,6 +53,30 @@ test("restore with invalid event outputs warning", async () => {
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
+test("restore on GHES should no-op", async () => {
+    try {
+        process.env["GITHUB_SERVER_URL"] = "http://example.com";
+
+        const infoMock = jest.spyOn(core, "info");
+        const restoreCacheMock = jest.spyOn(cache, "restoreCache");
+        const setCacheHitOutputMock = jest.spyOn(
+            actionUtils,
+            "setCacheHitOutput"
+        );
+
+        await run();
+
+        expect(restoreCacheMock).toHaveBeenCalledTimes(0);
+        expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+        expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
+        expect(infoMock).toHaveBeenCalledWith(
+            "Cache action is not supported on GHES"
+        );
+    } finally {
+        process.env["GITHUB_SERVER_URL"] = undefined;
+    }
+});
+
 test("restore with no path should fail", async () => {
     const failedMock = jest.spyOn(core, "setFailed");
     const restoreCacheMock = jest.spyOn(cache, "restoreCache");
