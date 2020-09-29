@@ -32,6 +32,8 @@ beforeAll(() => {
 beforeEach(() => {
     process.env[Events.Key] = Events.Push;
     process.env[RefKey] = "refs/heads/feature-branch";
+
+    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
 });
 
 afterEach(() => {
@@ -54,27 +56,20 @@ test("restore with invalid event outputs warning", async () => {
 });
 
 test("restore on GHES should no-op", async () => {
-    try {
-        process.env["GITHUB_SERVER_URL"] = "http://example.com";
+    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
 
-        const infoMock = jest.spyOn(core, "info");
-        const restoreCacheMock = jest.spyOn(cache, "restoreCache");
-        const setCacheHitOutputMock = jest.spyOn(
-            actionUtils,
-            "setCacheHitOutput"
-        );
+    const infoMock = jest.spyOn(core, "info");
+    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
+    const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
 
-        await run();
+    await run();
 
-        expect(restoreCacheMock).toHaveBeenCalledTimes(0);
-        expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
-        expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
-        expect(infoMock).toHaveBeenCalledWith(
-            "Cache action is not supported on GHES"
-        );
-    } finally {
-        process.env["GITHUB_SERVER_URL"] = undefined;
-    }
+    expect(restoreCacheMock).toHaveBeenCalledTimes(0);
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
+    expect(infoMock).toHaveBeenCalledWith(
+        "Cache action is not supported on GHES"
+    );
 });
 
 test("restore with no path should fail", async () => {
