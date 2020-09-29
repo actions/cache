@@ -2,7 +2,7 @@
 
 This action allows caching dependencies and build outputs to improve workflow execution time.
 
-<a href="https://github.com/actions/cache/actions?query=workflow%3ATests"><img alt="GitHub Actions status" src="https://github.com/actions/cache/workflows/Tests/badge.svg?branch=master&event=push"></a>
+<a href="https://github.com/actions/cache/actions?query=workflow%3ATests"><img alt="GitHub Actions status" src="https://github.com/actions/cache/workflows/Tests/badge.svg?branch=main&event=push"></a>
 
 ## Documentation
 
@@ -10,7 +10,7 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
 
 ## What's New
 
-* Added support for multiple paths, [glob patterns](https://github.com/actions/toolkit/tree/master/packages/glob), and single file caches. 
+* Added support for multiple paths, [glob patterns](https://github.com/actions/toolkit/tree/main/packages/glob), and single file caches. 
 
 ```yaml
 - name: Cache multiple paths
@@ -25,7 +25,7 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
 
 * Increased performance and improved cache sizes using `zstd` compression for Linux and macOS runners
 * Allowed caching for all events with a ref. See [events that trigger workflow](https://help.github.com/en/actions/reference/events-that-trigger-workflows) for info on which events do not have a `GITHUB_REF`
-* Released the [`@actions/cache`](https://github.com/actions/toolkit/tree/master/packages/cache) npm package to allow other actions to utilize caching
+* Released the [`@actions/cache`](https://github.com/actions/toolkit/tree/main/packages/cache) npm package to allow other actions to utilize caching
 * Added a best-effort cleanup step to delete the archive after extraction to reduce storage space
 
 Refer [here](https://github.com/actions/cache/blob/v1/README.md) for previous versions
@@ -37,7 +37,7 @@ Create a workflow `.yml` file in your repositories `.github/workflows` directory
 
 ### Inputs
 
-* `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/master/packages/glob) for supported patterns. 
+* `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns. 
 * `key` - An explicit key for restoring and saving the cache
 * `restore-keys` - An ordered list of keys to use for restoring the cache if no cache hit occurred for key
 
@@ -97,7 +97,7 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 - [Node - npm](./examples.md#node---npm)
 - [Node - Lerna](./examples.md#node---lerna)
 - [Node - Yarn](./examples.md#node---yarn)
-- [OCaml/Reason - esy](./examples.md##ocamlreason---esy)
+- [OCaml/Reason - esy](./examples.md#ocamlreason---esy)
 - [PHP - Composer](./examples.md#php---composer)
 - [Python - pip](./examples.md#python---pip)
 - [R - renv](./examples.md#r---renv)

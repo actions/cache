@@ -1,6 +1,6 @@
 {
   "name": "cache",
-  "version": "1.1.2",
+  "version": "2.1.1",
   "private": true,
   "description": "Cache dependencies and build outputs",
   "main": "dist/restore/index.js",
@@ -26,7 +26,7 @@
     "@actions/core": "^1.2.0",
     "@actions/exec": "^1.0.1",
     "@actions/io": "^1.0.1",
-    "@actions/cache": "^0.2.1"
+    "@actions/cache": "^1.0.2"
   },
   "devDependencies": {
     "@types/jest": "^24.0.13",

@@ -3,13 +3,13 @@ name: Tests
 on:
   pull_request:
     branches:
-      - master
+      - main
       - releases/**
     paths-ignore:
       - '**.md'
   push:
     branches:
-      - master
+      - main
       - releases/**
     paths-ignore:
       - '**.md'
@@ -34,7 +34,7 @@ jobs:
       run: |
         echo "::set-output name=dir::$(npm config get cache)"
     - name: Restore npm cache
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: ${{ steps.npm-cache.outputs.dir }}
         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
@@ -52,7 +52,7 @@ jobs:
       shell: bash
       run: |
         npm run build
-        if [ "$(git status --porcelain | wc -l)" -gt "0" ]; then
+        if [ "$(git diff --ignore-space-at-eol | wc -l)" -gt "0" ]; then
           echo "Detected uncommitted changes after build.  See status below:"
           git diff
           exit 1

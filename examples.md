@@ -14,16 +14,17 @@
     - [Using multiple systems and `npm config`](#using-multiple-systems-and-npm-config)
   - [Node - Lerna](#node---lerna)
   - [Node - Yarn](#node---yarn)
+  - [Node - Yarn 2](#node---yarn-2)
   - [OCaml/Reason - esy](#ocamlreason---esy)
   - [PHP - Composer](#php---composer)
   - [Python - pip](#python---pip)
     - [Simple example](#simple-example)
-    - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow)
+    - [Multiple OSes in a workflow](#multiple-oss-in-a-workflow)
     - [Using pip to get cache location](#using-pip-to-get-cache-location)
     - [Using a script to get cache location](#using-a-script-to-get-cache-location)
   - [R - renv](#r---renv)
     - [Simple example](#simple-example-1)
-    - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow-1)
+    - [Multiple OSes in a workflow](#multiple-oss-in-a-workflow-1)
   - [Ruby - Bundler](#ruby---bundler)
   - [Rust - Cargo](#rust---cargo)
   - [Scala - SBT](#scala---sbt)
@@ -44,7 +45,7 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 ```
 
 Depending on the environment, huge packages might be pre-installed in the global cache folder.
-With `actions/cache@v2` you can now exclude unwanted packages with [exclude pattern](https://github.com/actions/toolkit/tree/master/packages/glob#exclude-patterns)
+With `actions/cache@v2` you can now exclude unwanted packages with [exclude pattern](https://github.com/actions/toolkit/tree/main/packages/glob#exclude-patterns)
 ```yaml
 - uses: actions/cache@v2
   with:
@@ -135,7 +136,9 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 ```yaml
 - uses: actions/cache@v2
   with:
-    path: ~/.gradle/caches
+    path: |
+      ~/.gradle/caches
+      ~/.gradle/wrapper
     key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
     restore-keys: |
       ${{ runner.os }}-gradle-
@@ -221,6 +224,24 @@ The yarn cache directory will depend on your operating system and version of `ya
 - name: Get yarn cache directory path
   id: yarn-cache-dir-path
   run: echo "::set-output name=dir::$(yarn cache dir)"
+
+- uses: actions/cache@v2
+  id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+  with:
+    path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+    key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-yarn-
+```
+
+
+## Node - Yarn 2
+The yarn 2 cache directory will depend on your config. See https://yarnpkg.com/configuration/yarnrc#cacheFolder for more info.
+
+```yaml
+- name: Get yarn cache directory path
+  id: yarn-cache-dir-path
+  run: echo "::set-output name=dir::$(yarn config get cacheFolder)"
 
 - uses: actions/cache@v2
   id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
@@ -346,9 +367,9 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
 > Note: This uses an internal pip API and may not always work
 ```yaml
 - name: Get pip cache dir
- id: pip-cache
- run: |
-   python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
+  id: pip-cache
+  run: |
+    python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
 
 - uses: actions/cache@v2
   with:
