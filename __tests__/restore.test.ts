@@ -58,7 +58,7 @@ test("restore with invalid event outputs warning", async () => {
 test("restore on GHES should no-op", async () => {
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
 
-    const infoMock = jest.spyOn(core, "info");
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const restoreCacheMock = jest.spyOn(cache, "restoreCache");
     const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
 
@@ -67,7 +67,7 @@ test("restore on GHES should no-op", async () => {
     expect(restoreCacheMock).toHaveBeenCalledTimes(0);
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
-    expect(infoMock).toHaveBeenCalledWith(
+    expect(logWarningMock).toHaveBeenCalledWith(
         "Cache action is not supported on GHES"
     );
 });

@@ -39995,7 +39995,7 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             if (utils.isGhes()) {
-                core.info("Cache action is not supported on GHES");
+                utils.logWarning("Cache action is not supported on GHES");
                 utils.setCacheHitOutput(false);
                 return;
             }

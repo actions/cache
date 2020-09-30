@@ -96,13 +96,13 @@ test("save with no primary key in state outputs warning", async () => {
 test("save on GHES should no-op", async () => {
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
 
-    const infoMock = jest.spyOn(core, "info");
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const saveCacheMock = jest.spyOn(cache, "saveCache");
 
     await run();
 
     expect(saveCacheMock).toHaveBeenCalledTimes(0);
-    expect(infoMock).toHaveBeenCalledWith(
+    expect(logWarningMock).toHaveBeenCalledWith(
         "Cache action is not supported on GHES"
     );
 });
