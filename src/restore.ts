@@ -6,6 +6,12 @@ import * as utils from "./utils/actionUtils";
 
 async function run(): Promise<void> {
     try {
+        if (utils.isGhes()) {
+            utils.logWarning("Cache action is not supported on GHES");
+            utils.setCacheHitOutput(false);
+            return;
+        }
+
         // Validate inputs, this can cause task failure
         if (!utils.isValidEvent()) {
             utils.logWarning(

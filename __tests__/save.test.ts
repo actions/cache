@@ -44,6 +44,8 @@ beforeAll(() => {
 beforeEach(() => {
     process.env[Events.Key] = Events.Push;
     process.env[RefKey] = "refs/heads/feature-branch";
+
+    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
 });
 
 afterEach(() => {
@@ -89,6 +91,20 @@ test("save with no primary key in state outputs warning", async () => {
     );
     expect(logWarningMock).toHaveBeenCalledTimes(1);
     expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
+test("save on GHES should no-op", async () => {
+    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
+
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const saveCacheMock = jest.spyOn(cache, "saveCache");
+
+    await run();
+
+    expect(saveCacheMock).toHaveBeenCalledTimes(0);
+    expect(logWarningMock).toHaveBeenCalledWith(
+        "Cache action is not supported on GHES"
+    );
 });
 
 test("save with exact match returns early", async () => {

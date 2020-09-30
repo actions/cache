@@ -32,6 +32,8 @@ beforeAll(() => {
 beforeEach(() => {
     process.env[Events.Key] = Events.Push;
     process.env[RefKey] = "refs/heads/feature-branch";
+
+    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
 });
 
 afterEach(() => {
@@ -51,6 +53,23 @@ test("restore with invalid event outputs warning", async () => {
         `Event Validation Error: The event type ${invalidEvent} is not supported because it's not tied to a branch or tag ref.`
     );
     expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
+test("restore on GHES should no-op", async () => {
+    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
+
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
+    const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
+
+    await run();
+
+    expect(restoreCacheMock).toHaveBeenCalledTimes(0);
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
+    expect(logWarningMock).toHaveBeenCalledWith(
+        "Cache action is not supported on GHES"
+    );
 });
 
 test("restore with no path should fail", async () => {
