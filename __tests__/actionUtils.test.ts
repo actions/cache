@@ -15,7 +15,6 @@ beforeAll(() => {
 afterEach(() => {
     delete process.env[Events.Key];
     delete process.env[RefKey];
-    testUtils.clearInputs();
 });
 
 test("isGhes returns true if server url is not github.com", () => {
@@ -215,7 +214,7 @@ test("getInputAsArray handles empty lines correctly", () => {
 });
 
 test("getInputAsInt returns undefined if input not set", () => {
-    expect(actionUtils.getInputAsInt("foo")).toBeUndefined();
+    expect(actionUtils.getInputAsInt("undefined")).toBeUndefined();
 });
 
 test("getInputAsInt returns value if input is valid", () => {
@@ -226,4 +225,10 @@ test("getInputAsInt returns value if input is valid", () => {
 test("getInputAsInt returns undefined if input is invalid or NaN", () => {
     testUtils.setInput("foo", "bar");
     expect(actionUtils.getInputAsInt("foo")).toBeUndefined();
+});
+
+test("getInputAsInt throws if required and value missing", () => {
+    expect(() =>
+        actionUtils.getInputAsInt("undefined", { required: true })
+    ).toThrowError();
 });

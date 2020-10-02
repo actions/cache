@@ -68,8 +68,8 @@ export function getInputAsInt(
     name: string,
     options?: core.InputOptions
 ): number | undefined {
-    const value = Number(core.getInput(name, options));
-    if (Number.isNaN(value) || value < 0) {
+    const value = parseInt(core.getInput(name, options));
+    if (isNaN(value) || value < 0) {
         return undefined;
     }
     return value;

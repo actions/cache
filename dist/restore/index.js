@@ -31354,8 +31354,8 @@ function getInputAsArray(name, options) {
 }
 exports.getInputAsArray = getInputAsArray;
 function getInputAsInt(name, options) {
-    const value = Number(core.getInput(name, options));
-    if (Number.isNaN(value) || value < 0) {
+    const value = parseInt(core.getInput(name, options));
+    if (isNaN(value) || value < 0) {
         return undefined;
     }
     return value;
