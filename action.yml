@@ -12,7 +12,7 @@ inputs:
     description: 'An ordered list of keys to use for restoring the cache if no cache hit occurred for key'
     required: false
   upload-chunk-size:
-    description: 'The chunk size used when uploading large cache files'
+    description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
 outputs:
   cache-hit:
