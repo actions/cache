@@ -1,6 +1,7 @@
 # Examples
 
 - [Examples](#examples)
+  - [C++ - CPM.cmake](#c---cpm.cmake)
   - [C# - NuGet](#c---nuget)
   - [D - DUB](#d---dub)
   - [Elixir - Mix](#elixir---mix)
@@ -31,6 +32,29 @@
   - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
   - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
   - [Swift - Swift Package Manager](#swift---swift-package-manager)
+
+## C++ - CPM.cmake
+
+Using [CPM.cmake](https://github.com/TheLartians/CPM.cmake):
+
+```yaml
+- name: Set up cache
+  id: cache-cpm
+  uses: actions/cache@v2
+  with:
+    path: ~/cpm-cache
+    key: ${{ runner.os }}-cpm-${{ hashFiles('**/') }}
+    restore-keys: |
+      ${{ runner.os }}-cpm-
+                  
+- name: Build CMake
+  run: |
+    mkdir build && cd build
+    cmake -DCPM_SOURCE_CACHE=~/cpm-cache ..
+    make -j2
+```
+
+Pass `CPM_SOURCE_CACHE` to CMake as `-DCPM_SOURCE_CACHE=<path to cache directory>`.
 
 ## C# - NuGet
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
