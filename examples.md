@@ -17,6 +17,7 @@
   - [Node - Yarn 2](#node---yarn-2)
   - [OCaml/Reason - esy](#ocamlreason---esy)
   - [PHP - Composer](#php---composer)
+  - [PowerShell](#powershell)
   - [Python - pip](#python---pip)
     - [Simple example](#simple-example)
     - [Multiple OSes in a workflow](#multiple-oss-in-a-workflow)
@@ -293,6 +294,30 @@ Esy allows you to export built dependencies and import pre-built dependencies.
     key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
     restore-keys: |
       ${{ runner.os }}-composer-
+```
+
+## PowerShell
+
+For PowerShell, the cache directory will vary by OS.
+
+Locations:
+ - Ubuntu: `~/.local/share/powershell/Modules`
+ - Windows: `~\Documents\PowerShell\Modules`
+ - macOS: `~/.local/share/powershell/Modules`
+
+```yaml
+- name: Get PowerShell Cache Directory
+  id: powershell-cache
+- uses: actions/cache@v2
+  with:
+    path: "~/.local/share/powershell/Modules"
+    key: ${{ runner.os }}-PS-SqlServer-PSScriptAnalyzer
+- name: Install PowerShell modules
+  if: steps.powershell-cache.outputs.cache-hit != 'true'
+  shell: pwsh
+  run: |
+    Set-PSRepository PSGallery -InstallationPolicy Trusted
+    Install-Module SqlServer, PSScriptAnalyzer -ErrorAction Stop
 ```
 
 ## Python - pip
