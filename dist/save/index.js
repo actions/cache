@@ -31296,7 +31296,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.getCacheState = exports.setOutputAndState = exports.setCacheHitOutput = exports.setCacheState = exports.isExactKeyMatch = exports.isGhes = void 0;
+exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.getCacheState = exports.setOutputAndState = exports.setCacheHitOutput = exports.setCacheState = exports.isExactKeyMatch = exports.isGhes = void 0;
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(694);
 function isGhes() {
@@ -31353,6 +31353,14 @@ function getInputAsArray(name, options) {
         .filter(x => x !== "");
 }
 exports.getInputAsArray = getInputAsArray;
+function getInputAsInt(name, options) {
+    const value = parseInt(core.getInput(name, options));
+    if (isNaN(value) || value < 0) {
+        return undefined;
+    }
+    return value;
+}
+exports.getInputAsInt = getInputAsInt;
 
 
 /***/ }),
@@ -38353,7 +38361,9 @@ function run() {
                 required: true
             });
             try {
-                yield cache.saveCache(cachePaths, primaryKey);
+                yield cache.saveCache(cachePaths, primaryKey, {
+                    uploadChunkSize: utils.getInputAsInt(constants_1.Inputs.UploadChunkSize)
+                });
             }
             catch (error) {
                 if (error.name === cache.ValidationError.name) {
@@ -38574,6 +38584,7 @@ var Inputs;
     Inputs["Key"] = "key";
     Inputs["Path"] = "path";
     Inputs["RestoreKeys"] = "restore-keys";
+    Inputs["UploadChunkSize"] = "upload-chunk-size";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {

@@ -11,6 +11,9 @@ inputs:
   restore-keys:
     description: 'An ordered list of keys to use for restoring the cache if no cache hit occurred for key'
     required: false
+  upload-chunk-size:
+    description: 'The chunk size used to split up large files during upload, in bytes'
+    required: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'

@@ -1,6 +1,6 @@
 {
   "name": "cache",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "private": true,
   "description": "Cache dependencies and build outputs",
   "main": "dist/restore/index.js",

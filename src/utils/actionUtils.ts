@@ -63,3 +63,14 @@ export function getInputAsArray(
         .map(s => s.trim())
         .filter(x => x !== "");
 }
+
+export function getInputAsInt(
+    name: string,
+    options?: core.InputOptions
+): number | undefined {
+    const value = parseInt(core.getInput(name, options));
+    if (isNaN(value) || value < 0) {
+        return undefined;
+    }
+    return value;
+}

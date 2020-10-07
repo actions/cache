@@ -212,3 +212,23 @@ test("getInputAsArray handles empty lines correctly", () => {
     testUtils.setInput("foo", "\n\nbar\n\nbaz\n\n");
     expect(actionUtils.getInputAsArray("foo")).toEqual(["bar", "baz"]);
 });
+
+test("getInputAsInt returns undefined if input not set", () => {
+    expect(actionUtils.getInputAsInt("undefined")).toBeUndefined();
+});
+
+test("getInputAsInt returns value if input is valid", () => {
+    testUtils.setInput("foo", "8");
+    expect(actionUtils.getInputAsInt("foo")).toBe(8);
+});
+
+test("getInputAsInt returns undefined if input is invalid or NaN", () => {
+    testUtils.setInput("foo", "bar");
+    expect(actionUtils.getInputAsInt("foo")).toBeUndefined();
+});
+
+test("getInputAsInt throws if required and value missing", () => {
+    expect(() =>
+        actionUtils.getInputAsInt("undefined", { required: true })
+    ).toThrowError();
+});
