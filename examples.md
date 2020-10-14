@@ -194,12 +194,13 @@ If using `npm config` to retrieve the cache directory, ensure you run [actions/s
 
 ```yaml
 - name: Get npm cache directory
-  id: npm-cache
+  id: npm-cache-dir
   run: |
     echo "::set-output name=dir::$(npm config get cache)"
 - uses: actions/cache@v2
+  id: npm-cache # use this to check for `cache-hit` ==> if: steps.npm-cache.outputs.cache-hit != 'true'
   with:
-    path: ${{ steps.npm-cache.outputs.dir }}
+    path: ${{ steps.npm-cache-dir.outputs.dir }}
     key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
     restore-keys: |
       ${{ runner.os }}-node-
