@@ -150,7 +150,7 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 - name: Cache local Maven repository
   uses: actions/cache@v2
   with:
-    path: ~/.m2/repository
+    path: ~/.m2
     key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
     restore-keys: |
       ${{ runner.os }}-maven-
