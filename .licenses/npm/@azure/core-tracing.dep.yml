@@ -1,14 +1,16 @@
 ---
-name: "@actions/cache"
-version: 1.0.2
+name: "@azure/core-tracing"
+version: 1.0.0-preview.8
 type: npm
-summary: Actions cache lib
-homepage: https://github.com/actions/toolkit/tree/main/packages/cache
+summary: Provides low-level interfaces and helper methods for tracing in Azure SDK
+homepage: https://github.com/azure/azure-sdk-for-js/tree/master/sdk/core/core-tracing
 license: mit
 licenses:
-- sources: Auto-generated MIT license text
+- sources: LICENSE
   text: |
-    MIT License
+    The MIT License (MIT)
+
+    Copyright (c) 2020 Microsoft
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
