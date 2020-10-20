@@ -1,6 +1,6 @@
 ---
-name: "@actions/http-client"
-version: 1.0.9
+name: "@opentelemetry/api"
+version: 0.10.2
 type: npm
 summary: 
 homepage: 
