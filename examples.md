@@ -309,7 +309,7 @@ Locations:
 - uses: actions/cache@v2
   with:
     path: ~/.cache/pip
-    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/setup.py') }}
     restore-keys: |
       ${{ runner.os }}-pip-
 ```
@@ -323,7 +323,7 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
   if: startsWith(runner.os, 'Linux')
   with:
     path: ~/.cache/pip
-    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/setup.py') }}
     restore-keys: |
       ${{ runner.os }}-pip-
 
@@ -331,7 +331,7 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
   if: startsWith(runner.os, 'macOS')
   with:
     path: ~/Library/Caches/pip
-    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/setup.py') }}
     restore-keys: |
       ${{ runner.os }}-pip-
 
@@ -339,7 +339,7 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
   if: startsWith(runner.os, 'Windows')
   with:
     path: ~\AppData\Local\pip\Cache
-    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/setup.py') }}
     restore-keys: |
       ${{ runner.os }}-pip-
 ```
@@ -357,7 +357,7 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
   uses: actions/cache@v2
   with:
     path: ${{ steps.pip-cache.outputs.dir }}
-    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/setup.py') }}
     restore-keys: |
       ${{ runner.os }}-pip-
 ```
@@ -374,7 +374,7 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
 - uses: actions/cache@v2
   with:
     path: ${{ steps.pip-cache.outputs.dir }}
-    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/setup.py') }}
     restore-keys: |
       ${{ runner.os }}-pip-
 ```
