@@ -225,11 +225,18 @@ The yarn cache directory will depend on your operating system and version of `ya
   id: yarn-cache-dir-path
   run: echo "::set-output name=dir::$(yarn cache dir)"
 
+# Use week number for automatically purging the cache every week. This is
+# useful because caching yarn-cache would otherwise lead it to grow
+# indefinitely since old dependencies are never purged.
+- name: Get week number
+  id: week-number
+  run: echo "::set-output name=value::$(date +%W)"
+
 - uses: actions/cache@v2
   id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
   with:
     path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-    key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+    key: ${{ runner.os }}-${{ steps.week-number.outputs.value }}-yarn-${{ hashFiles('**/yarn.lock') }}
     restore-keys: |
       ${{ runner.os }}-yarn-
 ```
