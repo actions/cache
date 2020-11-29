@@ -74,3 +74,10 @@ export function getInputAsInt(
     }
     return value;
 }
+
+export function getInputAsBoolean(
+    name: string,
+    options?: core.InputOptions
+): boolean {
+    return core.getInput(name, options) === "true";
+}

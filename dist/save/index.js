@@ -4595,6 +4595,7 @@ var Inputs;
     Inputs["Path"] = "path";
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
+    Inputs["ReadOnly"] = "read-only";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -36910,7 +36911,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.getCacheState = exports.setOutputAndState = exports.setCacheHitOutput = exports.setCacheState = exports.isExactKeyMatch = exports.isGhes = void 0;
+exports.getInputAsBoolean = exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.getCacheState = exports.setOutputAndState = exports.setCacheHitOutput = exports.setCacheState = exports.isExactKeyMatch = exports.isGhes = void 0;
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(196);
 function isGhes() {
@@ -36975,6 +36976,10 @@ function getInputAsInt(name, options) {
     return value;
 }
 exports.getInputAsInt = getInputAsInt;
+function getInputAsBoolean(name, options) {
+    return core.getInput(name, options) === "true";
+}
+exports.getInputAsBoolean = getInputAsBoolean;
 
 
 /***/ }),
@@ -44209,6 +44214,10 @@ function run() {
         try {
             if (utils.isGhes()) {
                 utils.logWarning("Cache action is not supported on GHES");
+                return;
+            }
+            if (utils.getInputAsBoolean(constants_1.Inputs.ReadOnly)) {
+                core.info("Cache running in read-only mode, not saving cache.");
                 return;
             }
             if (!utils.isValidEvent()) {
