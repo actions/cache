@@ -21,7 +21,7 @@ runs:
   using: 'node12'
   main: 'dist/restore/index.js'
   post: 'dist/save/index.js'
-  post-if: 'success()'
+  post-if: 'success() && !env.CACHE_SKIP_SAVE'
 branding:
   icon: 'archive'
   color: 'gray-dark'
