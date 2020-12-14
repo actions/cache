@@ -41,6 +41,9 @@ Create a workflow `.yml` file in your repositories `.github/workflows` directory
 * `key` - An explicit key for restoring and saving the cache
 * `restore-keys` - An ordered list of keys to use for restoring the cache if no cache hit occurred for key
 
+### Environment Variables
+* `CACHE_SKIP_SAVE` - [optinal] When set on step, any modifications made to the restored cache will not be persisted back at the end of the step.  
+
 ### Outputs
 
 * `cache-hit` - A boolean value to indicate an exact match was found for the key
@@ -78,6 +81,8 @@ jobs:
       run: /generate-primes.sh -d prime-numbers
 
     - name: Use Prime Numbers
+      env:
+        CACHE_SKIP_SAVE: true
       run: /primes.sh -d prime-numbers
 ```
 
