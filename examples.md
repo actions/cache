@@ -22,6 +22,7 @@
     - [Multiple OSes in a workflow](#multiple-oss-in-a-workflow)
     - [Using pip to get cache location](#using-pip-to-get-cache-location)
     - [Using a script to get cache location](#using-a-script-to-get-cache-location)
+  - [Python - pipenv](#python---pipenv)
   - [R - renv](#r---renv)
     - [Simple example](#simple-example-1)
     - [Multiple OSes in a workflow](#multiple-oss-in-a-workflow-1)
@@ -377,6 +378,17 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
     key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
     restore-keys: |
       ${{ runner.os }}-pip-
+```
+
+## Python - pipenv
+
+```yaml
+- uses: actions/cache@v2
+  with:
+    path: ~/.local/share/virtualenvs
+    key: ${{ runner.os }}-pipenv-${{ hashFiles('Pipfile.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-pipenv-
 ```
 
 ## R - renv

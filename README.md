@@ -100,6 +100,7 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 - [OCaml/Reason - esy](./examples.md#ocamlreason---esy)
 - [PHP - Composer](./examples.md#php---composer)
 - [Python - pip](./examples.md#python---pip)
+- [Python - pipenv](./examples.md#python---pipenv)
 - [R - renv](./examples.md#r---renv)
 - [Ruby - Bundler](./examples.md#ruby---bundler)
 - [Rust - Cargo](./examples.md#rust---cargo)
