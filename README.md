@@ -70,6 +70,8 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Cache Primes
+      env:
+        CACHE_SKIP_SAVE: true
       id: cache-primes
       uses: actions/cache@v2
       with:
