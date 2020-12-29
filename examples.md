@@ -4,6 +4,7 @@
   - [C# - NuGet](#c---nuget)
   - [D - DUB](#d---dub)
   - [Elixir - Mix](#elixir---mix)
+  - [Erlang - Rebar3](#erlang--rebar3)
   - [Go - Modules](#go---modules)
   - [Haskell - Cabal](#haskell---cabal)
   - [Java - Gradle](#java---gradle)
@@ -102,6 +103,18 @@ steps:
     key: ${{ runner.os }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
     restore-keys: |
       ${{ runner.os }}-mix-
+```
+
+## Erlang - Rebar3
+```yaml
+- uses: actions/cache@v2
+  with:
+    path: |
+      ~/.cache/rebar3
+      _build
+    key: ${{ runner.os }}-erlang-${{ env.OTP_VERSION }}-${{ hashFiles('**/*rebar.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-erlang-${{ env.OTP_VERSION }}-
 ```
 
 ## Go - Modules
