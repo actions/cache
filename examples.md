@@ -134,12 +134,16 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 
 ## Java - Gradle
 
+Consider using [gradle-cache-action](https://github.com/burrunan/gradle-cache-action) as it provides fine-grained
+[@actions/cache](https://github.com/actions/toolkit/tree/main/packages/cache)-based caching for Gradle builds.
+
 ```yaml
 - uses: actions/cache@v2
   with:
     path: |
       ~/.gradle/caches
       ~/.gradle/wrapper
+      !~/.gradle/wrapper/dists/**/gradle*.zip
     key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
     restore-keys: |
       ${{ runner.os }}-gradle-
