@@ -140,7 +140,7 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
     path: |
       ~/.gradle/caches
       ~/.gradle/wrapper
-    key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+    key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
     restore-keys: |
       ${{ runner.os }}-gradle-
 ```
