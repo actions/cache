@@ -44,6 +44,7 @@ async function run(): Promise<void> {
             await cache.saveCache(cachePaths, primaryKey, {
                 uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
             });
+            core.info(`Cache saved with key: ${primaryKey}`);
         } catch (error) {
             if (error.name === cache.ValidationError.name) {
                 throw error;
