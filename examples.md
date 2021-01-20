@@ -468,21 +468,28 @@ Replace `~/.local/share/renv` with the correct `path` if not using Ubuntu.
 
 ## Ruby - Bundler
 
+[`ruby/setup-ruby`](https://github.com/ruby/setup-ruby) provides a way to automatically run `bundle install` and cache the result:
+
+```yaml
+- uses: ruby/setup-ruby@v1
+  with:
+    bundler-cache: true
+```
+
+If necessary, you can also cache gems manually using `actions/cache`:
+
 ```yaml
 - uses: actions/cache@v2
   with:
     path: vendor/bundle
-    key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+    key: bundle-use-ruby-${{ matrix.os }}-${{ matrix.ruby }}-${{ hashFiles('**/Gemfile.lock') }}
     restore-keys: |
-      ${{ runner.os }}-gems-
-```
-When dependencies are installed later in the workflow, we must specify the same path for the bundler.
-
-```yaml
-- name: Bundle install
+      bundle-use-ruby-${{ matrix.os }}-${{ matrix.ruby }}-
+- name: bundle install
   run: |
+    bundle config deployment true
     bundle config path vendor/bundle
-    bundle install --jobs 4 --retry 3
+    bundle install --jobs 4
 ```
 
 ## Rust - Cargo
