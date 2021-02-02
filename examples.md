@@ -468,21 +468,18 @@ Replace `~/.local/share/renv` with the correct `path` if not using Ubuntu.
 
 ## Ruby - Bundler
 
-```yaml
-- uses: actions/cache@v2
-  with:
-    path: vendor/bundle
-    key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-gems-
-```
-When dependencies are installed later in the workflow, we must specify the same path for the bundler.
+Caching gems with Bundler correctly is not trivial and just using `actions/cache`
+is [not enough](https://github.com/ruby/setup-ruby#caching-bundle-install-manually).
+
+Instead, it is recommended to use `ruby/setup-ruby`'s
+[`bundler-cache: true` option](https://github.com/ruby/setup-ruby#caching-bundle-install-automatically)
+whenever possible:
 
 ```yaml
-- name: Bundle install
-  run: |
-    bundle config path vendor/bundle
-    bundle install --jobs 4 --retry 3
+- uses: ruby/setup-ruby@v1
+  with:
+    ruby-version: ...
+    bundler-cache: true
 ```
 
 ## Rust - Cargo
