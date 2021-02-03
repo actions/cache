@@ -45471,6 +45471,7 @@ function run() {
                 yield cache.saveCache(cachePaths, primaryKey, {
                     uploadChunkSize: utils.getInputAsInt(constants_1.Inputs.UploadChunkSize)
                 });
+                core.info(`Cache saved with key: ${primaryKey}`);
             }
             catch (error) {
                 if (error.name === cache.ValidationError.name) {
