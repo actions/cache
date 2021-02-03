@@ -1,6 +1,6 @@
 ---
 name: tslib
-version: 1.14.1
+version: 2.1.0
 type: npm
 summary: Runtime library for TypeScript helper functions
 homepage: https://www.typescriptlang.org/
