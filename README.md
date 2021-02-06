@@ -81,6 +81,8 @@ jobs:
       run: /primes.sh -d prime-numbers
 ```
 
+Note: The call to cache both restores the cache and sets up a hook to restore the cache at the end of the workflow so you need to add the cache step near the beginning of your workflow.
+
 ## Implementation Examples
 
 Every programming language and framework has its own way of caching.
