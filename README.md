@@ -19,7 +19,6 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
     path: |
       ~/cache
       !~/cache/exclude
-      **/node_modules
     key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
 ```
 
