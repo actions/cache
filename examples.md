@@ -389,23 +389,6 @@ jobs:
       ${{ runner.os }}-pip-
 ```
 
-### Using a script to get cache location
-
-> Note: This uses an internal pip API and may not always work
-```yaml
-- name: Get pip cache dir
-  id: pip-cache
-  run: |
-    python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
-
-- uses: actions/cache@v2
-  with:
-    path: ${{ steps.pip-cache.outputs.dir }}
-    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-    restore-keys: |
-      ${{ runner.os }}-pip-
-```
-
 ## Python - pipenv
 
 ```yaml
