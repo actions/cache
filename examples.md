@@ -100,7 +100,9 @@ steps:
 ```yaml
 - uses: actions/cache@v2
   with:
-    path: deps
+    path: |
+      deps
+      _build
     key: ${{ runner.os }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
     restore-keys: |
       ${{ runner.os }}-mix-
