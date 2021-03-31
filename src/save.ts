@@ -29,7 +29,35 @@ async function run(): Promise<void> {
             return;
         }
 
-        if (utils.isExactKeyMatch(primaryKey, state)) {
+        const envVarSet =
+            core.getInput(Inputs.UpdateEnvVariable) &&
+            typeof process.env[core.getInput(Inputs.UpdateEnvVariable)] !==
+                "undefined";
+        if (envVarSet) {
+            const forceUpdate = ["true", "yes"].includes(
+                process.env[
+                    core.getInput(Inputs.UpdateEnvVariable)
+                ]!.toLowerCase()
+            );
+            if (forceUpdate) {
+                core.info(
+                    `Cache saving was forced by setting ${core.getInput(
+                        Inputs.UpdateEnvVariable
+                    )} to ${
+                        process.env[core.getInput(Inputs.UpdateEnvVariable)]
+                    }.`
+                );
+            } else {
+                core.info(
+                    `Cache saving was disabled by setting ${core.getInput(
+                        Inputs.UpdateEnvVariable
+                    )} to ${
+                        process.env[core.getInput(Inputs.UpdateEnvVariable)]
+                    }.`
+                );
+                return;
+            }
+        } else if (utils.isExactKeyMatch(primaryKey, state)) {
             core.info(
                 `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
             );

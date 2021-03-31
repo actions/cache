@@ -14,6 +14,9 @@ inputs:
   upload-chunk-size:
     description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
+  update-env-variable:
+    description: 'The name of an environment variable.  If the environment variable is set to "true" by the end of the job, force updating the cache.  If this environment variable is set to "false" by the end of the job, disable updating the cache.  Default is to update only if there was no primary-key exact cache hit.'
+    required: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'

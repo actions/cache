@@ -52,7 +52,7 @@ beforeAll(() => {
 beforeEach(() => {
     process.env[Events.Key] = Events.Push;
     process.env[RefKey] = "refs/heads/feature-branch";
-
+    delete process.env["MY_CACHE_ENV_VARIABLE"];
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
 });
 
@@ -60,6 +60,7 @@ afterEach(() => {
     testUtils.clearInputs();
     delete process.env[Events.Key];
     delete process.env[RefKey];
+    delete process.env["MY_CACHE_ENV_VARIABLE"];
 });
 
 test("save with invalid event outputs warning", async () => {
@@ -139,6 +140,78 @@ test("save with exact match returns early", async () => {
     expect(infoMock).toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
     );
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
+test("save with UpdateEnvVariable true updates the cache despite exact match", async () => {
+    const infoMock = jest.spyOn(core, "info");
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const savedCacheKey = primaryKey;
+
+    jest.spyOn(core, "getState")
+        // Cache Entry State
+        .mockImplementationOnce(() => {
+            return savedCacheKey;
+        })
+        // Cache Key State
+        .mockImplementationOnce(() => {
+            return primaryKey;
+        });
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.UpdateEnvVariable, "MY_CACHE_ENV_VARIABLE");
+
+    const cacheId = 4;
+    const saveCacheMock = jest
+        .spyOn(cache, "saveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(cacheId);
+        });
+    process.env["MY_CACHE_ENV_VARIABLE"] = "true";
+    await run();
+
+    expect(infoMock).toHaveBeenCalledWith(
+        "Cache saving was forced by setting MY_CACHE_ENV_VARIABLE to true."
+    );
+    expect(saveCacheMock).toHaveBeenCalledTimes(1);
+    expect(saveCacheMock).toHaveBeenCalledWith([inputPath], primaryKey, {
+        uploadChunkSize: undefined
+    });
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
+test("save with UpdateEnvVariable false doesn't update the cache", async () => {
+    const infoMock = jest.spyOn(core, "info");
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const savedCacheKey = primaryKey;
+
+    jest.spyOn(core, "getState")
+        // Cache Entry State
+        .mockImplementationOnce(() => {
+            return savedCacheKey;
+        })
+        // Cache Key State
+        .mockImplementationOnce(() => {
+            return primaryKey;
+        });
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.UpdateEnvVariable, "MY_CACHE_ENV_VARIABLE");
+
+    const saveCacheMock = jest.spyOn(cache, "saveCache");
+    process.env["MY_CACHE_ENV_VARIABLE"] = "no";
+    await run();
+
+    expect(infoMock).toHaveBeenCalledWith(
+        "Cache saving was disabled by setting MY_CACHE_ENV_VARIABLE to no."
+    );
+    expect(saveCacheMock).toHaveBeenCalledTimes(0);
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 

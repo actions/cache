@@ -4647,6 +4647,7 @@ var Inputs;
     Inputs["Path"] = "path";
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
+    Inputs["UpdateEnvVariable"] = "update-env-variable";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -45460,7 +45461,20 @@ function run() {
                 utils.logWarning(`Error retrieving key from state.`);
                 return;
             }
-            if (utils.isExactKeyMatch(primaryKey, state)) {
+            const envVarSet = core.getInput(constants_1.Inputs.UpdateEnvVariable) &&
+                typeof process.env[core.getInput(constants_1.Inputs.UpdateEnvVariable)] !==
+                    "undefined";
+            if (envVarSet) {
+                const forceUpdate = ["true", "yes"].includes(process.env[core.getInput(constants_1.Inputs.UpdateEnvVariable)].toLowerCase());
+                if (forceUpdate) {
+                    core.info(`Cache saving was forced by setting ${core.getInput(constants_1.Inputs.UpdateEnvVariable)} to ${process.env[core.getInput(constants_1.Inputs.UpdateEnvVariable)]}.`);
+                }
+                else {
+                    core.info(`Cache saving was disabled by setting ${core.getInput(constants_1.Inputs.UpdateEnvVariable)} to ${process.env[core.getInput(constants_1.Inputs.UpdateEnvVariable)]}.`);
+                    return;
+                }
+            }
+            else if (utils.isExactKeyMatch(primaryKey, state)) {
                 core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
                 return;
             }
