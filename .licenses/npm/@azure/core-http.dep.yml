@@ -1,9 +1,10 @@
 ---
 name: "@azure/core-http"
-version: 1.2.4
+version: 1.2.2
 type: npm
-summary: 
-homepage: 
+summary: Isomorphic client Runtime for Typescript/node.js/browser javascript client
+  libraries generated using AutoRest
+homepage: https://github.com/Azure/azure-sdk-for-js/blob/master/sdk/core/core-http/README.md
 license: mit
 licenses:
 - sources: LICENSE
