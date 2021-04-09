@@ -1,6 +1,6 @@
 ---
 name: "@azure/abort-controller"
-version: 1.0.2
+version: 1.0.4
 type: npm
 summary: Microsoft Azure SDK for JavaScript - Aborter
 homepage: https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/core/abort-controller/README.md
