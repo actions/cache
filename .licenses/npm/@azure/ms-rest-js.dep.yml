@@ -1,6 +1,6 @@
 ---
 name: "@azure/ms-rest-js"
-version: 2.2.0
+version: 2.3.0
 type: npm
 summary: Isomorphic client Runtime for Typescript/node.js/browser javascript client
   libraries generated using AutoRest
