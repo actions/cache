@@ -97,13 +97,14 @@ steps:
 ```
 
 ## Elixir - Mix
+
 ```yaml
 - uses: actions/cache@v2
   with:
     path: |
       deps
       _build
-    key: ${{ runner.os }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+    key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock')) }}
     restore-keys: |
       ${{ runner.os }}-mix-
 ```
