@@ -104,7 +104,7 @@ steps:
     path: |
       deps
       _build
-    key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock')) }}
+    key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
     restore-keys: |
       ${{ runner.os }}-mix-
 ```
