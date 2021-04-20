@@ -83,8 +83,6 @@ jobs:
       run: /generate-primes.sh -d prime-numbers
 
     - name: Use Prime Numbers
-      env:
-        CACHE_SKIP_SAVE: true
       run: /primes.sh -d prime-numbers
 ```
 
