@@ -42,7 +42,7 @@ Create a workflow `.yml` file in your repositories `.github/workflows` directory
 * `restore-keys` - An ordered list of keys to use for restoring the cache if no cache hit occurred for key
 
 ### Environment Variables
-* `CACHE_SKIP_SAVE` - [optinal] When set on step, any modifications made to the restored cache will not be persisted back at the end of the step.  
+* `CACHE_SKIP_SAVE` - [optional] When set to `true`, any modifications made to the restored cache will not be persisted back at the end of the step.  This environment variable can be set at any time using `echo "CACHE_SKIP_SAVE=true" >> $GITHUB_ENV`
 
 ### Outputs
 
