@@ -29,6 +29,13 @@ async function run(): Promise<void> {
             return;
         }
 
+        const skipSave = ["true", "yes"].includes(
+            core.getInput(Inputs.SkipSave).toLowerCase()
+        );
+        if (skipSave) {
+            core.info(`Cache saving was disabled by setting skip-save.`);
+            return;
+        }
         if (utils.isExactKeyMatch(primaryKey, state)) {
             core.info(
                 `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`

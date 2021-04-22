@@ -52,7 +52,6 @@ beforeAll(() => {
 beforeEach(() => {
     process.env[Events.Key] = Events.Push;
     process.env[RefKey] = "refs/heads/feature-branch";
-
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
 });
 
@@ -139,6 +138,75 @@ test("save with exact match returns early", async () => {
     expect(infoMock).toHaveBeenCalledWith(
         `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
     );
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
+test("save with skip-save false", async () => {
+    const infoMock = jest.spyOn(core, "info");
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const savedCacheKey = "Linux-node-";
+
+    jest.spyOn(core, "getState")
+        // Cache Entry State
+        .mockImplementationOnce(() => {
+            return savedCacheKey;
+        })
+        // Cache Key State
+        .mockImplementationOnce(() => {
+            return primaryKey;
+        });
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Path, inputPath);
+
+    const cacheId = 5;
+    const saveCacheMock = jest
+        .spyOn(cache, "saveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(cacheId);
+        });
+    await run();
+
+    expect(infoMock).toHaveBeenCalledWith(
+        `Cache saved with key: ${primaryKey}`
+    );
+    expect(saveCacheMock).toHaveBeenCalledTimes(1);
+    expect(saveCacheMock).toHaveBeenCalledWith([inputPath], primaryKey, {
+        uploadChunkSize: undefined
+    });
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
+test("save with skip-save true doesn't save", async () => {
+    const infoMock = jest.spyOn(core, "info");
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const savedCacheKey = "Linux-node-";
+
+    jest.spyOn(core, "getState")
+        // Cache Entry State
+        .mockImplementationOnce(() => {
+            return savedCacheKey;
+        })
+        // Cache Key State
+        .mockImplementationOnce(() => {
+            return primaryKey;
+        });
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.SkipSave, "true");
+
+    const saveCacheMock = jest.spyOn(cache, "saveCache");
+    await run();
+
+    expect(infoMock).toHaveBeenCalledWith(
+        "Cache saving was disabled by setting skip-save."
+    );
+    expect(saveCacheMock).toHaveBeenCalledTimes(0);
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 

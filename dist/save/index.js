@@ -5469,6 +5469,7 @@ var Inputs;
     Inputs["Path"] = "path";
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
+    Inputs["SkipSave"] = "skip-save";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -47170,6 +47171,11 @@ function run() {
             const primaryKey = core.getState(constants_1.State.CachePrimaryKey);
             if (!primaryKey) {
                 utils.logWarning(`Error retrieving key from state.`);
+                return;
+            }
+            const skipSave = ["true", "yes"].includes(core.getInput(constants_1.Inputs.SkipSave).toLowerCase());
+            if (skipSave) {
+                core.info(`Cache saving was disabled by setting skip-save.`);
                 return;
             }
             if (utils.isExactKeyMatch(primaryKey, state)) {
