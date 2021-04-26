@@ -412,7 +412,20 @@ Locations:
  - macOS: `~/Library/Application Support/renv`
  - Windows: `%LOCALAPPDATA%/renv`
 
-### Simple example
+
+### Using variables to specify location
+
+(Appropriate for single or multiple operating systems.)
+
+```yaml
+ - uses: actions/cache@v2
+   with:
+     path: ${{ env.R_LIBS_USER }}
+     key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ hashFiles('.github/depends.Rds') }}
+     restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-
+```
+
+### Simple example with hard-coded path
 ```yaml
 - uses: actions/cache@v2
   with:
@@ -424,7 +437,7 @@ Locations:
 
 Replace `~/.local/share/renv` with the correct `path` if not using Ubuntu.
 
-### Multiple OS's in a workflow
+### Multiple OSs in a workflow
 
 ```yaml
 - uses: actions/cache@v2
