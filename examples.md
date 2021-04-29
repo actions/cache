@@ -39,6 +39,7 @@
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 - [Swift - Swift Package Manager](#swift---swift-package-manager)
 - [Swift - Mint](#swift---mint)
+- [* - Bazel](#---bazel)
 
 ## C# - NuGet
 
@@ -656,4 +657,18 @@ steps:
       key: ${{ runner.os }}-mint-${{ hashFiles('**/Mintfile') }}
       restore-keys: |
         ${{ runner.os }}-mint-
+```
+
+## * - Bazel
+
+Bazel cache has a good handle to check if cached content should be rebuild or not based on its inputs like a hash(command + files). So using the latest cache of the branch is enough, no need to suffix with `hashFiles('**/...')`.
+
+```yaml
+- name: Cache Bazel
+  uses: actions/cache@v2
+  with:
+    path: |
+      ~/.cache/bazelisk
+      ~/.cache/bazel
+    key: ${{ runner.os }}-bazel
 ```
