@@ -32,6 +32,7 @@
   - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
   - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
   - [Swift - Swift Package Manager](#swift---swift-package-manager)
+  - [* - Bazel](#---bazel)
 
 ## C# - NuGet
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
@@ -523,4 +524,18 @@ whenever possible:
     key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
     restore-keys: |
       ${{ runner.os }}-spm-
+```
+
+## * - Bazel
+
+Bazel cache has a good handle to check if cached content should be rebuild or not based on its inputs like a hash(command + files). So using the latest cache of the branch is enough, no need to suffix with `hashFiles('**/...')`.
+
+```yaml
+- name: Cache Bazel
+  uses: actions/cache@v2
+  with:
+    path: |
+      ~/.cache/bazelisk
+      ~/.cache/bazel
+    key: ${{ runner.os }}-bazel
 ```
