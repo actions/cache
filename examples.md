@@ -34,6 +34,7 @@
   - [Swift - Swift Package Manager](#swift---swift-package-manager)
 
 ## C# - NuGet
+
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
 
 ```yaml
@@ -47,10 +48,11 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 
 Depending on the environment, huge packages might be pre-installed in the global cache folder.
 With `actions/cache@v2` you can now exclude unwanted packages with [exclude pattern](https://github.com/actions/toolkit/tree/main/packages/glob#exclude-patterns)
+
 ```yaml
 - uses: actions/cache@v2
   with:
-    path: | 
+    path: |
       ~/.nuget/packages
       !~/.nuget/packages/unwanted
     key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
@@ -239,8 +241,8 @@ The yarn cache directory will depend on your operating system and version of `ya
       ${{ runner.os }}-yarn-
 ```
 
-
 ## Node - Yarn 2
+
 The yarn 2 cache directory will depend on your config. See https://yarnpkg.com/configuration/yarnrc#cacheFolder for more info.
 
 ```yaml
@@ -258,6 +260,7 @@ The yarn 2 cache directory will depend on your config. See https://yarnpkg.com/c
 ```
 
 ## OCaml/Reason - esy
+
 Esy allows you to export built dependencies and import pre-built dependencies.
 ```yaml
     - name: Restore Cache
@@ -278,12 +281,11 @@ Esy allows you to export built dependencies and import pre-built dependencies.
     ...(Build job)...
 
     # Re-export dependencies if anything has changed or if it is the first time
-    - name: Setting dependency cache 
+    - name: Setting dependency cache
       run: |
         esy export-dependencies
       if: steps.restore-cache.outputs.cache-hit != 'true'
 ```
-
 
 ## PHP - Composer
 
@@ -305,11 +307,13 @@ Esy allows you to export built dependencies and import pre-built dependencies.
 For pip, the cache directory will vary by OS. See https://pip.pypa.io/en/stable/reference/pip_install/#caching
 
 Locations:
- - Ubuntu: `~/.cache/pip`
- - Windows: `~\AppData\Local\pip\Cache`
- - macOS: `~/Library/Caches/pip`
+
+- Ubuntu: `~/.cache/pip`
+- Windows: `~\AppData\Local\pip\Cache`
+- macOS: `~/Library/Caches/pip`
 
 ### Simple example
+
 ```yaml
 - uses: actions/cache@v2
   with:
@@ -408,11 +412,13 @@ jobs:
 For renv, the cache directory will vary by OS. Look at https://rstudio.github.io/renv/articles/renv.html#cache
 
 Locations:
- - Ubuntu: `~/.local/share/renv`
- - macOS: `~/Library/Application Support/renv`
- - Windows: `%LOCALAPPDATA%/renv`
+
+- Ubuntu: `~/.local/share/renv`
+- macOS: `~/Library/Application Support/renv`
+- Windows: `%LOCALAPPDATA%/renv`
 
 ### Simple example
+
 ```yaml
 - uses: actions/cache@v2
   with:
@@ -486,7 +492,7 @@ whenever possible:
 - name: Cache SBT
   uses: actions/cache@v2
   with:
-    path: | 
+    path: |
       ~/.ivy2/cache
       ~/.sbt
     key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
