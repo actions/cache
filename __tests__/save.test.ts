@@ -52,6 +52,7 @@ beforeAll(() => {
 beforeEach(() => {
     process.env[Events.Key] = Events.Push;
     process.env[RefKey] = "refs/heads/feature-branch";
+
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
 });
 
