@@ -15,7 +15,7 @@ inputs:
     description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
   skip-save:
-    description: 'Whether or not to skip the saving of the cache.  If this is set to "true", the cache will not be saved.  It can also be set to an evironment variable such as "\$\{\{ env.MY_SKIP_SAVE \}\}".  If the MY_SKIP_SAVE environment variable is "true" by the end of the CI, caching will be skipped.  Default is to update if and only if there was no primary-key exact cache hit.'
+    description: 'Whether or not to skip the saving of the cache.  If this is set to "true", the cache will not be saved.  It can also be set to an environment variable such as "\$\{\{ env.MY_SKIP_SAVE \}\}".  If the MY_SKIP_SAVE environment variable is "true" by the end of the CI, caching will be skipped.  Default is to update if and only if there was no primary-key exact cache hit.'
     required: false
     default: false
 outputs:
