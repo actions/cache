@@ -240,6 +240,17 @@ The yarn cache directory will depend on your operating system and version of `ya
 ```
 
 
+## Node - Pnpm
+
+```yaml
+  - name: Cache .pnpm-store
+    uses: actions/cache@v2
+    with:
+      path: ~/.pnpm-store
+      key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}```
+```
+
+
 ## Node - Yarn 2
 The yarn 2 cache directory will depend on your config. See https://yarnpkg.com/configuration/yarnrc#cacheFolder for more info.
 
