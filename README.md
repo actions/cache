@@ -107,6 +107,7 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 - [Swift, Objective-C - Carthage](./examples.md#swift-objective-c---carthage)
 - [Swift, Objective-C - CocoaPods](./examples.md#swift-objective-c---cocoapods)
 - [Swift - Swift Package Manager](./examples.md#swift---swift-package-manager)
+- [Swift - Mint](./examples.md#swift---mint)
 
 ## Creating a cache key
 
