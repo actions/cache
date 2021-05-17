@@ -479,7 +479,9 @@ whenever possible:
       ~/.cargo/registry
       ~/.cargo/git
       target
-    key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    key: cargo-${{ hashFiles('**/Cargo.lock') }}
+    restore-keys: |
+      cargo-
 ```
 
 ## Scala - SBT
