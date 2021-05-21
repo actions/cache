@@ -476,9 +476,11 @@ whenever possible:
 - uses: actions/cache@v2
   with:
     path: |
-      ~/.cargo/registry
-      ~/.cargo/git
-      target
+      ~/.cargo/bin/
+      ~/.cargo/registry/index/
+      ~/.cargo/registry/cache/
+      ~/.cargo/git/db/
+      target/
     key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 ```
 
