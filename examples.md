@@ -115,11 +115,39 @@ steps:
 
 ## Go - Modules
 
+### Linux
+
 ```yaml
 - uses: actions/cache@v2
   with:
     path: |
       ~/.cache/go-build
+      ~/go/pkg/mod
+    key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+    restore-keys: |
+      ${{ runner.os }}-go-
+```
+
+### macOS
+
+```yaml
+- uses: actions/cache@v2
+  with:
+    path: |
+      ~/Library/Caches/go-build
+      ~/go/pkg/mod
+    key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+    restore-keys: |
+      ${{ runner.os }}-go-
+```
+
+### Windows
+
+```yaml
+- uses: actions/cache@v2
+  with:
+    path: |
+      %LocalAppData%\go-build
       ~/go/pkg/mod
     key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
     restore-keys: |
