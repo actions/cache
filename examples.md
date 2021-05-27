@@ -15,6 +15,7 @@
   - [Node - Lerna](#node---lerna)
   - [Node - Yarn](#node---yarn)
   - [Node - Yarn 2](#node---yarn-2)
+  - [Node - Jest](#node---jest)
   - [OCaml/Reason - esy](#ocamlreason---esy)
   - [PHP - Composer](#php---composer)
   - [Python - pip](#python---pip)
@@ -257,6 +258,24 @@ The yarn 2 cache directory will depend on your config. See https://yarnpkg.com/c
     key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
     restore-keys: |
       ${{ runner.os }}-yarn-
+```
+
+## Node - Jest
+The Jest cache directory will depend on your config. See https://jestjs.io/docs/en/cli#--clearcache for more info.
+
+```yaml
+- name: Get Jest cache directory path
+  id: jest-cache-dir-path
+  run: |
+    JEST_CACHE_DIR=$(yarn jest --showConfig | grep -oP '(?<="cacheDirectory": ")[^"]+(?=")')
+    echo "::set-output name=dir::$JEST_CACHE_DIR"
+
+- uses: actions/cache@v2
+  with:
+    path: ${{ steps.jest-cache-dir-path.outputs.dir }}
+    key: ${{ runner.os }}-jest-${{ github.sha }}
+    restore-keys: |
+      ${{ runner.os }}-jest-
 ```
 
 ## OCaml/Reason - esy
