@@ -137,6 +137,8 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 
 ## Java - Gradle
 
+>Note: Ensure no Gradle daemons are running anymore when your workflow completes. Creating the cache package might fail due to locks being held by Gradle. Refer to the [Gradle Daemon documentation](https://docs.gradle.org/current/userguide/gradle_daemon.html) on how to disable or stop the Gradle Daemons.
+
 ```yaml
 - uses: actions/cache@v2
   with:
@@ -474,9 +476,11 @@ whenever possible:
 - uses: actions/cache@v2
   with:
     path: |
-      ~/.cargo/registry
-      ~/.cargo/git
-      target
+      ~/.cargo/bin/
+      ~/.cargo/registry/index/
+      ~/.cargo/registry/cache/
+      ~/.cargo/git/db/
+      target/
     key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 ```
 
