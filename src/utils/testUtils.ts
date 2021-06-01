@@ -13,11 +13,13 @@ interface CacheInput {
     path: string;
     key: string;
     restoreKeys?: string[];
+    skipSave?: string;
 }
 
 export function setInputs(input: CacheInput): void {
     setInput(Inputs.Path, input.path);
     setInput(Inputs.Key, input.key);
+    input.skipSave && setInput(Inputs.SkipSave, input.skipSave);
     input.restoreKeys &&
         setInput(Inputs.RestoreKeys, input.restoreKeys.join("\n"));
 }
@@ -25,6 +27,7 @@ export function setInputs(input: CacheInput): void {
 export function clearInputs(): void {
     delete process.env[getInputName(Inputs.Path)];
     delete process.env[getInputName(Inputs.Key)];
+    delete process.env[getInputName(Inputs.SkipSave)];
     delete process.env[getInputName(Inputs.RestoreKeys)];
     delete process.env[getInputName(Inputs.UploadChunkSize)];
 }
