@@ -246,7 +246,9 @@ The yarn cache directory will depend on your operating system and version of `ya
   - name: Cache .pnpm-store
     uses: actions/cache@v2
     with:
-      path: ~/.pnpm-store
+      path: |
+      	 ~/.pnpm-store
+         D:\.pnpm-store
       key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}```
 ```
 
