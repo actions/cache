@@ -435,12 +435,16 @@ jobs:
 ## Python - pipenv
 
 ```yaml
+- name: Set up Python
+  id: setup-python
+  uses: actions/setup-python@v2
+
+  ⋮
+
 - uses: actions/cache@v2
   with:
     path: ~/.local/share/virtualenvs
-    key: ${{ runner.os }}-pipenv-${{ hashFiles('Pipfile.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-pipenv-
+    key: ${{ runner.os }}-python-${{ steps.setup-python.outputs.python-version }}-pipenv-${{ hashFiles('Pipfile.lock') }}
 ```
 
 ## R - renv
