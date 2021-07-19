@@ -111,7 +111,7 @@ test("save on GHES should no-op", async () => {
 
     expect(saveCacheMock).toHaveBeenCalledTimes(0);
     expect(logWarningMock).toHaveBeenCalledWith(
-        "Cache action is not supported on GHES"
+        "Cache action is not supported on GHES. See https://github.com/actions/cache/issues/505 for more details"
     );
 });
 
