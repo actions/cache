@@ -49218,7 +49218,7 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             if (utils.isGhes()) {
-                utils.logWarning("Cache action is not supported on GHES");
+                utils.logWarning("Cache action is not supported on GHES. See https://github.com/actions/cache/issues/505 for more details");
                 utils.setCacheHitOutput(false);
                 return;
             }
