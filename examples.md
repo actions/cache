@@ -277,6 +277,22 @@ The yarn cache directory will depend on your operating system and version of `ya
       ${{ runner.os }}-yarn-
 ```
 
+
+## Node - Pnpm
+
+```yaml
+  - name: Cache .pnpm-store
+    uses: actions/cache@v2
+    with:
+      path: |
+      	 ~/.pnpm-store
+         D:\.pnpm-store
+      key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+      restore-keys: |
+        ${{ runner.os }}
+```
+
+
 ## Node - Yarn 2
 
 The yarn 2 cache directory will depend on your config. See https://yarnpkg.com/configuration/yarnrc#cacheFolder for more info.
