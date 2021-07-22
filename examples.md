@@ -448,6 +448,15 @@ jobs:
     key: ${{ runner.os }}-python-${{ steps.setup-python.outputs.python-version }}-pipenv-${{ hashFiles('Pipfile.lock') }}
 ```
 
+To use the cache effectively:
+```yaml
+- name: Install packages
+  run: |
+    pipenv --venv && \
+      (pipenv lock -r |cat - ci-requirements.txt|pipenv run pip install -r /dev/stdin) || \
+      (pipenv install --python ${{ matrix.python-version }} --deploy)
+```
+
 ## R - renv
 
 For renv, the cache directory will vary by OS. Look at https://rstudio.github.io/renv/articles/renv.html#cache
