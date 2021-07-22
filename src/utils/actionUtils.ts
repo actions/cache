@@ -60,8 +60,9 @@ export function getInputAsArray(
     return core
         .getInput(name, options)
         .split("\n")
-        .map(s => s.trim())
-        .filter(x => x !== "");
+        .map(s => s.replace(/^\!\s+/, '!').trim())
+        .filter(x => x !== "")
+        .sort();
 }
 
 export function getInputAsInt(
