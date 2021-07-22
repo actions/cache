@@ -304,7 +304,7 @@ test("restore with cache found for restore key", async () => {
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
 
     expect(infoMock).toHaveBeenCalledWith(
-        `Cache restored from key: ${restoreKey}`
+        `Cache restored from restore key: ${restoreKey}`
     );
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
