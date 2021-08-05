@@ -33,18 +33,18 @@ jobs:
         run: npm ci
 
       - name: Move the committed index.js file
-        run: mv dist/index.js /tmp
+        run: mv dist/ /tmp/
 
       - name: Rebuild the index.js file
-        run: npm run release
+        run: npm run build
 
       - name: Compare the expected and actual index.js files
-        run: git diff --ignore-all-space dist/index.js /tmp/index.js
+        run: git diff --ignore-all-space dist/ /tmp/dist
         id: diff
 
       # If index.js was different than expected, upload the expected version as an artifact
       - uses: actions/upload-artifact@v2
         if: ${{ failure() && steps.diff.conclusion == 'failure' }}
         with:
-          name: index.js
-          path: dist/index.js
+          name: dist
+          path: dist/
