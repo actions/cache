@@ -289,7 +289,7 @@ The yarn cache directory will depend on your operating system and version of `ya
       	 ~/.pnpm-store
          D:\.pnpm-store
          **/node_modules
-      key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+      key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
       restore-keys: |
         ${{ runner.os }}
 ```
