@@ -68,7 +68,7 @@ test("restore on GHES should no-op", async () => {
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
     expect(logWarningMock).toHaveBeenCalledWith(
-        "Cache action is not supported on GHES"
+        "Cache action is not supported on GHES. See https://github.com/actions/cache/issues/505 for more details"
     );
 });
 
