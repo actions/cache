@@ -17,6 +17,7 @@
   - [Windows](#windows-2)
   - [Using multiple systems and `npm config`](#using-multiple-systems-and-npm-config)
 - [Node - Lerna](#node---lerna)
+- [Node - Yarn](#node---pnpm)
 - [Node - Yarn](#node---yarn)
 - [Node - Yarn 2](#node---yarn-2)
 - [OCaml/Reason - esy](#ocamlreason---esy)
