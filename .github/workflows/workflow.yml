@@ -6,13 +6,13 @@ on:
       - main
       - releases/**
     paths-ignore:
-      - "**.md"
+      - '**.md'
   push:
     branches:
       - main
       - releases/**
     paths-ignore:
-      - "**.md"
+      - '**.md'
 
 jobs:
   # Build and unit test
