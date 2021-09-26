@@ -66,6 +66,7 @@ With `actions/cache@v2` you can now exclude unwanted packages with [exclude patt
 
 Or you could move the cache folder like below.
 >Note: This workflow does not work for projects that require files to be placed in user profile package folder
+
 ```yaml
 env:
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages

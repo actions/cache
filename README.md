@@ -10,7 +10,7 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
 
 ## What's New
 
-* Added support for multiple paths, [glob patterns](https://github.com/actions/toolkit/tree/main/packages/glob), and single file caches. 
+* Added support for multiple paths, [glob patterns](https://github.com/actions/toolkit/tree/main/packages/glob), and single file caches.
 
 ```yaml
 - name: Cache multiple paths
@@ -36,7 +36,7 @@ Create a workflow `.yml` file in your repositories `.github/workflows` directory
 
 ### Inputs
 
-* `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns. 
+* `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `key` - An explicit key for restoring and saving the cache
 * `restore-keys` - An ordered list of keys to use for restoring the cache if no cache hit occurred for key
 
@@ -47,7 +47,7 @@ Create a workflow `.yml` file in your repositories `.github/workflows` directory
 > See [Skipping steps based on cache-hit](#Skipping-steps-based-on-cache-hit) for info on using this output
 
 ### Cache scopes
-The cache is scoped to the key and branch. The default branch cache is available to other branches. 
+The cache is scoped to the key and branch. The default branch cache is available to other branches.
 
 See [Matching a cache key](https://help.github.com/en/actions/configuring-and-managing-workflows/caching-dependencies-to-speed-up-workflows#matching-a-cache-key) for more info.
 
@@ -117,9 +117,9 @@ For example, using the [`hashFiles`](https://help.github.com/en/actions/referenc
 ```yaml
   - uses: actions/cache@v2
     with:
-      path: | 
+      path: |
         path/to/dependencies
-        some/other/dependencies 
+        some/other/dependencies
       key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
 ```
 
