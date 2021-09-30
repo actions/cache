@@ -1,7 +1,8 @@
 import * as utils from "@actions/cache/lib/internal/cacheUtils";
 import { createTar, listTar } from "@actions/cache/lib/internal/tar";
 import * as core from "@actions/core";
-import { S3 } from "aws-sdk";
+import { AWSError, S3 } from "aws-sdk";
+import { PromiseResult } from "aws-sdk/lib/request";
 import filesize from "filesize";
 import fs from "fs";
 import * as path from "path";
@@ -73,23 +74,19 @@ export class CacheService {
         return key;
     }
 
-    private async uploadToS3(key: string, archivePath: string): Promise<void> {
+    private async uploadToS3(
+        key: string,
+        archivePath: string
+    ): Promise<PromiseResult<S3.PutObjectOutput, AWSError>> {
         const client = new S3();
-        // Read in the file, convert it to base64, store to S3
-        fs.readFile(archivePath, (err, data) => {
-            if (err) {
-                throw err;
-            }
+        const data = fs.readFileSync(archivePath).toString("base64");
 
-            const base64data = data.toString("base64");
-
-            client
-                .putObject({
-                    Bucket: this._bucket,
-                    Key: key,
-                    Body: base64data
-                })
-                .send();
-        });
+        return client
+            .putObject({
+                Bucket: this._bucket,
+                Key: key,
+                Body: data
+            })
+            .promise();
     }
 }
