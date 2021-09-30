@@ -127,7 +127,7 @@ export class CacheService {
         key: string,
         archivePath: string
     ): Promise<PromiseResult<S3.PutObjectOutput, AWSError>> {
-        const data = fs.readFileSync(archivePath).toString("base64");
+        const data = fs.readFileSync(archivePath);
 
         return this._client
             .putObject({
