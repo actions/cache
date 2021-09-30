@@ -132,12 +132,10 @@ export class CacheService {
         return this._client
             .putObject({
                 Bucket: this._bucket,
-                Key: path.join(this.getCacheFolder(), key),
+                Key: path.join(this.getCacheFolder(), `${key}.tgz`),
                 Body: data,
-                Metadata: {
-                    ContentType: "text/plain",
-                    ContentEncoding: "gzip"
-                }
+                ContentType: "text/plain",
+                ContentEncoding: "gzip"
             })
             .promise();
     }
@@ -147,7 +145,7 @@ export class CacheService {
             const response: GetObjectOutput = await this._client
                 .getObject({
                     Bucket: this._bucket,
-                    Key: path.join(this.getCacheFolder(), key)
+                    Key: path.join(this.getCacheFolder(), `${key}.tgz`)
                 })
                 .promise();
             fs.writeFileSync(savePath, response.Body);
@@ -166,7 +164,10 @@ export class CacheService {
                     await this._client
                         .headObject({
                             Bucket: this._bucket,
-                            Key: path.join(this.getCacheFolder(), keys[i])
+                            Key: path.join(
+                                this.getCacheFolder(),
+                                `${keys[i]}.tgz`
+                            )
                         })
                         .promise();
                     return keys[i];
