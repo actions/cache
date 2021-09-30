@@ -182,6 +182,29 @@ export class CacheService {
                             Prefix: path.join(this.getCacheFolder(), keys[i])
                         })
                         .promise();
+                    let selected: S3.Object | undefined = undefined;
+                    if (response.Contents) {
+                        for (const object of response.Contents) {
+                            if (selected === undefined) {
+                                selected = object;
+                            } else {
+                                if (
+                                    object.LastModified &&
+                                    selected.LastModified
+                                ) {
+                                    if (
+                                        object.LastModified >
+                                        selected.LastModified
+                                    ) {
+                                        selected = object;
+                                    }
+                                }
+                            }
+                        }
+                        if (selected && selected.Key) {
+                            return path.parse(selected.Key).name;
+                        }
+                    }
                     core.debug(JSON.stringify(response));
                     // eslint-disable-next-line no-empty
                 } catch {}
