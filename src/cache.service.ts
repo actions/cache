@@ -133,7 +133,11 @@ export class CacheService {
             .putObject({
                 Bucket: this._bucket,
                 Key: path.join(this.getCacheFolder(), key),
-                Body: data
+                Body: data,
+                Metadata: {
+                    ContentType: "text/plain",
+                    ContentEncoding: "gzip"
+                }
             })
             .promise();
     }
