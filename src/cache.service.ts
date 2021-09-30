@@ -36,6 +36,8 @@ export class CacheService {
     }
 
     async saveCache(paths: string[], key: string): Promise<string> {
+        const cacheId: string = this.getCacheId(key);
+
         const compressionMethod = await utils.getCompressionMethod();
 
         const cachePaths = await utils.resolvePaths(paths);
@@ -60,8 +62,8 @@ export class CacheService {
                 `Archive Size: ${filesize(fs.statSync(archivePath).size)}`
             );
 
-            core.debug(`Saving Cache (ID: ${key})`);
-            await this.uploadToS3(key, archivePath);
+            core.debug(`Saving Cache (ID: ${cacheId})`);
+            await this.uploadToS3(cacheId, archivePath);
         } finally {
             // Try to delete the archive to save space
             try {
@@ -88,5 +90,11 @@ export class CacheService {
                 Body: data
             })
             .promise();
+    }
+
+    private getCacheId(primaryKey: string): string {
+        return `${process.env["GITHUB_REPOSITORY"]
+            ?.replace("/", "-")
+            .toLowerCase()}-${primaryKey}`;
     }
 }
