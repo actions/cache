@@ -38,7 +38,7 @@ export class CacheService {
         restoreKeys: string[]
     ): Promise<string | undefined> {
         restoreKeys = restoreKeys || [];
-        const keys = [primaryKey, ...restoreKeys];
+        const keys = [primaryKey, ...restoreKeys].map(x => this.formatKey(x));
 
         core.debug("Resolved Keys:");
         core.debug(JSON.stringify(keys));
@@ -85,6 +85,7 @@ export class CacheService {
     }
 
     async saveCache(paths: string[], key: string): Promise<string> {
+        const formattedKey: string = this.formatKey(key);
         const compressionMethod = await utils.getCompressionMethod();
 
         const cachePaths = await utils.resolvePaths(paths);
@@ -109,8 +110,8 @@ export class CacheService {
                 `Archive Size: ${filesize(fs.statSync(archivePath).size)}`
             );
 
-            core.debug(`Saving Cache (ID: ${key})`);
-            await this.uploadToS3(key, archivePath);
+            core.debug(`Saving Cache (ID: ${formattedKey})`);
+            await this.uploadToS3(formattedKey, archivePath);
         } finally {
             // Try to delete the archive to save space
             try {
@@ -120,7 +121,7 @@ export class CacheService {
             }
         }
 
-        return key;
+        return formattedKey;
     }
 
     private async uploadToS3(
@@ -217,5 +218,9 @@ export class CacheService {
         return (process.env["GITHUB_REPOSITORY"] as string)
             .replace("/", "-")
             .toLowerCase();
+    }
+
+    private formatKey(key: string): string {
+        return key.replace(/[^\w\s]/gi, "-");
     }
 }
