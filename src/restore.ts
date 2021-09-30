@@ -1,29 +1,11 @@
-import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
-import { Events, Inputs, State } from "./constants";
+import { CacheService } from "./cache.service";
+import { Inputs, State } from "./constants";
 import * as utils from "./utils/actionUtils";
 
 async function run(): Promise<void> {
     try {
-        if (utils.isGhes()) {
-            utils.logWarning(
-                "Cache action is not supported on GHES. See https://github.com/actions/cache/issues/505 for more details"
-            );
-            utils.setCacheHitOutput(false);
-            return;
-        }
-
-        // Validate inputs, this can cause task failure
-        if (!utils.isValidEvent()) {
-            utils.logWarning(
-                `Event Validation Error: The event type ${
-                    process.env[Events.Key]
-                } is not supported because it's not tied to a branch or tag ref.`
-            );
-            return;
-        }
-
         const primaryKey = core.getInput(Inputs.Key, { required: true });
         core.saveState(State.CachePrimaryKey, primaryKey);
 
@@ -33,6 +15,13 @@ async function run(): Promise<void> {
         });
 
         try {
+            const cache: CacheService = new CacheService(
+                core.getInput(Inputs.AccessKeyId),
+                core.getInput(Inputs.SecretAccessKey),
+                core.getInput(Inputs.Region),
+                core.getInput(Inputs.Bucket)
+            );
+
             const cacheKey = await cache.restoreCache(
                 cachePaths,
                 primaryKey,
@@ -56,12 +45,8 @@ async function run(): Promise<void> {
 
             core.info(`Cache restored from key: ${cacheKey}`);
         } catch (error) {
-            if (error.name === cache.ValidationError.name) {
-                throw error;
-            } else {
-                utils.logWarning(error.message);
-                utils.setCacheHitOutput(false);
-            }
+            utils.logWarning(error.message);
+            utils.setCacheHitOutput(false);
         }
     } catch (error) {
         core.setFailed(error.message);

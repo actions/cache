@@ -2,7 +2,11 @@ export enum Inputs {
     Key = "key",
     Path = "path",
     RestoreKeys = "restore-keys",
-    UploadChunkSize = "upload-chunk-size"
+    UploadChunkSize = "upload-chunk-size",
+    Region = "region",
+    AccessKeyId = "access-key-id",
+    SecretAccessKey = "secret-access-key",
+    Bucket = "bucket"
 }
 
 export enum Outputs {
