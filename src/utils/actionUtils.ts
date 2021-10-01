@@ -9,10 +9,14 @@ export function isGhes(): boolean {
     return ghUrl.hostname.toUpperCase() !== "GITHUB.COM";
 }
 
+export function formatKey(key: string): string {
+    return key.replace(/[^\w\s]/gi, "-");
+}
+
 export function isExactKeyMatch(key: string, cacheKey?: string): boolean {
     return !!(
         cacheKey &&
-        cacheKey.localeCompare(key, undefined, {
+        formatKey(cacheKey).localeCompare(formatKey(key), undefined, {
             sensitivity: "accent"
         }) === 0
     );

@@ -12,6 +12,8 @@ import filesize from "filesize";
 import fs from "fs";
 import * as path from "path";
 
+import { formatKey } from "./utils/actionUtils";
+
 export class CacheService {
     private _client: S3;
     private _bucket: string;
@@ -38,7 +40,7 @@ export class CacheService {
         restoreKeys: string[]
     ): Promise<string | undefined> {
         restoreKeys = restoreKeys || [];
-        const keys = [primaryKey, ...restoreKeys].map(x => this.formatKey(x));
+        const keys = [primaryKey, ...restoreKeys].map(x => formatKey(x));
 
         core.debug("Resolved Keys:");
         core.debug(JSON.stringify(keys));
@@ -85,7 +87,7 @@ export class CacheService {
     }
 
     async saveCache(paths: string[], key: string): Promise<string> {
-        const formattedKey: string = this.formatKey(key);
+        const formattedKey: string = formatKey(key);
         const compressionMethod = await utils.getCompressionMethod();
 
         const cachePaths = await utils.resolvePaths(paths);
@@ -218,9 +220,5 @@ export class CacheService {
         return (process.env["GITHUB_REPOSITORY"] as string)
             .replace("/", "-")
             .toLowerCase();
-    }
-
-    private formatKey(key: string): string {
-        return key.replace(/[^\w\s]/gi, "-");
     }
 }
