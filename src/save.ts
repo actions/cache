@@ -36,7 +36,6 @@ async function run(): Promise<void> {
             const cache: CacheService = new CacheService(
                 core.getInput(Inputs.AccessKeyId),
                 core.getInput(Inputs.SecretAccessKey),
-                core.getInput(Inputs.Region),
                 core.getInput(Inputs.Bucket)
             );
             await cache.saveCache(cachePaths, primaryKey);

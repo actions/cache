@@ -2,7 +2,6 @@ export enum Inputs {
     Key = "key",
     Path = "path",
     RestoreKeys = "restore-keys",
-    Region = "region",
     AccessKeyId = "access-key-id",
     SecretAccessKey = "secret-access-key",
     Bucket = "bucket"

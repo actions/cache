@@ -11,9 +11,6 @@ inputs:
   restore-keys:
     description: 'An ordered list of keys to use for restoring the cache if no cache hit occurred for key'
     required: false
-  region:
-    description: 'aws region'
-    required: true
   access-key-id:
     description: 'aws access key id'
     required: false

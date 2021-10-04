@@ -18,24 +18,16 @@ export class CacheService {
     private _client: S3;
     private _bucket: string;
 
-    constructor(
-        accessKeyId: string,
-        secretAccessKey: string,
-        region: string,
-        bucket: string
-    ) {
+    constructor(accessKeyId: string, secretAccessKey: string, bucket: string) {
         if (accessKeyId && secretAccessKey) {
             this._client = new S3({
-                region: region,
                 credentials: {
                     accessKeyId: accessKeyId,
                     secretAccessKey: secretAccessKey
                 }
             });
         } else {
-            this._client = new S3({
-                region: region
-            });
+            this._client = new S3();
         }
         this._bucket = bucket;
     }
