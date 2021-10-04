@@ -16,10 +16,10 @@ inputs:
     required: true
   access-key-id:
     description: 'aws access key id'
-    required: true
+    required: false
   secret-access-key:
     description: 'aws secret access key'
-    required: true
+    required: false
   bucket:
     description: 'aws s3 bucket'
     required: true

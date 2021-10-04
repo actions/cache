@@ -24,13 +24,19 @@ export class CacheService {
         region: string,
         bucket: string
     ) {
-        this._client = new S3({
-            region: region,
-            credentials: {
-                accessKeyId: accessKeyId,
-                secretAccessKey: secretAccessKey
-            }
-        });
+        if (accessKeyId && secretAccessKey) {
+            this._client = new S3({
+                region: region,
+                credentials: {
+                    accessKeyId: accessKeyId,
+                    secretAccessKey: secretAccessKey
+                }
+            });
+        } else {
+            this._client = new S3({
+                region: region
+            });
+        }
         this._bucket = bucket;
     }
 
