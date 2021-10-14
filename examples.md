@@ -454,22 +454,22 @@ For renv, the cache directory will vary by OS. Look at https://rstudio.github.io
 
 Locations:
 
-- Ubuntu: `~/.local/share/renv`
-- macOS: `~/Library/Application Support/renv`
-- Windows: `%LOCALAPPDATA%/renv`
+- Ubuntu: `~/.cache/R/renv`
+- macOS: `~/Library/Caches/org.R-project.R/R/renv`
+- Windows: `%LOCALAPPDATA%/R/cache/R/renv`
 
 ### Simple example
 
 ```yaml
 - uses: actions/cache@v2
   with:
-    path: ~/.local/share/renv
+    path: ~/.cache/R/renv
     key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
     restore-keys: |
       ${{ runner.os }}-renv-
 ```
 
-Replace `~/.local/share/renv` with the correct `path` if not using Ubuntu.
+Replace `~/.cache/R/renv` with the correct `path` if not using Ubuntu.
 
 ### Multiple OS's in a workflow
 
@@ -477,7 +477,7 @@ Replace `~/.local/share/renv` with the correct `path` if not using Ubuntu.
 - uses: actions/cache@v2
   if: startsWith(runner.os, 'Linux')
   with:
-    path: ~/.local/share/renv
+    path: ~/.cache/R/renv
     key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
     restore-keys: |
       ${{ runner.os }}-renv-
