@@ -450,53 +450,31 @@ jobs:
 
 ## R - renv
 
-For renv, the cache directory will vary by OS. Look at https://rstudio.github.io/renv/articles/renv.html#cache
-
-Locations:
-
-- Ubuntu: `~/.cache/R/renv`
-- macOS: `~/Library/Caches/org.R-project.R/R/renv`
-- Windows: `%LOCALAPPDATA%/R/cache/R/renv`
-
-### Simple example
+For renv, the cache directory will vary by OS. The `renv::paths$cache()` function is used to get the cache location based on the OS and R version. Look at https://rstudio.github.io/renv/articles/renv.html#cache for more details.
 
 ```yaml
-- uses: actions/cache@v2
+- name: Install and activate renv
+  run: |
+    install.packages("renv")
+    renv::activate()
+  shell: Rscript {0}
+- name: Get R and OS version
+  id: get-version
+  run: |
+    cat("##[set-output name=os-version;]", sessionInfo()$running, "\n", sep = "")
+    cat("##[set-output name=r-version;]", R.Version()$version.string, sep = "")
+  shell: Rscript {0}
+- name: Get renv cache path
+  id: get-renv-cache-path
+  run: |
+    cat("##[set-output name=renv-cache-path;]", renv::paths$cache(), sep = "")
+  shell: Rscript {0}
+- name: Restore Renv package cache
+  uses: actions/cache@v2
   with:
-    path: ~/.cache/R/renv
-    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-renv-
-```
-
-Replace `~/.cache/R/renv` with the correct `path` if not using Ubuntu.
-
-### Multiple OS's in a workflow
-
-```yaml
-- uses: actions/cache@v2
-  if: startsWith(runner.os, 'Linux')
-  with:
-    path: ~/.cache/R/renv
-    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-renv-
-
-- uses: actions/cache@v2
-  if: startsWith(runner.os, 'macOS')
-  with:
-    path: ~/Library/Application Support/renv
-    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-renv-
-
-- uses: actions/cache@v2
-  if: startsWith(runner.os, 'Windows')
-  with:
-    path: ~\AppData\Local\renv
-    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-renv-
+    path: ${{ steps.get-renv-cache-path.outputs.renv-cache-path }}
+    key: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{inputs.cache-version }}-${{ hashFiles('renv.lock') }}
+    restore-keys: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{inputs.cache-version }}-
 ```
 
 ## Ruby - Bundler
