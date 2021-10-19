@@ -450,9 +450,13 @@ jobs:
 
 ## R - renv
 
-For renv, the cache directory will vary by OS. The `renv::paths$cache()` function is used to get the cache location based on the OS and R version. Look at https://rstudio.github.io/renv/articles/renv.html#cache for more details.
+For renv, the cache directory will vary by OS. The `RENV_PATHS_ROOT` environment variable is used to set the cache location. Have a look at https://rstudio.github.io/renv/reference/paths.html#details for more details.
 
 ```yaml
+- name: Set RENV_PATHS_ROOT
+  shell: bash
+  run: |
+    echo "RENV_PATHS_ROOT=${{ runner.temp }}/renv" >> $GITHUB_ENV
 - name: Install and activate renv
   run: |
     install.packages("renv")
@@ -472,8 +476,8 @@ For renv, the cache directory will vary by OS. The `renv::paths$cache()` functio
 - name: Restore Renv package cache
   uses: actions/cache@v2
   with:
-    path: ${{ steps.get-renv-cache-path.outputs.renv-cache-path }}
-    key: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{inputs.cache-version }}-${{ hashFiles('renv.lock') }}
+    path: ${{ env.RENV_PATHS_ROOT }}
+    key: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{ inputs.cache-version }}-${{ hashFiles('renv.lock') }}
     restore-keys: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{inputs.cache-version }}-
 ```
 
