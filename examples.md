@@ -468,11 +468,6 @@ For renv, the cache directory will vary by OS. The `RENV_PATHS_ROOT` environment
     cat("##[set-output name=os-version;]", sessionInfo()$running, "\n", sep = "")
     cat("##[set-output name=r-version;]", R.Version()$version.string, sep = "")
   shell: Rscript {0}
-- name: Get renv cache path
-  id: get-renv-cache-path
-  run: |
-    cat("##[set-output name=renv-cache-path;]", renv::paths$cache(), sep = "")
-  shell: Rscript {0}
 - name: Restore Renv package cache
   uses: actions/cache@v2
   with:
