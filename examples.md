@@ -1,6 +1,7 @@
 # Examples
 
 - [C++ - vcpkg](#c++---vcpkg)
+- [C++ - Conan](#c++---conan)
 - [C# - NuGet](#c---nuget)
 - [D - DUB](#d---dub)
   - [POSIX](#posix)
@@ -65,6 +66,32 @@ env:
         restore-keys: |
           ${{ runner.os }}-${{ env.BUILD_TYPE }}
 ```
+
+## C++ - Conan
+
+Using [Conan](https://docs.conan.io/en/latest/)
+
+```yaml
+# Set the environment variables
+env:
+  BUILD_TYPE: Debug
+  CONAN_SYSREQUIRES_MODE: enabled
+  CONAN_USER_HOME: "./conan-cache"
+  CONAN_USER_HOME_SHORT: "./conan-cache/short"
+```
+
+```yaml
+    - name: Cache
+      uses: actions/cache@v2
+      with:
+        path: |
+          ${{ env.CONAN_USER_HOME }}
+          ~/.cache/pip
+        key: ${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('./conanfile.txt')}}-${{ hashFiles('./conanfile.py')}}
+        restore-keys: |
+          ${{ runner.os }}-${{ env.BUILD_TYPE }}
+```
+
 ## C# - NuGet
 
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
