@@ -86,6 +86,7 @@ Every programming language and framework has its own way of caching.
 
 See [Examples](examples.md) for a list of `actions/cache` implementations for use with:
 
+- [C++ - vcpkg](./examples.md#c++---vcpkg)
 - [C# - Nuget](./examples.md#c---nuget)
 - [D - DUB](./examples.md#d---dub)
 - [Elixir - Mix](./examples.md#elixir---mix)

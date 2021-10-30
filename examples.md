@@ -1,5 +1,6 @@
 # Examples
 
+- [C++ - vcpkg](#c++---vcpkg)
 - [C# - NuGet](#c---nuget)
 - [D - DUB](#d---dub)
   - [POSIX](#posix)
@@ -37,6 +38,33 @@
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 - [Swift - Swift Package Manager](#swift---swift-package-manager)
 
+### C++ - vcpkg
+
+Using [vcpkg](https://vcpkg.io/en/getting-started.html):
+
+```yaml
+# Set the build type environment variable
+env:
+  BUILD_TYPE: Debug
+```
+
+```yaml
+    - name: Cache
+      uses: actions/cache@v2
+      with:
+        # Assuming that vcpkg is installed in `~/vcpkg`
+        # Assuming that the build directory is `./build`
+        path: |
+          ~/vcpkg 
+          ./build/vcpkg_installed
+          ${{ env.HOME }}/.cache/vcpkg/archives
+          ${{ env.XDG_CACHE_HOME }}/vcpkg/archives
+          ${{ env.LOCALAPPDATA }}\vcpkg\archives
+          ${{ env.APPDATA }}\vcpkg\archives
+        key: ${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('./vcpkg.json')}}
+        restore-keys: |
+          ${{ runner.os }}-${{ env.BUILD_TYPE }}
+```
 ## C# - NuGet
 
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
