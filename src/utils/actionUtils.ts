@@ -18,6 +18,13 @@ export function isExactKeyMatch(key: string, cacheKey?: string): boolean {
     );
 }
 
+export function setActionsCacheUrl(): void {
+    const requestedCacheUrl = core.getInput("cache-url");
+    if (requestedCacheUrl) {
+        process.env.ACTIONS_CACHE_URL = requestedCacheUrl;
+    }
+}
+
 export function setCacheState(state: string): void {
     core.saveState(State.CacheMatchedKey, state);
 }

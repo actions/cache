@@ -36328,7 +36328,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.getCacheState = exports.setOutputAndState = exports.setCacheHitOutput = exports.setCacheState = exports.isExactKeyMatch = exports.isGhes = void 0;
+exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.getCacheState = exports.setOutputAndState = exports.setCacheHitOutput = exports.setCacheState = exports.setActionsCacheUrl = exports.isExactKeyMatch = exports.isGhes = void 0;
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(196);
 function isGhes() {
@@ -36343,6 +36343,13 @@ function isExactKeyMatch(key, cacheKey) {
         }) === 0);
 }
 exports.isExactKeyMatch = isExactKeyMatch;
+function setActionsCacheUrl() {
+    const requestedCacheUrl = core.getInput("cache-url");
+    if (requestedCacheUrl) {
+        process.env.ACTIONS_CACHE_URL = requestedCacheUrl;
+    }
+}
+exports.setActionsCacheUrl = setActionsCacheUrl;
 function setCacheState(state) {
     core.saveState(constants_1.State.CacheMatchedKey, state);
 }
@@ -44905,6 +44912,7 @@ process.on("uncaughtException", e => utils.logWarning(e.message));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
+            utils.setActionsCacheUrl();
             if (utils.isGhes()) {
                 utils.logWarning("Cache action is not supported on GHES. See https://github.com/actions/cache/issues/505 for more details");
                 return;
