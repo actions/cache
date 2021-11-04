@@ -36348,6 +36348,9 @@ function setActionsCacheUrl() {
     if (requestedCacheUrl) {
         process.env.ACTIONS_CACHE_URL = requestedCacheUrl;
     }
+    else if (process.env.GITHUB_ACTIONS_CACHE_URL) {
+        process.env.ACTIONS_CACHE_URL = process.env.GITHUB_ACTIONS_CACHE_URL;
+    }
 }
 exports.setActionsCacheUrl = setActionsCacheUrl;
 function setCacheState(state) {

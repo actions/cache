@@ -22,6 +22,8 @@ export function setActionsCacheUrl(): void {
     const requestedCacheUrl = core.getInput("cache-url");
     if (requestedCacheUrl) {
         process.env.ACTIONS_CACHE_URL = requestedCacheUrl;
+    } else if (process.env.GITHUB_ACTIONS_CACHE_URL) {
+        process.env.ACTIONS_CACHE_URL = process.env.GITHUB_ACTIONS_CACHE_URL;
     }
 }
 
