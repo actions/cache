@@ -36,6 +36,7 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 * `key` - An explicit key for restoring and saving the cache
 * `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key. Note
 `cache-hit` returns false in this case.
+* `reeval-key` - A boolean which causes the key to be re-evaluated during the Post-Action step
 
 #### Environment Variables
 * `SEGMENT_DOWNLOAD_TIMEOUT_MIN` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](#cache-segment-restore-timeout)
