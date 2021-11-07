@@ -1,40 +1,45 @@
 # Examples
 
-- [Examples](#examples)
-  - [C# - NuGet](#c---nuget)
-  - [D - DUB](#d---dub)
-  - [Elixir - Mix](#elixir---mix)
-  - [Go - Modules](#go---modules)
-  - [Haskell - Cabal](#haskell---cabal)
-  - [Java - Gradle](#java---gradle)
-  - [Java - Maven](#java---maven)
-  - [Node - npm](#node---npm)
-    - [macOS and Ubuntu](#macos-and-ubuntu)
-    - [Windows](#windows)
-    - [Using multiple systems and `npm config`](#using-multiple-systems-and-npm-config)
-  - [Node - Lerna](#node---lerna)
-  - [Node - Yarn](#node---yarn)
-  - [Node - Yarn 2](#node---yarn-2)
-  - [OCaml/Reason - esy](#ocamlreason---esy)
-  - [PHP - Composer](#php---composer)
-  - [Python - pip](#python---pip)
-    - [Simple example](#simple-example)
-    - [Multiple OSes in a workflow](#multiple-oss-in-a-workflow)
-    - [Using pip to get cache location](#using-pip-to-get-cache-location)
-    - [Using a script to get cache location](#using-a-script-to-get-cache-location)
-  - [Python - pipenv](#python---pipenv)
-  - [R - renv](#r---renv)
-    - [Simple example](#simple-example-1)
-    - [Multiple OSes in a workflow](#multiple-oss-in-a-workflow-1)
-  - [Ruby - Bundler](#ruby---bundler)
-  - [Rust - Cargo](#rust---cargo)
-  - [Scala - SBT](#scala---sbt)
-  - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
-  - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
-  - [Swift - Swift Package Manager](#swift---swift-package-manager)
-  - [* - Bazel](#---bazel)
+- [C# - NuGet](#c---nuget)
+- [D - DUB](#d---dub)
+  - [POSIX](#posix)
+  - [Windows](#windows)
+- [Elixir - Mix](#elixir---mix)
+- [Go - Modules](#go---modules)
+  - [Linux](#linux)
+  - [macOS](#macos)
+  - [Windows](#windows-1)
+- [Haskell - Cabal](#haskell---cabal)
+- [Java - Gradle](#java---gradle)
+- [Java - Maven](#java---maven)
+- [Node - npm](#node---npm)
+  - [macOS and Ubuntu](#macos-and-ubuntu)
+  - [Windows](#windows-2)
+  - [Using multiple systems and `npm config`](#using-multiple-systems-and-npm-config)
+- [Node - Lerna](#node---lerna)
+- [Node - Yarn](#node---yarn)
+- [Node - Yarn 2](#node---yarn-2)
+- [OCaml/Reason - esy](#ocamlreason---esy)
+- [PHP - Composer](#php---composer)
+- [Python - pip](#python---pip)
+  - [Simple example](#simple-example)
+  - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow)
+  - [Multiple OS's in a workflow with a matrix](#multiple-oss-in-a-workflow-with-a-matrix)
+  - [Using pip to get cache location](#using-pip-to-get-cache-location)
+- [Python - pipenv](#python---pipenv)
+- [R - renv](#r---renv)
+  - [Simple example](#simple-example-1)
+  - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow-1)
+- [Ruby - Bundler](#ruby---bundler)
+- [Rust - Cargo](#rust---cargo)
+- [Scala - SBT](#scala---sbt)
+- [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
+- [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
+- [Swift - Swift Package Manager](#swift---swift-package-manager)
+- [* - Bazel](#---bazel)
 
 ## C# - NuGet
+
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
 
 ```yaml
@@ -48,10 +53,11 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 
 Depending on the environment, huge packages might be pre-installed in the global cache folder.
 With `actions/cache@v2` you can now exclude unwanted packages with [exclude pattern](https://github.com/actions/toolkit/tree/main/packages/glob#exclude-patterns)
+
 ```yaml
 - uses: actions/cache@v2
   with:
-    path: | 
+    path: |
       ~/.nuget/packages
       !~/.nuget/packages/unwanted
     key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
@@ -112,10 +118,40 @@ steps:
 
 ## Go - Modules
 
+### Linux
+
 ```yaml
 - uses: actions/cache@v2
   with:
-    path: ~/go/pkg/mod
+    path: |
+      ~/.cache/go-build
+      ~/go/pkg/mod
+    key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+    restore-keys: |
+      ${{ runner.os }}-go-
+```
+
+### macOS
+
+```yaml
+- uses: actions/cache@v2
+  with:
+    path: |
+      ~/Library/Caches/go-build
+      ~/go/pkg/mod
+    key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+    restore-keys: |
+      ${{ runner.os }}-go-
+```
+
+### Windows
+
+```yaml
+- uses: actions/cache@v2
+  with:
+    path: |
+      %LocalAppData%\go-build
+      ~/go/pkg/mod
     key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
     restore-keys: |
       ${{ runner.os }}-go-
@@ -137,6 +173,8 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 ```
 
 ## Java - Gradle
+
+>Note: Ensure no Gradle daemons are running anymore when your workflow completes. Creating the cache package might fail due to locks being held by Gradle. Refer to the [Gradle Daemon documentation](https://docs.gradle.org/current/userguide/gradle_daemon.html) on how to disable or stop the Gradle Daemons.
 
 ```yaml
 - uses: actions/cache@v2
@@ -240,8 +278,8 @@ The yarn cache directory will depend on your operating system and version of `ya
       ${{ runner.os }}-yarn-
 ```
 
-
 ## Node - Yarn 2
+
 The yarn 2 cache directory will depend on your config. See https://yarnpkg.com/configuration/yarnrc#cacheFolder for more info.
 
 ```yaml
@@ -259,6 +297,7 @@ The yarn 2 cache directory will depend on your config. See https://yarnpkg.com/c
 ```
 
 ## OCaml/Reason - esy
+
 Esy allows you to export built dependencies and import pre-built dependencies.
 ```yaml
     - name: Restore Cache
@@ -279,12 +318,11 @@ Esy allows you to export built dependencies and import pre-built dependencies.
     ...(Build job)...
 
     # Re-export dependencies if anything has changed or if it is the first time
-    - name: Setting dependency cache 
+    - name: Setting dependency cache
       run: |
         esy export-dependencies
       if: steps.restore-cache.outputs.cache-hit != 'true'
 ```
-
 
 ## PHP - Composer
 
@@ -306,11 +344,13 @@ Esy allows you to export built dependencies and import pre-built dependencies.
 For pip, the cache directory will vary by OS. See https://pip.pypa.io/en/stable/reference/pip_install/#caching
 
 Locations:
- - Ubuntu: `~/.cache/pip`
- - Windows: `~\AppData\Local\pip\Cache`
- - macOS: `~/Library/Caches/pip`
+
+- Ubuntu: `~/.cache/pip`
+- Windows: `~\AppData\Local\pip\Cache`
+- macOS: `~/Library/Caches/pip`
 
 ### Simple example
+
 ```yaml
 - uses: actions/cache@v2
   with:
@@ -396,61 +436,45 @@ jobs:
 ## Python - pipenv
 
 ```yaml
+- name: Set up Python
+  # The actions/cache step below uses this id to get the exact python version
+  id: setup-python
+  uses: actions/setup-python@v2
+
+  ⋮
+
 - uses: actions/cache@v2
   with:
     path: ~/.local/share/virtualenvs
-    key: ${{ runner.os }}-pipenv-${{ hashFiles('Pipfile.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-pipenv-
+    key: ${{ runner.os }}-python-${{ steps.setup-python.outputs.python-version }}-pipenv-${{ hashFiles('Pipfile.lock') }}
 ```
 
 ## R - renv
 
-For renv, the cache directory will vary by OS. Look at https://rstudio.github.io/renv/articles/renv.html#cache
-
-Locations:
- - Ubuntu: `~/.local/share/renv`
- - macOS: `~/Library/Application Support/renv`
- - Windows: `%LOCALAPPDATA%/renv`
-
-### Simple example
-```yaml
-- uses: actions/cache@v2
-  with:
-    path: ~/.local/share/renv
-    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-renv-
-```
-
-Replace `~/.local/share/renv` with the correct `path` if not using Ubuntu.
-
-### Multiple OS's in a workflow
+For renv, the cache directory will vary by OS. The `RENV_PATHS_ROOT` environment variable is used to set the cache location. Have a look at https://rstudio.github.io/renv/reference/paths.html#details for more details.
 
 ```yaml
-- uses: actions/cache@v2
-  if: startsWith(runner.os, 'Linux')
+- name: Set RENV_PATHS_ROOT
+  shell: bash
+  run: |
+    echo "RENV_PATHS_ROOT=${{ runner.temp }}/renv" >> $GITHUB_ENV
+- name: Install and activate renv
+  run: |
+    install.packages("renv")
+    renv::activate()
+  shell: Rscript {0}
+- name: Get R and OS version
+  id: get-version
+  run: |
+    cat("##[set-output name=os-version;]", sessionInfo()$running, "\n", sep = "")
+    cat("##[set-output name=r-version;]", R.Version()$version.string, sep = "")
+  shell: Rscript {0}
+- name: Restore Renv package cache
+  uses: actions/cache@v2
   with:
-    path: ~/.local/share/renv
-    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-renv-
-
-- uses: actions/cache@v2
-  if: startsWith(runner.os, 'macOS')
-  with:
-    path: ~/Library/Application Support/renv
-    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-renv-
-
-- uses: actions/cache@v2
-  if: startsWith(runner.os, 'Windows')
-  with:
-    path: ~\AppData\Local\renv
-    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-renv-
+    path: ${{ env.RENV_PATHS_ROOT }}
+    key: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{ inputs.cache-version }}-${{ hashFiles('renv.lock') }}
+    restore-keys: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{inputs.cache-version }}-
 ```
 
 ## Ruby - Bundler
@@ -475,9 +499,11 @@ whenever possible:
 - uses: actions/cache@v2
   with:
     path: |
-      ~/.cargo/registry
-      ~/.cargo/git
-      target
+      ~/.cargo/bin/
+      ~/.cargo/registry/index/
+      ~/.cargo/registry/cache/
+      ~/.cargo/git/db/
+      target/
     key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 ```
 
@@ -487,7 +513,7 @@ whenever possible:
 - name: Cache SBT
   uses: actions/cache@v2
   with:
-    path: | 
+    path: |
       ~/.ivy2/cache
       ~/.sbt
     key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
