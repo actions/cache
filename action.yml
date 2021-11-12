@@ -19,7 +19,8 @@ inputs:
     required: false
   bucket:
     description: 'aws s3 bucket'
-    required: true
+    required: false
+    default: 'github-actions-cache'
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
