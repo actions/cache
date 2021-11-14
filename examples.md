@@ -1,5 +1,6 @@
 # Examples
 
+- [C++ - Conan](#c---conan)
 - [C# - NuGet](#c---nuget)
 - [D - DUB](#d---dub)
   - [POSIX](#posix)
@@ -36,6 +37,47 @@
 - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 - [Swift - Swift Package Manager](#swift---swift-package-manager)
+
+## C++ - Conan
+
+Using [Conan Lockfiles](https://docs.conan.io/en/latest/versioning/lockfiles.html):
+
+```.yaml
+- name: create conan cache keys
+  run: |
+    conan lock create conanfile.py --build missing
+- name: get conan cache
+  uses: actions/cache@v2
+  with:
+    path: |
+      ~/.conan/data
+      !~/.conan/data/**/conan_sources.tgz
+    key: conan-${{ hashFiles('conan.lock') }}
+- name: install conan dependencies
+  run: |
+    conan install . --lockfile conan.lock --build missing
+```
+
+Using a custom cache location, and a profile as a partial cache key:
+
+```.yaml
+env: 
+  CONAN_USER_HOME: /tmp/
+  PROFILE: my_profile
+- name: create lockfile
+  run: |
+    conan lock create conanfile.py -pr $PROFILE --build missing
+- name: get conan cache
+  uses: actions/cache@v2
+  with:
+    path: |
+      ${{ env.CONAN_USER_HOME }}/.conan/data
+      !${{ env.CONAN_USER_HOME }}/.conan/data/**/conan_sources.tgz
+    key: conan-${{ env.PROFILE }}-${{ hashFiles('conan.lock') }}
+- name: install conan dependencies
+  run: |
+    conan install . --lockfile conan.lock --build missing
+```
 
 ## C# - NuGet
 
