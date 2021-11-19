@@ -23,29 +23,29 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
-    "@actions/cache": "^1.0.8",
-    "@actions/core": "^1.6.0",
-    "@actions/exec": "^1.1.0",
-    "@actions/io": "^1.1.1"
+    "@actions/cache": "^1.0.7",
+    "@actions/core": "^1.2.6",
+    "@actions/exec": "^1.0.1",
+    "@actions/io": "^1.1.0"
   },
   "devDependencies": {
     "@types/jest": "^24.0.13",
     "@types/nock": "^11.1.0",
-    "@types/node": "^12.20.37",
+    "@types/node": "^12.20.7",
     "@typescript-eslint/eslint-plugin": "^2.7.0",
     "@typescript-eslint/parser": "^2.7.0",
     "@zeit/ncc": "^0.20.5",
     "eslint": "^6.6.0",
     "eslint-config-prettier": "^6.15.0",
-    "eslint-plugin-import": "^2.25.3",
+    "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-jest": "^23.20.0",
-    "eslint-plugin-prettier": "^3.4.1",
+    "eslint-plugin-prettier": "^3.3.1",
     "eslint-plugin-simple-import-sort": "^5.0.2",
     "jest": "^24.8.0",
     "jest-circus": "^24.7.1",
     "nock": "^11.7.0",
     "prettier": "^1.19.1",
-    "ts-jest": "^26.5.6",
-    "typescript": "^3.9.10"
+    "ts-jest": "^26.5.4",
+    "typescript": "^3.9.9"
   }
 }
