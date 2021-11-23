@@ -1,6 +1,6 @@
 ---
 name: "@actions/cache"
-version: 1.0.7
+version: 1.0.8
 type: npm
 summary: Actions cache lib
 homepage: https://github.com/actions/toolkit/tree/main/packages/cache
