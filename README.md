@@ -143,7 +143,7 @@ See [Using contexts to create cache keys](https://help.github.com/en/actions/con
 
 ## Cache Limits
 
-A repository can have up to 5GB of caches. Once the 5GB limit is reached, older caches will be evicted based on when the cache was last accessed.  Caches that are not accessed within the last week will also be evicted.
+A repository can have up to 10GB of caches. Once the 10GB limit is reached, older caches will be evicted based on when the cache was last accessed.  Caches that are not accessed within the last week will also be evicted.
 
 ## Skipping steps based on cache-hit
 
