@@ -256,7 +256,7 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 
 ## Node - npm
 
-For npm, cache files are stored in `~/.npm` on Posix, or `~\AppData\npm-cache` on Windows, but it's possible to use `npm config get cache` to find the path on any platform. See https://docs.npmjs.com/cli/cache#cache for more details.
+For npm, cache files are stored in `~/.npm` on Posix, or `~\AppData\npm-cache` on Windows, but it's possible to use `npm config get cache` to find the path on any platform. See [the npm docs](https://docs.npmjs.com/cli/cache#cache) for more details.
 
 If using `npm config` to retrieve the cache directory, ensure you run [actions/setup-node](https://github.com/actions/setup-node) first to ensure your `npm` version is correct.
 
