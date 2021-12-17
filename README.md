@@ -169,7 +169,9 @@ steps:
 
 ## Known limitation
 
-- The `action/cache` is not supported on GithHub Enterprise Server deployments. GitHub Enterprise Server uses self-hosted runners, dependencies are typically cached on the runner by whatever dependency management tool is being used (npm, maven, etc.), so saving these to an external cache would be less efficient.
+- `action/cache` is currently not supported on GitHub Enterprise Server. <https://github.com/github/roadmap/issues/273> is tracking this.
+
+Since GitHub Enterprise Server uses self-hosted runners, dependencies are typically cached on the runner by whatever dependency management tool is being used (npm, maven, etc.).  This eliminates the need for explicit caching in some scenarios.
 
 ## Contributing
 We would love for you to contribute to `actions/cache`, pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
