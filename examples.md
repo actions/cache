@@ -168,8 +168,9 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
       ~/.cabal/packages
       ~/.cabal/store
       dist-newstyle
-    key: cabal-${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal.project.freeze') }}
-    restore-keys: cabal-${{ runner.os }}-${{ matrix.ghc }}-```
+    key: ${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal.project.freeze') }}
+    restore-keys: ${{ runner.os }}-${{ matrix.ghc }}-
+```
 
 ## Java - Gradle
 
