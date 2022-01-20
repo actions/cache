@@ -17,24 +17,6 @@ afterEach(() => {
     delete process.env[RefKey];
 });
 
-test("isGhes returns true if server url is not github.com", () => {
-    try {
-        process.env["GITHUB_SERVER_URL"] = "http://example.com";
-        expect(actionUtils.isGhes()).toBe(true);
-    } finally {
-        process.env["GITHUB_SERVER_URL"] = undefined;
-    }
-});
-
-test("isGhes returns true when server url is github.com", () => {
-    try {
-        process.env["GITHUB_SERVER_URL"] = "http://github.com";
-        expect(actionUtils.isGhes()).toBe(false);
-    } finally {
-        process.env["GITHUB_SERVER_URL"] = undefined;
-    }
-});
-
 test("isExactKeyMatch with undefined cache key returns false", () => {
     const key = "linux-rust";
     const cacheKey = undefined;
