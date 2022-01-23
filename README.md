@@ -46,6 +46,8 @@ Create a workflow `.yml` file in your repositories `.github/workflows` directory
 
 > See [Skipping steps based on cache-hit](#Skipping-steps-based-on-cache-hit) for info on using this output
 
+* `cache-key` - A string indicating the matching cache key (if any).
+
 ### Cache scopes
 The cache is scoped to the key and branch. The default branch cache is available to other branches. 
 

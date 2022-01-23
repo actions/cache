@@ -4609,6 +4609,7 @@ var Inputs;
 var Outputs;
 (function (Outputs) {
     Outputs["CacheHit"] = "cache-hit";
+    Outputs["CacheKey"] = "cache-key";
 })(Outputs = exports.Outputs || (exports.Outputs = {}));
 var State;
 (function (State) {
@@ -36343,8 +36344,9 @@ function isExactKeyMatch(key, cacheKey) {
         }) === 0);
 }
 exports.isExactKeyMatch = isExactKeyMatch;
-function setCacheState(state) {
+function setCacheState(state, key) {
     core.saveState(constants_1.State.CacheMatchedKey, state);
+    core.setOutput(constants_1.Outputs.CacheKey, key);
 }
 exports.setCacheState = setCacheState;
 function setCacheHitOutput(isCacheHit) {
@@ -36354,7 +36356,7 @@ exports.setCacheHitOutput = setCacheHitOutput;
 function setOutputAndState(key, cacheKey) {
     setCacheHitOutput(isExactKeyMatch(key, cacheKey));
     // Store the matched cache key if it exists
-    cacheKey && setCacheState(cacheKey);
+    cacheKey && setCacheState(cacheKey, key);
 }
 exports.setOutputAndState = setOutputAndState;
 function getCacheState() {
