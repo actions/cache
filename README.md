@@ -42,7 +42,7 @@ Create a workflow `.yml` file in your repositories `.github/workflows` directory
 
 ### Outputs
 
-* `cache-hit` - A boolean value to indicate an exact match was found for the key
+* `cache-hit` - A boolean value to indicate an exact match was found for the key. It will be `false` if a `restore-key` is matched.
 
 > See [Skipping steps based on cache-hit](#Skipping-steps-based-on-cache-hit) for info on using this output
 
