@@ -34,6 +34,8 @@ Refer [here](https://github.com/actions/cache/blob/v1/README.md) for previous ve
 ### Pre-requisites
 Create a workflow `.yml` file in your repositories `.github/workflows` directory. An [example workflow](#example-workflow) is available below. For more information, reference the GitHub Help Documentation for [Creating a workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
 
+If you are using this inside a container, a POSIX-compliant `tar` needs to be included and accessible in the execution path.
+
 ### Inputs
 
 * `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns. 
