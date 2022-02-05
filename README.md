@@ -10,14 +10,14 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
 
 ## What's New
 
-* Added support for multiple paths, [glob patterns](https://github.com/actions/toolkit/tree/main/packages/glob), and single file caches. 
+* Added support for multiple paths, [glob patterns](https://github.com/actions/toolkit/tree/main/packages/glob), and single file caches (see [caveats on negative patterns](https://github.com/actions/cache/issues/494)). 
 
 ```yaml
 - name: Cache multiple paths
   uses: actions/cache@v2
   with:
     path: |
-      ~/cache
+      ~/cache/*
       !~/cache/exclude
     key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
 ```
