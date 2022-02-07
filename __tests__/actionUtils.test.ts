@@ -26,7 +26,7 @@ test("isGhes returns true if server url is not github.com", () => {
     }
 });
 
-test("isGhes returns true when server url is github.com", () => {
+test("isGhes returns false when server url is github.com", () => {
     try {
         process.env["GITHUB_SERVER_URL"] = "http://github.com";
         expect(actionUtils.isGhes()).toBe(false);
