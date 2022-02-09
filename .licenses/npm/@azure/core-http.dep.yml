@@ -1,6 +1,6 @@
 ---
 name: "@azure/core-http"
-version: 2.2.2
+version: 2.2.4
 type: npm
 summary: Isomorphic client Runtime for Typescript/node.js/browser javascript client
   libraries generated using AutoRest
