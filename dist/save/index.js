@@ -1473,17 +1473,7 @@ exports.parseURL = __webpack_require__(936).parseURL;
 
 
 /***/ }),
-/* 71 */
-/***/ (function() {
-
-"use strict";
-
-if (typeof Symbol === undefined || !Symbol.asyncIterator) {
-    Symbol.asyncIterator = Symbol.for("Symbol.asyncIterator");
-}
-//# sourceMappingURL=index.js.map
-
-/***/ }),
+/* 71 */,
 /* 72 */,
 /* 73 */,
 /* 74 */,
@@ -2743,7 +2733,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 
 /***/ }),
 /* 96 */,
-/* 97 */,
+/* 97 */
+/***/ (function() {
+
+"use strict";
+
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+if (typeof Symbol === undefined || !Symbol.asyncIterator) {
+    Symbol.asyncIterator = Symbol.for("Symbol.asyncIterator");
+}
+//# sourceMappingURL=index.js.map
+
+/***/ }),
 /* 98 */,
 /* 99 */,
 /* 100 */,
@@ -35986,9 +35988,9 @@ function extractTar(archivePath, compressionMethod) {
         function getCompressionProgram() {
             switch (compressionMethod) {
                 case constants_1.CompressionMethod.Zstd:
-                    return ['--use-compress-program', 'zstd -d --long=30'];
+                    return ['--use-compress-program', 'zstd -d --fast=1 --long=30'];
                 case constants_1.CompressionMethod.ZstdWithoutLong:
-                    return ['--use-compress-program', 'zstd -d'];
+                    return ['--use-compress-program', 'zstd -d --fast=1'];
                 default:
                     return ['-z'];
             }
@@ -36050,9 +36052,9 @@ function listTar(archivePath, compressionMethod) {
         function getCompressionProgram() {
             switch (compressionMethod) {
                 case constants_1.CompressionMethod.Zstd:
-                    return ['--use-compress-program', 'zstd -d --long=30'];
+                    return ['--use-compress-program', 'zstd -d --fast=1 --long=30'];
                 case constants_1.CompressionMethod.ZstdWithoutLong:
-                    return ['--use-compress-program', 'zstd -d'];
+                    return ['--use-compress-program', 'zstd -d --fast=1'];
                 default:
                     return ['-z'];
             }
@@ -39151,7 +39153,7 @@ function defer(fn)
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-__webpack_require__(71);
+__webpack_require__(97);
 var tslib = __webpack_require__(671);
 
 // Copyright (c) Microsoft Corporation.
@@ -53431,7 +53433,7 @@ var FormData = __webpack_require__(790);
 var node_fetch = __webpack_require__(454);
 var coreTracing = __webpack_require__(263);
 var url = __webpack_require__(835);
-__webpack_require__(71);
+__webpack_require__(97);
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
