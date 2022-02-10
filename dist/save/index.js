@@ -36021,9 +36021,9 @@ function createTar(archiveFolder, sourceDirectories, compressionMethod) {
         function getCompressionProgram() {
             switch (compressionMethod) {
                 case constants_1.CompressionMethod.Zstd:
-                    return ['--use-compress-program', 'zstd -T0 --long=30'];
+                    return ['--use-compress-program', 'zstd -T0 --fast=1 --long=30'];
                 case constants_1.CompressionMethod.ZstdWithoutLong:
-                    return ['--use-compress-program', 'zstd -T0'];
+                    return ['--use-compress-program', 'zstd -T0 --fast=1'];
                 default:
                     return ['-z'];
             }
