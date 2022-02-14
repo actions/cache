@@ -1,6 +1,6 @@
-name: 'Cache'
-description: 'Cache artifacts like dependencies and build outputs to improve workflow execution time'
-author: 'GitHub'
+name: 'Cache S3'
+description: 'actions/cache@v2 for AWS S3 and compatible software (forked Actions)'
+author: 'whywaita'
 inputs:
   path:
     description: 'A list of files, directories, and wildcard patterns to cache and restore'
