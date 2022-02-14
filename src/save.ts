@@ -11,13 +11,6 @@ process.on("uncaughtException", e => utils.logWarning(e.message));
 
 async function run(): Promise<void> {
     try {
-        if (utils.isGhes()) {
-            utils.logWarning(
-                "Cache action is not supported on GHES. See https://github.com/actions/cache/issues/505 for more details"
-            );
-            return;
-        }
-
         if (!utils.isValidEvent()) {
             utils.logWarning(
                 `Event Validation Error: The event type ${
@@ -46,11 +39,13 @@ async function run(): Promise<void> {
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
             required: true
         });
+        const s3BucketName = core.getInput(Inputs.AWSS3Bucket);
+        const s3config = utils.getInputS3ClientConfig();
 
         try {
             await cache.saveCache(cachePaths, primaryKey, {
                 uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
-            });
+            }, s3config, s3BucketName);
             core.info(`Cache saved with key: ${primaryKey}`);
         } catch (error) {
             if (error.name === cache.ValidationError.name) {

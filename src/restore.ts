@@ -6,14 +6,6 @@ import * as utils from "./utils/actionUtils";
 
 async function run(): Promise<void> {
     try {
-        if (utils.isGhes()) {
-            utils.logWarning(
-                "Cache action is not supported on GHES. See https://github.com/actions/cache/issues/505 for more details"
-            );
-            utils.setCacheHitOutput(false);
-            return;
-        }
-
         // Validate inputs, this can cause task failure
         if (!utils.isValidEvent()) {
             utils.logWarning(
@@ -31,12 +23,17 @@ async function run(): Promise<void> {
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
             required: true
         });
+        const s3BucketName = core.getInput(Inputs.AWSS3Bucket);
+        const s3config = utils.getInputS3ClientConfig();
 
         try {
             const cacheKey = await cache.restoreCache(
                 cachePaths,
                 primaryKey,
-                restoreKeys
+                restoreKeys,
+                undefined,
+                s3config,
+                s3BucketName
             );
             if (!cacheKey) {
                 core.info(

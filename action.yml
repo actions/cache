@@ -14,6 +14,29 @@ inputs:
   upload-chunk-size:
     description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
+  aws-s3-bucket:
+    description: 'An AWS S3 bucket to save cache'
+    required: true
+  aws-access-key-id:
+    description: 'An AWS access key id to access the bucket'
+    required: true
+  aws-secret-access-key:
+    description: 'An AWS secret access key to access the bucket'
+    required: true
+  aws-region:
+    description: 'An AWS region where the bucket is located'
+    required: false
+  aws-endpoint:
+    description: 'An endpoint of AWS S3 (for compatible software)'
+    required: false
+  aws-s3-bucket-endpoint:
+    description: 'Whether to use the bucket name as the endpoint for this request.'
+    required: false
+    default: true
+  aws-s3-force-path-style:
+    description: 'Whether to force path style URLs for S3 objects.'
+    required: false
+    default: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
