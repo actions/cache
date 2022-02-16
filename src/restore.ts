@@ -52,6 +52,7 @@ async function run(): Promise<void> {
             utils.setCacheState(cacheKey);
 
             const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
+            utils.setCacheRestoredOutput(true);
             utils.setCacheHitOutput(isExactKeyMatch);
 
             core.info(`Cache restored from key: ${cacheKey}`);
@@ -60,6 +61,7 @@ async function run(): Promise<void> {
                 throw error;
             } else {
                 utils.logWarning(error.message);
+                utils.setCacheRestoredOutput(false);
                 utils.setCacheHitOutput(false);
             }
         }
