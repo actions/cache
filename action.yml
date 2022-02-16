@@ -18,7 +18,7 @@ outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
   cache-restored:
-    description: 'A boolean value to indicate an exact or partial match was found resulting in a restore'
+    description: 'A boolean value to indicate a primary key match was found resulting in a restore'
 runs:
   using: 'node16'
   main: 'dist/restore/index.js'

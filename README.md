@@ -45,7 +45,7 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 ### Outputs
 
 * `cache-hit` - A boolean value to indicate an exact match was found for the key
-* `cache-restored` - A boolean value to a match was found resulting in a restored cache
+* `cache-restored` - A boolean value to indicate a primary key match was found resulting in a restore
 
 > See [Skipping steps based on `cache-hit`](#Skipping-steps-based-on-cache-hit) for info on using this output
 
