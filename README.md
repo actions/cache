@@ -45,8 +45,9 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 ### Outputs
 
 * `cache-hit` - A boolean value to indicate an exact match was found for the key
+* `cache-restored` - A boolean value to a match was found resulting in a restored cache
 
-> See [Skipping steps based on cache-hit](#Skipping-steps-based-on-cache-hit) for info on using this output
+> See [Skipping steps based on `cache-hit`](#Skipping-steps-based-on-cache-hit) for info on using this output
 
 ### Cache scopes
 The cache is scoped to the key and branch. The default branch cache is available to other branches. 
@@ -147,7 +148,7 @@ See [Using contexts to create cache keys](https://help.github.com/en/actions/con
 
 A repository can have up to 10GB of caches. Once the 10GB limit is reached, older caches will be evicted based on when the cache was last accessed.  Caches that are not accessed within the last week will also be evicted.
 
-## Skipping steps based on cache-hit
+## Skipping steps based on `cache-hit`
 
 Using the `cache-hit` output, subsequent steps (such as install or build) can be skipped when a cache hit occurs on the key.
 
