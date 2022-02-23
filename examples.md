@@ -215,7 +215,7 @@ If using `npm config` to retrieve the cache directory, ensure you run [actions/s
 - name: restore lerna
   uses: actions/cache@v2
   with:
-    path: **/*/node_modules
+    path: **/node_modules
     key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
 ```
 
