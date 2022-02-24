@@ -2,7 +2,7 @@
 
 This action allows caching dependencies and build outputs to improve workflow execution time.
 
-<a href="https://github.com/actions/cache/actions?query=workflow%3ATests"><img alt="GitHub Actions status" src="https://github.com/actions/cache/workflows/Tests/badge.svg?branch=main&event=push"></a>
+[![Tests](https://github.com/actions/cache/actions/workflows/workflow.yml/badge.svg)](https://github.com/actions/cache/actions/workflows/workflow.yml)
 
 ## Documentation
 
