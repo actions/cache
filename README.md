@@ -90,6 +90,7 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 
 - [C# - Nuget](./examples.md#c---nuget)
 - [D - DUB](./examples.md#d---dub)
+- [Deno](./examples.md#deno)
 - [Elixir - Mix](./examples.md#elixir---mix)
 - [Go - Modules](./examples.md#go---modules)
 - [Haskell - Cabal](./examples.md#haskell---cabal)

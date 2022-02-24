@@ -4,18 +4,22 @@
 - [D - DUB](#d---dub)
   - [POSIX](#posix)
   - [Windows](#windows)
-- [Elixir - Mix](#elixir---mix)
-- [Go - Modules](#go---modules)
+- [Deno](#deno)
   - [Linux](#linux)
   - [macOS](#macos)
   - [Windows](#windows-1)
+- [Elixir - Mix](#elixir---mix)
+- [Go - Modules](#go---modules)
+  - [Linux](#linux-1)
+  - [macOS](#macos-1)
+  - [Windows](#windows-2)
 - [Haskell - Cabal](#haskell---cabal)
 - [Haskell - Stack](#haskell---stack)
 - [Java - Gradle](#java---gradle)
 - [Java - Maven](#java---maven)
 - [Node - npm](#node---npm)
   - [macOS and Ubuntu](#macos-and-ubuntu)
-  - [Windows](#windows-2)
+  - [Windows](#windows-3)
   - [Using multiple systems and `npm config`](#using-multiple-systems-and-npm-config)
 - [Node - Lerna](#node---lerna)
 - [Node - Yarn](#node---yarn)
@@ -102,6 +106,42 @@ steps:
     restore-keys: |
       ${{ runner.os }}-dub-
 ```
+
+## Deno
+
+### Linux
+
+```yaml
+- uses: actions/cache@v2
+  with:
+    path: |
+      ~/.deno
+      ~/.cache/deno
+    key: ${{ runner.os }}-deno-${{ hashFiles('**/deps.ts') }}
+```
+
+### macOS
+
+```yaml
+- uses: actions/cache@v2
+  with:
+    path: |
+      ~/.deno
+      ~/Library/Caches/deno
+    key: ${{ runner.os }}-deno-${{ hashFiles('**/deps.ts') }}
+```
+
+### Windows
+
+```yaml
+- uses: actions/cache@v2
+  with:
+    path: |
+      ~\.deno
+      %LocalAppData%\deno
+    key: ${{ runner.os }}-deno-${{ hashFiles('**/deps.ts') }}
+```
+
 
 ## Elixir - Mix
 
