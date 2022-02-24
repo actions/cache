@@ -34,6 +34,8 @@ Refer [here](https://github.com/actions/cache/blob/v1/README.md) for previous ve
 ### Pre-requisites
 Create a workflow `.yml` file in your repositories `.github/workflows` directory. An [example workflow](#example-workflow) is available below. For more information, reference the GitHub Help Documentation for [Creating a workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
 
+If you are using this inside a container, a POSIX-compliant `tar` needs to be included and accessible in the execution path.
+
 ### Inputs
 
 * `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
@@ -91,6 +93,7 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 - [Elixir - Mix](./examples.md#elixir---mix)
 - [Go - Modules](./examples.md#go---modules)
 - [Haskell - Cabal](./examples.md#haskell---cabal)
+- [Haskell - Stack](./examples.md#haskell---stack)
 - [Java - Gradle](./examples.md#java---gradle)
 - [Java - Maven](./examples.md#java---maven)
 - [Node - npm](./examples.md#node---npm)
@@ -143,7 +146,7 @@ See [Using contexts to create cache keys](https://help.github.com/en/actions/con
 
 ## Cache Limits
 
-A repository can have up to 5GB of caches. Once the 5GB limit is reached, older caches will be evicted based on when the cache was last accessed.  Caches that are not accessed within the last week will also be evicted.
+A repository can have up to 10GB of caches. Once the 10GB limit is reached, older caches will be evicted based on when the cache was last accessed.  Caches that are not accessed within the last week will also be evicted.
 
 ## Skipping steps based on cache-hit
 
@@ -166,6 +169,12 @@ steps:
 ```
 
 > Note: The `id` defined in `actions/cache` must match the `id` in the `if` statement (i.e. `steps.[ID].outputs.cache-hit`)
+
+## Known limitation
+
+- `action/cache` is currently not supported on GitHub Enterprise Server. <https://github.com/github/roadmap/issues/273> is tracking this.
+
+Since GitHub Enterprise Server uses self-hosted runners, dependencies are typically cached on the runner by whatever dependency management tool is being used (npm, maven, etc.).  This eliminates the need for explicit caching in some scenarios.
 
 ## Contributing
 We would love for you to contribute to `actions/cache`, pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
