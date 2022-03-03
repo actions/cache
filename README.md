@@ -97,6 +97,7 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 - [Node - npm](./examples.md#node---npm)
 - [Node - Lerna](./examples.md#node---lerna)
 - [Node - Yarn](./examples.md#node---yarn)
+- [Node - Typescript](./examples.md#node---typescript)
 - [OCaml/Reason - esy](./examples.md##ocamlreason---esy)
 - [PHP - Composer](./examples.md#php---composer)
 - [Python - pip](./examples.md#python---pip)
