@@ -142,6 +142,38 @@ test("save with exact match returns early", async () => {
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
+test("save with force-update", async () => {
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const savedCacheKey = primaryKey;
+
+    jest.spyOn(core, "getState")
+        // Cache Entry State
+        .mockImplementationOnce(() => {
+            return savedCacheKey;
+        })
+        // Cache Key State
+        .mockImplementationOnce(() => {
+            return primaryKey;
+        });
+
+    testUtils.setInput(Inputs.ForceUpdate, "true");
+    testUtils.setInput(Inputs.Path, "node_modules");
+
+    const cacheId = 4;
+    const saveCacheMock = jest
+        .spyOn(cache, "saveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(cacheId);
+        });
+
+    await run();
+
+    expect(saveCacheMock).toHaveBeenCalledTimes(1);
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
 test("save with missing input outputs warning", async () => {
     const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const failedMock = jest.spyOn(core, "setFailed");
