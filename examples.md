@@ -33,8 +33,6 @@
   - [Using pip to get cache location](#using-pip-to-get-cache-location)
 - [Python - pipenv](#python---pipenv)
 - [R - renv](#r---renv)
-  - [Simple example](#simple-example-1)
-  - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow-1)
 - [Ruby - Bundler](#ruby---bundler)
 - [Rust - Cargo](#rust---cargo)
 - [Scala - SBT](#scala---sbt)
@@ -71,6 +69,7 @@ With `actions/cache@v2` you can now exclude unwanted packages with [exclude patt
 
 Or you could move the cache folder like below.
 >Note: This workflow does not work for projects that require files to be placed in user profile package folder
+
 ```yaml
 env:
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
@@ -190,8 +189,8 @@ steps:
 - uses: actions/cache@v2
   with:
     path: |
-      %LocalAppData%\go-build
-      ~/go/pkg/mod
+      ~\AppData\Local\go-build
+      ~\go\pkg\mod
     key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
     restore-keys: |
       ${{ runner.os }}-go-

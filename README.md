@@ -2,7 +2,7 @@
 
 This action allows caching dependencies and build outputs to improve workflow execution time.
 
-<a href="https://github.com/actions/cache/actions?query=workflow%3ATests"><img alt="GitHub Actions status" src="https://github.com/actions/cache/workflows/Tests/badge.svg?branch=main&event=push"></a>
+[![Tests](https://github.com/actions/cache/actions/workflows/workflow.yml/badge.svg)](https://github.com/actions/cache/actions/workflows/workflow.yml)
 
 ## Documentation
 
@@ -10,7 +10,7 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
 
 ## What's New
 
-* Added support for multiple paths, [glob patterns](https://github.com/actions/toolkit/tree/main/packages/glob), and single file caches. 
+* Added support for multiple paths, [glob patterns](https://github.com/actions/toolkit/tree/main/packages/glob), and single file caches.
 
 ```yaml
 - name: Cache multiple paths
@@ -38,7 +38,7 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 
 ### Inputs
 
-* `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns. 
+* `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `key` - An explicit key for restoring and saving the cache
 * `restore-keys` - An ordered list of keys to use for restoring the cache if no cache hit occurred for key
 
@@ -49,7 +49,7 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 > See [Skipping steps based on cache-hit](#Skipping-steps-based-on-cache-hit) for info on using this output
 
 ### Cache scopes
-The cache is scoped to the key and branch. The default branch cache is available to other branches. 
+The cache is scoped to the key and branch. The default branch cache is available to other branches.
 
 See [Matching a cache key](https://help.github.com/en/actions/configuring-and-managing-workflows/caching-dependencies-to-speed-up-workflows#matching-a-cache-key) for more info.
 
@@ -88,7 +88,7 @@ Every programming language and framework has its own way of caching.
 
 See [Examples](examples.md) for a list of `actions/cache` implementations for use with:
 
-- [C# - Nuget](./examples.md#c---nuget)
+- [C# - NuGet](./examples.md#c---nuget)
 - [D - DUB](./examples.md#d---dub)
 - [Deno](./examples.md#deno)
 - [Elixir - Mix](./examples.md#elixir---mix)
@@ -121,9 +121,9 @@ For example, using the [`hashFiles`](https://help.github.com/en/actions/referenc
 ```yaml
   - uses: actions/cache@v2
     with:
-      path: | 
+      path: |
         path/to/dependencies
-        some/other/dependencies 
+        some/other/dependencies
       key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
 ```
 
