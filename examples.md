@@ -330,7 +330,7 @@ The yarn cache directory will depend on your operating system and version of `ya
   id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
   with:
     path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-    key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+    key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
     restore-keys: |
       ${{ runner.os }}-yarn-
 ```
@@ -348,7 +348,7 @@ The yarn 2 cache directory will depend on your config. See https://yarnpkg.com/c
   id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
   with:
     path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-    key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+    key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
     restore-keys: |
       ${{ runner.os }}-yarn-
 ```
