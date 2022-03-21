@@ -25,10 +25,10 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-    - name: Setup Node.js 12.x
+    - name: Setup Node.js 16.x
       uses: actions/setup-node@v3
       with:
-        node-version: '12.x'
+        node-version: 16.x
     - name: Determine npm cache directory
       id: npm-cache
       run: |
