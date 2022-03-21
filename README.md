@@ -10,6 +10,8 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
 
 ## What's New
 
+* Updated the minimum runner version support from node 12 -> node 16.
+* Increased the cache size limit to 10 GB.
 * Added support for multiple paths, [glob patterns](https://github.com/actions/toolkit/tree/main/packages/glob), and single file caches.
 
 ```yaml
