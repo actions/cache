@@ -10,7 +10,6 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
 
 ## What's New
 ### v3
-
 * Updated the minimum runner version support from node 12 -> node 16.
 
 ### v2
