@@ -27,8 +27,6 @@ async function run(): Promise<void> {
             return;
         }
 
-        const state = utils.getCacheState();
-
         // Inputs are re-evaluted before the post action, so we want the original key used for restore
         const primaryKey = core.getState(State.CachePrimaryKey);
         if (!primaryKey) {
@@ -36,7 +34,9 @@ async function run(): Promise<void> {
             return;
         }
 
-        if (utils.isExactKeyMatch(primaryKey, state)) {
+        const forceUpdate = core.getInput(Inputs.ForceUpdate) === "true";
+        const state = utils.getCacheState();
+        if (utils.isExactKeyMatch(primaryKey, state) && !forceUpdate) {
             core.info(
                 `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
             );

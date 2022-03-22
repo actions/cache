@@ -1,4 +1,5 @@
 export enum Inputs {
+    ForceUpdate = "force-update",
     Key = "key",
     Path = "path",
     RestoreKeys = "restore-keys",
