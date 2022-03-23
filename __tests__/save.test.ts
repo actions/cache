@@ -54,6 +54,7 @@ beforeEach(() => {
     process.env[RefKey] = "refs/heads/feature-branch";
 
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
+    jest.spyOn(cache, "isAvailable").mockImplementation(() => true);
 });
 
 afterEach(() => {
@@ -101,8 +102,8 @@ test("save with no primary key in state outputs warning", async () => {
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
-test("save on GHES should no-op", async () => {
-    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
+test("save without AC available should no=op", async () => {
+    jest.spyOn(cache, "isAvailable").mockImplementation(() => false);
 
     const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const saveCacheMock = jest.spyOn(cache, "saveCache");
@@ -111,8 +112,61 @@ test("save on GHES should no-op", async () => {
 
     expect(saveCacheMock).toHaveBeenCalledTimes(0);
     expect(logWarningMock).toHaveBeenCalledWith(
-        "Cache action is not supported on GHES. See https://github.com/actions/cache/issues/505 for more details"
+        "Something is going wrong with ArtifactCache service which supports cache actions. Please check https://www.githubstatus.com/ for any ongoing issue in actions."
     );
+});
+
+test("save on ghes without AC available should no=op", async () => {
+    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
+    jest.spyOn(cache, "isAvailable").mockImplementation(() => false);
+
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const saveCacheMock = jest.spyOn(cache, "saveCache");
+
+    await run();
+
+    expect(saveCacheMock).toHaveBeenCalledTimes(0);
+    expect(logWarningMock).toHaveBeenCalledWith(
+        "Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if ArtifactCache service is enabled or not."
+    );
+});
+
+test("save on GHES with AC available", async () => {
+    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const savedCacheKey = "Linux-node-";
+
+    jest.spyOn(core, "getState")
+        // Cache Entry State
+        .mockImplementationOnce(() => {
+            return savedCacheKey;
+        })
+        // Cache Key State
+        .mockImplementationOnce(() => {
+            return primaryKey;
+        });
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.UploadChunkSize, "4000000");
+
+    const cacheId = 4;
+    const saveCacheMock = jest
+        .spyOn(cache, "saveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(cacheId);
+        });
+
+    await run();
+
+    expect(saveCacheMock).toHaveBeenCalledTimes(1);
+    expect(saveCacheMock).toHaveBeenCalledWith([inputPath], primaryKey, {
+        uploadChunkSize: 4000000
+    });
+
+    expect(failedMock).toHaveBeenCalledTimes(0);   
 });
 
 test("save with exact match returns early", async () => {
