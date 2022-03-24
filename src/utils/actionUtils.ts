@@ -80,7 +80,7 @@ export function isCacheFeatureAvailable(): boolean {
     if (!cache.isFeatureAvailable()) {
         if (isGhes()){
             logWarning(
-                "Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if ArtifactCache service is enabled or not."
+                "Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not."
             );
         }
         else{
