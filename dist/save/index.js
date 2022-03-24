@@ -1199,13 +1199,6 @@ function assertDefined(name, value) {
     return value;
 }
 exports.assertDefined = assertDefined;
-function isFeatureAvailable() {
-    if (process.env['ACTIONS_CACHE_URL']) {
-        return true;
-    }
-    return false;
-}
-exports.isFeatureAvailable = isFeatureAvailable;
 //# sourceMappingURL=cacheUtils.js.map
 
 /***/ }),
@@ -5523,7 +5516,8 @@ function downloadCacheStorageSDK(archiveLocation, archivePath, options) {
             //
             // If the file exceeds the buffer maximum length (~1 GB on 32-bit systems and ~2 GB
             // on 64-bit systems), split the download into multiple segments
-            const maxSegmentSize = buffer.constants.MAX_LENGTH;
+            // ~2 GB = 2147483647, beyond this, we start getting out of range error. So, capping it accordingly.
+            const maxSegmentSize = Math.min(2147483647, buffer.constants.MAX_LENGTH);
             const downloadProgress = new DownloadProgress(contentLength);
             const fd = fs.openSync(archivePath, 'w');
             try {
@@ -37532,7 +37526,7 @@ exports.getInputAsInt = getInputAsInt;
 function isCacheFeatureAvailable() {
     if (!cache.isFeatureAvailable()) {
         if (isGhes()) {
-            logWarning("Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if ArtifactCache service is enabled or not.");
+            logWarning("Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.");
         }
         else {
             logWarning("An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.");
@@ -46551,12 +46545,12 @@ function checkKey(key) {
     }
 }
 /**
- * isFeatureAvailable to check the presence of Artifact cache service
+ * isFeatureAvailable to check the presence of Actions cache service
  *
- * @returns boolean return true if Artifact cache service is available, otherwise false
+ * @returns boolean return true if Actions cache service feature is available, otherwise false
  */
 function isFeatureAvailable() {
-    return utils.isFeatureAvailable();
+    return !!process.env['ACTIONS_CACHE_URL'];
 }
 exports.isFeatureAvailable = isFeatureAvailable;
 /**
