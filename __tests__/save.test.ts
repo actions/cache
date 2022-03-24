@@ -54,7 +54,7 @@ beforeEach(() => {
     process.env[RefKey] = "refs/heads/feature-branch";
 
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
-    jest.spyOn(cache, "isAvailable").mockImplementation(() => true);
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(() => true);
 });
 
 afterEach(() => {
@@ -103,32 +103,24 @@ test("save with no primary key in state outputs warning", async () => {
 });
 
 test("save without AC available should no=op", async () => {
-    jest.spyOn(cache, "isAvailable").mockImplementation(() => false);
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(() => false);
 
-    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const saveCacheMock = jest.spyOn(cache, "saveCache");
 
     await run();
 
     expect(saveCacheMock).toHaveBeenCalledTimes(0);
-    expect(logWarningMock).toHaveBeenCalledWith(
-        "Something is going wrong with ArtifactCache service which supports cache actions. Please check https://www.githubstatus.com/ for any ongoing issue in actions."
-    );
 });
 
 test("save on ghes without AC available should no=op", async () => {
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
-    jest.spyOn(cache, "isAvailable").mockImplementation(() => false);
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(() => false);
 
-    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const saveCacheMock = jest.spyOn(cache, "saveCache");
 
     await run();
 
     expect(saveCacheMock).toHaveBeenCalledTimes(0);
-    expect(logWarningMock).toHaveBeenCalledWith(
-        "Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if ArtifactCache service is enabled or not."
-    );
 });
 
 test("save on GHES with AC available", async () => {

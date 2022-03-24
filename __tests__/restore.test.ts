@@ -34,7 +34,7 @@ beforeEach(() => {
     process.env[RefKey] = "refs/heads/feature-branch";
 
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
-    jest.spyOn(cache, "isAvailable").mockImplementation(() => true);
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(() => true);
 });
 
 afterEach(() => {
@@ -58,9 +58,8 @@ test("restore with invalid event outputs warning", async () => {
 
 test("restore without AC available should no-op", async () => {
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
-    jest.spyOn(cache, "isAvailable").mockImplementation(() => false);
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(() => false);
 
-    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const restoreCacheMock = jest.spyOn(cache, "restoreCache");
     const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
 
@@ -69,16 +68,12 @@ test("restore without AC available should no-op", async () => {
     expect(restoreCacheMock).toHaveBeenCalledTimes(0);
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
-    expect(logWarningMock).toHaveBeenCalledWith(
-        "Something is going wrong with ArtifactCache service which supports cache actions. Please check https://www.githubstatus.com/ for any ongoing issue in actions."
-    );
 });
 
 test("restore on GHES without AC available should no-op", async () => {
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
-    jest.spyOn(cache, "isAvailable").mockImplementation(() => false);
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(() => false);
 
-    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const restoreCacheMock = jest.spyOn(cache, "restoreCache");
     const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
 
@@ -87,9 +82,6 @@ test("restore on GHES without AC available should no-op", async () => {
     expect(restoreCacheMock).toHaveBeenCalledTimes(0);
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
-    expect(logWarningMock).toHaveBeenCalledWith(
-        "Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if ArtifactCache service is enabled or not."
-    );
 });
 
 test("restore on GHES with AC available ", async () => {

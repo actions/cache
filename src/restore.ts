@@ -6,17 +6,7 @@ import * as utils from "./utils/actionUtils";
 
 async function run(): Promise<void> {
     try {
-        if (!cache.isAvailable()) {
-            if (utils.isGhes()){
-                utils.logWarning(
-                    "Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if ArtifactCache service is enabled or not."
-                );
-            }
-            else{
-                utils.logWarning(
-                    "Something is going wrong with ArtifactCache service which supports cache actions. Please check https://www.githubstatus.com/ for any ongoing issue in actions."
-                );
-            }
+        if (!utils.isCacheFeatureAvailable()) {
             utils.setCacheHitOutput(false);
             return;
         }

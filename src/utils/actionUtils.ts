@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 
 import { Outputs, RefKey, State } from "../constants";
+import * as cache from "@actions/cache";
 
 export function isGhes(): boolean {
     const ghUrl = new URL(
@@ -73,4 +74,22 @@ export function getInputAsInt(
         return undefined;
     }
     return value;
+}
+
+export function isCacheFeatureAvailable(): boolean {
+    if (!cache.isFeatureAvailable()) {
+        if (isGhes()){
+            logWarning(
+                "Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if ArtifactCache service is enabled or not."
+            );
+        }
+        else{
+            logWarning(
+                "An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions."
+            );
+        }
+        return false;
+    }
+
+    return true;
 }

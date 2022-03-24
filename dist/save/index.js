@@ -1031,25 +1031,6 @@ class ExecState extends events.EventEmitter {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -1066,8 +1047,14 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
     function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
     function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.assertDefined = exports.isGnuTarInstalled = exports.getCacheFileName = exports.getCompressionMethod = exports.unlinkFile = exports.resolvePaths = exports.getArchiveFileSizeInBytes = exports.createTempDirectory = void 0;
 const core = __importStar(__webpack_require__(470));
 const exec = __importStar(__webpack_require__(986));
 const glob = __importStar(__webpack_require__(281));
@@ -1212,6 +1199,13 @@ function assertDefined(name, value) {
     return value;
 }
 exports.assertDefined = assertDefined;
+function isFeatureAvailable() {
+    if (process.env['ACTIONS_CACHE_URL']) {
+        return true;
+    }
+    return false;
+}
+exports.isFeatureAvailable = isFeatureAvailable;
 //# sourceMappingURL=cacheUtils.js.map
 
 /***/ }),
@@ -3204,25 +3198,6 @@ exports.baggageEntryMetadataFromString = baggageEntryMetadataFromString;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -3232,8 +3207,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.saveCache = exports.reserveCache = exports.downloadCache = exports.getCacheEntry = exports.getCacheVersion = void 0;
 const core = __importStar(__webpack_require__(470));
 const http_client_1 = __webpack_require__(539);
 const auth_1 = __webpack_require__(226);
@@ -5338,25 +5319,6 @@ exports.default = _default;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -5366,8 +5328,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.downloadCacheStorageSDK = exports.downloadCacheHttpClient = exports.DownloadProgress = void 0;
 const core = __importStar(__webpack_require__(470));
 const http_client_1 = __webpack_require__(539);
 const storage_blob_1 = __webpack_require__(373);
@@ -37102,25 +37070,6 @@ function escapeProperty(s) {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -37130,8 +37079,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.listTar = exports.createTar = exports.extractTar = void 0;
 const exec_1 = __webpack_require__(986);
 const io = __importStar(__webpack_require__(1));
 const fs_1 = __webpack_require__(747);
@@ -37508,9 +37463,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.getCacheState = exports.setOutputAndState = exports.setCacheHitOutput = exports.setCacheState = exports.isExactKeyMatch = exports.isGhes = void 0;
+exports.isCacheFeatureAvailable = exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.getCacheState = exports.setOutputAndState = exports.setCacheHitOutput = exports.setCacheState = exports.isExactKeyMatch = exports.isGhes = void 0;
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(196);
+const cache = __importStar(__webpack_require__(692));
 function isGhes() {
     const ghUrl = new URL(process.env["GITHUB_SERVER_URL"] || "https://github.com");
     return ghUrl.hostname.toUpperCase() !== "GITHUB.COM";
@@ -37573,6 +37529,19 @@ function getInputAsInt(name, options) {
     return value;
 }
 exports.getInputAsInt = getInputAsInt;
+function isCacheFeatureAvailable() {
+    if (!cache.isFeatureAvailable()) {
+        if (isGhes()) {
+            logWarning("Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if ArtifactCache service is enabled or not.");
+        }
+        else {
+            logWarning("An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.");
+        }
+        return false;
+    }
+    return true;
+}
+exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
 
 
 /***/ }),
@@ -40651,27 +40620,14 @@ exports.unregisterGlobal = unregisterGlobal;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getDownloadOptions = exports.getUploadOptions = void 0;
 const core = __importStar(__webpack_require__(470));
 /**
  * Returns a copy of the upload options with defaults filled in.
@@ -46450,14 +46406,7 @@ process.on("uncaughtException", e => utils.logWarning(e.message));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            if (!cache.isAvailable()) {
-                if (utils.isGhes()) {
-                    utils.logWarning("Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if ArtifactCache service is enabled or not.");
-                }
-                else {
-                    utils.logWarning("Something is going wrong with ArtifactCache service which supports cache actions. Please check https://www.githubstatus.com/ for any ongoing issue in actions.");
-                }
-                utils.setCacheHitOutput(false);
+            if (!utils.isCacheFeatureAvailable()) {
                 return;
             }
             if (!utils.isValidEvent()) {
@@ -46549,25 +46498,6 @@ exports.default = run;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -46577,8 +46507,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.saveCache = exports.restoreCache = exports.isAvailable = exports.ReserveCacheError = exports.ValidationError = void 0;
 const core = __importStar(__webpack_require__(470));
 const path = __importStar(__webpack_require__(622));
 const utils = __importStar(__webpack_require__(15));
@@ -46615,17 +46551,14 @@ function checkKey(key) {
     }
 }
 /**
- * isAvailable to check the presence of Artifact cache service
+ * isFeatureAvailable to check the presence of Artifact cache service
  *
  * @returns boolean return true if Artifact cache service is available, otherwise false
  */
-function isAvailable() {
-    if (process.env['ACTIONS_CACHE_URL']) {
-        return true;
-    }
-    return false;
+function isFeatureAvailable() {
+    return utils.isFeatureAvailable();
 }
-exports.isAvailable = isAvailable;
+exports.isFeatureAvailable = isFeatureAvailable;
 /**
  * Restores cache from keys
  *
@@ -51761,25 +51694,6 @@ module.exports = uuid;
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -51789,8 +51703,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.retryHttpClientResponse = exports.retryTypedResponse = exports.retry = exports.isRetryableStatusCode = exports.isServerErrorStatusCode = exports.isSuccessStatusCode = void 0;
 const core = __importStar(__webpack_require__(470));
 const http_client_1 = __webpack_require__(539);
 const constants_1 = __webpack_require__(931);
@@ -52612,7 +52532,6 @@ exports.setLogLevel = setLogLevel;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SocketTimeout = exports.DefaultRetryDelay = exports.DefaultRetryAttempts = exports.CompressionMethod = exports.CacheFilename = void 0;
 var CacheFilename;
 (function (CacheFilename) {
     CacheFilename["Gzip"] = "cache.tgz";
