@@ -104,7 +104,7 @@ test("save with no primary key in state outputs warning", async () => {
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
-test("save without AC available should no=op", async () => {
+test("save without AC available should no-op", async () => {
     jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
         () => false
     );
@@ -116,7 +116,7 @@ test("save without AC available should no=op", async () => {
     expect(saveCacheMock).toHaveBeenCalledTimes(0);
 });
 
-test("save on ghes without AC available should no=op", async () => {
+test("save on ghes without AC available should no-op", async () => {
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
     jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
         () => false
