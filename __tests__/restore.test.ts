@@ -34,7 +34,9 @@ beforeEach(() => {
     process.env[RefKey] = "refs/heads/feature-branch";
 
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
-    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(() => true);
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
+        () => true
+    );
 });
 
 afterEach(() => {
@@ -58,7 +60,9 @@ test("restore with invalid event outputs warning", async () => {
 
 test("restore without AC available should no-op", async () => {
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
-    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(() => false);
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
+        () => false
+    );
 
     const restoreCacheMock = jest.spyOn(cache, "restoreCache");
     const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
@@ -72,7 +76,9 @@ test("restore without AC available should no-op", async () => {
 
 test("restore on GHES without AC available should no-op", async () => {
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
-    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(() => false);
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
+        () => false
+    );
 
     const restoreCacheMock = jest.spyOn(cache, "restoreCache");
     const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");

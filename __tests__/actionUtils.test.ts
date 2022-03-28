@@ -244,7 +244,8 @@ test("isCacheFeatureAvailable for ac enabled", () => {
 test("isCacheFeatureAvailable for ac disabled on GHES", () => {
     jest.spyOn(cache, "isFeatureAvailable").mockImplementation(() => false);
 
-    const message = "Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.";
+    const message =
+        "Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.";
     const infoMock = jest.spyOn(core, "info");
 
     try {
@@ -252,15 +253,15 @@ test("isCacheFeatureAvailable for ac disabled on GHES", () => {
         expect(actionUtils.isCacheFeatureAvailable()).toBe(false);
         expect(infoMock).toHaveBeenCalledWith(`[warning]${message}`);
     } finally {
-        delete  process.env["GITHUB_SERVER_URL"];
+        delete process.env["GITHUB_SERVER_URL"];
     }
-
 });
 
 test("isCacheFeatureAvailable for ac disabled on dotcom", () => {
     jest.spyOn(cache, "isFeatureAvailable").mockImplementation(() => false);
 
-    const message = "An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.";
+    const message =
+        "An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.";
     const infoMock = jest.spyOn(core, "info");
 
     try {
@@ -268,7 +269,6 @@ test("isCacheFeatureAvailable for ac disabled on dotcom", () => {
         expect(actionUtils.isCacheFeatureAvailable()).toBe(false);
         expect(infoMock).toHaveBeenCalledWith(`[warning]${message}`);
     } finally {
-        delete  process.env["GITHUB_SERVER_URL"];
+        delete process.env["GITHUB_SERVER_URL"];
     }
-
 });

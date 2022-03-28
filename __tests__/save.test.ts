@@ -54,7 +54,9 @@ beforeEach(() => {
     process.env[RefKey] = "refs/heads/feature-branch";
 
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
-    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(() => true);
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
+        () => true
+    );
 });
 
 afterEach(() => {
@@ -103,7 +105,9 @@ test("save with no primary key in state outputs warning", async () => {
 });
 
 test("save without AC available should no=op", async () => {
-    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(() => false);
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
+        () => false
+    );
 
     const saveCacheMock = jest.spyOn(cache, "saveCache");
 
@@ -114,7 +118,9 @@ test("save without AC available should no=op", async () => {
 
 test("save on ghes without AC available should no=op", async () => {
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
-    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(() => false);
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
+        () => false
+    );
 
     const saveCacheMock = jest.spyOn(cache, "saveCache");
 
@@ -158,7 +164,7 @@ test("save on GHES with AC available", async () => {
         uploadChunkSize: 4000000
     });
 
-    expect(failedMock).toHaveBeenCalledTimes(0);   
+    expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
 test("save with exact match returns early", async () => {
