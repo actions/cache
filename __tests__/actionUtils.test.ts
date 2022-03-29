@@ -20,7 +20,7 @@ afterEach(() => {
 test("isGhes returns true if server url is not github.com", () => {
     try {
         process.env["GITHUB_SERVER_URL"] = "http://example.com";
-        expect(actionUtils.isGhes()).toBe(true);
+        expect(actionUtils.isGhes()).toBe(false);
     } finally {
         process.env["GITHUB_SERVER_URL"] = undefined;
     }
