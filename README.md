@@ -10,6 +10,7 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
 
 ## What's New
 ### v3
+* Fixed download issue for files > 2GB during restore.
 * Updated the minimum runner version support from node 12 -> node 16.
 
 ### v2
@@ -181,7 +182,7 @@ steps:
 
 Since GitHub Enterprise Server uses self-hosted runners, dependencies are typically cached on the runner by whatever dependency management tool is being used (npm, maven, etc.).  This eliminates the need for explicit caching in some scenarios.
 
-## Changelog schedule and history 
+## Changelog schedule and history
 
 | Status  | Version  | Date  | Highlights  |
 |:---|:---|:---|:---|
