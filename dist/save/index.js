@@ -51561,7 +51561,8 @@ function retryTypedResponse(name, method, maxAttempts = constants_1.DefaultRetry
         // an ITypedResponse<T> so it can be processed by the retry logic.
         (error) => {
             if (error instanceof http_client_1.HttpClientError) {
-                console.log(error);
+                console.log("\n\nRESULT\n\n");
+                console.log(error.result);
                 return {
                     statusCode: error.statusCode,
                     result: null,
