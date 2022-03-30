@@ -3221,10 +3221,7 @@ const options_1 = __webpack_require__(538);
 const requestUtils_1 = __webpack_require__(899);
 const versionSalt = '1.0';
 function getCacheApiUrl(resource) {
-    // Ideally we just use ACTIONS_CACHE_URL
-    const baseUrl = (process.env['ACTIONS_CACHE_URL'] ||
-        process.env['ACTIONS_RUNTIME_URL'] ||
-        '').replace('pipelines', 'artifactcache');
+    const baseUrl = process.env['ACTIONS_CACHE_URL'] || '';
     if (!baseUrl) {
         throw new Error('Cache Service Url not found, unable to restore cache.');
     }
@@ -37460,7 +37457,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.getCacheState = exports.setOutputAndState = exports.setCacheHitOutput = exports.setCacheState = exports.isExactKeyMatch = exports.isGhes = void 0;
+exports.isCacheFeatureAvailable = exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.getCacheState = exports.setOutputAndState = exports.setCacheHitOutput = exports.setCacheState = exports.isExactKeyMatch = exports.isGhes = void 0;
+const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(196);
 function isGhes() {
@@ -37525,6 +37523,19 @@ function getInputAsInt(name, options) {
     return value;
 }
 exports.getInputAsInt = getInputAsInt;
+function isCacheFeatureAvailable() {
+    if (!cache.isFeatureAvailable()) {
+        if (isGhes()) {
+            logWarning("Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.");
+        }
+        else {
+            logWarning("An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.");
+        }
+        return false;
+    }
+    return true;
+}
+exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
 
 
 /***/ }),
@@ -46441,6 +46452,15 @@ function checkKey(key) {
     }
 }
 /**
+ * isFeatureAvailable to check the presence of Actions cache service
+ *
+ * @returns boolean return true if Actions cache service feature is available, otherwise false
+ */
+function isFeatureAvailable() {
+    return !!process.env['ACTIONS_CACHE_URL'];
+}
+exports.isFeatureAvailable = isFeatureAvailable;
+/**
  * Restores cache from keys
  *
  * @param paths a list of file paths to restore from the cache
@@ -48101,8 +48121,7 @@ const utils = __importStar(__webpack_require__(443));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            if (utils.isGhes()) {
-                utils.logWarning("Cache action is not supported on GHES. See https://github.com/actions/cache/issues/505 for more details");
+            if (!utils.isCacheFeatureAvailable()) {
                 utils.setCacheHitOutput(false);
                 return;
             }
