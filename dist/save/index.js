@@ -3278,9 +3278,11 @@ function reserveCache(key, paths, options) {
             version,
             cacheSize: options === null || options === void 0 ? void 0 : options.cacheSize
         };
-        const response = yield requestUtils_1.retryTypedResponse('reserveCache', () => __awaiter(this, void 0, void 0, function* () {
-            return httpClient.postJson(getCacheApiUrl('caches'), reserveCacheRequest);
+        const response = yield requestUtils_1.retryHttpClientResponse('reserveCache', () => __awaiter(this, void 0, void 0, function* () {
+            return httpClient.post(getCacheApiUrl('caches'), JSON.stringify(reserveCacheRequest));
         }));
+        console.log("\n\nResponse\n\n");
+        console.log(response);
         return response;
     });
 }
@@ -46520,7 +46522,6 @@ exports.restoreCache = restoreCache;
  * @returns number returns cacheId if the cache was saved successfully and throws an error if save fails
  */
 function saveCache(paths, key, options) {
-    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         checkPaths(paths);
         checkKey(key);
@@ -46545,16 +46546,20 @@ function saveCache(paths, key, options) {
                 compressionMethod,
                 cacheSize
             });
-            console.log(reserveCacheResponse);
-            if ((reserveCacheResponse === null || reserveCacheResponse === void 0 ? void 0 : reserveCacheResponse.statusCode) === 400) {
-                throw new ReserveCacheError(`Cache size of ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B) is over the data cap limit, not saving cache.`);
-            }
-            if ((_a = reserveCacheResponse === null || reserveCacheResponse === void 0 ? void 0 : reserveCacheResponse.result) === null || _a === void 0 ? void 0 : _a.cacheId) {
-                cacheId = (_b = reserveCacheResponse === null || reserveCacheResponse === void 0 ? void 0 : reserveCacheResponse.result) === null || _b === void 0 ? void 0 : _b.cacheId;
-            }
-            else {
-                throw new ReserveCacheError(`Unable to reserve cache with key ${key}, another job may be creating this cache.`);
-            }
+            // if(reserveCacheResponse?.statusCode === 400 && reserveCacheResponse?.result?.typeKey === "InvalidReserveCacheRequestException"){
+            //   throw new ReserveCacheError(
+            //     reserveCacheResponse?.result?.message ??
+            //     `Cache size of ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B) is over the data cap limit, not saving cache.`
+            //   )
+            // }
+            // if(reserveCacheResponse?.result?.cacheId){
+            //   cacheId = reserveCacheResponse?.result?.cacheId
+            // }else{
+            //   throw new ReserveCacheError(
+            //     `Unable to reserve cache with key ${key}, another job may be creating this cache.`
+            //   )
+            // }
+            throw new ReserveCacheError(`Unable to reserve cache with key ${key}, another job may be creating this cache.`);
             core.debug(`Cache ID: ${cacheId}`);
             core.debug(`Saving Cache (ID: ${cacheId})`);
             yield cacheHttpClient.saveCache(cacheId, archivePath, options);
@@ -51561,8 +51566,6 @@ function retryTypedResponse(name, method, maxAttempts = constants_1.DefaultRetry
         // an ITypedResponse<T> so it can be processed by the retry logic.
         (error) => {
             if (error instanceof http_client_1.HttpClientError) {
-                console.log("\n\nRESULT\n\n");
-                console.log(error.result);
                 return {
                     statusCode: error.statusCode,
                     result: null,
