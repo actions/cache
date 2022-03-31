@@ -3278,10 +3278,9 @@ function reserveCache(key, paths, options) {
             version,
             cacheSize: options === null || options === void 0 ? void 0 : options.cacheSize
         };
-        const response = yield requestUtils_1.retryHttpClientResponse('reserveCache', () => __awaiter(this, void 0, void 0, function* () {
-            return httpClient.post(getCacheApiUrl('caches'), JSON.stringify(reserveCacheRequest));
+        const response = yield requestUtils_1.retryTypedResponse('reserveCache', () => __awaiter(this, void 0, void 0, function* () {
+            return httpClient.postJson(getCacheApiUrl('caches'), reserveCacheRequest);
         }));
-        console.log("\n\nResponse\n\n");
         console.log(response);
         return response;
     });
@@ -51569,7 +51568,9 @@ function retryTypedResponse(name, method, maxAttempts = constants_1.DefaultRetry
                 return {
                     statusCode: error.statusCode,
                     result: null,
-                    headers: {}
+                    headers: {},
+                    message: error.message,
+                    typeKey: error.result
                 };
             }
             else {
