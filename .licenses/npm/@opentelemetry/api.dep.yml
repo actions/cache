@@ -1,9 +1,9 @@
 ---
 name: "@opentelemetry/api"
-version: 1.1.0
+version: 1.0.4
 type: npm
-summary: 
-homepage: 
+summary: Public API for OpenTelemetry
+homepage: https://github.com/open-telemetry/opentelemetry-js-api#readme
 license: apache-2.0
 licenses:
 - sources: LICENSE
