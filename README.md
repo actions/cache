@@ -71,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Cache Primes
       id: cache-primes
@@ -162,7 +162,7 @@ Using the `cache-hit` output, subsequent steps (such as install or build) can be
 Example:
 ```yaml
 steps:
-  - uses: actions/checkout@v2
+  - uses: actions/checkout@v3
 
   - uses: actions/cache@v3
     id: cache
