@@ -46645,14 +46645,15 @@ function run() {
                 core.info(`Cache saved with key: ${primaryKey}`);
             }
             catch (error) {
-                if (error.name === cache.ValidationError.name) {
+                const typedError = error;
+                if (typedError.name === cache.ValidationError.name) {
                     throw error;
                 }
-                else if (error.name === cache.ReserveCacheError.name) {
-                    core.info(error.message);
+                else if (typedError.name === cache.ReserveCacheError.name) {
+                    core.info(typedError.message);
                 }
                 else {
-                    utils.logWarning(error.message);
+                    utils.logWarning(typedError.message);
                 }
             }
         }

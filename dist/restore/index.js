@@ -48245,11 +48245,12 @@ function run() {
                 core.info(`Cache restored from key: ${cacheKey}`);
             }
             catch (error) {
-                if (error.name === cache.ValidationError.name) {
+                const typedError = error;
+                if (typedError.name === cache.ValidationError.name) {
                     throw error;
                 }
                 else {
-                    utils.logWarning(error.message);
+                    utils.logWarning(typedError.message);
                     utils.setCacheHitOutput(false);
                 }
             }
