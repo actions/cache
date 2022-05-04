@@ -4,11 +4,6 @@ import * as core from "@actions/core";
 import { Events, Inputs, State } from "./constants";
 import * as utils from "./utils/actionUtils";
 
-interface RestoreError {
-    name: string;
-    message: string;
-}
-
 async function run(): Promise<void> {
     try {
         if (!utils.isCacheFeatureAvailable()) {
