@@ -4614,6 +4614,7 @@ var Inputs;
 var Outputs;
 (function (Outputs) {
     Outputs["CacheHit"] = "cache-hit";
+    Outputs["CacheKey"] = "cache-key";
 })(Outputs = exports.Outputs || (exports.Outputs = {}));
 var State;
 (function (State) {
@@ -37444,8 +37445,9 @@ function isExactKeyMatch(key, cacheKey) {
         }) === 0);
 }
 exports.isExactKeyMatch = isExactKeyMatch;
-function setCacheState(state) {
+function setCacheState(state, key) {
     core.saveState(constants_1.State.CacheMatchedKey, state);
+    core.setOutput(constants_1.Outputs.CacheKey, key);
 }
 exports.setCacheState = setCacheState;
 function setCacheHitOutput(isCacheHit) {
@@ -37455,7 +37457,7 @@ exports.setCacheHitOutput = setCacheHitOutput;
 function setOutputAndState(key, cacheKey) {
     setCacheHitOutput(isExactKeyMatch(key, cacheKey));
     // Store the matched cache key if it exists
-    cacheKey && setCacheState(cacheKey);
+    cacheKey && setCacheState(cacheKey, key);
 }
 exports.setOutputAndState = setOutputAndState;
 function getCacheState() {
@@ -47945,7 +47947,22 @@ function run() {
                 utils.setCacheState(cacheKey);
                 const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
                 utils.setCacheHitOutput(isExactKeyMatch);
-                core.info(`Cache restored from key: ${cacheKey}`);
+                let foundKey;
+                if (isExactKeyMatch) {
+                    foundKey = primaryKey;
+                    core.info(`Cache restored for key: ${foundKey}`);
+                }
+                else {
+                    let i;
+                    for (i = 0; i < restoreKeys.length - 1; i++) {
+                        const fallbackCacheKey = yield cache.restoreCache(cachePaths, restoreKeys[i]);
+                        if (cacheKey) {
+                            break;
+                        }
+                    }
+                    foundKey = restoreKeys[i];
+                    core.info(`Cache restored from key: ${foundKey}`);
+                }
             }
             catch (error) {
                 if (error.name === cache.ValidationError.name) {

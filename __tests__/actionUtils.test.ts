@@ -104,7 +104,8 @@ test("setOutputAndState with exact match to set cache-hit output and state", () 
     actionUtils.setOutputAndState(key, cacheKey);
 
     expect(setOutputMock).toHaveBeenCalledWith(Outputs.CacheHit, "true");
-    expect(setOutputMock).toHaveBeenCalledTimes(1);
+    expect(setOutputMock).toHaveBeenCalledWith(Outputs.CacheKey, key);
+    expect(setOutputMock).toHaveBeenCalledTimes(2);
 
     expect(saveStateMock).toHaveBeenCalledWith(State.CacheMatchedKey, cacheKey);
     expect(saveStateMock).toHaveBeenCalledTimes(1);
@@ -120,7 +121,8 @@ test("setOutputAndState with no exact match to set cache-hit output and state", 
     actionUtils.setOutputAndState(key, cacheKey);
 
     expect(setOutputMock).toHaveBeenCalledWith(Outputs.CacheHit, "false");
-    expect(setOutputMock).toHaveBeenCalledTimes(1);
+    expect(setOutputMock).toHaveBeenCalledWith(Outputs.CacheKey, key);
+    expect(setOutputMock).toHaveBeenCalledTimes(2);
 
     expect(saveStateMock).toHaveBeenCalledWith(State.CacheMatchedKey, cacheKey);
     expect(saveStateMock).toHaveBeenCalledTimes(1);

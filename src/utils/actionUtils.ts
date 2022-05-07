@@ -19,8 +19,9 @@ export function isExactKeyMatch(key: string, cacheKey?: string): boolean {
     );
 }
 
-export function setCacheState(state: string): void {
+export function setCacheState(state: string, key?: string): void {
     core.saveState(State.CacheMatchedKey, state);
+    core.setOutput(Outputs.CacheKey, key);
 }
 
 export function setCacheHitOutput(isCacheHit: boolean): void {
@@ -30,7 +31,7 @@ export function setCacheHitOutput(isCacheHit: boolean): void {
 export function setOutputAndState(key: string, cacheKey?: string): void {
     setCacheHitOutput(isExactKeyMatch(key, cacheKey));
     // Store the matched cache key if it exists
-    cacheKey && setCacheState(cacheKey);
+    cacheKey && setCacheState(cacheKey, key);
 }
 
 export function getCacheState(): string | undefined {

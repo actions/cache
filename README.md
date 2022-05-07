@@ -50,9 +50,11 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 
 ### Outputs
 
-* `cache-hit` - A boolean value to indicate an exact match was found for the key
+* `cache-hit` - A boolean value to indicate an exact match was found for the key. It will be `false` if a `restore-key` is matched.
 
 > See [Skipping steps based on cache-hit](#Skipping-steps-based-on-cache-hit) for info on using this output
+
+* `cache-key` - A string indicating the matching cache key (if any).
 
 ### Cache scopes
 The cache is scoped to the key and branch. The default branch cache is available to other branches.
