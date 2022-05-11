@@ -90,7 +90,7 @@ steps:
 - uses: actions/cache@v3
   with:
     path: ~/.dub
-    key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
+    key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.selections.json') }}
     restore-keys: |
       ${{ runner.os }}-dub-
 ```
@@ -101,7 +101,7 @@ steps:
 - uses: actions/cache@v3
   with:
     path: ~\AppData\Local\dub
-    key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
+    key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.selections.json') }}
     restore-keys: |
       ${{ runner.os }}-dub-
 ```
