@@ -177,6 +177,57 @@ steps:
 
 > Note: The `id` defined in `actions/cache` must match the `id` in the `if` statement (i.e. `steps.[ID].outputs.cache-hit`)
 
+
+## Cache Version
+Cache version is unique for a combination of compression tools(Gzip, Zstd, etc) and the path of cache, which may differ according to runner OS as well. If two caches have different versions, then they are identified as unique cache entries. 
+
+Example: Below example will create 3 unique caches with same keys.
+```yaml
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Cache Primes
+      id: cache-primes
+      uses: actions/cache@v3
+      with:
+        path: prime-numbers
+        key: primes
+
+    - name: Generate Prime Numbers
+      if: steps.cache-primes.outputs.cache-hit != 'true'
+      run: ./generate-primes.sh -d prime-numbers
+      
+    - name: Cache Numbers
+      id: cache-numbers
+      uses: actions/cache@v3
+      with:
+        path: numbers
+        key: primes
+
+    - name: Generate Numbers
+      if: steps.cache-numbers.outputs.cache-hit != 'true'
+      run: ./generate-primes.sh -d numbers
+      
+   build-windows:
+      runs-on: windows-latest
+      steps:
+      - uses: actions/checkout@v3
+
+      - name: Cache Primes
+        id: cache-primes
+        uses: actions/cache@v3
+        with:
+          path: prime-numbers
+          key: primes
+
+      - name: Generate Prime Numbers
+        if: steps.cache-primes.outputs.cache-hit != 'true'
+        run: ./generate-primes -d prime-numbers
+```
+
 ## Contributing
 We would love for you to contribute to `actions/cache`, pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
