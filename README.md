@@ -179,9 +179,10 @@ steps:
 
 
 ## Cache Version
-Cache version is unique for a combination of compression tools(Gzip, Zstd, etc) and the path of cache, which may differ according to runner OS as well. If two caches have different versions, then they are identified as unique cache entries. 
+Cache version is unique for a combination of compression tool used for compression of cache (Gzip, Zstd, etc based on runner OS) and the path of directories being cached. If two caches have different versions, they are identified as unique cache entries. This also means that a cache created on `windows-latest` runner can't be restored on `ubuntu-latest` as cache `Version`s are different. 
 
-Example: Below example will create 3 unique caches with same keys.
+Example: Below example will create 3 unique caches with same keys. Ubuntu and windows runners will use different compression technique and hence create two different caches. And `build-linux` will create two different caches as the `paths` are different.
+
 ```yaml
 jobs:
   build-linux:
