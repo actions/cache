@@ -18,9 +18,6 @@
 - [Java - Gradle](#java---gradle)
 - [Java - Maven](#java---maven)
 - [Node - npm](#node---npm)
-  - [macOS and Ubuntu](#macos-and-ubuntu)
-  - [Windows](#windows-3)
-  - [Using multiple systems and `npm config`](#using-multiple-systems-and-npm-config)
 - [Node - Lerna](#node---lerna)
 - [Node - Yarn](#node---yarn)
 - [Node - Yarn 2](#node---yarn-2)
@@ -259,39 +256,11 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 
 ## Node - npm
 
-For npm, cache files are stored in `~/.npm` on Posix, or `~\AppData\npm-cache` on Windows. See https://docs.npmjs.com/cli/cache#cache
+For npm, cache files are stored in `~/.npm` on Posix, or `~\AppData\npm-cache` on Windows, but it's possible to use `npm config get cache` to find the path on any platform. See [the npm docs](https://docs.npmjs.com/cli/cache#cache) for more details.
 
 If using `npm config` to retrieve the cache directory, ensure you run [actions/setup-node](https://github.com/actions/setup-node) first to ensure your `npm` version is correct.
 
 >Note: It is not recommended to cache `node_modules`, as it can break across Node versions and won't work with `npm ci`
-
-### macOS and Ubuntu
-
-```yaml
-- uses: actions/cache@v3
-  with:
-    path: ~/.npm
-    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-    restore-keys: |
-      ${{ runner.os }}-node-
-```
-
-### Windows
-
-```yaml
-- name: Get npm cache directory
-  id: npm-cache
-  run: |
-    echo "::set-output name=dir::$(npm config get cache)"
-- uses: actions/cache@v3
-  with:
-    path: ${{ steps.npm-cache.outputs.dir }}
-    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-    restore-keys: |
-      ${{ runner.os }}-node-
-```
-
-### Using multiple systems and `npm config`
 
 ```yaml
 - name: Get npm cache directory
