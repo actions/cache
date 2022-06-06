@@ -5,18 +5,20 @@
 - [D - DUB](#d---dub)
   - [POSIX](#posix)
   - [Windows](#windows)
-- [Elixir - Mix](#elixir---mix)
-- [Go - Modules](#go---modules)
+- [Deno](#deno)
   - [Linux](#linux)
   - [macOS](#macos)
   - [Windows](#windows-1)
+- [Elixir - Mix](#elixir---mix)
+- [Go - Modules](#go---modules)
+  - [Linux](#linux-1)
+  - [macOS](#macos-1)
+  - [Windows](#windows-2)
 - [Haskell - Cabal](#haskell---cabal)
+- [Haskell - Stack](#haskell---stack)
 - [Java - Gradle](#java---gradle)
 - [Java - Maven](#java---maven)
 - [Node - npm](#node---npm)
-  - [macOS and Ubuntu](#macos-and-ubuntu)
-  - [Windows](#windows-2)
-  - [Using multiple systems and `npm config`](#using-multiple-systems-and-npm-config)
 - [Node - Lerna](#node---lerna)
 - [Node - Yarn](#node---yarn)
 - [Node - Yarn 2](#node---yarn-2)
@@ -29,8 +31,6 @@
   - [Using pip to get cache location](#using-pip-to-get-cache-location)
 - [Python - pipenv](#python---pipenv)
 - [R - renv](#r---renv)
-  - [Simple example](#simple-example-1)
-  - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow-1)
 - [Ruby - Bundler](#ruby---bundler)
 - [Rust - Cargo](#rust---cargo)
 - [Scala - SBT](#scala---sbt)
@@ -84,7 +84,7 @@ env:
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: ~/.nuget/packages
     key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
@@ -93,10 +93,10 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 ```
 
 Depending on the environment, huge packages might be pre-installed in the global cache folder.
-With `actions/cache@v2` you can now exclude unwanted packages with [exclude pattern](https://github.com/actions/toolkit/tree/main/packages/glob#exclude-patterns)
+With `actions/cache@v3` you can now exclude unwanted packages with [exclude pattern](https://github.com/actions/toolkit/tree/main/packages/glob#exclude-patterns)
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: |
       ~/.nuget/packages
@@ -108,11 +108,12 @@ With `actions/cache@v2` you can now exclude unwanted packages with [exclude patt
 
 Or you could move the cache folder like below.
 >Note: This workflow does not work for projects that require files to be placed in user profile package folder
+
 ```yaml
 env:
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 steps:
-  - uses: actions/cache@v2
+  - uses: actions/cache@v3
     with:
       path: ${{ github.workspace }}/.nuget/packages
       key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
@@ -125,10 +126,10 @@ steps:
 ### POSIX
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: ~/.dub
-    key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
+    key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.selections.json') }}
     restore-keys: |
       ${{ runner.os }}-dub-
 ```
@@ -136,18 +137,53 @@ steps:
 ### Windows
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: ~\AppData\Local\dub
-    key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
+    key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.selections.json') }}
     restore-keys: |
       ${{ runner.os }}-dub-
+```
+
+## Deno
+
+### Linux
+
+```yaml
+- uses: actions/cache@v3
+  with:
+    path: |
+      ~/.deno
+      ~/.cache/deno
+    key: ${{ runner.os }}-deno-${{ hashFiles('**/deps.ts') }}
+```
+
+### macOS
+
+```yaml
+- uses: actions/cache@v3
+  with:
+    path: |
+      ~/.deno
+      ~/Library/Caches/deno
+    key: ${{ runner.os }}-deno-${{ hashFiles('**/deps.ts') }}
+```
+
+### Windows
+
+```yaml
+- uses: actions/cache@v3
+  with:
+    path: |
+      ~\.deno
+      ~\AppData\Local\deno
+    key: ${{ runner.os }}-deno-${{ hashFiles('**/deps.ts') }}
 ```
 
 ## Elixir - Mix
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: |
       deps
@@ -162,7 +198,7 @@ steps:
 ### Linux
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: |
       ~/.cache/go-build
@@ -175,7 +211,7 @@ steps:
 ### macOS
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: |
       ~/Library/Caches/go-build
@@ -188,11 +224,11 @@ steps:
 ### Windows
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: |
-      %LocalAppData%\go-build
-      ~/go/pkg/mod
+      ~\AppData\Local\go-build
+      ~\go\pkg\mod
     key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
     restore-keys: |
       ${{ runner.os }}-go-
@@ -204,13 +240,33 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 
 ```yaml
 - name: Cache ~/.cabal/packages, ~/.cabal/store and dist-newstyle
-  uses: actions/cache@v2
+  uses: actions/cache@v3
   with:
     path: |
       ~/.cabal/packages
       ~/.cabal/store
       dist-newstyle
-    key: ${{ runner.os }}-${{ matrix.ghc }}
+    key: ${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal.project.freeze') }}
+    restore-keys: ${{ runner.os }}-${{ matrix.ghc }}-
+```
+
+## Haskell - Stack
+
+```yaml
+- uses: actions/cache@v3
+  name: Cache ~/.stack
+  with:
+    path: ~/.stack
+    key: ${{ runner.os }}-stack-global-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+    restore-keys: |
+      ${{ runner.os }}-stack-global-
+- uses: actions/cache@v3
+  name: Cache .stack-work
+  with:
+    path: .stack-work
+    key: ${{ runner.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+    restore-keys: |
+      ${{ runner.os }}-stack-work-
 ```
 
 ## Java - Gradle
@@ -218,7 +274,7 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 >Note: Ensure no Gradle daemons are running anymore when your workflow completes. Creating the cache package might fail due to locks being held by Gradle. Refer to the [Gradle Daemon documentation](https://docs.gradle.org/current/userguide/gradle_daemon.html) on how to disable or stop the Gradle Daemons.
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: |
       ~/.gradle/caches
@@ -232,7 +288,7 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 
 ```yaml
 - name: Cache local Maven repository
-  uses: actions/cache@v2
+  uses: actions/cache@v3
   with:
     path: ~/.m2/repository
     key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -242,46 +298,18 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 
 ## Node - npm
 
-For npm, cache files are stored in `~/.npm` on Posix, or `%AppData%/npm-cache` on Windows. See https://docs.npmjs.com/cli/cache#cache
+For npm, cache files are stored in `~/.npm` on Posix, or `~\AppData\npm-cache` on Windows, but it's possible to use `npm config get cache` to find the path on any platform. See [the npm docs](https://docs.npmjs.com/cli/cache#cache) for more details.
 
 If using `npm config` to retrieve the cache directory, ensure you run [actions/setup-node](https://github.com/actions/setup-node) first to ensure your `npm` version is correct.
 
 >Note: It is not recommended to cache `node_modules`, as it can break across Node versions and won't work with `npm ci`
-
-### macOS and Ubuntu
-
-```yaml
-- uses: actions/cache@v2
-  with:
-    path: ~/.npm
-    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-    restore-keys: |
-      ${{ runner.os }}-node-
-```
-
-### Windows
-
-```yaml
-- name: Get npm cache directory
-  id: npm-cache
-  run: |
-    echo "::set-output name=dir::$(npm config get cache)"
-- uses: actions/cache@v2
-  with:
-    path: ${{ steps.npm-cache.outputs.dir }}
-    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-    restore-keys: |
-      ${{ runner.os }}-node-
-```
-
-### Using multiple systems and `npm config`
 
 ```yaml
 - name: Get npm cache directory
   id: npm-cache-dir
   run: |
     echo "::set-output name=dir::$(npm config get cache)"
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   id: npm-cache # use this to check for `cache-hit` ==> if: steps.npm-cache.outputs.cache-hit != 'true'
   with:
     path: ${{ steps.npm-cache-dir.outputs.dir }}
@@ -294,11 +322,9 @@ If using `npm config` to retrieve the cache directory, ensure you run [actions/s
 
 ```yaml
 - name: restore lerna
-  uses: actions/cache@v2
+  uses: actions/cache@v3
   with:
-    path: |
-      node_modules
-      */*/node_modules
+    path: **/node_modules
     key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
 ```
 
@@ -310,7 +336,7 @@ The yarn cache directory will depend on your operating system and version of `ya
   id: yarn-cache-dir-path
   run: echo "::set-output name=dir::$(yarn cache dir)"
 
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
   with:
     path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
@@ -328,7 +354,7 @@ The yarn 2 cache directory will depend on your config. See https://yarnpkg.com/c
   id: yarn-cache-dir-path
   run: echo "::set-output name=dir::$(yarn config get cacheFolder)"
 
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
   with:
     path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
@@ -343,7 +369,7 @@ Esy allows you to export built dependencies and import pre-built dependencies.
 ```yaml
     - name: Restore Cache
       id: restore-cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: _export
         key:  ${{ runner.os }}-esy-${{ hashFiles('esy.lock/index.json') }}
@@ -372,7 +398,7 @@ Esy allows you to export built dependencies and import pre-built dependencies.
   id: composer-cache
   run: |
     echo "::set-output name=dir::$(composer config cache-files-dir)"
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: ${{ steps.composer-cache.outputs.dir }}
     key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -393,7 +419,7 @@ Locations:
 ### Simple example
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: ~/.cache/pip
     key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -406,7 +432,7 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
 ### Multiple OS's in a workflow
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   if: startsWith(runner.os, 'Linux')
   with:
     path: ~/.cache/pip
@@ -414,7 +440,7 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
     restore-keys: |
       ${{ runner.os }}-pip-
 
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   if: startsWith(runner.os, 'macOS')
   with:
     path: ~/Library/Caches/pip
@@ -422,7 +448,7 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
     restore-keys: |
       ${{ runner.os }}-pip-
 
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   if: startsWith(runner.os, 'Windows')
   with:
     path: ~\AppData\Local\pip\Cache
@@ -448,7 +474,7 @@ jobs:
         - os: windows-latest
           path: ~\AppData\Local\pip\Cache
     steps:
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: ${{ matrix.path }}
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -466,7 +492,7 @@ jobs:
     echo "::set-output name=dir::$(pip cache dir)"
 
 - name: pip cache
-  uses: actions/cache@v2
+  uses: actions/cache@v3
   with:
     path: ${{ steps.pip-cache.outputs.dir }}
     key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -484,7 +510,7 @@ jobs:
 
   ⋮
 
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: ~/.local/share/virtualenvs
     key: ${{ runner.os }}-python-${{ steps.setup-python.outputs.python-version }}-pipenv-${{ hashFiles('Pipfile.lock') }}
@@ -511,7 +537,7 @@ For renv, the cache directory will vary by OS. The `RENV_PATHS_ROOT` environment
     cat("##[set-output name=r-version;]", R.Version()$version.string, sep = "")
   shell: Rscript {0}
 - name: Restore Renv package cache
-  uses: actions/cache@v2
+  uses: actions/cache@v3
   with:
     path: ${{ env.RENV_PATHS_ROOT }}
     key: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{ inputs.cache-version }}-${{ hashFiles('renv.lock') }}
@@ -537,7 +563,7 @@ whenever possible:
 ## Rust - Cargo
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: |
       ~/.cargo/bin/
@@ -552,7 +578,7 @@ whenever possible:
 
 ```yaml
 - name: Cache SBT
-  uses: actions/cache@v2
+  uses: actions/cache@v3
   with:
     path: |
       ~/.ivy2/cache
@@ -563,7 +589,7 @@ whenever possible:
 ## Swift, Objective-C - Carthage
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: Carthage
     key: ${{ runner.os }}-carthage-${{ hashFiles('**/Cartfile.resolved') }}
@@ -574,7 +600,7 @@ whenever possible:
 ## Swift, Objective-C - CocoaPods
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: Pods
     key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
@@ -585,7 +611,7 @@ whenever possible:
 ## Swift - Swift Package Manager
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: .build
     key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}

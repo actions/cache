@@ -1,9 +1,9 @@
 ---
 name: "@azure/core-lro"
-version: 1.0.4
+version: 2.2.4
 type: npm
-summary: LRO Polling strtegy for the Azure SDK in TypeScript
-homepage: https://github.com/Azure/azure-sdk-for-js/blob/master/sdk/core/core-lro/README.md
+summary: 
+homepage: 
 license: mit
 licenses:
 - sources: LICENSE
