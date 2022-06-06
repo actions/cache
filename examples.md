@@ -9,6 +9,7 @@
   - [macOS](#macos)
   - [Windows](#windows-1)
 - [Elixir - Mix](#elixir---mix)
+- [Erlang - Rebar3](#erlang--rebar3)
 - [Go - Modules](#go---modules)
   - [Linux](#linux-1)
   - [macOS](#macos-1)
@@ -149,6 +150,18 @@ steps:
     key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
     restore-keys: |
       ${{ runner.os }}-mix-
+```
+
+## Erlang - Rebar3
+```yaml
+- uses: actions/cache@v2
+  with:
+    path: |
+      ~/.cache/rebar3
+      _build
+    key: ${{ runner.os }}-erlang-${{ env.OTP_VERSION }}-${{ hashFiles('**/*rebar.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-erlang-${{ env.OTP_VERSION }}-
 ```
 
 ## Go - Modules
