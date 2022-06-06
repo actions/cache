@@ -27,6 +27,14 @@ beforeAll(() => {
         }
     );
 
+    jest.spyOn(actionUtils, "getInputAsInt").mockImplementation(
+        (name, options) => {
+            return jest
+                .requireActual("../src/utils/actionUtils")
+                .getInputAsInt(name, options);
+        }
+    );
+
     jest.spyOn(actionUtils, "isExactKeyMatch").mockImplementation(
         (key, cacheResult) => {
             return jest
@@ -44,6 +52,11 @@ beforeAll(() => {
 beforeEach(() => {
     process.env[Events.Key] = Events.Push;
     process.env[RefKey] = "refs/heads/feature-branch";
+
+    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
+        () => true
+    );
 });
 
 afterEach(() => {
@@ -88,6 +101,69 @@ test("save with no primary key in state outputs warning", async () => {
         `Error retrieving key from state.`
     );
     expect(logWarningMock).toHaveBeenCalledTimes(1);
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
+test("save without AC available should no-op", async () => {
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
+        () => false
+    );
+
+    const saveCacheMock = jest.spyOn(cache, "saveCache");
+
+    await run();
+
+    expect(saveCacheMock).toHaveBeenCalledTimes(0);
+});
+
+test("save on ghes without AC available should no-op", async () => {
+    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
+        () => false
+    );
+
+    const saveCacheMock = jest.spyOn(cache, "saveCache");
+
+    await run();
+
+    expect(saveCacheMock).toHaveBeenCalledTimes(0);
+});
+
+test("save on GHES with AC available", async () => {
+    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const savedCacheKey = "Linux-node-";
+
+    jest.spyOn(core, "getState")
+        // Cache Entry State
+        .mockImplementationOnce(() => {
+            return savedCacheKey;
+        })
+        // Cache Key State
+        .mockImplementationOnce(() => {
+            return primaryKey;
+        });
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.UploadChunkSize, "4000000");
+
+    const cacheId = 4;
+    const saveCacheMock = jest
+        .spyOn(cache, "saveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(cacheId);
+        });
+
+    await run();
+
+    expect(saveCacheMock).toHaveBeenCalledTimes(1);
+    expect(saveCacheMock).toHaveBeenCalledWith([inputPath], primaryKey, {
+        uploadChunkSize: 4000000
+    });
+
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
@@ -177,7 +253,11 @@ test("save with large cache outputs warning", async () => {
     await run();
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith([inputPath], primaryKey);
+    expect(saveCacheMock).toHaveBeenCalledWith(
+        [inputPath],
+        primaryKey,
+        expect.anything()
+    );
 
     expect(logWarningMock).toHaveBeenCalledTimes(1);
     expect(logWarningMock).toHaveBeenCalledWith(
@@ -220,7 +300,11 @@ test("save with reserve cache failure outputs warning", async () => {
     await run();
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith([inputPath], primaryKey);
+    expect(saveCacheMock).toHaveBeenCalledWith(
+        [inputPath],
+        primaryKey,
+        expect.anything()
+    );
 
     expect(infoMock).toHaveBeenCalledWith(
         `Unable to reserve cache with key ${primaryKey}, another job may be creating this cache.`
@@ -258,7 +342,11 @@ test("save with server error outputs warning", async () => {
     await run();
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith([inputPath], primaryKey);
+    expect(saveCacheMock).toHaveBeenCalledWith(
+        [inputPath],
+        primaryKey,
+        expect.anything()
+    );
 
     expect(logWarningMock).toHaveBeenCalledTimes(1);
     expect(logWarningMock).toHaveBeenCalledWith("HTTP Error Occurred");
@@ -284,6 +372,7 @@ test("save with valid inputs uploads a cache", async () => {
 
     const inputPath = "node_modules";
     testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.UploadChunkSize, "4000000");
 
     const cacheId = 4;
     const saveCacheMock = jest
@@ -295,7 +384,9 @@ test("save with valid inputs uploads a cache", async () => {
     await run();
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith([inputPath], primaryKey);
+    expect(saveCacheMock).toHaveBeenCalledWith([inputPath], primaryKey, {
+        uploadChunkSize: 4000000
+    });
 
     expect(failedMock).toHaveBeenCalledTimes(0);
 });

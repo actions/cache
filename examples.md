@@ -1,42 +1,49 @@
 # Examples
 
-- [Examples](#examples)
-  - [C# - NuGet](#c---nuget)
-  - [D - DUB](#d---dub)
-  - [Elixir - Mix](#elixir---mix)
-  - [Erlang - Rebar3](#erlang--rebar3)
-  - [Go - Modules](#go---modules)
-  - [Haskell - Cabal](#haskell---cabal)
-  - [Java - Gradle](#java---gradle)
-  - [Java - Maven](#java---maven)
-  - [Node - npm](#node---npm)
-    - [macOS and Ubuntu](#macos-and-ubuntu)
-    - [Windows](#windows)
-    - [Using multiple systems and `npm config`](#using-multiple-systems-and-npm-config)
-  - [Node - Lerna](#node---lerna)
-  - [Node - Yarn](#node---yarn)
-  - [OCaml/Reason - esy](#ocamlreason---esy)
-  - [PHP - Composer](#php---composer)
-  - [Python - pip](#python---pip)
-    - [Simple example](#simple-example)
-    - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow)
-    - [Using pip to get cache location](#using-pip-to-get-cache-location)
-    - [Using a script to get cache location](#using-a-script-to-get-cache-location)
-  - [R - renv](#r---renv)
-    - [Simple example](#simple-example-1)
-    - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow-1)
-  - [Ruby - Bundler](#ruby---bundler)
-  - [Rust - Cargo](#rust---cargo)
-  - [Scala - SBT](#scala---sbt)
-  - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
-  - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
-  - [Swift - Swift Package Manager](#swift---swift-package-manager)
+- [C# - NuGet](#c---nuget)
+- [D - DUB](#d---dub)
+  - [POSIX](#posix)
+  - [Windows](#windows)
+- [Deno](#deno)
+  - [Linux](#linux)
+  - [macOS](#macos)
+  - [Windows](#windows-1)
+- [Elixir - Mix](#elixir---mix)
+- [Erlang - Rebar3](#erlang--rebar3)
+- [Go - Modules](#go---modules)
+  - [Linux](#linux-1)
+  - [macOS](#macos-1)
+  - [Windows](#windows-2)
+- [Haskell - Cabal](#haskell---cabal)
+- [Haskell - Stack](#haskell---stack)
+- [Java - Gradle](#java---gradle)
+- [Java - Maven](#java---maven)
+- [Node - npm](#node---npm)
+- [Node - Lerna](#node---lerna)
+- [Node - Yarn](#node---yarn)
+- [Node - Yarn 2](#node---yarn-2)
+- [OCaml/Reason - esy](#ocamlreason---esy)
+- [PHP - Composer](#php---composer)
+- [Python - pip](#python---pip)
+  - [Simple example](#simple-example)
+  - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow)
+  - [Multiple OS's in a workflow with a matrix](#multiple-oss-in-a-workflow-with-a-matrix)
+  - [Using pip to get cache location](#using-pip-to-get-cache-location)
+- [Python - pipenv](#python---pipenv)
+- [R - renv](#r---renv)
+- [Ruby - Bundler](#ruby---bundler)
+- [Rust - Cargo](#rust---cargo)
+- [Scala - SBT](#scala---sbt)
+- [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
+- [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
+- [Swift - Swift Package Manager](#swift---swift-package-manager)
 
 ## C# - NuGet
+
 Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/package-references-in-project-files#locking-dependencies):
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: ~/.nuget/packages
     key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
@@ -45,11 +52,12 @@ Using [NuGet lock files](https://docs.microsoft.com/nuget/consume-packages/packa
 ```
 
 Depending on the environment, huge packages might be pre-installed in the global cache folder.
-With `actions/cache@v2` you can now exclude unwanted packages with [exclude pattern](https://github.com/actions/toolkit/tree/master/packages/glob#exclude-patterns)
+With `actions/cache@v3` you can now exclude unwanted packages with [exclude pattern](https://github.com/actions/toolkit/tree/main/packages/glob#exclude-patterns)
+
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
-    path: | 
+    path: |
       ~/.nuget/packages
       !~/.nuget/packages/unwanted
     key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
@@ -59,11 +67,12 @@ With `actions/cache@v2` you can now exclude unwanted packages with [exclude patt
 
 Or you could move the cache folder like below.
 >Note: This workflow does not work for projects that require files to be placed in user profile package folder
+
 ```yaml
 env:
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 steps:
-  - uses: actions/cache@v2
+  - uses: actions/cache@v3
     with:
       path: ${{ github.workspace }}/.nuget/packages
       key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
@@ -76,10 +85,10 @@ steps:
 ### POSIX
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: ~/.dub
-    key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
+    key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.selections.json') }}
     restore-keys: |
       ${{ runner.os }}-dub-
 ```
@@ -87,20 +96,58 @@ steps:
 ### Windows
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: ~\AppData\Local\dub
-    key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
+    key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.selections.json') }}
     restore-keys: |
       ${{ runner.os }}-dub-
 ```
 
-## Elixir - Mix
+## Deno
+
+### Linux
+
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
-    path: deps
-    key: ${{ runner.os }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+    path: |
+      ~/.deno
+      ~/.cache/deno
+    key: ${{ runner.os }}-deno-${{ hashFiles('**/deps.ts') }}
+```
+
+### macOS
+
+```yaml
+- uses: actions/cache@v3
+  with:
+    path: |
+      ~/.deno
+      ~/Library/Caches/deno
+    key: ${{ runner.os }}-deno-${{ hashFiles('**/deps.ts') }}
+```
+
+### Windows
+
+```yaml
+- uses: actions/cache@v3
+  with:
+    path: |
+      ~\.deno
+      ~\AppData\Local\deno
+    key: ${{ runner.os }}-deno-${{ hashFiles('**/deps.ts') }}
+```
+
+## Elixir - Mix
+
+```yaml
+- uses: actions/cache@v3
+  with:
+    path: |
+      deps
+      _build
+    key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
     restore-keys: |
       ${{ runner.os }}-mix-
 ```
@@ -119,10 +166,40 @@ steps:
 
 ## Go - Modules
 
+### Linux
+
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
-    path: ~/go/pkg/mod
+    path: |
+      ~/.cache/go-build
+      ~/go/pkg/mod
+    key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+    restore-keys: |
+      ${{ runner.os }}-go-
+```
+
+### macOS
+
+```yaml
+- uses: actions/cache@v3
+  with:
+    path: |
+      ~/Library/Caches/go-build
+      ~/go/pkg/mod
+    key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+    restore-keys: |
+      ${{ runner.os }}-go-
+```
+
+### Windows
+
+```yaml
+- uses: actions/cache@v3
+  with:
+    path: |
+      ~\AppData\Local\go-build
+      ~\go\pkg\mod
     key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
     restore-keys: |
       ${{ runner.os }}-go-
@@ -134,22 +211,46 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 
 ```yaml
 - name: Cache ~/.cabal/packages, ~/.cabal/store and dist-newstyle
-  uses: actions/cache@v2
+  uses: actions/cache@v3
   with:
     path: |
       ~/.cabal/packages
       ~/.cabal/store
       dist-newstyle
-    key: ${{ runner.os }}-${{ matrix.ghc }}
+    key: ${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal.project.freeze') }}
+    restore-keys: ${{ runner.os }}-${{ matrix.ghc }}-
+```
+
+## Haskell - Stack
+
+```yaml
+- uses: actions/cache@v3
+  name: Cache ~/.stack
+  with:
+    path: ~/.stack
+    key: ${{ runner.os }}-stack-global-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+    restore-keys: |
+      ${{ runner.os }}-stack-global-
+- uses: actions/cache@v3
+  name: Cache .stack-work
+  with:
+    path: .stack-work
+    key: ${{ runner.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+    restore-keys: |
+      ${{ runner.os }}-stack-work-
 ```
 
 ## Java - Gradle
 
+>Note: Ensure no Gradle daemons are running anymore when your workflow completes. Creating the cache package might fail due to locks being held by Gradle. Refer to the [Gradle Daemon documentation](https://docs.gradle.org/current/userguide/gradle_daemon.html) on how to disable or stop the Gradle Daemons.
+
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
-    path: ~/.gradle/caches
-    key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+    path: |
+      ~/.gradle/caches
+      ~/.gradle/wrapper
+    key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
     restore-keys: |
       ${{ runner.os }}-gradle-
 ```
@@ -158,7 +259,7 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 
 ```yaml
 - name: Cache local Maven repository
-  uses: actions/cache@v2
+  uses: actions/cache@v3
   with:
     path: ~/.m2/repository
     key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -168,48 +269,21 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 
 ## Node - npm
 
-For npm, cache files are stored in `~/.npm` on Posix, or `%AppData%/npm-cache` on Windows. See https://docs.npmjs.com/cli/cache#cache
+For npm, cache files are stored in `~/.npm` on Posix, or `~\AppData\npm-cache` on Windows, but it's possible to use `npm config get cache` to find the path on any platform. See [the npm docs](https://docs.npmjs.com/cli/cache#cache) for more details.
 
 If using `npm config` to retrieve the cache directory, ensure you run [actions/setup-node](https://github.com/actions/setup-node) first to ensure your `npm` version is correct.
 
 >Note: It is not recommended to cache `node_modules`, as it can break across Node versions and won't work with `npm ci`
 
-### macOS and Ubuntu
-
-```yaml
-- uses: actions/cache@v2
-  with:
-    path: ~/.npm
-    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-    restore-keys: |
-      ${{ runner.os }}-node-
-```
-
-### Windows
-
 ```yaml
 - name: Get npm cache directory
-  id: npm-cache
+  id: npm-cache-dir
   run: |
     echo "::set-output name=dir::$(npm config get cache)"
-- uses: actions/cache@v2
+- uses: actions/cache@v3
+  id: npm-cache # use this to check for `cache-hit` ==> if: steps.npm-cache.outputs.cache-hit != 'true'
   with:
-    path: ${{ steps.npm-cache.outputs.dir }}
-    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-    restore-keys: |
-      ${{ runner.os }}-node-
-```
-
-### Using multiple systems and `npm config`
-
-```yaml
-- name: Get npm cache directory
-  id: npm-cache
-  run: |
-    echo "::set-output name=dir::$(npm config get cache)"
-- uses: actions/cache@v2
-  with:
-    path: ${{ steps.npm-cache.outputs.dir }}
+    path: ${{ steps.npm-cache-dir.outputs.dir }}
     key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
     restore-keys: |
       ${{ runner.os }}-node-
@@ -219,11 +293,9 @@ If using `npm config` to retrieve the cache directory, ensure you run [actions/s
 
 ```yaml
 - name: restore lerna
-  uses: actions/cache@v2
+  uses: actions/cache@v3
   with:
-    path: |
-      node_modules
-      */*/node_modules
+    path: **/node_modules
     key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
 ```
 
@@ -235,7 +307,25 @@ The yarn cache directory will depend on your operating system and version of `ya
   id: yarn-cache-dir-path
   run: echo "::set-output name=dir::$(yarn cache dir)"
 
-- uses: actions/cache@v2
+- uses: actions/cache@v3
+  id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+  with:
+    path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+    key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-yarn-
+```
+
+## Node - Yarn 2
+
+The yarn 2 cache directory will depend on your config. See https://yarnpkg.com/configuration/yarnrc#cacheFolder for more info.
+
+```yaml
+- name: Get yarn cache directory path
+  id: yarn-cache-dir-path
+  run: echo "::set-output name=dir::$(yarn config get cacheFolder)"
+
+- uses: actions/cache@v3
   id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
   with:
     path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
@@ -245,11 +335,12 @@ The yarn cache directory will depend on your operating system and version of `ya
 ```
 
 ## OCaml/Reason - esy
+
 Esy allows you to export built dependencies and import pre-built dependencies.
 ```yaml
     - name: Restore Cache
       id: restore-cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: _export
         key:  ${{ runner.os }}-esy-${{ hashFiles('esy.lock/index.json') }}
@@ -265,12 +356,11 @@ Esy allows you to export built dependencies and import pre-built dependencies.
     ...(Build job)...
 
     # Re-export dependencies if anything has changed or if it is the first time
-    - name: Setting dependency cache 
+    - name: Setting dependency cache
       run: |
         esy export-dependencies
       if: steps.restore-cache.outputs.cache-hit != 'true'
 ```
-
 
 ## PHP - Composer
 
@@ -279,7 +369,7 @@ Esy allows you to export built dependencies and import pre-built dependencies.
   id: composer-cache
   run: |
     echo "::set-output name=dir::$(composer config cache-files-dir)"
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: ${{ steps.composer-cache.outputs.dir }}
     key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -292,13 +382,15 @@ Esy allows you to export built dependencies and import pre-built dependencies.
 For pip, the cache directory will vary by OS. See https://pip.pypa.io/en/stable/reference/pip_install/#caching
 
 Locations:
- - Ubuntu: `~/.cache/pip`
- - Windows: `~\AppData\Local\pip\Cache`
- - macOS: `~/Library/Caches/pip`
+
+- Ubuntu: `~/.cache/pip`
+- Windows: `~\AppData\Local\pip\Cache`
+- macOS: `~/Library/Caches/pip`
 
 ### Simple example
+
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: ~/.cache/pip
     key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -311,7 +403,7 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
 ### Multiple OS's in a workflow
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   if: startsWith(runner.os, 'Linux')
   with:
     path: ~/.cache/pip
@@ -319,7 +411,7 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
     restore-keys: |
       ${{ runner.os }}-pip-
 
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   if: startsWith(runner.os, 'macOS')
   with:
     path: ~/Library/Caches/pip
@@ -327,13 +419,38 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
     restore-keys: |
       ${{ runner.os }}-pip-
 
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   if: startsWith(runner.os, 'Windows')
   with:
     path: ~\AppData\Local\pip\Cache
     key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
     restore-keys: |
       ${{ runner.os }}-pip-
+```
+
+### Multiple OS's in a workflow with a matrix
+
+``` yaml
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+        - os: ubuntu-latest
+          path: ~/.cache/pip
+        - os: macos-latest
+          path: ~/Library/Caches/pip
+        - os: windows-latest
+          path: ~\AppData\Local\pip\Cache
+    steps:
+    - uses: actions/cache@v3
+      with:
+        path: ${{ matrix.path }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+         ${{ runner.os }}-pip-
 ```
 
 ### Using pip to get cache location
@@ -346,7 +463,7 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
     echo "::set-output name=dir::$(pip cache dir)"
 
 - name: pip cache
-  uses: actions/cache@v2
+  uses: actions/cache@v3
   with:
     path: ${{ steps.pip-cache.outputs.dir }}
     key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -354,100 +471,77 @@ Replace `~/.cache/pip` with the correct `path` if not using Ubuntu.
       ${{ runner.os }}-pip-
 ```
 
-### Using a script to get cache location
+## Python - pipenv
 
-> Note: This uses an internal pip API and may not always work
 ```yaml
-- name: Get pip cache dir
- id: pip-cache
- run: |
-   python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
+- name: Set up Python
+  # The actions/cache step below uses this id to get the exact python version
+  id: setup-python
+  uses: actions/setup-python@v2
 
-- uses: actions/cache@v2
+  ⋮
+
+- uses: actions/cache@v3
   with:
-    path: ${{ steps.pip-cache.outputs.dir }}
-    key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-    restore-keys: |
-      ${{ runner.os }}-pip-
+    path: ~/.local/share/virtualenvs
+    key: ${{ runner.os }}-python-${{ steps.setup-python.outputs.python-version }}-pipenv-${{ hashFiles('Pipfile.lock') }}
 ```
 
 ## R - renv
 
-For renv, the cache directory will vary by OS. Look at https://rstudio.github.io/renv/articles/renv.html#cache
-
-Locations:
- - Ubuntu: `~/.local/share/renv`
- - macOS: `~/Library/Application Support/renv`
- - Windows: `%LOCALAPPDATA%/renv`
-
-### Simple example
-```yaml
-- uses: actions/cache@v2
-  with:
-    path: ~/.local/share/renv
-    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-renv-
-```
-
-Replace `~/.local/share/renv` with the correct `path` if not using Ubuntu.
-
-### Multiple OS's in a workflow
+For renv, the cache directory will vary by OS. The `RENV_PATHS_ROOT` environment variable is used to set the cache location. Have a look at https://rstudio.github.io/renv/reference/paths.html#details for more details.
 
 ```yaml
-- uses: actions/cache@v2
-  if: startsWith(runner.os, 'Linux')
+- name: Set RENV_PATHS_ROOT
+  shell: bash
+  run: |
+    echo "RENV_PATHS_ROOT=${{ runner.temp }}/renv" >> $GITHUB_ENV
+- name: Install and activate renv
+  run: |
+    install.packages("renv")
+    renv::activate()
+  shell: Rscript {0}
+- name: Get R and OS version
+  id: get-version
+  run: |
+    cat("##[set-output name=os-version;]", sessionInfo()$running, "\n", sep = "")
+    cat("##[set-output name=r-version;]", R.Version()$version.string, sep = "")
+  shell: Rscript {0}
+- name: Restore Renv package cache
+  uses: actions/cache@v3
   with:
-    path: ~/.local/share/renv
-    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-renv-
-
-- uses: actions/cache@v2
-  if: startsWith(runner.os, 'macOS')
-  with:
-    path: ~/Library/Application Support/renv
-    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-renv-
-
-- uses: actions/cache@v2
-  if: startsWith(runner.os, 'Windows')
-  with:
-    path: ~\AppData\Local\renv
-    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-renv-
+    path: ${{ env.RENV_PATHS_ROOT }}
+    key: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{ inputs.cache-version }}-${{ hashFiles('renv.lock') }}
+    restore-keys: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{inputs.cache-version }}-
 ```
 
 ## Ruby - Bundler
 
-```yaml
-- uses: actions/cache@v2
-  with:
-    path: vendor/bundle
-    key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-gems-
-```
-When dependencies are installed later in the workflow, we must specify the same path for the bundler.
+Caching gems with Bundler correctly is not trivial and just using `actions/cache`
+is [not enough](https://github.com/ruby/setup-ruby#caching-bundle-install-manually).
+
+Instead, it is recommended to use `ruby/setup-ruby`'s
+[`bundler-cache: true` option](https://github.com/ruby/setup-ruby#caching-bundle-install-automatically)
+whenever possible:
 
 ```yaml
-- name: Bundle install
-  run: |
-    bundle config path vendor/bundle
-    bundle install --jobs 4 --retry 3
+- uses: ruby/setup-ruby@v1
+  with:
+    ruby-version: ...
+    bundler-cache: true
 ```
 
 ## Rust - Cargo
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: |
-      ~/.cargo/registry
-      ~/.cargo/git
-      target
+      ~/.cargo/bin/
+      ~/.cargo/registry/index/
+      ~/.cargo/registry/cache/
+      ~/.cargo/git/db/
+      target/
     key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 ```
 
@@ -455,9 +549,9 @@ When dependencies are installed later in the workflow, we must specify the same 
 
 ```yaml
 - name: Cache SBT
-  uses: actions/cache@v2
+  uses: actions/cache@v3
   with:
-    path: | 
+    path: |
       ~/.ivy2/cache
       ~/.sbt
     key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
@@ -466,7 +560,7 @@ When dependencies are installed later in the workflow, we must specify the same 
 ## Swift, Objective-C - Carthage
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: Carthage
     key: ${{ runner.os }}-carthage-${{ hashFiles('**/Cartfile.resolved') }}
@@ -477,7 +571,7 @@ When dependencies are installed later in the workflow, we must specify the same 
 ## Swift, Objective-C - CocoaPods
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: Pods
     key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
@@ -488,7 +582,7 @@ When dependencies are installed later in the workflow, we must specify the same 
 ## Swift - Swift Package Manager
 
 ```yaml
-- uses: actions/cache@v2
+- uses: actions/cache@v3
   with:
     path: .build
     key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}

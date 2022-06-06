@@ -32,6 +32,11 @@ beforeAll(() => {
 beforeEach(() => {
     process.env[Events.Key] = Events.Push;
     process.env[RefKey] = "refs/heads/feature-branch";
+
+    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
+        () => true
+    );
 });
 
 afterEach(() => {
@@ -50,6 +55,70 @@ test("restore with invalid event outputs warning", async () => {
     expect(logWarningMock).toHaveBeenCalledWith(
         `Event Validation Error: The event type ${invalidEvent} is not supported because it's not tied to a branch or tag ref.`
     );
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
+test("restore without AC available should no-op", async () => {
+    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
+        () => false
+    );
+
+    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
+    const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
+
+    await run();
+
+    expect(restoreCacheMock).toHaveBeenCalledTimes(0);
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
+});
+
+test("restore on GHES without AC available should no-op", async () => {
+    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
+    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
+        () => false
+    );
+
+    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
+    const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
+
+    await run();
+
+    expect(restoreCacheMock).toHaveBeenCalledTimes(0);
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
+});
+
+test("restore on GHES with AC available ", async () => {
+    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
+    const path = "node_modules";
+    const key = "node-test";
+    testUtils.setInputs({
+        path: path,
+        key
+    });
+
+    const infoMock = jest.spyOn(core, "info");
+    const failedMock = jest.spyOn(core, "setFailed");
+    const stateMock = jest.spyOn(core, "saveState");
+    const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
+    const restoreCacheMock = jest
+        .spyOn(cache, "restoreCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(key);
+        });
+
+    await run();
+
+    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
+    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, []);
+
+    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith(true);
+
+    expect(infoMock).toHaveBeenCalledWith(`Cache restored from key: ${key}`);
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
