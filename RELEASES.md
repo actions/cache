@@ -14,4 +14,4 @@
 - Fixed avoiding empty cache save when no files are available for caching. ([issue](https://github.com/actions/cache/issues/624))
 
 ### 3.0.4
-- Fixed tar creation error while trying to create tar with path has `~/` home folder on ubuntu-latest. ([issue](https://github.com/actions/cache/issues/689))
+- Fixed tar creation error while trying to create tar with path has `~/` home folder on `ubuntu-latest`. ([issue](https://github.com/actions/cache/issues/689))
