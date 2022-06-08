@@ -172,33 +172,33 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Cache Primes
-      id: cache-primes
-      uses: actions/cache@v3
-      with:
-        path: prime-numbers
-        key: primes
+      - name: Cache Primes
+        id: cache-primes
+        uses: actions/cache@v3
+        with:
+          path: prime-numbers
+          key: primes
 
-    - name: Generate Prime Numbers
-      if: steps.cache-primes.outputs.cache-hit != 'true'
-      run: ./generate-primes.sh -d prime-numbers
-      
-    - name: Cache Numbers
-      id: cache-numbers
-      uses: actions/cache@v3
-      with:
-        path: numbers
-        key: primes
+      - name: Generate Prime Numbers
+        if: steps.cache-primes.outputs.cache-hit != 'true'
+        run: ./generate-primes.sh -d prime-numbers
 
-    - name: Generate Numbers
-      if: steps.cache-numbers.outputs.cache-hit != 'true'
-      run: ./generate-primes.sh -d numbers
-      
-   build-windows:
-      runs-on: windows-latest
-      steps:
+      - name: Cache Numbers
+        id: cache-numbers
+        uses: actions/cache@v3
+        with:
+          path: numbers
+          key: primes
+
+      - name: Generate Numbers
+        if: steps.cache-numbers.outputs.cache-hit != 'true'
+        run: ./generate-primes.sh -d numbers
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
       - uses: actions/checkout@v3
 
       - name: Cache Primes
