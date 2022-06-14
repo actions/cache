@@ -9,13 +9,16 @@ inputs:
     description: 'An explicit key for restoring and saving the cache'
     required: true
   restore-keys:
-    description: 'An ordered list of keys to use for restoring the cache if no cache hit occurred for key'
+    description: 'An ordered list of keys to use for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
+    required: false
+  upload-chunk-size:
+    description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/restore/index.js'
   post: 'dist/save/index.js'
   post-if: 'success()'

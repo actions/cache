@@ -1,3 +1,4 @@
+import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
 import { Events, Outputs, RefKey, State } from "../src/constants";
@@ -5,6 +6,7 @@ import * as actionUtils from "../src/utils/actionUtils";
 import * as testUtils from "../src/utils/testUtils";
 
 jest.mock("@actions/core");
+jest.mock("@actions/cache");
 
 beforeAll(() => {
     jest.spyOn(core, "getInput").mockImplementation((name, options) => {
@@ -26,7 +28,7 @@ test("isGhes returns true if server url is not github.com", () => {
     }
 });
 
-test("isGhes returns true when server url is github.com", () => {
+test("isGhes returns false when server url is github.com", () => {
     try {
         process.env["GITHUB_SERVER_URL"] = "http://github.com";
         expect(actionUtils.isGhes()).toBe(false);
@@ -211,4 +213,62 @@ test("getInputAsArray handles different new lines correctly", () => {
 test("getInputAsArray handles empty lines correctly", () => {
     testUtils.setInput("foo", "\n\nbar\n\nbaz\n\n");
     expect(actionUtils.getInputAsArray("foo")).toEqual(["bar", "baz"]);
+});
+
+test("getInputAsInt returns undefined if input not set", () => {
+    expect(actionUtils.getInputAsInt("undefined")).toBeUndefined();
+});
+
+test("getInputAsInt returns value if input is valid", () => {
+    testUtils.setInput("foo", "8");
+    expect(actionUtils.getInputAsInt("foo")).toBe(8);
+});
+
+test("getInputAsInt returns undefined if input is invalid or NaN", () => {
+    testUtils.setInput("foo", "bar");
+    expect(actionUtils.getInputAsInt("foo")).toBeUndefined();
+});
+
+test("getInputAsInt throws if required and value missing", () => {
+    expect(() =>
+        actionUtils.getInputAsInt("undefined", { required: true })
+    ).toThrowError();
+});
+
+test("isCacheFeatureAvailable for ac enabled", () => {
+    jest.spyOn(cache, "isFeatureAvailable").mockImplementation(() => true);
+
+    expect(actionUtils.isCacheFeatureAvailable()).toBe(true);
+});
+
+test("isCacheFeatureAvailable for ac disabled on GHES", () => {
+    jest.spyOn(cache, "isFeatureAvailable").mockImplementation(() => false);
+
+    const message =
+        "Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.";
+    const infoMock = jest.spyOn(core, "info");
+
+    try {
+        process.env["GITHUB_SERVER_URL"] = "http://example.com";
+        expect(actionUtils.isCacheFeatureAvailable()).toBe(false);
+        expect(infoMock).toHaveBeenCalledWith(`[warning]${message}`);
+    } finally {
+        delete process.env["GITHUB_SERVER_URL"];
+    }
+});
+
+test("isCacheFeatureAvailable for ac disabled on dotcom", () => {
+    jest.spyOn(cache, "isFeatureAvailable").mockImplementation(() => false);
+
+    const message =
+        "An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.";
+    const infoMock = jest.spyOn(core, "info");
+
+    try {
+        process.env["GITHUB_SERVER_URL"] = "http://github.com";
+        expect(actionUtils.isCacheFeatureAvailable()).toBe(false);
+        expect(infoMock).toHaveBeenCalledWith(`[warning]${message}`);
+    } finally {
+        delete process.env["GITHUB_SERVER_URL"];
+    }
 });

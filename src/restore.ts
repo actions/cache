@@ -6,8 +6,7 @@ import * as utils from "./utils/actionUtils";
 
 async function run(): Promise<void> {
     try {
-        if (utils.isGhes()) {
-            utils.logWarning("Cache action is not supported on GHES");
+        if (!utils.isCacheFeatureAvailable()) {
             utils.setCacheHitOutput(false);
             return;
         }
@@ -53,16 +52,17 @@ async function run(): Promise<void> {
             utils.setCacheHitOutput(isExactKeyMatch);
 
             core.info(`Cache restored from key: ${cacheKey}`);
-        } catch (error) {
-            if (error.name === cache.ValidationError.name) {
+        } catch (error: unknown) {
+            const typedError = error as Error;
+            if (typedError.name === cache.ValidationError.name) {
                 throw error;
             } else {
-                utils.logWarning(error.message);
+                utils.logWarning(typedError.message);
                 utils.setCacheHitOutput(false);
             }
         }
-    } catch (error) {
-        core.setFailed(error.message);
+    } catch (error: unknown) {
+        core.setFailed((error as Error).message);
     }
 }
 
