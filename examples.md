@@ -24,6 +24,7 @@
 - [Node - Yarn 2](#node---yarn-2)
 - [OCaml/Reason - esy](#ocamlreason---esy)
 - [PHP - Composer](#php---composer)
+- [PowerShell](#powershell)
 - [Python - pip](#python---pip)
   - [Simple example](#simple-example)
   - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow)
