@@ -9,14 +9,15 @@
     "plugin:import/errors",
     "plugin:import/warnings",
     "plugin:import/typescript",
-    "plugin:prettier/recommended"
+    "plugin:prettier/recommended",
+    "prettier/@typescript-eslint"
   ],
   "plugins": ["@typescript-eslint", "simple-import-sort", "jest"],
   "rules": {
     "import/first": "error",
     "import/newline-after-import": "error",
     "import/no-duplicates": "error",
-    "simple-import-sort/imports": "error",
+    "simple-import-sort/sort": "error",
     "sort-imports": "off"
   }
 }

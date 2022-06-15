@@ -14,7 +14,6 @@
   - [macOS](#macos-1)
   - [Windows](#windows-2)
 - [Haskell - Cabal](#haskell---cabal)
-- [Haskell - Stack](#haskell---stack)
 - [Java - Gradle](#java---gradle)
 - [Java - Maven](#java---maven)
 - [Node - npm](#node---npm)
@@ -210,27 +209,7 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
       ~/.cabal/packages
       ~/.cabal/store
       dist-newstyle
-    key: ${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal.project.freeze') }}
-    restore-keys: ${{ runner.os }}-${{ matrix.ghc }}-
-```
-
-## Haskell - Stack
-
-```yaml
-- uses: actions/cache@v2
-  name: Cache ~/.stack
-  with:
-    path: ~/.stack
-    key: ${{ runner.os }}-stack-global-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
-    restore-keys: |
-      ${{ runner.os }}-stack-global-
-- uses: actions/cache@v2
-  name: Cache .stack-work
-  with:
-    path: .stack-work
-    key: ${{ runner.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
-    restore-keys: |
-      ${{ runner.os }}-stack-work-
+    key: ${{ runner.os }}-${{ matrix.ghc }}
 ```
 
 ## Java - Gradle
@@ -316,7 +295,9 @@ If using `npm config` to retrieve the cache directory, ensure you run [actions/s
 - name: restore lerna
   uses: actions/cache@v2
   with:
-    path: **/node_modules
+    path: |
+      node_modules
+      */*/node_modules
     key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
 ```
 
@@ -510,30 +491,53 @@ jobs:
 
 ## R - renv
 
-For renv, the cache directory will vary by OS. The `RENV_PATHS_ROOT` environment variable is used to set the cache location. Have a look at https://rstudio.github.io/renv/reference/paths.html#details for more details.
+For renv, the cache directory will vary by OS. Look at https://rstudio.github.io/renv/articles/renv.html#cache
+
+Locations:
+
+- Ubuntu: `~/.local/share/renv`
+- macOS: `~/Library/Application Support/renv`
+- Windows: `%LOCALAPPDATA%/renv`
+
+### Simple example
 
 ```yaml
-- name: Set RENV_PATHS_ROOT
-  shell: bash
-  run: |
-    echo "RENV_PATHS_ROOT=${{ runner.temp }}/renv" >> $GITHUB_ENV
-- name: Install and activate renv
-  run: |
-    install.packages("renv")
-    renv::activate()
-  shell: Rscript {0}
-- name: Get R and OS version
-  id: get-version
-  run: |
-    cat("##[set-output name=os-version;]", sessionInfo()$running, "\n", sep = "")
-    cat("##[set-output name=r-version;]", R.Version()$version.string, sep = "")
-  shell: Rscript {0}
-- name: Restore Renv package cache
-  uses: actions/cache@v2
+- uses: actions/cache@v2
   with:
-    path: ${{ env.RENV_PATHS_ROOT }}
-    key: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{ inputs.cache-version }}-${{ hashFiles('renv.lock') }}
-    restore-keys: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{inputs.cache-version }}-
+    path: ~/.local/share/renv
+    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-renv-
+```
+
+Replace `~/.local/share/renv` with the correct `path` if not using Ubuntu.
+
+### Multiple OS's in a workflow
+
+```yaml
+- uses: actions/cache@v2
+  if: startsWith(runner.os, 'Linux')
+  with:
+    path: ~/.local/share/renv
+    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-renv-
+
+- uses: actions/cache@v2
+  if: startsWith(runner.os, 'macOS')
+  with:
+    path: ~/Library/Application Support/renv
+    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-renv-
+
+- uses: actions/cache@v2
+  if: startsWith(runner.os, 'Windows')
+  with:
+    path: ~\AppData\Local\renv
+    key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-renv-
 ```
 
 ## Ruby - Bundler
