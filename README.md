@@ -14,7 +14,7 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
 
 ```yaml
 - name: Cache multiple paths
-  uses: actions/cache@v3
+  uses: actions/cache@v2
   with:
     path: |
       ~/cache
@@ -69,7 +69,7 @@ jobs:
 
     - name: Cache Primes
       id: cache-primes
-      uses: actions/cache@v3
+      uses: actions/cache@v2
       with:
         path: prime-numbers
         key: ${{ runner.os }}-primes
@@ -119,7 +119,7 @@ A cache key can include any of the contexts, functions, literals, and operators 
 For example, using the [`hashFiles`](https://help.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#hashfiles) function allows you to create a new cache when dependencies change.
 
 ```yaml
-  - uses: actions/cache@v3
+  - uses: actions/cache@v2
     with:
       path: |
         path/to/dependencies
@@ -137,7 +137,7 @@ Additionally, you can use arbitrary command output in a cache key, such as a dat
       echo "::set-output name=date::$(/bin/date -u "+%Y%m%d")"
     shell: bash
 
-  - uses: actions/cache@v3
+  - uses: actions/cache@v2
     with:
       path: path/to/dependencies
       key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('**/lockfiles') }}
@@ -158,7 +158,7 @@ Example:
 steps:
   - uses: actions/checkout@v2
 
-  - uses: actions/cache@v3
+  - uses: actions/cache@v2
     id: cache
     with:
       path: path/to/dependencies
