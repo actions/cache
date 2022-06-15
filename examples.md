@@ -33,6 +33,8 @@
   - [Using pip to get cache location](#using-pip-to-get-cache-location)
 - [Python - pipenv](#python---pipenv)
 - [R - renv](#r---renv)
+  - [Simple example](#simple-example-1)
+  - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow-1)
 - [Ruby - Bundler](#ruby---bundler)
 - [Rust - Cargo](#rust---cargo)
 - [Scala - SBT](#scala---sbt)
