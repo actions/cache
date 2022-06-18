@@ -15,7 +15,7 @@ inputs:
     description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
   reeval:
-    description: 'Boolean. Whether to reevaluate the key argument in post. Set to TRUE if you would like your cache key set after your job's steps are complete.'
+    description: "Boolean. Whether to reevaluate the key argument in post. Set to TRUE if you would like your cache key set after your job's steps are complete."
     required: false
     default: false
   only-restore:
