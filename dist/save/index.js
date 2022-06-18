@@ -37319,6 +37319,8 @@ function createTar(archiveFolder, sourceDirectories, compressionMethod) {
             ...getCompressionProgram(),
             '-cf',
             cacheFileName.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
+            '--exclude',
+            cacheFileName.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
             '-P',
             '-C',
             workingDirectory.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
