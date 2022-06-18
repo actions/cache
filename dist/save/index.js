@@ -4607,7 +4607,9 @@ exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inpu
 var Inputs;
 (function (Inputs) {
     Inputs["Key"] = "key";
+    Inputs["OnlyRestore"] = "only-restore";
     Inputs["Path"] = "path";
+    Inputs["Reeval"] = "reeval";
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
@@ -37317,8 +37319,6 @@ function createTar(archiveFolder, sourceDirectories, compressionMethod) {
             ...getCompressionProgram(),
             '-cf',
             cacheFileName.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
-            '--exclude',
-            cacheFileName.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
             '-P',
             '-C',
             workingDirectory.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
@@ -46770,49 +46770,52 @@ const utils = __importStar(__webpack_require__(443));
 process.on("uncaughtException", e => utils.logWarning(e.message));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
-        try {
-            if (!utils.isCacheFeatureAvailable()) {
-                return;
-            }
-            if (!utils.isValidEvent()) {
-                utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
-                return;
-            }
-            const state = utils.getCacheState();
-            // Inputs are re-evaluted before the post action, so we want the original key used for restore
-            const primaryKey = core.getState(constants_1.State.CachePrimaryKey);
-            if (!primaryKey) {
-                utils.logWarning(`Error retrieving key from state.`);
-                return;
-            }
-            if (utils.isExactKeyMatch(primaryKey, state)) {
-                core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
-                return;
-            }
-            const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
-                required: true
-            });
+        const save = !core.getBooleanInput(constants_1.Inputs.OnlyRestore);
+        if (save) {
             try {
-                yield cache.saveCache(cachePaths, primaryKey, {
-                    uploadChunkSize: utils.getInputAsInt(constants_1.Inputs.UploadChunkSize)
+                if (!utils.isCacheFeatureAvailable()) {
+                    return;
+                }
+                if (!utils.isValidEvent()) {
+                    utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
+                    return;
+                }
+                const state = utils.getCacheState();
+                // Inputs are re-evaluted before the post action, so we want the original key used for restore
+                const primaryKey = core.getState(constants_1.State.CachePrimaryKey);
+                if (!primaryKey) {
+                    utils.logWarning(`Error retrieving key from state.`);
+                    return;
+                }
+                if (utils.isExactKeyMatch(primaryKey, state)) {
+                    core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
+                    return;
+                }
+                const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
+                    required: true
                 });
-                core.info(`Cache saved with key: ${primaryKey}`);
+                try {
+                    yield cache.saveCache(cachePaths, primaryKey, {
+                        uploadChunkSize: utils.getInputAsInt(constants_1.Inputs.UploadChunkSize)
+                    });
+                    core.info(`Cache saved with key: ${primaryKey}`);
+                }
+                catch (error) {
+                    const typedError = error;
+                    if (typedError.name === cache.ValidationError.name) {
+                        throw error;
+                    }
+                    else if (typedError.name === cache.ReserveCacheError.name) {
+                        core.info(typedError.message);
+                    }
+                    else {
+                        utils.logWarning(typedError.message);
+                    }
+                }
             }
             catch (error) {
-                const typedError = error;
-                if (typedError.name === cache.ValidationError.name) {
-                    throw error;
-                }
-                else if (typedError.name === cache.ReserveCacheError.name) {
-                    core.info(typedError.message);
-                }
-                else {
-                    utils.logWarning(typedError.message);
-                }
+                utils.logWarning(error.message);
             }
-        }
-        catch (error) {
-            utils.logWarning(error.message);
         }
     });
 }

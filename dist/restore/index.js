@@ -4607,7 +4607,9 @@ exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inpu
 var Inputs;
 (function (Inputs) {
     Inputs["Key"] = "key";
+    Inputs["OnlyRestore"] = "only-restore";
     Inputs["Path"] = "path";
+    Inputs["Reeval"] = "reeval";
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
@@ -37316,8 +37318,6 @@ function createTar(archiveFolder, sourceDirectories, compressionMethod) {
             '--posix',
             ...getCompressionProgram(),
             '-cf',
-            cacheFileName.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
-            '--exclude',
             cacheFileName.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
             '-P',
             '-C',
