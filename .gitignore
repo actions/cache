@@ -94,3 +94,6 @@ typings/
 
 # Text editor files
 .vscode/
+
+# OS
+.DS_Store
