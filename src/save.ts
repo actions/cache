@@ -10,13 +10,13 @@ import * as utils from "./utils/actionUtils";
 process.on("uncaughtException", e => utils.logWarning(e.message));
 
 async function run(): Promise<void> {
-    const save = ! core.getBooleanInput(Inputs.OnlyRestore);
+    const save = !core.getBooleanInput(Inputs.OnlyRestore);
     if (save) {
         try {
             if (!utils.isCacheFeatureAvailable()) {
                 return;
             }
-    
+
             if (!utils.isValidEvent()) {
                 utils.logWarning(
                     `Event Validation Error: The event type ${
@@ -25,27 +25,27 @@ async function run(): Promise<void> {
                 );
                 return;
             }
-    
+
             const state = utils.getCacheState();
-    
+
             // Inputs are re-evaluted before the post action, so we want the original key used for restore
             const primaryKey = core.getState(State.CachePrimaryKey);
             if (!primaryKey) {
                 utils.logWarning(`Error retrieving key from state.`);
                 return;
             }
-    
+
             if (utils.isExactKeyMatch(primaryKey, state)) {
                 core.info(
                     `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
                 );
                 return;
             }
-    
+
             const cachePaths = utils.getInputAsArray(Inputs.Path, {
                 required: true
             });
-    
+
             try {
                 await cache.saveCache(cachePaths, primaryKey, {
                     uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)

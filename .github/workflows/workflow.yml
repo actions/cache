@@ -72,7 +72,7 @@ jobs:
           test-cache
           ~/test-cache
   test-only-restore:
-    needs: test-restore
+    needs: test-save
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
