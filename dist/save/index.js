@@ -46783,8 +46783,16 @@ function run() {
                     return;
                 }
                 const state = utils.getCacheState();
-                // Inputs are re-evaluted before the post action, so we want the original key used for restore
-                const primaryKey = core.getState(constants_1.State.CachePrimaryKey);
+                let primaryKey = "";
+                const reeval = core.getBooleanInput(constants_1.Inputs.Reeval);
+                if (!reeval) {
+                    // Inputs are reevaluted before the post action, so we want the original key used for restore
+                    primaryKey = core.getState(constants_1.State.CachePrimaryKey);
+                }
+                else {
+                    // choose to reevaluate primary key
+                    primaryKey = core.getInput(constants_1.Inputs.Key, { required: true });
+                }
                 if (!primaryKey) {
                     utils.logWarning(`Error retrieving key from state.`);
                     return;
