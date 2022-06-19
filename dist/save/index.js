@@ -46782,7 +46782,6 @@ function run() {
                     utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
                     return;
                 }
-                const state = utils.getCacheState();
                 let primaryKey = "";
                 const reeval = core.getBooleanInput(constants_1.Inputs.Reeval);
                 if (!reeval) {
@@ -46790,13 +46789,15 @@ function run() {
                     primaryKey = core.getState(constants_1.State.CachePrimaryKey);
                 }
                 else {
-                    // choose to reevaluate primary key
+                    // choose to reevaluate primary key - resave state to correctly test cache hit
                     primaryKey = core.getInput(constants_1.Inputs.Key, { required: true });
+                    core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
                 }
                 if (!primaryKey) {
                     utils.logWarning(`Error retrieving key from state.`);
                     return;
                 }
+                const state = utils.getCacheState();
                 if (utils.isExactKeyMatch(primaryKey, state)) {
                     core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
                     return;
