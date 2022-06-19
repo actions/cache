@@ -53,6 +53,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
+        reeval: [false, true]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -67,10 +68,36 @@ jobs:
     - name: Save cache
       uses: ./
       with:
-        key: test-${{ runner.os }}-${{ github.run_id }}
+        reeval: ${{ matrix.reeval }}
+        key: test-${{ runner.os }}-${{ github.run_id }}-${{ matrix.reeval }}
         path: |
           test-cache
           ~/test-cache
+  test-only-restore:
+    needs: test-save
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Restore cache
+      uses: ./
+      with:
+        only-restore: true
+        reeval: ${{ matrix.reeval }}
+        key: test-${{ runner.os }}-${{ github.run_id }}-${{ matrix.reeval }}
+        path: |
+          test-cache
+          ~/test-cache
+    - name: Verify cache files in working directory
+      shell: bash
+      run: __tests__/verify-cache-files.sh ${{ runner.os }} test-cache
+    - name: Verify cache files outside working directory
+      shell: bash
+      run: __tests__/verify-cache-files.sh ${{ runner.os }} ~/test-cache
   test-restore:
     needs: test-save
     strategy:
@@ -84,7 +111,8 @@ jobs:
     - name: Restore cache
       uses: ./
       with:
-        key: test-${{ runner.os }}-${{ github.run_id }}
+        reeval: ${{ matrix.reeval }}
+        key: test-${{ runner.os }}-${{ github.run_id }}-${{ matrix.reeval }}
         path: |
           test-cache
           ~/test-cache
@@ -97,6 +125,9 @@ jobs:
 
   # End to end with proxy
   test-proxy-save:
+    strategy:
+      matrix:
+        reeval: [false, true]
     runs-on: ubuntu-latest
     container:
       image: ubuntu:latest
@@ -116,10 +147,14 @@ jobs:
     - name: Save cache
       uses: ./
       with:
-        key: test-proxy-${{ github.run_id }}
+        reeval: ${{ matrix.reeval }}
+        key: test-proxy-${{ github.run_id }}-${{ matrix.reeval }}
         path: test-cache
-  test-proxy-restore:
+  test-proxy-only-restore:
     needs: test-proxy-save
+    strategy:
+      matrix:
+        reeval: [false, true]
     runs-on: ubuntu-latest
     container:
       image: ubuntu:latest
@@ -137,7 +172,36 @@ jobs:
     - name: Restore cache
       uses: ./
       with:
-        key: test-proxy-${{ github.run_id }}
+        only-restore: true
+        reeval: ${{ matrix.reeval }}
+        key: test-proxy-${{ github.run_id }}-${{ matrix.reeval }}
+        path: test-cache
+    - name: Verify cache
+      run: __tests__/verify-cache-files.sh proxy test-cache
+  test-proxy-restore:
+    needs: test-proxy-save
+    strategy:
+      matrix:
+        reeval: [false, true]
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:latest
+      options: --dns 127.0.0.1
+    services:
+      squid-proxy:
+        image: datadog/squid:latest
+        ports:
+          - 3128:3128
+    env:
+      https_proxy: http://squid-proxy:3128
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Restore cache
+      uses: ./
+      with:
+        reeval: ${{ matrix.reeval }}
+        key: test-proxy-${{ github.run_id }}-${{ matrix.reeval }}
         path: test-cache
     - name: Verify cache
       run: __tests__/verify-cache-files.sh proxy test-cache
