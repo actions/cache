@@ -168,6 +168,15 @@ steps:
 
 > Note: The `id` defined in `actions/cache` must match the `id` in the `if` statement (i.e. `steps.[ID].outputs.cache-hit`)
 
+<<<<<<< HEAD
+=======
+## Known limitation
+
+- `action/cache` is currently not supported on GitHub Enterprise Server. <https://github.com/github/roadmap/issues/273> is tracking this.
+
+Since GitHub Enterprise Server uses self-hosted runners, dependencies are typically cached on the runner by whatever dependency management tool is being used (npm, maven, etc.).  This eliminates the need for explicit caching in some scenarios.
+
+>>>>>>> parent of 2d8d0d1 (Updated what's new. (#771))
 ## Contributing
 We would love for you to contribute to `actions/cache`, pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
