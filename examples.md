@@ -1,42 +1,44 @@
 # Examples
 
-- [C# - NuGet](#c---nuget)
-- [D - DUB](#d---dub)
-  - [POSIX](#posix)
-  - [Windows](#windows)
-- [Deno](#deno)
-  - [Linux](#linux)
-  - [macOS](#macos)
-  - [Windows](#windows-1)
-- [Elixir - Mix](#elixir---mix)
-- [Erlang - Rebar3](#erlang--rebar3)
-- [Go - Modules](#go---modules)
-  - [Linux](#linux-1)
-  - [macOS](#macos-1)
-  - [Windows](#windows-2)
-- [Haskell - Cabal](#haskell---cabal)
-- [Haskell - Stack](#haskell---stack)
-- [Java - Gradle](#java---gradle)
-- [Java - Maven](#java---maven)
-- [Node - npm](#node---npm)
-- [Node - Lerna](#node---lerna)
-- [Node - Yarn](#node---yarn)
-- [Node - Yarn 2](#node---yarn-2)
-- [OCaml/Reason - esy](#ocamlreason---esy)
-- [PHP - Composer](#php---composer)
-- [Python - pip](#python---pip)
-  - [Simple example](#simple-example)
-  - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow)
-  - [Multiple OS's in a workflow with a matrix](#multiple-oss-in-a-workflow-with-a-matrix)
-  - [Using pip to get cache location](#using-pip-to-get-cache-location)
-- [Python - pipenv](#python---pipenv)
-- [R - renv](#r---renv)
-- [Ruby - Bundler](#ruby---bundler)
-- [Rust - Cargo](#rust---cargo)
-- [Scala - SBT](#scala---sbt)
-- [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
-- [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
-- [Swift - Swift Package Manager](#swift---swift-package-manager)
+- [Examples](#examples)
+  - [C# - NuGet](#c---nuget)
+  - [D - DUB](#d---dub)
+    - [POSIX](#posix)
+    - [Windows](#windows)
+  - [Deno](#deno)
+    - [Linux](#linux)
+    - [macOS](#macos)
+    - [Windows](#windows-1)
+  - [Elixir - Mix](#elixir---mix)
+  - [Erlang - Rebar3](#erlang---rebar3)
+  - [Go - Modules](#go---modules)
+    - [Linux](#linux-1)
+    - [macOS](#macos-1)
+    - [Windows](#windows-2)
+  - [Haskell - Cabal](#haskell---cabal)
+  - [Haskell - Stack](#haskell---stack)
+  - [Java - Gradle](#java---gradle)
+  - [Java - Maven](#java---maven)
+  - [Node - npm](#node---npm)
+  - [Node - Lerna](#node---lerna)
+  - [Node - Yarn](#node---yarn)
+  - [Node - Yarn 2](#node---yarn-2)
+  - [OCaml/Reason - esy](#ocamlreason---esy)
+  - [PHP - Composer](#php---composer)
+  - [Python - pip](#python---pip)
+    - [Simple example](#simple-example)
+    - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow)
+    - [Multiple OS's in a workflow with a matrix](#multiple-oss-in-a-workflow-with-a-matrix)
+    - [Using pip to get cache location](#using-pip-to-get-cache-location)
+  - [Python - pipenv](#python---pipenv)
+  - [R - renv](#r---renv)
+  - [R Markdown - knitr cache](#r-markdown---knitr-cache)
+  - [Ruby - Bundler](#ruby---bundler)
+  - [Rust - Cargo](#rust---cargo)
+  - [Scala - SBT](#scala---sbt)
+  - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
+  - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
+  - [Swift - Swift Package Manager](#swift---swift-package-manager)
 
 ## C# - NuGet
 
@@ -513,6 +515,48 @@ For renv, the cache directory will vary by OS. The `RENV_PATHS_ROOT` environment
     path: ${{ env.RENV_PATHS_ROOT }}
     key: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{ inputs.cache-version }}-${{ hashFiles('renv.lock') }}
     restore-keys: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{inputs.cache-version }}-
+```
+
+## R Markdown - knitr cache
+
+For [R Markdown](https://bookdown.org/yihui/rmarkdown-cookbook/cache.html) and [Quarto](https://quarto.org/docs/computations/caching.html#knitr-cache), [knitr](https://yihui.org/knitr/options/#cache) creates a directory of cached code chunk variables & output for chunks where the chunk option `cache=TRUE` is set. The cache directory is typically located in the directory of the input file being rendered. It is named by concating the input `.Rmd` or `.qmd` file name with `_cache` appended.
+
+See the composite action implementation [prncevince/r-actions/setup-knitr-cache](https://github.com/prncevince/r-actions/tree/main/setup-knitr-cache) and corresponding [example](https://github.com/prncevince/r-actions/blob/main/.github/workflows/knitr-cache.yaml) [workflows](https://github.com/prncevince/test-workflow-knitr-cache/blob/main/.github/workflows/knitr-cache.yaml).
+
+Here, we set `reeval` to `true`. This instructs the action to reevalute the cache `key` input variable before saving the cache during the action's post script run when determing if we have met a cache hit. When using knitr caching, we do this because the knitr cache is typically ignored from the Git repo, and invalidation is determined by much more than a diff on the input file. Thus, it makes more sense to evaluate our cache key after knitr code chunk evaluation has completed. For more info on knitr cache invalidation, see [On Cache Invalidation](https://yihui.org/en/2018/06/cache-invalidation/). 
+
+```yaml
+jobs:
+  setup-knitr-cache:
+    - uses: actions/checkout@v3
+    - uses: r-lib/actions/setup-pandoc@v2
+    - name: Install system dependencies on Linux
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev
+    - uses: r-lib/actions/setup-r@v2
+      with:
+        r-version: latest
+    - name: Get R and OS version
+      id: restore-partials
+      shell: Rscript {0}
+      run: |
+        cat("##[set-output name=os-version;]", sessionInfo()$running, "\n", sep = "")
+        cat("##[set-output name=r-version;]", R.Version()$version.string, sep = "")
+    - name: Install R Markdown
+      shell: Rscript {0}
+      run: install.packages("rmarkdown")
+    - name: Restore knitr cache
+      uses: actions/cache@v3
+      with:
+        reeval: true
+        path: rmd-file-name_cache
+        key: ${{ github.action }}-${{ github.workflow }}-${{ steps.restore-partials.outputs.os-version }}-${{ steps.restore-partials.outputs.r-version }}-${{ hashFiles(format('{0}/**', rmd-file-name_cache)) }}
+        restore-keys: ${{ github.action }}-${{ github.workflow }}-${{ steps.restore-partials.outputs.os-version }}-${{ steps.restore-partials.outputs.r-version }}-
+    - name: Render R Markdown & Build knitr cache
+      shell: Rscript {0}
+      run: rmarkdown::render(input = "rmd-file-name.Rmd")
 ```
 
 ## Ruby - Bundler
