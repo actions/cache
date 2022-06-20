@@ -70,7 +70,7 @@ export function getInputAsBoolean(
     options?: core.InputOptions
 ): boolean {
     const value = core.getBooleanInput(name, options);
-    return value;    
+    return value;
 }
 
 export function getInputAsInt(
