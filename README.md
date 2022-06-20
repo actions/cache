@@ -31,6 +31,8 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 * `key` - An explicit key for restoring and saving the cache
 * `restore-keys` - An ordered list of keys to use for restoring stale cache if no cache hit occurred for key. Note
 `cache-hit` returns false in this case.
+* `reeval` - A boolean. Whether to reevaluate the `key` argument in the action's post run script when saving cache. Set to `true` if you would like your cache key set after your job's steps are complete.
+* `only-restore` - A boolean. Whether to only perform cache restoration and not the save post run script.
 
 ### Outputs
 
