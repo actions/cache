@@ -13,9 +13,27 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
 * Added support for caching from GHES 3.5.
 * Fixed download issue for files > 2GB during restore.
 * Updated the minimum runner version support from node 12 -> node 16.
-* Fixed avoiding empty cache save when no files are available for caching.
 
-Refer [here](https://github.com/actions/cache/blob/v2/README.md) for previous versions
+### v2
+* Increased the cache size limit to 10 GB.
+* Added support for multiple paths, [glob patterns](https://github.com/actions/toolkit/tree/main/packages/glob), and single file caches.
+
+```yaml
+- name: Cache multiple paths
+  uses: actions/cache@v3
+  with:
+    path: |
+      ~/cache
+      !~/cache/exclude
+    key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+```
+
+* Increased performance and improved cache sizes using `zstd` compression for Linux and macOS runners
+* Allowed caching for all events with a ref. See [events that trigger workflow](https://help.github.com/en/actions/reference/events-that-trigger-workflows) for info on which events do not have a `GITHUB_REF`
+* Released the [`@actions/cache`](https://github.com/actions/toolkit/tree/main/packages/cache) npm package to allow other actions to utilize caching
+* Added a best-effort cleanup step to delete the archive after extraction to reduce storage space
+
+Refer [here](https://github.com/actions/cache/blob/v1/README.md) for previous versions
 
 ## Usage
 
