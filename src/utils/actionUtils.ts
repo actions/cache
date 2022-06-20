@@ -65,6 +65,14 @@ export function getInputAsArray(
         .filter(x => x !== "");
 }
 
+export function getInputAsBoolean(
+    name: string,
+    options?: core.InputOptions
+): boolean {
+    const value = core.getBooleanInput(name, options);
+    return value;    
+}
+
 export function getInputAsInt(
     name: string,
     options?: core.InputOptions

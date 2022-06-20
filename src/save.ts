@@ -26,13 +26,15 @@ async function run(): Promise<void> {
                 return;
             }
 
+            const state = utils.getCacheState();
+
             let primaryKey = "";
-            const reeval = core.getBooleanInput(Inputs.Reeval);
+            const reeval = utils.getInputAsBoolean(Inputs.Reeval);
             if (!reeval) {
                 // Inputs are reevaluted before the post action, so we want the original key used for restore
                 primaryKey = core.getState(State.CachePrimaryKey);
             } else {
-                // choose to reevaluate primary key - resave state to correctly test cache hit
+                // choose to reevaluate primary key - resave state to correctly test cache hit on next run
                 primaryKey = core.getInput(Inputs.Key, { required: true });
                 core.saveState(State.CachePrimaryKey, primaryKey);
             }
@@ -40,8 +42,6 @@ async function run(): Promise<void> {
                 utils.logWarning(`Error retrieving key from state.`);
                 return;
             }
-
-            const state = utils.getCacheState();
 
             if (utils.isExactKeyMatch(primaryKey, state)) {
                 core.info(

@@ -22,7 +22,12 @@ async function run(): Promise<void> {
         }
 
         const primaryKey = core.getInput(Inputs.Key, { required: true });
-        core.saveState(State.CachePrimaryKey, primaryKey);
+
+        // when selecting to reevaluate primary key - state is saved in save step
+        const reeval = utils.getInputAsBoolean(Inputs.Reeval);
+        if (!reeval) {
+            core.saveState(State.CachePrimaryKey, primaryKey);
+        }
 
         const restoreKeys = utils.getInputAsArray(Inputs.RestoreKeys);
         const cachePaths = utils.getInputAsArray(Inputs.Path, {

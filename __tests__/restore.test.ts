@@ -27,11 +27,19 @@ beforeAll(() => {
             return actualUtils.getInputAsArray(name, options);
         }
     );
+
+    jest.spyOn(actionUtils, "getInputAsBoolean").mockImplementation(
+        (name, options) => {
+            const actualUtils = jest.requireActual("../src/utils/actionUtils");
+            return actualUtils.getInputAsBoolean(name, options);
+        }
+    );
 });
 
 beforeEach(() => {
     process.env[Events.Key] = Events.Push;
     process.env[RefKey] = "refs/heads/feature-branch";
+    testUtils.setInput(Inputs.Reeval, "false");
 
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
     jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(

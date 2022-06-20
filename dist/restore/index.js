@@ -37588,7 +37588,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isCacheFeatureAvailable = exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.getCacheState = exports.setOutputAndState = exports.setCacheHitOutput = exports.setCacheState = exports.isExactKeyMatch = exports.isGhes = void 0;
+exports.isCacheFeatureAvailable = exports.getInputAsInt = exports.getInputAsBoolean = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.getCacheState = exports.setOutputAndState = exports.setCacheHitOutput = exports.setCacheState = exports.isExactKeyMatch = exports.isGhes = void 0;
 const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(196);
@@ -37646,6 +37646,11 @@ function getInputAsArray(name, options) {
         .filter(x => x !== "");
 }
 exports.getInputAsArray = getInputAsArray;
+function getInputAsBoolean(name, options) {
+    const value = core.getBooleanInput(name, options);
+    return value;
+}
+exports.getInputAsBoolean = getInputAsBoolean;
 function getInputAsInt(name, options) {
     const value = parseInt(core.getInput(name, options));
     if (isNaN(value) || value < 0) {
@@ -48993,7 +48998,11 @@ function run() {
                 return;
             }
             const primaryKey = core.getInput(constants_1.Inputs.Key, { required: true });
-            core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
+            // when selecting to reevaluate primary key - state is saved in save step
+            const reeval = utils.getInputAsBoolean(constants_1.Inputs.Reeval);
+            if (!reeval) {
+                core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
+            }
             const restoreKeys = utils.getInputAsArray(constants_1.Inputs.RestoreKeys);
             const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
                 required: true
