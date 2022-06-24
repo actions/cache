@@ -34,13 +34,13 @@ async function run(): Promise<void> {
             primaryKey,
             restoreKeys
         );
-        
+
         if (!cacheKey) {
             core.info(
                 `Cache not found for input keys: ${[
                     primaryKey,
                     ...restoreKeys
-                 ].join(", ")}`
+                ].join(", ")}`
             );
 
             return;

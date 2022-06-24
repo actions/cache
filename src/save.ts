@@ -44,13 +44,13 @@ async function run(): Promise<void> {
             required: true
         });
 
-        const cacheId =  await cache.saveCache(cachePaths, primaryKey, {
-                                    uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
-                                });
-        if (cacheId == -1 ) {
+        const cacheId = await cache.saveCache(cachePaths, primaryKey, {
+            uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
+        });
+        if (cacheId == -1) {
             return;
         }
-       
+
         core.info(`Cache saved with key: ${primaryKey}`);
     } catch (error: unknown) {
         utils.logWarning((error as Error).message);
