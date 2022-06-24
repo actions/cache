@@ -44,21 +44,14 @@ async function run(): Promise<void> {
             required: true
         });
 
-        try {
-            await cache.saveCache(cachePaths, primaryKey, {
-                uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
-            });
-            core.info(`Cache saved with key: ${primaryKey}`);
-        } catch (error: unknown) {
-            const typedError = error as Error;
-            if (typedError.name === cache.ValidationError.name) {
-                throw error;
-            } else if (typedError.name === cache.ReserveCacheError.name) {
-                core.info(typedError.message);
-            } else {
-                utils.logWarning(typedError.message);
-            }
+        const cacheId =  await cache.saveCache(cachePaths, primaryKey, {
+                                    uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
+                                });
+        if (cacheId == -1 ) {
+            return;
         }
+       
+        core.info(`Cache saved with key: ${primaryKey}`);
     } catch (error: unknown) {
         utils.logWarning((error as Error).message);
     }
