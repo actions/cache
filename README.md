@@ -9,7 +9,11 @@ This action allows caching dependencies and build outputs to improve workflow ex
 See ["Caching dependencies to speed up workflows"](https://help.github.com/github/automating-your-workflow-with-github-actions/caching-dependencies-to-speed-up-workflows).
 
 ## What's New
+### v3
+* Updated the minimum runner version support from node 12 -> node 16.
 
+### v2
+* Increased the cache size limit to 10 GB.
 * Added support for multiple paths, [glob patterns](https://github.com/actions/toolkit/tree/main/packages/glob), and single file caches.
 
 ```yaml
@@ -176,7 +180,16 @@ steps:
 
 Since GitHub Enterprise Server uses self-hosted runners, dependencies are typically cached on the runner by whatever dependency management tool is being used (npm, maven, etc.).  This eliminates the need for explicit caching in some scenarios.
 
+<<<<<<< HEAD
 >>>>>>> parent of 2d8d0d1 (Updated what's new. (#771))
+=======
+## Changelog schedule and history 
+
+| Status  | Version  | Date  | Highlights  |
+|:---|:---|:---|:---|
+| Published  | v3.0.0  | Mar 21st, 2022 | -  Updated minimum runner version support from node 12 -> node 16 <br>  |
+
+>>>>>>> parent of 98e1c5d (Revert "Updated what's new. (#771)")
 ## Contributing
 We would love for you to contribute to `actions/cache`, pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
