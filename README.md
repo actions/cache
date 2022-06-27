@@ -81,7 +81,7 @@ jobs:
       run: /primes.sh -d prime-numbers
 ```
 
-Note: The call to cache both restores the cache and sets up a hook to restore the cache at the end of the workflow so you need to add the cache step near the beginning of your workflow.
+> Note: You must use the `cache` action in your workflow before you need to use the files that might be restored from the cache. If the provided `key` doesn't match an existing cache, a new cache is automatically created if the job completes successfully.
 
 ## Implementation Examples
 
