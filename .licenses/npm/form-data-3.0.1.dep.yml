@@ -1,6 +1,6 @@
 ---
 name: form-data
-version: 3.0.0
+version: 3.0.1
 type: npm
 summary: A library to create readable "multipart/form-data" streams. Can be used to
   submit forms and file uploads to other web applications.
@@ -28,6 +28,6 @@ licenses:
      LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
      OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
      THE SOFTWARE.
-- sources: README.md
+- sources: Readme.md
   text: Form-Data is released under the [MIT](License) license.
 notices: []

@@ -1,17 +1,16 @@
 ---
-name: mime-db
-version: 1.51.0
+name: whatwg-url
+version: 5.0.0
 type: npm
-summary: Media Type Database
-homepage: https://github.com/jshttp/mime-db#readme
+summary: An implementation of the WHATWG URL Standard's URL API and parsing machinery
+homepage: https://github.com/jsdom/whatwg-url#readme
 license: mit
 licenses:
-- sources: LICENSE
-  text: |2
-
+- sources: LICENSE.txt
+  text: |
     The MIT License (MIT)
 
-    Copyright (c) 2014 Jonathan Ong me@jongleberry.com
+    Copyright (c) 2015–2016 Sebastian Mayr
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal

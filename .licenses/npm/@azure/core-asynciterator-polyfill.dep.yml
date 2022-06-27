@@ -1,9 +1,9 @@
 ---
 name: "@azure/core-asynciterator-polyfill"
-version: 1.0.0
+version: 1.0.2
 type: npm
-summary: Polyfill for IE/Node 8 for Symbol.asyncIterator
-homepage: https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/core/core-asynciterator-polyfill
+summary: 
+homepage: 
 license: mit
 licenses:
 - sources: LICENSE

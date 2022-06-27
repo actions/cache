@@ -4,10 +4,14 @@ import * as core from "@actions/core";
 import { Events, Inputs, State } from "./constants";
 import * as utils from "./utils/actionUtils";
 
+// Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
+// @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
+// throw an uncaught exception.  Instead of failing this action, just warn.
+process.on("uncaughtException", e => utils.logWarning(e.message));
+
 async function run(): Promise<void> {
     try {
-        if (utils.isGhes()) {
-            utils.logWarning("Cache action is not supported on GHES");
+        if (!utils.isCacheFeatureAvailable()) {
             return;
         }
 
@@ -44,17 +48,19 @@ async function run(): Promise<void> {
             await cache.saveCache(cachePaths, primaryKey, {
                 uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
             });
-        } catch (error) {
-            if (error.name === cache.ValidationError.name) {
+            core.info(`Cache saved with key: ${primaryKey}`);
+        } catch (error: unknown) {
+            const typedError = error as Error;
+            if (typedError.name === cache.ValidationError.name) {
                 throw error;
-            } else if (error.name === cache.ReserveCacheError.name) {
-                core.info(error.message);
+            } else if (typedError.name === cache.ReserveCacheError.name) {
+                core.info(typedError.message);
             } else {
-                utils.logWarning(error.message);
+                utils.logWarning(typedError.message);
             }
         }
-    } catch (error) {
-        utils.logWarning(error.message);
+    } catch (error: unknown) {
+        utils.logWarning((error as Error).message);
     }
 }
 
