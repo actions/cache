@@ -47,11 +47,10 @@ async function run(): Promise<void> {
         const cacheId = await cache.saveCache(cachePaths, primaryKey, {
             uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
         });
-        if (cacheId == -1) {
-            return;
-        }
 
-        core.info(`Cache saved with key: ${primaryKey}`);
+        if (cacheId != -1) {
+            core.info(`Cache saved with key: ${primaryKey}`);
+        }
     } catch (error: unknown) {
         utils.logWarning((error as Error).message);
     }
