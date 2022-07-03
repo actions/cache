@@ -293,6 +293,41 @@ test("restore with restore keys and no cache found", async () => {
     );
 });
 
+test("restore with always-save", async () => {
+    const path = "node_modules";
+    const key = "node-test";
+    testUtils.setInputs({
+        path: path,
+        key,
+        alwaysSave: true
+    });
+
+    const infoMock = jest.spyOn(core, "info");
+    const failedMock = jest.spyOn(core, "setFailed");
+    const stateMock = jest.spyOn(core, "saveState");
+    const restoreCacheMock = jest
+        .spyOn(cache, "restoreCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(undefined);
+        });
+
+    process.env['GITHUB_RUN_ID'] = '1234'
+
+    await run();
+
+    process.env['GITHUB_RUN_ID'] = ''
+
+    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
+    expect(restoreCacheMock).toHaveBeenCalledWith([path], `${key}-1234`, [`${key}-`]);
+
+    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", `${key}-1234`);
+    expect(failedMock).toHaveBeenCalledTimes(0);
+
+    expect(infoMock).toHaveBeenCalledWith(
+        `Cache not found for input keys: ${key}-1234, ${key}-`
+    );
+});
+
 test("restore with cache found for key", async () => {
     const path = "node_modules";
     const key = "node-test";

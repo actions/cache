@@ -21,10 +21,20 @@ async function run(): Promise<void> {
             return;
         }
 
-        const primaryKey = core.getInput(Inputs.Key, { required: true });
-        core.saveState(State.CachePrimaryKey, primaryKey);
-
+        let primaryKey = core.getInput(Inputs.Key, { required: true });
         const restoreKeys = utils.getInputAsArray(Inputs.RestoreKeys);
+
+        // https://github.com/actions/toolkit/issues/844
+        let alwaysSave = false;
+        if (core.getInput(Inputs.AlwaysSave)) {
+            alwaysSave = core.getBooleanInput(Inputs.AlwaysSave);
+        }
+        if (alwaysSave) {
+            restoreKeys.push(`${primaryKey}-`);
+            primaryKey = `${primaryKey}-${process.env['GITHUB_RUN_ID'] ?? Date.now()}`;
+        }
+
+        core.saveState(State.CachePrimaryKey, primaryKey);
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
             required: true
         });

@@ -31,6 +31,7 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 * `key` - An explicit key for restoring and saving the cache
 * `restore-keys` - An ordered list of keys to use for restoring stale cache if no cache hit occurred for key. Note
 `cache-hit` returns false in this case.
+* `always-save` - Flag indicating that it the cache should always be written
 
 ### Outputs
 

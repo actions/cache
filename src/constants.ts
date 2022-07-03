@@ -2,7 +2,8 @@ export enum Inputs {
     Key = "key",
     Path = "path",
     RestoreKeys = "restore-keys",
-    UploadChunkSize = "upload-chunk-size"
+    UploadChunkSize = "upload-chunk-size",
+    AlwaysSave = "always-save"
 }
 
 export enum Outputs {

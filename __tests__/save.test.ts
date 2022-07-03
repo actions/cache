@@ -15,6 +15,12 @@ beforeAll(() => {
         return jest.requireActual("@actions/core").getInput(name, options);
     });
 
+    jest.spyOn(core, "getBooleanInput").mockImplementation((name, options) => {
+        return jest
+            .requireActual("@actions/core")
+            .getBooleanInput(name, options);
+    });
+
     jest.spyOn(actionUtils, "getCacheState").mockImplementation(() => {
         return jest.requireActual("../src/utils/actionUtils").getCacheState();
     });
