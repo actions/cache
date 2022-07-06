@@ -72,6 +72,8 @@ jobs:
       run: /primes.sh -d prime-numbers
 ```
 
+> Note: You must use the `cache` action in your workflow before you need to use the files that might be restored from the cache. If the provided `key` doesn't match an existing cache, a new cache is automatically created if the job completes successfully.
+
 ## Implementation Examples
 
 Every programming language and framework has its own way of caching.

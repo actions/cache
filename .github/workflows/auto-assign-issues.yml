@@ -11,5 +11,5 @@ jobs:
             - name: 'Auto-assign issue'
               uses: pozil/auto-assign-issue@v1.4.0
               with:
-                  assignees: phantsure,tiwarishub,aparna-ravindra,vsvipul,bishal-pdmsft
+                  assignees: kotewar,tiwarishub,aparna-ravindra,vsvipul,bishal-pdmsft
                   numOfAssignee: 1
