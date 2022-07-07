@@ -267,7 +267,6 @@ test("save with large cache outputs warning", async () => {
 });
 
 test("save with reserve cache failure outputs warning", async () => {
-    const infoMock = jest.spyOn(core, "info");
     const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const failedMock = jest.spyOn(core, "setFailed");
 
@@ -306,10 +305,10 @@ test("save with reserve cache failure outputs warning", async () => {
         expect.anything()
     );
 
-    expect(infoMock).toHaveBeenCalledWith(
+    expect(logWarningMock).toHaveBeenCalledWith(
         `Unable to reserve cache with key ${primaryKey}, another job may be creating this cache.`
     );
-    expect(logWarningMock).toHaveBeenCalledTimes(0);
+    expect(logWarningMock).toHaveBeenCalledTimes(1);
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
