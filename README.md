@@ -14,6 +14,7 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
 * Fixed download issue for files > 2GB during restore.
 * Updated the minimum runner version support from node 12 -> node 16.
 * Fixed avoiding empty cache save when no files are available for caching.
+* Fixed tar creation error while trying to create tar with path as `~/` home folder on `ubuntu-latest`.
 
 Refer [here](https://github.com/actions/cache/blob/v2/README.md) for previous versions
 
@@ -28,7 +29,8 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 
 * `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `key` - An explicit key for restoring and saving the cache
-* `restore-keys` - An ordered list of keys to use for restoring the cache if no cache hit occurred for key
+* `restore-keys` - An ordered list of keys to use for restoring stale cache if no cache hit occurred for key. Note
+`cache-hit` returns false in this case.
 
 ### Outputs
 
@@ -69,6 +71,8 @@ jobs:
     - name: Use Prime Numbers
       run: /primes.sh -d prime-numbers
 ```
+
+> Note: You must use the `cache` action in your workflow before you need to use the files that might be restored from the cache. If the provided `key` doesn't match an existing cache, a new cache is automatically created if the job completes successfully.
 
 ## Implementation Examples
 
@@ -170,33 +174,33 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Cache Primes
-      id: cache-primes
-      uses: actions/cache@v3
-      with:
-        path: prime-numbers
-        key: primes
+      - name: Cache Primes
+        id: cache-primes
+        uses: actions/cache@v3
+        with:
+          path: prime-numbers
+          key: primes
 
-    - name: Generate Prime Numbers
-      if: steps.cache-primes.outputs.cache-hit != 'true'
-      run: ./generate-primes.sh -d prime-numbers
-      
-    - name: Cache Numbers
-      id: cache-numbers
-      uses: actions/cache@v3
-      with:
-        path: numbers
-        key: primes
+      - name: Generate Prime Numbers
+        if: steps.cache-primes.outputs.cache-hit != 'true'
+        run: ./generate-primes.sh -d prime-numbers
 
-    - name: Generate Numbers
-      if: steps.cache-numbers.outputs.cache-hit != 'true'
-      run: ./generate-primes.sh -d numbers
-      
-   build-windows:
-      runs-on: windows-latest
-      steps:
+      - name: Cache Numbers
+        id: cache-numbers
+        uses: actions/cache@v3
+        with:
+          path: numbers
+          key: primes
+
+      - name: Generate Numbers
+        if: steps.cache-numbers.outputs.cache-hit != 'true'
+        run: ./generate-primes.sh -d numbers
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
       - uses: actions/checkout@v3
 
       - name: Cache Primes

@@ -9,6 +9,7 @@
   - [macOS](#macos)
   - [Windows](#windows-1)
 - [Elixir - Mix](#elixir---mix)
+- [Erlang - Rebar3](#erlang--rebar3)
 - [Go - Modules](#go---modules)
   - [Linux](#linux-1)
   - [macOS](#macos-1)
@@ -151,6 +152,18 @@ steps:
       ${{ runner.os }}-mix-
 ```
 
+## Erlang - Rebar3
+```yaml
+- uses: actions/cache@v2
+  with:
+    path: |
+      ~/.cache/rebar3
+      _build
+    key: ${{ runner.os }}-erlang-${{ env.OTP_VERSION }}-${{ hashFiles('**/*rebar.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-erlang-${{ env.OTP_VERSION }}-
+```
+
 ## Go - Modules
 
 ### Linux
@@ -210,11 +223,34 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 
 ## Haskell - Stack
 
+### Linux or macOS
+
 ```yaml
 - uses: actions/cache@v3
   name: Cache ~/.stack
   with:
     path: ~/.stack
+    key: ${{ runner.os }}-stack-global-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+    restore-keys: |
+      ${{ runner.os }}-stack-global-
+- uses: actions/cache@v3
+  name: Cache .stack-work
+  with:
+    path: .stack-work
+    key: ${{ runner.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
+    restore-keys: |
+      ${{ runner.os }}-stack-work-
+```
+
+### Windows
+
+```yaml
+- uses: actions/cache@v3
+  name: Cache %APPDATA%\stack %LOCALAPPDATA%\Programs\stack
+  with:
+    path: |
+      ~\AppData\Roaming\stack
+      ~\AppData\Local\Programs\stack    
     key: ${{ runner.os }}-stack-global-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
     restore-keys: |
       ${{ runner.os }}-stack-global-
