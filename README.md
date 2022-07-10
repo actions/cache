@@ -18,7 +18,7 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
 
 ```yaml
 - name: Cache multiple paths
-  uses: actions/cache@v3
+  uses: actions/cache@v2
   with:
     path: |
       ~/cache
@@ -37,8 +37,6 @@ Refer [here](https://github.com/actions/cache/blob/v1/README.md) for previous ve
 
 ### Pre-requisites
 Create a workflow `.yml` file in your repositories `.github/workflows` directory. An [example workflow](#example-workflow) is available below. For more information, reference the GitHub Help Documentation for [Creating a workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
-
-If you are using this inside a container, a POSIX-compliant `tar` needs to be included and accessible in the execution path.
 
 ### Inputs
 
@@ -73,7 +71,7 @@ jobs:
 
     - name: Cache Primes
       id: cache-primes
-      uses: actions/cache@v3
+      uses: actions/cache@v2
       with:
         path: prime-numbers
         key: ${{ runner.os }}-primes
@@ -98,7 +96,6 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 - [Elixir - Mix](./examples.md#elixir---mix)
 - [Go - Modules](./examples.md#go---modules)
 - [Haskell - Cabal](./examples.md#haskell---cabal)
-- [Haskell - Stack](./examples.md#haskell---stack)
 - [Java - Gradle](./examples.md#java---gradle)
 - [Java - Maven](./examples.md#java---maven)
 - [Node - npm](./examples.md#node---npm)
@@ -123,7 +120,7 @@ A cache key can include any of the contexts, functions, literals, and operators 
 For example, using the [`hashFiles`](https://help.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#hashfiles) function allows you to create a new cache when dependencies change.
 
 ```yaml
-  - uses: actions/cache@v3
+  - uses: actions/cache@v2
     with:
       path: |
         path/to/dependencies
@@ -141,7 +138,7 @@ Additionally, you can use arbitrary command output in a cache key, such as a dat
       echo "::set-output name=date::$(/bin/date -u "+%Y%m%d")"
     shell: bash
 
-  - uses: actions/cache@v3
+  - uses: actions/cache@v2
     with:
       path: path/to/dependencies
       key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('**/lockfiles') }}
@@ -151,7 +148,7 @@ See [Using contexts to create cache keys](https://help.github.com/en/actions/con
 
 ## Cache Limits
 
-A repository can have up to 10GB of caches. Once the 10GB limit is reached, older caches will be evicted based on when the cache was last accessed.  Caches that are not accessed within the last week will also be evicted.
+A repository can have up to 5GB of caches. Once the 5GB limit is reached, older caches will be evicted based on when the cache was last accessed.  Caches that are not accessed within the last week will also be evicted.
 
 ## Skipping steps based on cache-hit
 
@@ -162,7 +159,7 @@ Example:
 steps:
   - uses: actions/checkout@v2
 
-  - uses: actions/cache@v3
+  - uses: actions/cache@v2
     id: cache
     with:
       path: path/to/dependencies
@@ -175,18 +172,24 @@ steps:
 
 > Note: The `id` defined in `actions/cache` must match the `id` in the `if` statement (i.e. `steps.[ID].outputs.cache-hit`)
 
+<<<<<<< HEAD
+=======
 ## Known limitation
 
 - `action/cache` is currently not supported on GitHub Enterprise Server. <https://github.com/github/roadmap/issues/273> is tracking this.
 
 Since GitHub Enterprise Server uses self-hosted runners, dependencies are typically cached on the runner by whatever dependency management tool is being used (npm, maven, etc.).  This eliminates the need for explicit caching in some scenarios.
 
+<<<<<<< HEAD
+>>>>>>> parent of 2d8d0d1 (Updated what's new. (#771))
+=======
 ## Changelog schedule and history 
 
 | Status  | Version  | Date  | Highlights  |
 |:---|:---|:---|:---|
 | Published  | v3.0.0  | Mar 21st, 2022 | -  Updated minimum runner version support from node 12 -> node 16 <br>  |
 
+>>>>>>> parent of 98e1c5d (Revert "Updated what's new. (#771)")
 ## Contributing
 We would love for you to contribute to `actions/cache`, pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
