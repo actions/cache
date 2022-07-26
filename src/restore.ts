@@ -43,6 +43,7 @@ async function run(): Promise<void> {
                 ].join(", ")}`
             );
 
+            utils.setCacheHitOutput(false);
             return;
         }
 
