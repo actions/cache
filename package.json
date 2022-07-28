@@ -1,6 +1,10 @@
 {
   "name": "cache",
+<<<<<<< HEAD
   "version": "3.0.4",
+=======
+  "version": "3.0.1",
+>>>>>>> parent of 5751604 (Updated @actions/cache to 2.0.1)
   "private": true,
   "description": "Cache dependencies and build outputs",
   "main": "dist/restore/index.js",
@@ -23,8 +27,13 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
+<<<<<<< HEAD
     "@actions/cache": "^2.0.6",
     "@actions/core": "^1.7.0",
+=======
+    "@actions/cache": "^2.0.0",
+    "@actions/core": "^1.2.6",
+>>>>>>> parent of 5751604 (Updated @actions/cache to 2.0.1)
     "@actions/exec": "^1.1.1",
     "@actions/io": "^1.1.2"
   },
