@@ -1113,7 +1113,13 @@ function resolvePaths(patterns) {
                     .replace(new RegExp(`\\${path.sep}`, 'g'), '/');
                 core.debug(`Matched: ${relativeFile}`);
                 // Paths are made relative so the tar entries are all relative to the root of the workspace.
-                paths.push(`${relativeFile}`);
+                if (relativeFile === '') {
+                    // path.relative returns empty string if workspace and file are equal
+                    paths.push('.');
+                }
+                else {
+                    paths.push(`${relativeFile}`);
+                }
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
@@ -5464,6 +5470,7 @@ const buffer = __importStar(__webpack_require__(293));
 const fs = __importStar(__webpack_require__(747));
 const stream = __importStar(__webpack_require__(794));
 const util = __importStar(__webpack_require__(669));
+const timer = __importStar(__webpack_require__(581));
 const utils = __importStar(__webpack_require__(15));
 const constants_1 = __webpack_require__(931);
 const requestUtils_1 = __webpack_require__(899);
@@ -5654,10 +5661,14 @@ function downloadCacheStorageSDK(archiveLocation, archivePath, options) {
                     const segmentStart = downloadProgress.segmentOffset + downloadProgress.segmentSize;
                     const segmentSize = Math.min(maxSegmentSize, contentLength - segmentStart);
                     downloadProgress.nextSegment(segmentSize);
-                    const result = yield client.downloadToBuffer(segmentStart, segmentSize, {
-                        concurrency: options.downloadConcurrency,
-                        onProgress: downloadProgress.onProgress()
-                    });
+                    const result = yield Promise.race([client.downloadToBuffer(segmentStart, segmentSize, {
+                            concurrency: options.downloadConcurrency,
+                            onProgress: downloadProgress.onProgress()
+                        }),
+                        timer.setTimeout(60 * 60 * 1000, 'timeout')]);
+                    if (result === 'timeout') {
+                        throw new Error("Segment download timed out");
+                    }
                     fs.writeFileSync(fd, result);
                 }
             }
@@ -37272,9 +37283,9 @@ function extractTar(archivePath, compressionMethod) {
         function getCompressionProgram() {
             switch (compressionMethod) {
                 case constants_1.CompressionMethod.Zstd:
-                    return ['--use-compress-program', 'zstd -d --long=30'];
+                    return ['--use-compress-program', 'unzstd --long=30'];
                 case constants_1.CompressionMethod.ZstdWithoutLong:
-                    return ['--use-compress-program', 'zstd -d'];
+                    return ['--use-compress-program', 'unzstd'];
                 default:
                     return ['-z'];
             }
@@ -37305,9 +37316,9 @@ function createTar(archiveFolder, sourceDirectories, compressionMethod) {
         function getCompressionProgram() {
             switch (compressionMethod) {
                 case constants_1.CompressionMethod.Zstd:
-                    return ['--use-compress-program', 'zstd -T0 --long=30'];
+                    return ['--use-compress-program', 'zstdmt --long=30'];
                 case constants_1.CompressionMethod.ZstdWithoutLong:
-                    return ['--use-compress-program', 'zstd -T0'];
+                    return ['--use-compress-program', 'zstdmt'];
                 default:
                     return ['-z'];
             }
@@ -37338,9 +37349,9 @@ function listTar(archivePath, compressionMethod) {
         function getCompressionProgram() {
             switch (compressionMethod) {
                 case constants_1.CompressionMethod.Zstd:
-                    return ['--use-compress-program', 'zstd -d --long=30'];
+                    return ['--use-compress-program', 'unzstd --long=30'];
                 case constants_1.CompressionMethod.ZstdWithoutLong:
-                    return ['--use-compress-program', 'zstd -d'];
+                    return ['--use-compress-program', 'unzstd'];
                 default:
                     return ['-z'];
             }
@@ -42343,7 +42354,12 @@ function clean(key)
 /* 578 */,
 /* 579 */,
 /* 580 */,
-/* 581 */,
+/* 581 */
+/***/ (function(module) {
+
+module.exports = require("timers/promises");
+
+/***/ }),
 /* 582 */
 /***/ (function(module) {
 
