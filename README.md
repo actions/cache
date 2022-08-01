@@ -81,6 +81,7 @@ Every programming language and framework has its own way of caching.
 See [Examples](examples.md) for a list of `actions/cache` implementations for use with:
 
 - [C# - NuGet](./examples.md#c---nuget)
+- [Clojure - Lein Deps](./examples.md#clojure---lein-deps)
 - [D - DUB](./examples.md#d---dub)
 - [Deno](./examples.md#deno)
 - [Elixir - Mix](./examples.md#elixir---mix)
