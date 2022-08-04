@@ -18,3 +18,7 @@
 
 ### 3.0.5
 - Removed error handling by consuming actions/cache 3.0 toolkit, Now cache server error handling will be done by toolkit. ([PR](https://github.com/actions/cache/pull/834))
+
+### 3.0.6
+- Fixed [#809](https://github.com/actions/cache/issues/809) - zstd -d: no such file or directory error
+- Fixed [#833](https://github.com/actions/cache/issues/833) - cache doesn't work with github workspace directory
