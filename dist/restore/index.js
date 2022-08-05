@@ -1113,7 +1113,13 @@ function resolvePaths(patterns) {
                     .replace(new RegExp(`\\${path.sep}`, 'g'), '/');
                 core.debug(`Matched: ${relativeFile}`);
                 // Paths are made relative so the tar entries are all relative to the root of the workspace.
-                paths.push(`${relativeFile}`);
+                if (relativeFile === '') {
+                    // path.relative returns empty string if workspace and file are equal
+                    paths.push('.');
+                }
+                else {
+                    paths.push(`${relativeFile}`);
+                }
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
@@ -37272,9 +37278,9 @@ function extractTar(archivePath, compressionMethod) {
         function getCompressionProgram() {
             switch (compressionMethod) {
                 case constants_1.CompressionMethod.Zstd:
-                    return ['--use-compress-program', 'zstd -d --long=30'];
+                    return ['--use-compress-program', 'unzstd --long=30'];
                 case constants_1.CompressionMethod.ZstdWithoutLong:
-                    return ['--use-compress-program', 'zstd -d'];
+                    return ['--use-compress-program', 'unzstd'];
                 default:
                     return ['-z'];
             }
@@ -37305,9 +37311,9 @@ function createTar(archiveFolder, sourceDirectories, compressionMethod) {
         function getCompressionProgram() {
             switch (compressionMethod) {
                 case constants_1.CompressionMethod.Zstd:
-                    return ['--use-compress-program', 'zstd -T0 --long=30'];
+                    return ['--use-compress-program', 'zstdmt --long=30'];
                 case constants_1.CompressionMethod.ZstdWithoutLong:
-                    return ['--use-compress-program', 'zstd -T0'];
+                    return ['--use-compress-program', 'zstdmt'];
                 default:
                     return ['-z'];
             }
@@ -37338,9 +37344,9 @@ function listTar(archivePath, compressionMethod) {
         function getCompressionProgram() {
             switch (compressionMethod) {
                 case constants_1.CompressionMethod.Zstd:
-                    return ['--use-compress-program', 'zstd -d --long=30'];
+                    return ['--use-compress-program', 'unzstd --long=30'];
                 case constants_1.CompressionMethod.ZstdWithoutLong:
-                    return ['--use-compress-program', 'zstd -d'];
+                    return ['--use-compress-program', 'unzstd'];
                 default:
                     return ['-z'];
             }

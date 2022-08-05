@@ -15,6 +15,8 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
 * Updated the minimum runner version support from node 12 -> node 16.
 * Fixed avoiding empty cache save when no files are available for caching.
 * Fixed tar creation error while trying to create tar with path as `~/` home folder on `ubuntu-latest`.
+* Fixed zstd failing on amazon linux 2.0 runners
+* Fixed cache not working with github workspace directory or current directory
 
 Refer [here](https://github.com/actions/cache/blob/v2/README.md) for previous versions
 
