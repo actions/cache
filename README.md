@@ -17,6 +17,7 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
 * Fixed tar creation error while trying to create tar with path as `~/` home folder on `ubuntu-latest`.
 * Fixed zstd failing on amazon linux 2.0 runners
 * Fixed cache not working with github workspace directory or current directory
+* Fixed the download stuck problem by introducing a timeout of 1 hour for cache downloads.
 
 Refer [here](https://github.com/actions/cache/blob/v2/README.md) for previous versions
 
