@@ -40,6 +40,12 @@ async function run(): Promise<void> {
             return;
         }
 
+        if (core.getBooleanInput(Inputs.SkipUpload)) {
+            core.info(
+                `Skipping upload of cache since the skip-upload input was set.`
+            );
+        }
+
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
             required: true
         });

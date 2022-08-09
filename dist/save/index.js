@@ -4616,6 +4616,7 @@ var Inputs;
     Inputs["Path"] = "path";
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
+    Inputs["SkipUpload"] = "skip-upload";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -46794,6 +46795,9 @@ function run() {
             if (utils.isExactKeyMatch(primaryKey, state)) {
                 core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
                 return;
+            }
+            if (core.getBooleanInput(constants_1.Inputs.SkipUpload)) {
+                core.info(`Skipping upload of cache since the skip-upload input was set.`);
             }
             const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
                 required: true
