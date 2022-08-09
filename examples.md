@@ -623,6 +623,4 @@ whenever possible:
   with:
     path: .build
     key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
-    restore-keys: |
-      ${{ runner.os }}-spm-
 ```
