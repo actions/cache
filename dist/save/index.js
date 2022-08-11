@@ -5657,20 +5657,24 @@ function downloadCacheStorageSDK(archiveLocation, archivePath, options) {
             const fd = fs.openSync(archivePath, 'w');
             try {
                 downloadProgress.startDisplayTimer();
-                const abortSignal = abort_controller_1.AbortController.timeout(options.segmentTimeoutInMs || 3600000);
-                abortSignal.addEventListener('abort', () => {
-                    core.warning('Aborting cache download as it exceeded the timeout.');
-                });
+                const controller = new abort_controller_1.AbortController();
+                const abortSignal = controller.signal;
                 while (!downloadProgress.isDone()) {
                     const segmentStart = downloadProgress.segmentOffset + downloadProgress.segmentSize;
                     const segmentSize = Math.min(maxSegmentSize, contentLength - segmentStart);
                     downloadProgress.nextSegment(segmentSize);
-                    const result = yield client.downloadToBuffer(segmentStart, segmentSize, {
+                    const result = yield promiseWithTimeout(options.segmentTimeoutInMs || 3600000, client.downloadToBuffer(segmentStart, segmentSize, {
                         abortSignal,
                         concurrency: options.downloadConcurrency,
                         onProgress: downloadProgress.onProgress()
-                    });
-                    fs.writeFileSync(fd, result);
+                    }));
+                    if (result === 'timeout') {
+                        controller.abort();
+                        throw new Error('Aborting cache download as the download time exceeded the timeout.');
+                    }
+                    else if (Buffer.isBuffer(result)) {
+                        fs.writeFileSync(fd, result);
+                    }
                 }
             }
             finally {
@@ -5681,6 +5685,16 @@ function downloadCacheStorageSDK(archiveLocation, archivePath, options) {
     });
 }
 exports.downloadCacheStorageSDK = downloadCacheStorageSDK;
+const promiseWithTimeout = (timeoutMs, promise) => __awaiter(void 0, void 0, void 0, function* () {
+    let timeoutHandle;
+    const timeoutPromise = new Promise(resolve => {
+        timeoutHandle = setTimeout(() => resolve('timeout'), timeoutMs);
+    });
+    return Promise.race([promise, timeoutPromise]).then(result => {
+        clearTimeout(timeoutHandle);
+        return result;
+    });
+});
 //# sourceMappingURL=downloadUtils.js.map
 
 /***/ }),
