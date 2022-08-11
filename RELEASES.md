@@ -22,3 +22,6 @@
 ### 3.0.6
 - Fixed [#809](https://github.com/actions/cache/issues/809) - zstd -d: no such file or directory error
 - Fixed [#833](https://github.com/actions/cache/issues/833) - cache doesn't work with github workspace directory
+
+### 3.0.7
+- Fixed [#810](https://github.com/actions/cache/issues/810) - download stuck issue. A new timeout is introduced in the download process to abort the download if it gets stuck and doesn't finish within an hour.
