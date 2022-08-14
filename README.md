@@ -219,6 +219,23 @@ jobs:
         run: ./generate-primes -d prime-numbers
 ```
 
+## Good practices
+These are some of the good practices which can be used to fulfill certain requirements and are not necessarily the only or the recommended solution.
+
+- **Update a cache** - A cache today is immutable and cannot be updated. But some use cases require the cache to be saved even though there was a "hit" during restore. To do so, use a `key` which is unique for every run and use `restore-keys` to restore the nearest cache. For example:
+  ```
+      - name: update cache on every commit
+        uses: actions/cache@v3
+        with:
+          path: prime-numbers
+          key: primes-${{ runner.os }}-${{ github.run_id }} # Can use time based key as well
+          restore-keys: |
+            primes-${{ runner.os }}
+  ```          
+  Please note that this will create a new cache on every run and hence will consume the cache [quota](#cache-limits).
+  
+- **Use cache across feature branches** - Reusing cache across feature branches is not allowed today to provide cache [isolation](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#restrictions-for-accessing-a-cache). However if both feature branches are from same base branch, a good way to achieve this is to ensure that the base branch has a cache. This cache will then be consumable by both feature branches.
+
 ## Contributing
 We would love for you to contribute to `actions/cache`, pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
