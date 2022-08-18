@@ -15,9 +15,11 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
 * Updated the minimum runner version support from node 12 -> node 16.
 * Fixed avoiding empty cache save when no files are available for caching.
 * Fixed tar creation error while trying to create tar with path as `~/` home folder on `ubuntu-latest`.
-* Fixed zstd failing on amazon linux 2.0 runners
-* Fixed cache not working with github workspace directory or current directory
+* Fixed zstd failing on amazon linux 2.0 runners.
+* Fixed cache not working with github workspace directory or current directory.
 * Fixed the download stuck problem by introducing a timeout of 1 hour for cache downloads.
+* Fix zstd not working for windows on gnu tar in issues.
+* Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MIN`. Default is 60 minutes.
 
 Refer [here](https://github.com/actions/cache/blob/v2/README.md) for previous versions
 
@@ -34,6 +36,9 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 * `key` - An explicit key for restoring and saving the cache
 * `restore-keys` - An ordered list of keys to use for restoring stale cache if no cache hit occurred for key. Note
 `cache-hit` returns false in this case.
+
+#### Environment Variables
+* `SEGMENT_DOWNLOAD_TIMEOUT_MIN` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](#cache-segment-restore-timeout)
 
 ### Outputs
 
@@ -218,6 +223,11 @@ jobs:
         if: steps.cache-primes.outputs.cache-hit != 'true'
         run: ./generate-primes -d prime-numbers
 ```
+## Cache segment restore timeout
+
+A cache gets downloaded in multiple segments of fixed sizes (`1GB` for a `32-bit` runner and `2GB` for a `64-bit` runner). Sometimes, a segment download gets stuck which causes the workflow job to be stuck forever and fail. Version `v3.0.8` of `actions/cache` introduces a segment download timeout. The segment download timeout will allow the segment download to get aborted and hence allow the job to proceed with a cache miss.
+
+Default value of this timeout is 60 minutes and can be customized by specifying an [environment variable](https://docs.github.com/en/actions/learn-github-actions/environment-variables) named `SEGMENT_DOWNLOAD_TIMEOUT_MINS` with timeout value in minutes.
 
 ## Contributing
 We would love for you to contribute to `actions/cache`, pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
