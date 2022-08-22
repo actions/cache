@@ -37662,7 +37662,7 @@ function getInputAsArray(name, options) {
     return core
         .getInput(name, options)
         .split("\n")
-        .map(s => s.replace(/^\!\s+/, "!").trim())
+        .map(s => s.replace(/^!\s+/, "!").trim())
         .filter(x => x !== "")
         .sort();
 }
