@@ -1,0 +1,143 @@
+ชื่อ : Tests
+
+บน :
+  pull_request :
+    สาขา :
+      - หลัก
+      - เผยแพร่/**
+    เส้นทาง-ละเว้น :
+      - ' **.md '
+  ดัน :
+    สาขา :
+      - หลัก
+      - เผยแพร่/**
+    เส้นทาง-ละเว้น :
+      - ' **.md '
+
+งาน :
+  #สร้างและทดสอบหน่วย
+  สร้าง :
+    กลยุทธ์ :
+      เมทริกซ์ :
+        ระบบ ปฏิบัติการ : [ubuntu-ล่าสุด, windows-ล่าสุด, macOS-ล่าสุด]
+      ล้มเหลวเร็ว : false
+    รันบน : ${{ matrix.os }}
+    ขั้นตอน :
+    - ชื่อ : ชำระเงิน
+      ใช้ : actions/checkout@v3
+    - ชื่อ : ตั้งค่า Node.js 16.x
+      ใช้ : actions/setup-node@v3
+      ด้วย :
+        รุ่นโหนด : 16.x
+    - ชื่อ : กำหนดไดเร็กทอรีแคช npm
+      id : npm-cache
+      วิ่ง : |
+        echo "::set-output name=dir::$(npm config รับแคช)"
+    - ชื่อ : กู้คืน npm cache
+      ใช้ : actions/cache@v3
+      ด้วย :
+        เส้นทาง : ${{ steps.npm-cache.outputs.dir }}
+        คีย์ : ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        คืนค่าคีย์ : |
+          ${{ runner.os }}-โหนด-
+    - วิ่ง : npm ci
+    - ชื่อ : Prettier Format Check
+      run : npm run format-check
+    - ชื่อ : ESLint Check
+      วิ่ง : npm วิ่ง lint
+    - ชื่อ : สร้างและทดสอบ
+      run : npm run test
+
+  # End to end บันทึกและกู้คืน
+  ทดสอบประหยัด :
+    กลยุทธ์ :
+      เมทริกซ์ :
+        ระบบ ปฏิบัติการ : [ubuntu-ล่าสุด, windows-ล่าสุด, macOS-ล่าสุด]
+      ล้มเหลวเร็ว : false
+    รันบน : ${{ matrix.os }}
+    ขั้นตอน :
+    - ชื่อ : ชำระเงิน
+      ใช้ : actions/checkout@v3
+    - ชื่อ : สร้างไฟล์ในไดเร็กทอรีการทำงาน
+      เปลือก : bash
+      เรียกใช้ : __tests__/create-cache-files.sh ${{ runner.os }} แคชทดสอบ
+    - ชื่อ : สร้างไฟล์นอกไดเร็กทอรีการทำงาน
+      เปลือก : bash
+      วิ่ง : __tests__/create-cache-files.sh ${{ runner.os }} ~/test-cache
+    - ชื่อ : บันทึกแคช
+      ใช้ : ./
+      กับ :
+        คีย์ : test-${{ runner.os }}-${{ github.run_id }}
+        เส้นทาง : |
+          แคชทดสอบ
+          ~/test-cache
+  ทดสอบ-เรียกคืน :
+    ความต้องการ : ทดสอบ-บันทึก
+    กลยุทธ์ :
+      เมทริกซ์ :
+        ระบบ ปฏิบัติการ : [ubuntu-ล่าสุด, windows-ล่าสุด, macOS-ล่าสุด]
+      ล้มเหลวเร็ว : false
+    รันบน : ${{ matrix.os }}
+    ขั้นตอน :
+    - ชื่อ : ชำระเงิน
+      ใช้ :actions/checkout@v3
+    - ชื่อ : กู้คืนแคช
+      ใช้ : ./
+      กับ :
+        คีย์ : test-${{ runner.os }}-${{ github.run_id }}
+        เส้นทาง : |
+          แคชทดสอบ
+          ~/test-cache
+    - ชื่อ : ตรวจสอบไฟล์แคชในไดเร็กทอรีการทำงาน
+      เปลือก : bash
+      วิ่ง : __tests__/verify-cache-files.sh ${{ runner.os }} test-cache
+    - ชื่อ : ตรวจสอบไฟล์แคชนอกไดเร็กทอรีการทำงาน
+      เปลือก : bash
+      เรียกใช้ : __tests__/verify-cache-files.sh ${{ runner.os }} ~/test-cache
+
+  #จบจนจบด้วย proxy
+  ทดสอบพร็อกซีบันทึก :
+    รันออน : ubuntu-latest
+    คอนเทนเนอร์ :
+      รูปภาพ : ubuntu:latest
+      ตัวเลือก : --dns 127.0.0.1
+    บริการ :
+      ปลาหมึกพร็อกซี่ :
+        image : datadog/squid:ล่าสุด
+        พอร์ต :
+          - 3128:3128
+    env :
+      https_proxy : http://squid-proxy:3128
+    ขั้นตอน :
+    - ชื่อ : ชำระเงิน
+      ใช้ : actions/checkout@v3
+    - ชื่อ : สร้างไฟล์
+      รัน : __tests__/create-cache-files.sh proxy test-cache
+    - ชื่อ : บันทึกแคช
+      ใช้ : ./
+      ด้วย :
+        คีย์ : test-proxy-${{ github.run_id }}
+        เส้นทาง : ทดสอบแคช
+  ทดสอบ-proxy-restore :
+    ความต้องการ : test-proxy-save
+    รันออน : ubuntu-latest
+    คอนเทนเนอร์ :
+      รูปภาพ : ubuntu:latest
+      ตัวเลือก : --dns 127.0.0.1
+    บริการ :
+      ปลาหมึกพร็อกซี่ :
+        image : datadog/squid:ล่าสุด
+        พอร์ต :
+          - 3128:3128
+    env :
+      https_proxy : http://squid-proxy:3128
+    ขั้นตอน :
+    - ชื่อ : ชำระเงิน
+      ใช้ : actions/checkout@v3
+    - ชื่อ : กู้คืนแคช
+      ใช้ : ./
+      ด้วย :
+        คีย์ : test-proxy-${{ github.run_id }}
+        เส้นทาง : ทดสอบแคช
+    - ชื่อ : ตรวจสอบแคช
+      รัน : __tests__/verify-cache-files.sh proxy test-cache
