@@ -216,7 +216,10 @@ test("getInputAsArray handles empty lines correctly", () => {
 });
 
 test("getInputAsArray sorts files correctly", () => {
-    testUtils.setInput("foo", "bar\n!baz\nwaldo\nqux\nquux\ncorge\ngrault\ngarply");
+    testUtils.setInput(
+        "foo",
+        "bar\n!baz\nwaldo\nqux\nquux\ncorge\ngrault\ngarply"
+    );
     expect(actionUtils.getInputAsArray("foo")).toEqual([
         "!baz",
         "bar",
