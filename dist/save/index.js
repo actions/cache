@@ -37662,8 +37662,9 @@ function getInputAsArray(name, options) {
     return core
         .getInput(name, options)
         .split("\n")
-        .map(s => s.trim())
-        .filter(x => x !== "");
+        .map(s => s.replace(/^!\s+/, "!").trim())
+        .filter(x => x !== "")
+        .sort();
 }
 exports.getInputAsArray = getInputAsArray;
 function getInputAsInt(name, options) {
