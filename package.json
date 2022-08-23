@@ -23,7 +23,7 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
-    "@actions/cache": "https://gitpkg.now.sh/whywaita/toolkit/packages/cache?main",
+    "@actions/cache": "https://gitpkg.now.sh/whywaita/toolkit/packages/cache?feat/support-prefixmatch",
     "@actions/core": "^1.2.6",
     "@actions/exec": "^1.0.1",
     "@actions/io": "^1.1.0",
