@@ -215,6 +215,39 @@ test("getInputAsArray handles empty lines correctly", () => {
     expect(actionUtils.getInputAsArray("foo")).toEqual(["bar", "baz"]);
 });
 
+test("getInputAsArray sorts files correctly", () => {
+    testUtils.setInput(
+        "foo",
+        "bar\n!baz\nwaldo\nqux\nquux\ncorge\ngrault\ngarply"
+    );
+    expect(actionUtils.getInputAsArray("foo")).toEqual([
+        "!baz",
+        "bar",
+        "corge",
+        "garply",
+        "grault",
+        "quux",
+        "qux",
+        "waldo"
+    ]);
+});
+
+test("getInputAsArray removes spaces after ! at the beginning", () => {
+    testUtils.setInput(
+        "foo",
+        "!   bar\n!  baz\n! qux\n!quux\ncorge\ngrault! garply\n!\r\t waldo"
+    );
+    expect(actionUtils.getInputAsArray("foo")).toEqual([
+        "!bar",
+        "!baz",
+        "!quux",
+        "!qux",
+        "!waldo",
+        "corge",
+        "grault! garply"
+    ]);
+});
+
 test("getInputAsInt returns undefined if input not set", () => {
     expect(actionUtils.getInputAsInt("undefined")).toBeUndefined();
 });
