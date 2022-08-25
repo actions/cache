@@ -15,6 +15,11 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
 * Updated the minimum runner version support from node 12 -> node 16.
 * Fixed avoiding empty cache save when no files are available for caching.
 * Fixed tar creation error while trying to create tar with path as `~/` home folder on `ubuntu-latest`.
+* Fixed zstd failing on amazon linux 2.0 runners.
+* Fixed cache not working with github workspace directory or current directory.
+* Fixed the download stuck problem by introducing a timeout of 1 hour for cache downloads.
+* Fix zstd not working for windows on gnu tar in issues.
+* Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MIN`. Default is 60 minutes.
 
 Refer [here](https://github.com/actions/cache/blob/v2/README.md) for previous versions
 
@@ -31,6 +36,9 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 * `key` - An explicit key for restoring and saving the cache
 * `restore-keys` - An ordered list of keys to use for restoring stale cache if no cache hit occurred for key. Note
 `cache-hit` returns false in this case.
+
+#### Environment Variables
+* `SEGMENT_DOWNLOAD_TIMEOUT_MIN` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](#cache-segment-restore-timeout)
 
 ### Outputs
 
@@ -81,6 +89,7 @@ Every programming language and framework has its own way of caching.
 See [Examples](examples.md) for a list of `actions/cache` implementations for use with:
 
 - [C# - NuGet](./examples.md#c---nuget)
+- [Clojure - Lein Deps](./examples.md#clojure---lein-deps)
 - [D - DUB](./examples.md#d---dub)
 - [Deno](./examples.md#deno)
 - [Elixir - Mix](./examples.md#elixir---mix)
@@ -214,6 +223,30 @@ jobs:
         if: steps.cache-primes.outputs.cache-hit != 'true'
         run: ./generate-primes -d prime-numbers
 ```
+## Cache segment restore timeout
+
+A cache gets downloaded in multiple segments of fixed sizes (`1GB` for a `32-bit` runner and `2GB` for a `64-bit` runner). Sometimes, a segment download gets stuck which causes the workflow job to be stuck forever and fail. Version `v3.0.8` of `actions/cache` introduces a segment download timeout. The segment download timeout will allow the segment download to get aborted and hence allow the job to proceed with a cache miss.
+
+Default value of this timeout is 60 minutes and can be customized by specifying an [environment variable](https://docs.github.com/en/actions/learn-github-actions/environment-variables) named `SEGMENT_DOWNLOAD_TIMEOUT_MINS` with timeout value in minutes.
+
+## Known practices and workarounds
+Following are some of the known practices/workarounds which community has used to fulfill specific requirements. You may choose to use them if suits your use case. Note these are not necessarily the only or the recommended solution.
+
+#### Update a cache
+A cache today is immutable and cannot be updated. But some use cases require the cache to be saved even though there was a "hit" during restore. To do so, use a `key` which is unique for every run and use `restore-keys` to restore the nearest cache. For example:
+  ```
+      - name: update cache on every commit
+        uses: actions/cache@v3
+        with:
+          path: prime-numbers
+          key: primes-${{ runner.os }}-${{ github.run_id }} # Can use time based key as well
+          restore-keys: |
+            primes-${{ runner.os }}
+  ```          
+  Please note that this will create a new cache on every run and hence will consume the cache [quota](#cache-limits).
+  
+#### Use cache across feature branches
+Reusing cache across feature branches is not allowed today to provide cache [isolation](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#restrictions-for-accessing-a-cache). However if both feature branches are from the default branch, a good way to achieve this is to ensure that the default branch has a cache. This cache will then be consumable by both feature branches.
 
 ## Contributing
 We would love for you to contribute to `actions/cache`, pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.

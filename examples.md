@@ -1,6 +1,7 @@
 # Examples
 
 - [C# - NuGet](#c---nuget)
+- [Clojure - Lein Deps](#clojure---lein-deps)
 - [D - DUB](#d---dub)
   - [POSIX](#posix)
   - [Windows](#windows)
@@ -79,6 +80,19 @@ steps:
       restore-keys: |
         ${{ runner.os }}-nuget-
 ```
+
+## Clojure - Lein Deps
+
+```yaml
+- name: Cache lein project dependencies
+  uses: actions/cache@v3
+  with:
+    path: ~/.m2/repository
+    key: ${{ runner.os }}-clojure-${{ hashFiles('**/project.clj') }}
+    restore-keys: |
+      ${{ runner.os }}-clojure
+```
+
 
 ## D - DUB
 
