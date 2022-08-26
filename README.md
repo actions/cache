@@ -248,10 +248,10 @@ A cache today is immutable and cannot be updated. But some use cases require the
 #### Use cache across feature branches
 Reusing cache across feature branches is not allowed today to provide cache [isolation](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#restrictions-for-accessing-a-cache). However if both feature branches are from the default branch, a good way to achieve this is to ensure that the default branch has a cache. This cache will then be consumable by both feature branches.
 
-#### Improving cache restore performance on Windows
-Currently, cache restore is slow on Windows due to both tar being slow and the compression algorithm being used is `gzip`. Zstd was disabled on windows due to issues with bsd tar(libarchive) which is the tar implementation in use on Windows. To improve cache restore performance, we can re-enable `zstd` as the compression algorithm using the following workaround by using GNU tar instead.
+#### Improving cache restore performance on Windows/Using cross-os caching
+Currently, cache restore is slow on Windows due to tar being inherently slow and the compression algorithm `gzip` in use. `zstd` is the default algorithm in use on linux and macos. It was disabled on Windows due to issues with bsd tar(libarchive), the tar implementation in use on Windows. 
 
-Add the following step to your workflow before the cache step:
+To improve cache restore performance, we can re-enable `zstd` as the compression algorithm using the following workaround. Add the following step to your workflow before the cache step:
 
 ```yaml
     - if: ${{ runner.os == 'Windows' }}
@@ -262,8 +262,9 @@ Add the following step to your workflow before the cache step:
         echo C:\Program Files\Git\usr\bin>>"%GITHUB_PATH%"
 ```
 
-This should work on all Github Hosted runners as it is. For self-hosted runners, please ensure you have GNU tar and `zstd` installed.
+The `cache` action will use GNU tar instead of bsd tar on Windows. This should work on all Github Hosted runners as it is. For self-hosted runners, please ensure you have GNU tar and `zstd` installed.
 
+The above workaround is also needed if you wish to use cross-os caching since difference of compression algorithms will result in different cache versions for the same cache key. So the above workaround will ensure `zstd` is used for caching on all platforms thus resulting in the same cache version for the same cache key.
 
 ## Contributing
 We would love for you to contribute to `actions/cache`, pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
