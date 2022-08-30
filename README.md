@@ -232,6 +232,9 @@ Following are some of the known practices/workarounds which community has used t
 - [Use cache across feature branches](./workarounds.md#use-cache-across-feature-branches)
 - [Improving cache restore performance on Windows/Using cross-os caching](./workarounds.md#improving-cache-restore-performance-on-windows-using-cross-os-caching)
 
+#### Windows environment variables
+Please note that Windows environment variables (like `%LocalAppData%`) will NOT be expanded by this action. Instead, prefer using `~` in your paths which will expand to HOME directory. For example, instead of `%LocalAppData%`, use `~\AppData\Local`. For a list of supported default environment variables, see [this](https://docs.github.com/en/actions/learn-github-actions/environment-variables) page. 
+
 ## Contributing
 We would love for you to contribute to `actions/cache`, pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
