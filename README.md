@@ -8,14 +8,14 @@ This Action provides Amazon Web Services S3 backend (and compatible software) fo
 
 ```yaml
 - name: Cache multiple paths
-  uses: whywaita/actions-cache-s3@main
+  uses: whywaita/actions-cache-s3@v2
   with:
     path: |
       ~/cache
       !~/cache/exclude
-    key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+    key: ${{ github.repository }}-${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
     restore-keys: |
-      ${{ runner.os }}-go-
+      ${{ github.repository }}-${{ runner.os }}-go-
     aws-s3-bucket: ${{ secrets.AWS_S3_BUCKET_NAME }}
     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
