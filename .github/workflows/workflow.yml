@@ -5,14 +5,10 @@ on:
     branches:
       - main
       - releases/**
-    paths-ignore:
-      - '**.md'
   push:
     branches:
       - main
       - releases/**
-    paths-ignore:
-      - '**.md'
 
 jobs:
   # Build and unit test
