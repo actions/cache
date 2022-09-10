@@ -4931,6 +4931,7 @@ var Inputs;
     Inputs["Path"] = "path";
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
+    Inputs["UpdateEnvVariable"] = "update-env-variable";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -47288,9 +47289,27 @@ function run() {
                 utils.logWarning(`Error retrieving key from state.`);
                 return;
             }
-            if (utils.isExactKeyMatch(primaryKey, state)) {
-                core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
-                return;
+            const envVarName = core.getInput(constants_1.Inputs.UpdateEnvVariable);
+            let envVarValue;
+            if (envVarName) {
+                envVarValue = process.env[envVarName];
+            }
+            if (envVarValue !== undefined) {
+                const forceUpdate = ["true", "yes"].includes(envVarValue.toLowerCase());
+                if (forceUpdate) {
+                    core.info(`Cache saving was forced by setting "${envVarName}" to "${envVarValue}".`);
+                }
+                else {
+                    core.info(`Cache saving was disabled by setting "${envVarName}" to "${envVarValue}".`);
+                    return;
+                }
+            }
+            else {
+                core.info(`"${envVarName}" is not set.`);
+                if (utils.isExactKeyMatch(primaryKey, state)) {
+                    core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
+                    return;
+                }
             }
             const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
                 required: true

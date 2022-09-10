@@ -33,11 +33,36 @@ async function run(): Promise<void> {
             return;
         }
 
-        if (utils.isExactKeyMatch(primaryKey, state)) {
-            core.info(
-                `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
-            );
-            return;
+        const envVarName = core.getInput(Inputs.UpdateEnvVariable);
+        let forceUpdate;
+        if (envVarName) {
+            let envVarValue;
+            envVarValue = process.env[envVarName];
+            if (["true"].includes(envVarValue.toLowerCase())) {
+                forcedUpdate = true;
+            } else if (["false"].includes(envVarValue.toLowerCase())) {
+                forcedUpdate = false;
+            }
+        }
+        if (forcedUpdate !== undefined) {
+            if (forceUpdate) {
+                core.info(
+                    `Cache saving was forced by setting "${envVarName}" to "${envVarValue}".`
+                );
+            } else {
+                core.info(
+                    `Cache saving was disabled by setting "${envVarName}" to "${envVarValue}".`
+                );
+                return;
+            }
+        } else {
+            core.info(`"${envVarName}" is not set.`);
+            if (utils.isExactKeyMatch(primaryKey, state)) {
+                core.info(
+                    `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
+                );
+                return;
+            }
         }
 
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
