@@ -277,8 +277,8 @@ test("isCacheFeatureAvailable for ac enabled", () => {
 test("isCacheFeatureAvailable for ac disabled on GHES", () => {
     jest.spyOn(cache, "isFeatureAvailable").mockImplementation(() => false);
 
-    const message =
-        "Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.";
+    const message = `Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.
+Otherwise please upgrade to GHES version >= 3.5 and If you are also using Github Connect, please unretire the actions/cache namespace before upgrade (see https://docs.github.com/en/enterprise-server@3.5/admin/github-actions/managing-access-to-actions-from-githubcom/enabling-automatic-access-to-githubcom-actions-using-github-connect#automatic-retirement-of-namespaces-for-actions-accessed-on-githubcom)`;
     const infoMock = jest.spyOn(core, "info");
 
     try {
