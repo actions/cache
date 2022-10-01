@@ -44,41 +44,49 @@
 
 Using [Conan Lockfiles](https://docs.conan.io/en/latest/versioning/lockfiles.html):
 
-```.yaml
+```yaml
 - name: create conan cache keys
   run: |
     conan lock create conanfile.py --build missing
-- name: get conan cache
-  uses: actions/cache@v2
+    
+- uses: actions/cache@v3
   with:
     path: |
       ~/.conan/data
-      !~/.conan/data/**/conan_sources.tgz
     key: conan-${{ hashFiles('conan.lock') }}
-- name: install conan dependencies
+    
   run: |
     conan install . --lockfile conan.lock --build missing
 ```
 
+For Windows, use
+
+```yaml
+- uses: actions/cache@v3
+  if: runner.os == 'Windows'
+  with:
+    path: |
+      ~/.conan/data
+      C:/.conan
+    key: conan-${{ hashFiles('conan.lock') }}
+```
+
 Using a custom cache location, and a profile as a partial cache key:
 
-```.yaml
-env: 
-  CONAN_USER_HOME: /tmp/
-  PROFILE: my_profile
+```yaml
+  env: 
+    CONAN_USER_HOME: /tmp/
+    PROFILE: my_profile
+    
 - name: create lockfile
   run: |
     conan lock create conanfile.py -pr $PROFILE --build missing
-- name: get conan cache
-  uses: actions/cache@v2
+    
+- uses: actions/cache@v3
   with:
     path: |
       ${{ env.CONAN_USER_HOME }}/.conan/data
-      !${{ env.CONAN_USER_HOME }}/.conan/data/**/conan_sources.tgz
     key: conan-${{ env.PROFILE }}-${{ hashFiles('conan.lock') }}
-- name: install conan dependencies
-  run: |
-    conan install . --lockfile conan.lock --build missing
 ```
 
 ## C# - NuGet
