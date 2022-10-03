@@ -38437,8 +38437,7 @@ function getInputAsArray(name, options) {
         .getInput(name, options)
         .split("\n")
         .map(s => s.replace(/^!\s+/, "!").trim())
-        .filter(x => x !== "")
-        .sort();
+        .filter(x => x !== "");
 }
 exports.getInputAsArray = getInputAsArray;
 function getInputAsInt(name, options) {
