@@ -62,8 +62,7 @@ export function getInputAsArray(
         .getInput(name, options)
         .split("\n")
         .map(s => s.replace(/^!\s+/, "!").trim())
-        .filter(x => x !== "")
-        .sort();
+        .filter(x => x !== "");
 }
 
 export function getInputAsInt(
