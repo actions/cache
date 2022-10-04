@@ -32,3 +32,7 @@
 
 ### 3.0.9
 - Enhanced the warning message for cache unavailablity in case of GHES.
+
+### 3.0.10
+- Fix a bug with sorting inputs.
+- Update definition for restore-keys in README.md
