@@ -4947,6 +4947,7 @@ var Inputs;
     Inputs["Path"] = "path";
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
+    Inputs["ReEvalKey"] = "reeval-key";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -47297,8 +47298,9 @@ function run() {
                 return;
             }
             const state = utils.getCacheState();
-            // Inputs are re-evaluted before the post action, so we want the original key used for restore
-            const primaryKey = core.getState(constants_1.State.CachePrimaryKey);
+            const primaryKey = core.getBooleanInput(constants_1.Inputs.ReEvalKey)
+                ? core.getInput(constants_1.Inputs.Key, { required: true })
+                : core.getState(constants_1.State.CachePrimaryKey);
             if (!primaryKey) {
                 utils.logWarning(`Error retrieving key from state.`);
                 return;
