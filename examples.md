@@ -316,7 +316,7 @@ If using `npm config` to retrieve the cache directory, ensure you run [actions/s
 - name: Get npm cache directory
   id: npm-cache-dir
   run: |
-    echo "::set-output name=dir::$(npm config get cache)"
+    echo "dir=$(npm config get cache)" >> $GITHUB_OUTPUT
 - uses: actions/cache@v3
   id: npm-cache # use this to check for `cache-hit` ==> if: steps.npm-cache.outputs.cache-hit != 'true'
   with:
@@ -342,7 +342,7 @@ The yarn cache directory will depend on your operating system and version of `ya
 ```yaml
 - name: Get yarn cache directory path
   id: yarn-cache-dir-path
-  run: echo "::set-output name=dir::$(yarn cache dir)"
+  run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
 
 - uses: actions/cache@v3
   id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
@@ -360,7 +360,7 @@ The yarn 2 cache directory will depend on your config. See https://yarnpkg.com/c
 ```yaml
 - name: Get yarn cache directory path
   id: yarn-cache-dir-path
-  run: echo "::set-output name=dir::$(yarn config get cacheFolder)"
+  run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
 
 - uses: actions/cache@v3
   id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
@@ -405,7 +405,7 @@ Esy allows you to export built dependencies and import pre-built dependencies.
 - name: Get Composer Cache Directory
   id: composer-cache
   run: |
-    echo "::set-output name=dir::$(composer config cache-files-dir)"
+    echo "dir::$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 - uses: actions/cache@v3
   with:
     path: ${{ steps.composer-cache.outputs.dir }}
@@ -497,7 +497,7 @@ jobs:
 - name: Get pip cache dir
   id: pip-cache
   run: |
-    echo "::set-output name=dir::$(pip cache dir)"
+    echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
 
 - name: pip cache
   uses: actions/cache@v3
