@@ -405,7 +405,7 @@ Esy allows you to export built dependencies and import pre-built dependencies.
 - name: Get Composer Cache Directory
   id: composer-cache
   run: |
-    echo "dir::$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+    echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 - uses: actions/cache@v3
   with:
     path: ${{ steps.composer-cache.outputs.dir }}
