@@ -36,3 +36,7 @@
 ### 3.0.10
 - Fix a bug with sorting inputs.
 - Update definition for restore-keys in README.md
+
+### 3.0.11
+- Update toolkit version to 3.0.5 to include `@actions/core@^1.10.0`
+- Update `@actions/cache` to use updated `saveState` and `setOutput` functions from `@actions/core@^1.10.0`
