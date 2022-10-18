@@ -19,7 +19,7 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 * Fixed cache not working with github workspace directory or current directory.
 * Fixed the download stuck problem by introducing a timeout of 1 hour for cache downloads.
 * Fix zstd not working for windows on gnu tar in issues.
-* Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MIN`. Default is 60 minutes.
+* Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MINS`. Default is 60 minutes.
 
 Refer [here](https://github.com/actions/cache/blob/v2/README.md) for previous versions
 
@@ -38,7 +38,7 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 `cache-hit` returns false in this case.
 
 #### Environment Variables
-* `SEGMENT_DOWNLOAD_TIMEOUT_MIN` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](#cache-segment-restore-timeout)
+* `SEGMENT_DOWNLOAD_TIMEOUT_MINS` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](#cache-segment-restore-timeout)
 
 ### Outputs
 
