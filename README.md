@@ -47,7 +47,7 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 > See [Skipping steps based on cache-hit](#Skipping-steps-based-on-cache-hit) for info on using this output
 
 ### Cache scopes
-The cache is scoped to the key and branch. The default branch cache is available to other branches.
+The cache is scoped to the key, [version](#cache-version) and branch. The default branch cache is available to other branches.
 
 See [Matching a cache key](https://help.github.com/en/actions/configuring-and-managing-workflows/caching-dependencies-to-speed-up-workflows#matching-a-cache-key) for more info.
 
@@ -174,9 +174,13 @@ steps:
 
 
 ## Cache Version
-Cache version is unique for a combination of compression tool used for compression of cache (Gzip, Zstd, etc based on runner OS) and the path of directories being cached. If two caches have different versions, they are identified as unique cache entries. This also means that a cache created on `windows-latest` runner can't be restored on `ubuntu-latest` as cache `Version`s are different. 
+Cache version is a hash [generated](https://github.com/actions/toolkit/blob/500d0b42fee2552ae9eeb5933091fe2fbf14e72d/packages/cache/src/internal/cacheHttpClient.ts#L73-L90) for a combination of compression tool used (Gzip, Zstd etc based on runner OS) and the `path` of directories being cached. If two caches have different versions, they are identified as unique caches while matching. This for example, means that a cache created on `windows-latest` runner can't be restored on `ubuntu-latest` as cache `Version`s are different. 
 
-Example: Below example will create 3 unique caches with same keys. Ubuntu and windows runners will use different compression technique and hence create two different caches. And `build-linux` will create two different caches as the `paths` are different.
+> Pro tip: [List caches](https://docs.github.com/en/rest/actions/cache#list-github-actions-caches-for-a-repository) API can be used to get the version of a cache. This can be helpful to troubleshoot cache miss due to version. 
+
+<details>
+  <summary>Example</summary>
+The workflow will create 3 unique caches with same keys. Ubuntu and windows runners will use different compression technique and hence create two different caches. And `build-linux` will create two different caches as the `paths` are different.
 
 ```yaml
 jobs:
@@ -223,6 +227,7 @@ jobs:
         if: steps.cache-primes.outputs.cache-hit != 'true'
         run: ./generate-primes -d prime-numbers
 ```
+</details>
 
 ## Known practices and workarounds
 Following are some of the known practices/workarounds which community has used to fulfill specific requirements. You may choose to use them if suits your use case. Note these are not necessarily the only or the recommended solution.
