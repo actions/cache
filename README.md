@@ -6,7 +6,7 @@ This action allows caching dependencies and build outputs to improve workflow ex
 
 ## Documentation
 
-See ["Caching dependencies to speed up workflows"](https://help.github.com/github/automating-your-workflow-with-github-actions/caching-dependencies-to-speed-up-workflows).
+See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows).
 
 ## What's New
 ### v3
@@ -19,7 +19,7 @@ See ["Caching dependencies to speed up workflows"](https://help.github.com/githu
 * Fixed cache not working with github workspace directory or current directory.
 * Fixed the download stuck problem by introducing a timeout of 1 hour for cache downloads.
 * Fix zstd not working for windows on gnu tar in issues.
-* Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MIN`. Default is 60 minutes.
+* Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MINS`. Default is 60 minutes.
 
 Refer [here](https://github.com/actions/cache/blob/v2/README.md) for previous versions
 
@@ -34,17 +34,18 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 
 * `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `key` - An explicit key for restoring and saving the cache
-* `restore-keys` - An ordered list of keys to use for restoring stale cache if no cache hit occurred for key. Note
-`cache-hit` returns false in this case.
+* `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
 
 #### Environment Variables
-* `SEGMENT_DOWNLOAD_TIMEOUT_MIN` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](#cache-segment-restore-timeout)
+* `SEGMENT_DOWNLOAD_TIMEOUT_MINS` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](#cache-segment-restore-timeout)
 
 ### Outputs
 
-* `cache-hit` - A boolean value to indicate an exact match was found for the key
+* `cache-hit` - A boolean value to indicate an exact match was found for the key. 
 
-> See [Skipping steps based on cache-hit](#Skipping-steps-based-on-cache-hit) for info on using this output
+> Note: `cache-hit` will be set to `true` only when cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.
+
+See [Skipping steps based on cache-hit](#skipping-steps-based-on-cache-hit) for info on using this output
 
 ### Cache scopes
 The cache is scoped to the key and branch. The default branch cache is available to other branches.
@@ -80,7 +81,7 @@ jobs:
       run: /primes.sh -d prime-numbers
 ```
 
-> Note: You must use the `cache` action in your workflow before you need to use the files that might be restored from the cache. If the provided `key` doesn't match an existing cache, a new cache is automatically created if the job completes successfully.
+> Note: You must use the `cache` action in your workflow before you need to use the files that might be restored from the cache. If the provided `key` matches an existing cache, a new cache is not created and if the provided `key` doesn't match an existing cache, a new cache is automatically created provided the job completes successfully.
 
 ## Implementation Examples
 
@@ -152,7 +153,7 @@ A repository can have up to 10GB of caches. Once the 10GB limit is reached, olde
 
 ## Skipping steps based on cache-hit
 
-Using the `cache-hit` output, subsequent steps (such as install or build) can be skipped when a cache hit occurs on the key.
+Using the `cache-hit` output, subsequent steps (such as install or build) can be skipped when a cache hit occurs on the key.  It is recommended to install the missing/updated dependencies in case of a partial key match when the key is dependent on the `hash` of the package file.
 
 Example:
 ```yaml

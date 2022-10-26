@@ -28,4 +28,15 @@
 
 ### 3.0.8
 - Fix zstd not working for windows on gnu tar in issues [#888](https://github.com/actions/cache/issues/888) and [#891](https://github.com/actions/cache/issues/891).
-- Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MIN`. Default is 60 minutes.
+- Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MINS`. Default is 60 minutes.
+
+### 3.0.9
+- Enhanced the warning message for cache unavailablity in case of GHES.
+
+### 3.0.10
+- Fix a bug with sorting inputs.
+- Update definition for restore-keys in README.md
+
+### 3.0.11
+- Update toolkit version to 3.0.5 to include `@actions/core@^1.10.0`
+- Update `@actions/cache` to use updated `saveState` and `setOutput` functions from `@actions/core@^1.10.0`

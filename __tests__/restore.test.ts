@@ -147,7 +147,7 @@ test("restore with no key", async () => {
 test("restore with too many keys should fail", async () => {
     const path = "node_modules";
     const key = "node-test";
-    const restoreKeys = [...Array(20).keys()].map(x => x.toString()).sort();
+    const restoreKeys = [...Array(20).keys()].map(x => x.toString());
     testUtils.setInputs({
         path: path,
         key,
