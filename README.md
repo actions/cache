@@ -43,7 +43,7 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 
 * `cache-hit` - A boolean value to indicate an exact match was found for the key. 
 
-> Note: `cache-hit` will be set to `true` only when cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`. It is recommended to install the missing/updated dependencies in case of a partial key match when the key is dependent on the `hash` of the package file.
+> Note: `cache-hit` will be set to `true` only when cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.
 
 See [Skipping steps based on cache-hit](#skipping-steps-based-on-cache-hit) for info on using this output
 
@@ -153,7 +153,7 @@ A repository can have up to 10GB of caches. Once the 10GB limit is reached, olde
 
 ## Skipping steps based on cache-hit
 
-Using the `cache-hit` output, subsequent steps (such as install or build) can be skipped when a cache hit occurs on the key.
+Using the `cache-hit` output, subsequent steps (such as install or build) can be skipped when a cache hit occurs on the key.  It is recommended to install the missing/updated dependencies in case of a partial key match when the key is dependent on the `hash` of the package file.
 
 Example:
 ```yaml
