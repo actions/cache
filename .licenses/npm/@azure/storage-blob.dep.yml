@@ -1,9 +1,9 @@
 ---
 name: "@azure/storage-blob"
-version: 12.5.0
+version: 12.9.0
 type: npm
-summary: Microsoft Azure Storage SDK for JavaScript - Blob
-homepage: https://github.com/Azure/azure-sdk-for-js/blob/master/sdk/storage/storage-blob/
+summary: 
+homepage: 
 license: mit
 licenses:
 - sources: LICENSE

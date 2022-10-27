@@ -1,9 +1,9 @@
 ---
 name: "@actions/io"
-version: 1.1.0
+version: 1.1.2
 type: npm
-summary: Actions io lib
-homepage: https://github.com/actions/toolkit/tree/main/packages/io
+summary: 
+homepage: 
 license: mit
 licenses:
 - sources: LICENSE.md
