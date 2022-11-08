@@ -34,20 +34,21 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 
 * `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `key` - An explicit key for restoring and saving the cache
-* `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key. Note
-`cache-hit` returns false in this case.
+* `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
 
 #### Environment Variables
 * `SEGMENT_DOWNLOAD_TIMEOUT_MINS` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](#cache-segment-restore-timeout)
 
 ### Outputs
 
-* `cache-hit` - A boolean value to indicate an exact match was found for the key
+* `cache-hit` - A boolean value to indicate an exact match was found for the key. 
 
-> See [Skipping steps based on cache-hit](#Skipping-steps-based-on-cache-hit) for info on using this output
+> Note: `cache-hit` will be set to `true` only when cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.
+
+See [Skipping steps based on cache-hit](#skipping-steps-based-on-cache-hit) for info on using this output
 
 ### Cache scopes
-The cache is scoped to the key and branch. The default branch cache is available to other branches.
+The cache is scoped to the key, [version](#cache-version) and branch. The default branch cache is available to other branches.
 
 See [Matching a cache key](https://help.github.com/en/actions/configuring-and-managing-workflows/caching-dependencies-to-speed-up-workflows#matching-a-cache-key) for more info.
 
@@ -152,7 +153,7 @@ A repository can have up to 10GB of caches. Once the 10GB limit is reached, olde
 
 ## Skipping steps based on cache-hit
 
-Using the `cache-hit` output, subsequent steps (such as install or build) can be skipped when a cache hit occurs on the key.
+Using the `cache-hit` output, subsequent steps (such as install or build) can be skipped when a cache hit occurs on the key.  It is recommended to install the missing/updated dependencies in case of a partial key match when the key is dependent on the `hash` of the package file.
 
 Example:
 ```yaml
@@ -174,9 +175,13 @@ steps:
 
 
 ## Cache Version
-Cache version is unique for a combination of compression tool used for compression of cache (Gzip, Zstd, etc based on runner OS) and the path of directories being cached. If two caches have different versions, they are identified as unique cache entries. This also means that a cache created on `windows-latest` runner can't be restored on `ubuntu-latest` as cache `Version`s are different. 
+Cache version is a hash [generated](https://github.com/actions/toolkit/blob/500d0b42fee2552ae9eeb5933091fe2fbf14e72d/packages/cache/src/internal/cacheHttpClient.ts#L73-L90) for a combination of compression tool used (Gzip, Zstd, etc. based on the runner OS) and the `path` of directories being cached. If two caches have different versions, they are identified as unique caches while matching. This for example, means that a cache created on `windows-latest` runner can't be restored on `ubuntu-latest` as cache `Version`s are different. 
 
-Example: Below example will create 3 unique caches with same keys. Ubuntu and windows runners will use different compression technique and hence create two different caches. And `build-linux` will create two different caches as the `paths` are different.
+> Pro tip: [List caches](https://docs.github.com/en/rest/actions/cache#list-github-actions-caches-for-a-repository) API can be used to get the version of a cache. This can be helpful to troubleshoot cache miss due to version. 
+
+<details>
+  <summary>Example</summary>
+The workflow will create 3 unique caches with same keys. Ubuntu and windows runners will use different compression technique and hence create two different caches. And `build-linux` will create two different caches as the `paths` are different.
 
 ```yaml
 jobs:
@@ -223,6 +228,7 @@ jobs:
         if: steps.cache-primes.outputs.cache-hit != 'true'
         run: ./generate-primes -d prime-numbers
 ```
+</details>
 
 ## Known practices and workarounds
 Following are some of the known practices/workarounds which community has used to fulfill specific requirements. You may choose to use them if suits your use case. Note these are not necessarily the only or the recommended solution.
