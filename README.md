@@ -118,7 +118,7 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 
 A cache key can include any of the contexts, functions, literals, and operators supported by GitHub Actions.
 
-For example, using the [`hashFiles`](https://help.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#hashfiles) function allows you to create a new cache when dependencies change.
+For example, using the [`hashFiles`](https://docs.github.com/en/actions/learn-github-actions/expressions#hashfiles) function allows you to create a new cache when dependencies change.
 
 ```yaml
   - uses: actions/cache@v3
