@@ -231,7 +231,7 @@ jobs:
 </details>
 
 ## Deleting caches
-We can not re-use caches from pull request branches in other branches like main, such caches can eat up the storage quota and hence causing thrashing on more useful branches like main. In order to resolve this issue, we should use [gh-actions-cache cli](https://github.com/actions/gh-actions-cache/) to delete caches. This workflow uses gh-actions-cache to delete all the cache created by pull requests. 
+We can not re-use caches from pull request branches in other branches like main, such caches can eat up the storage quota and hence causing thrashing on more useful branches like main. In order to resolve this issue, we can use [gh-actions-cache cli](https://github.com/actions/gh-actions-cache/) to delete caches. This workflow uses `gh-actions-cache` to delete all the caches created by all the pull requests. 
 
 ```
 name: cleanup-caches
