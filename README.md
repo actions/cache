@@ -230,6 +230,44 @@ jobs:
 ```
 </details>
 
+## Deleting caches
+We can not re-use caches from pull request branches in other branches like main, such caches can eat up the storage quota and hence causing thrashing on more useful branches like main. In order to resolve this issue, we should use [gh-actions-cache cli](https://github.com/actions/gh-actions-cache/) to delete caches. This workflow uses gh-actions-cache to delete all the cache created by pull requests. 
+
+```
+name: cleanup-caches
+on:
+  schedule:
+    - cron: '0 */3 * * *'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Cleanup
+        run: |
+          gh extension install actions/gh-actions-cache
+          
+          REPO=${{ github.repository }}
+
+          echo "Fetching list of cache key"
+          ## This will extract out all the cache keys for pull requests
+          cacheKeysForPR=$(gh actions-cache list -R $REPO | grep "refs/pull" | cut -d $'\t'  -f 1 )
+
+          ## Setting this to not fail the workflow while deleting duplicate cache keys. We can have same cache key for multiple branches based on the cache key generation.
+          set +e
+          echo "Deleting caches..."
+          for cacheKey in $cacheKeysForPR
+          do
+              gh actions-cache delete $cacheKey -R $REPO --confirm
+          done
+          echo "Done"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
 ## Known practices and workarounds
 Following are some of the known practices/workarounds which community has used to fulfill specific requirements. You may choose to use them if suits your use case. Note these are not necessarily the only or the recommended solution.
 
