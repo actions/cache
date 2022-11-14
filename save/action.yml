@@ -14,14 +14,6 @@ inputs:
   upload-chunk-size:
     description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
-  skip-save:
-    description: 'To save cache after the build or not'
-    required: false
-    default: 'no'
-  skip-restore:
-    description: 'To restore cache before the build or not'
-    required: false
-    default: 'no'
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
