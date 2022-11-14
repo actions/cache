@@ -236,8 +236,7 @@ We can not re-use caches from pull request branches in other branches like main,
 ```
 name: cleanup-caches
 on:
-  schedule:
-    - cron: '0 */3 * * *'
+  workflow_dispatch
 
 jobs:
   release:
