@@ -27,7 +27,7 @@ outputs:
     description: 'A boolean value to indicate an exact match was found for the primary key'
 runs:
   using: 'node16'
-  main: 'dist/save/index.js'
+  main: '../dist/save/index.js'
 branding:
   icon: 'archive'
   color: 'gray-dark'
