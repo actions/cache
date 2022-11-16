@@ -230,13 +230,20 @@ jobs:
 ```
 </details>
 
-## Deleting caches
-We can not re-use caches from pull request branches in other branches like main, such caches can eat up the storage quota and hence causing thrashing on more useful branches like main. In order to resolve this issue, we can use [gh-actions-cache cli](https://github.com/actions/gh-actions-cache/) to delete caches. This workflow uses `gh-actions-cache` to delete all the caches created by all the pull requests. 
+## Force deletion of caches overriding default cache eviction policy
+Caches have [branch scope restriction](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#restrictions-for-accessing-a-cache) in place. This means that if caches for a specific branch are using a lot of storage quota, it may result into more frequently used caches from `default` branch getting thrashed. For example, if there are many pull requests happening on a repo and are creating caches, these cannot be used in default branch scope but will still occupy a lot of space till they get cleaned up by [eviction policy](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#usage-limits-and-eviction-policy). But sometime we want to clean them up on a faster cadence so as to ensure default branch is not thrashing. In order to achieve this, [gh-actions-cache cli](https://github.com/actions/gh-actions-cache/) can be used to delete caches for specific branches.
 
-```
+This workflow uses `gh-actions-cache` to delete all the caches created by a branch. 
+<details>
+  <summary>Example</summary>
+
+```yaml
 name: cleanup-caches
 on:
-  workflow_dispatch
+  pull_request:
+    types:
+      - closed
+  workflow_dispatch:
 
 jobs:
   release:
@@ -250,22 +257,22 @@ jobs:
           gh extension install actions/gh-actions-cache
           
           REPO=${{ github.repository }}
+          BRANCH=${{ github.ref }}
 
           echo "Fetching list of cache key"
-          ## This will extract out all the cache keys for pull requests
-          cacheKeysForPR=$(gh actions-cache list -R $REPO | grep "refs/pull" | cut -d $'\t'  -f 1 )
-
-          ## Setting this to not fail the workflow while deleting duplicate cache keys. We can have same cache key for multiple branches based on the cache key generation.
+          cacheKeysForPR=$(gh actions-cache list -R $REPO -B $BRANCH | cut -f 1 )
+        
           set +e
           echo "Deleting caches..."
           for cacheKey in $cacheKeysForPR
           do
-              gh actions-cache delete $cacheKey -R $REPO --confirm
+              gh actions-cache delete $cacheKey -R $REPO -B $BRANCH --confirm
           done
           echo "Done"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
+</details>
 
 ## Known practices and workarounds
 Following are some of the known practices/workarounds which community has used to fulfill specific requirements. You may choose to use them if suits your use case. Note these are not necessarily the only or the recommended solution.
