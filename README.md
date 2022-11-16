@@ -238,7 +238,7 @@ This workflow uses `gh-actions-cache` to delete all the caches created by a bran
   <summary>Example</summary>
 
 ```yaml
-name: cleanup-caches
+name: cleanup caches for a branch
 on:
   pull_request:
     types:
@@ -246,7 +246,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  release:
+  cleanup:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
