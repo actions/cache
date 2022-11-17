@@ -51,6 +51,13 @@ async function run(): Promise<void> {
 
         const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
         utils.setCacheHitOutput(isExactKeyMatch);
+
+        if (!isExactKeyMatch && core.getInput(Inputs.StrictRestore) == "true") {
+            core.info(
+                "Cache with exact key not found, hence exiting the workflow as strict-restore is set to true"
+            );
+            return;
+        }
         core.info(`Cache restored from key: ${cacheKey}`);
     } catch (error: unknown) {
         core.setFailed((error as Error).message);

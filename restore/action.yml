@@ -12,6 +12,9 @@ inputs:
   restore-keys:
     description: 'An ordered list of keys to use for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
     required: false
+  strict-restore:
+    description: 'Fail the workflow if the cache is not found for the given key.'
+    required: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
