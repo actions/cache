@@ -48997,7 +48997,7 @@ function run() {
             const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
             utils.setCacheHitOutput(isExactKeyMatch);
             if (!isExactKeyMatch && core.getInput(constants_1.Inputs.StrictRestore) == "true") {
-                throw new Error("Cache with exact key not found, hence exiting the workflow as strict-restore is set to true");
+                throw new Error("Restored cache doesn't match the key in the input, hence exiting the workflow as strict-restore requirement is not met.");
             }
             core.info(`Cache restored from key: ${cacheKey}`);
         }
