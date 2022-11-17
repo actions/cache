@@ -48987,7 +48987,7 @@ function run() {
             const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys);
             if (!cacheKey) {
                 if (core.getInput(constants_1.Inputs.StrictRestore) == "true") {
-                    throw new Error("Cache with given key not found, hence exiting the workflow as the strict-restore requirement is not met.");
+                    throw new Error(`Cache with the given input key ${primaryKey} is not found, hence exiting the workflow as the strict-restore requirement is not met.`);
                 }
                 core.info(`Cache not found for input keys: ${[
                     primaryKey,
@@ -49000,7 +49000,7 @@ function run() {
             const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
             utils.setCacheHitOutput(isExactKeyMatch);
             if (!isExactKeyMatch && core.getInput(constants_1.Inputs.StrictRestore) == "true") {
-                throw new Error("Restored cache doesn't match the key in the input, hence exiting the workflow as the strict-restore requirement is not met.");
+                throw new Error(`Restored cache key doesn't match the given input key ${primaryKey}, hence exiting the workflow as the strict-restore requirement is not met.`);
             }
             core.info(`Cache restored from key: ${cacheKey}`);
         }
