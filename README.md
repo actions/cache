@@ -233,11 +233,11 @@ jobs:
 ## Known practices and workarounds
 Following are some of the known practices/workarounds which community has used to fulfill specific requirements. You may choose to use them if suits your use case. Note these are not necessarily the only or the recommended solution.
 
-- [Cache segment restore timeout](./workarounds.md#cache-segment-restore-timeout)
-- [Update a cache](./workarounds.md#update-a-cache)
-- [Use cache across feature branches](./workarounds.md#use-cache-across-feature-branches)
-- [Improving cache restore performance on Windows/Using cross-os caching](./workarounds.md#improving-cache-restore-performance-on-windows-using-cross-os-caching)
-- [Force deletion of caches overriding default cache eviction policy](./workarounds.md#force-deletion-of-caches-overriding-default-cache-eviction-policy)
+- [Cache segment restore timeout](./tips-and-workarounds.md#cache-segment-restore-timeout)
+- [Update a cache](./tips-and-workarounds.md#update-a-cache)
+- [Use cache across feature branches](./tips-and-workarounds.md#use-cache-across-feature-branches)
+- [Improving cache restore performance on Windows/Using cross-os caching](./tips-and-workarounds.md#improving-cache-restore-performance-on-windows-using-cross-os-caching)
+- [Force deletion of caches overriding default cache eviction policy](./tips-and-workarounds.md#force-deletion-of-caches-overriding-default-cache-eviction-policy)
 
 #### Windows environment variables
 Please note that Windows environment variables (like `%LocalAppData%`) will NOT be expanded by this action. Instead, prefer using `~` in your paths which will expand to HOME directory. For example, instead of `%LocalAppData%`, use `~\AppData\Local`. For a list of supported default environment variables, see [this](https://docs.github.com/en/actions/learn-github-actions/environment-variables) page. 
