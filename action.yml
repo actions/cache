@@ -14,6 +14,10 @@ inputs:
   upload-chunk-size:
     description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
+  reevaluate-key:
+    description: 'If set to true, the key will be re-evaluated when saving the cache.'
+    required: false
+    default: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'

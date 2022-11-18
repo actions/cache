@@ -26,11 +26,17 @@ async function run(): Promise<void> {
 
         const state = utils.getCacheState();
 
-        // Inputs are re-evaluted before the post action, so we want the original key used for restore
-        const primaryKey = core.getState(State.CachePrimaryKey);
-        if (!primaryKey) {
-            utils.logWarning(`Error retrieving key from state.`);
-            return;
+        let primaryKey : string;
+        if (core.getInput(Inputs.ReevaluateKey)?.toLowerCase() === 'true') {
+            // Inputs are re-evaluated before the post action
+            primaryKey = core.getInput(Inputs.Key);
+        } else {
+            // Get the original key used for restore from the cache
+            primaryKey = core.getState(State.CachePrimaryKey);
+            if (!primaryKey) {
+                utils.logWarning(`Error retrieving key from state.`);
+                return;
+            }
         }
 
         if (utils.isExactKeyMatch(primaryKey, state)) {
