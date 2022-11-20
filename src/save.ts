@@ -26,8 +26,8 @@ async function run(): Promise<void> {
 
         const state = utils.getCacheState();
 
-        let primaryKey : string;
-        if (core.getInput(Inputs.ReevaluateKey)?.toLowerCase() === 'true') {
+        let primaryKey: string;
+        if (core.getInput(Inputs.ReevaluateKey)?.toLowerCase() === "true") {
             // Inputs are re-evaluated before the post action
             primaryKey = core.getInput(Inputs.Key);
         } else {
