@@ -20,7 +20,7 @@ inputs:
     default: "false"
   save-cache-on-any-failure:
     description: 'Save build cache despite of failure in the job'
-    default: "false"
+    default: "no"
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
@@ -28,7 +28,7 @@ runs:
   using: 'node16'
   main: 'dist/restore/index.js'
   post: 'dist/save/index.js'
-  post-if: success() || inputs.save-cache-on-any-failure == 'yes'
+  post-if: success() || inputs.save-cache-on-any-failure == "yes"
 branding:
   icon: 'archive'
   color: 'gray-dark'
