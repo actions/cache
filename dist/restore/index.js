@@ -48987,6 +48987,12 @@ function run() {
                 required: true
             });
             const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys);
+            //Check if user wants to save cache despite of failure in any previous job
+            const saveCache = core.getInput(constants_1.Inputs.SaveCacheOnAnyFailure);
+            if (saveCache === "yes") {
+                core.saveState(constants_1.State.SaveCache, saveCache);
+                core.info(`Input save-cache-on-any-failure is set to yes, the cache will be saved despite of any failure in the build.`);
+            }
             if (!cacheKey) {
                 if (core.getInput(constants_1.Inputs.StrictRestore) == "true") {
                     throw new Error(`Cache with the given input key ${primaryKey} is not found, hence exiting the workflow as the strict-restore requirement is not met.`);
@@ -49005,11 +49011,6 @@ function run() {
                 throw new Error(`Restored cache key doesn't match the given input key ${primaryKey}, hence exiting the workflow as the strict-restore requirement is not met.`);
             }
             core.info(`Cache restored from key: ${cacheKey}`);
-            const saveCache = core.getInput(constants_1.Inputs.SaveCacheOnAnyFailure);
-            if (saveCache === "yes") {
-                core.saveState(constants_1.State.SaveCache, saveCache);
-                core.info(`Input save-cache-on-any-failure is set to yes, the cache will be saved despite of any failure in the build.`);
-            }
         }
         catch (error) {
             core.setFailed(error.message);
