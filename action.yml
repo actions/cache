@@ -28,7 +28,7 @@ runs:
   using: 'node16'
   main: 'dist/restore/index.js'
   post: 'dist/save/index.js'
-  post-if: success() || inputs.save-on-failure == 'true'
+  post-if: success() || inputs.save-cache-on-any-failure == 'yes'
 branding:
   icon: 'archive'
   color: 'gray-dark'
