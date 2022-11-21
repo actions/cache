@@ -18,7 +18,7 @@ inputs:
     description: 'Fail the workflow if the cache is not found for the given key.'
     required: false
     default: "false"
-  save-on-failure:
+  save-cache-on-any-failure:
     description: 'Save build cache despite of failure in the job'
     default: "false"
 outputs:
