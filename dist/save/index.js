@@ -47300,6 +47300,8 @@ function run() {
                 return;
             }
             const state = utils.getCacheState();
+            core.info(core.getState(constants_1.State.SaveCache));
+            core.info(core.getState(constants_1.State.CachePrimaryKey));
             // Inputs are re-evaluted before the post action, so we want the original key used for restore
             const primaryKey = core.getState(constants_1.State.CachePrimaryKey) || core.getInput(constants_1.Inputs.Key);
             if (!primaryKey) {
