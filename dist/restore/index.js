@@ -4948,6 +4948,7 @@ var Inputs;
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
     Inputs["StrictRestore"] = "strict-restore";
+    Inputs["SaveCacheOnAnyFailure"] = "save-cache-on-any-failure";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -4957,6 +4958,7 @@ var State;
 (function (State) {
     State["CachePrimaryKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_RESULT";
+    State["SaveCache"] = "SAVE_CACHE";
 })(State = exports.State || (exports.State = {}));
 var Events;
 (function (Events) {
@@ -49003,6 +49005,11 @@ function run() {
                 throw new Error(`Restored cache key doesn't match the given input key ${primaryKey}, hence exiting the workflow as the strict-restore requirement is not met.`);
             }
             core.info(`Cache restored from key: ${cacheKey}`);
+            const saveCache = core.getInput(constants_1.Inputs.SaveCacheOnAnyFailure);
+            if (saveCache === "yes") {
+                core.saveState(constants_1.State.SaveCache, saveCache);
+                core.info(`Input save-cache-on-any-failure is set to yes, the cache will be saved despite of any failure in the build.`);
+            }
         }
         catch (error) {
             core.setFailed(error.message);

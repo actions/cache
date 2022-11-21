@@ -3,7 +3,8 @@ export enum Inputs {
     Path = "path",
     RestoreKeys = "restore-keys",
     UploadChunkSize = "upload-chunk-size",
-    StrictRestore = "strict-restore"
+    StrictRestore = "strict-restore",
+    SaveCacheOnAnyFailure = "save-cache-on-any-failure"
 }
 
 export enum Outputs {
@@ -12,7 +13,8 @@ export enum Outputs {
 
 export enum State {
     CachePrimaryKey = "CACHE_KEY",
-    CacheMatchedKey = "CACHE_RESULT"
+    CacheMatchedKey = "CACHE_RESULT",
+    SaveCache = "SAVE_CACHE"
 }
 
 export enum Events {

@@ -4948,6 +4948,7 @@ var Inputs;
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
     Inputs["StrictRestore"] = "strict-restore";
+    Inputs["SaveCacheOnAnyFailure"] = "save-cache-on-any-failure";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -4957,6 +4958,7 @@ var State;
 (function (State) {
     State["CachePrimaryKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_RESULT";
+    State["SaveCache"] = "SAVE_CACHE";
 })(State = exports.State || (exports.State = {}));
 var Events;
 (function (Events) {

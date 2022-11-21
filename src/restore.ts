@@ -63,6 +63,15 @@ async function run(): Promise<void> {
             );
         }
         core.info(`Cache restored from key: ${cacheKey}`);
+
+        const saveCache = core.getInput(Inputs.SaveCacheOnAnyFailure);
+
+        if (saveCache === "yes") {
+            core.saveState(State.SaveCache, saveCache);
+            core.info(
+                `Input save-cache-on-any-failure is set to yes, the cache will be saved despite of any failure in the build.`
+            );
+        }
     } catch (error: unknown) {
         core.setFailed((error as Error).message);
     }
