@@ -28,7 +28,7 @@ runs:
   using: 'node16'
   main: 'dist/restore/index.js'
   post: 'dist/save/index.js'
-  post-if: success() || env.STATE_SAVE_CACHE == 'yes'
+  post-if: success() || env.STATE_SAVE_CACHE != 'no'
 branding:
   icon: 'archive'
   color: 'gray-dark'
