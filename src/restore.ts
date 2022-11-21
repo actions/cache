@@ -40,7 +40,7 @@ async function run(): Promise<void> {
         if (saveCache === "yes") {
             core.saveState(State.SaveCache, saveCache);
             core.info(
-                `Input save-cache-on-any-failure is set to yes, the cache will be saved despite of any failure in the build.`
+                `Input saveCacheOnAnyFailure is set to yes, the cache will be saved despite of any failure in the build.`
             );
             core.info(core.getState(State.SaveCache));
             core.info(core.getState(State.CachePrimaryKey));

@@ -18,7 +18,7 @@ inputs:
     description: 'Fail the workflow if the cache is not found for the given key.'
     required: false
     default: "false"
-  save-cache-on-any-failure:
+  saveCacheOnAnyFailure:
     description: 'Save build cache despite of failure in the job'
     default: 'no'
 outputs:
@@ -28,7 +28,7 @@ runs:
   using: 'node16'
   main: 'dist/restore/index.js'
   post: 'dist/save/index.js'
-  post-if: success() || env.INPUT_SAVE-CACHE-ON-ANY-FAILURE == 'yes'
+  post-if: (success() || (env.INPUT_SAVECACHEONANYFAILURE == 'yes'))
 branding:
   icon: 'archive'
   color: 'gray-dark'

@@ -4948,7 +4948,7 @@ var Inputs;
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
     Inputs["StrictRestore"] = "strict-restore";
-    Inputs["SaveCacheOnAnyFailure"] = "save-cache-on-any-failure";
+    Inputs["SaveCacheOnAnyFailure"] = "saveCacheOnAnyFailure";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -48991,7 +48991,7 @@ function run() {
             const saveCache = core.getInput(constants_1.Inputs.SaveCacheOnAnyFailure);
             if (saveCache === "yes") {
                 core.saveState(constants_1.State.SaveCache, saveCache);
-                core.info(`Input save-cache-on-any-failure is set to yes, the cache will be saved despite of any failure in the build.`);
+                core.info(`Input saveCacheOnAnyFailure is set to yes, the cache will be saved despite of any failure in the build.`);
                 core.info(core.getState(constants_1.State.SaveCache));
                 core.info(core.getState(constants_1.State.CachePrimaryKey));
             }

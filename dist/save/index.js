@@ -4948,7 +4948,7 @@ var Inputs;
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
     Inputs["StrictRestore"] = "strict-restore";
-    Inputs["SaveCacheOnAnyFailure"] = "save-cache-on-any-failure";
+    Inputs["SaveCacheOnAnyFailure"] = "saveCacheOnAnyFailure";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
