@@ -42,6 +42,7 @@ async function run(): Promise<void> {
             core.info(
                 `Input save-cache-on-any-failure is set to yes, the cache will be saved despite of any failure in the build.`
             );
+            core.info(core.getState(State.SaveCache));
         }
 
         if (!cacheKey) {

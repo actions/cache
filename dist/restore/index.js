@@ -48992,6 +48992,7 @@ function run() {
             if (saveCache === "yes") {
                 core.saveState(constants_1.State.SaveCache, saveCache);
                 core.info(`Input save-cache-on-any-failure is set to yes, the cache will be saved despite of any failure in the build.`);
+                core.info(core.getState(constants_1.State.SaveCache));
             }
             if (!cacheKey) {
                 if (core.getInput(constants_1.Inputs.StrictRestore) == "true") {
