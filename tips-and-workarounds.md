@@ -85,7 +85,7 @@ jobs:
 #### Re-evaluating the cache key
 By default, the string resolved from the `key` parameter for restoring the cache will also be used for saving the cache.  In some situations it may be preferred to re-evaluate the `key` parameter when saving, such as when part of the key's name is not available until after the restore has completed.  In such cases, you can add the option `reevaluate-key: true`.
 
-For example, consider a a .NET solution that doesn't *normally* use `packages.lock.json` lock files.  You may still want to generate a lock file for purposes of determining the cache key only.
+For example, consider a .NET solution that doesn't *normally* use `packages.lock.json` lock files.  You may still want to generate a lock file for purposes of determining the cache key only.
 
 ```yaml
   - name: Cache Packages
