@@ -35,6 +35,14 @@ beforeAll(() => {
         }
     );
 
+    jest.spyOn(actionUtils, "getInputAsBoolean").mockImplementation(
+        (name, options) => {
+            return jest
+                .requireActual("../src/utils/actionUtils")
+                .getInputAsBoolean(name, options);
+        }
+    );
+
     jest.spyOn(actionUtils, "isExactKeyMatch").mockImplementation(
         (key, cacheResult) => {
             return jest
@@ -388,4 +396,39 @@ test("save with valid inputs uploads a cache", async () => {
     });
 
     expect(failedMock).toHaveBeenCalledTimes(0);
+}); 
+
+test("save with read-only", async () => {
+  const failedMock = jest.spyOn(core, "setFailed");
+
+  const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+  const savedCacheKey = "Linux-node-";
+
+  jest.spyOn(core, "getState")
+      // Cache Entry State
+      .mockImplementationOnce(() => {
+          return savedCacheKey;
+      })
+      // Cache Key State
+      .mockImplementationOnce(() => {
+          return primaryKey;
+      });
+
+  const inputPath = "node_modules";
+  testUtils.setInput(Inputs.Path, inputPath);
+  testUtils.setInput(Inputs.UploadChunkSize, "4000000");
+  testUtils.setInput(Inputs.ReadOnly, "true");
+
+  const cacheId = 4;
+  const saveCacheMock = jest
+      .spyOn(cache, "saveCache")
+      .mockImplementationOnce(() => {
+          return Promise.resolve(cacheId);
+      });
+
+  await run();
+
+  expect(saveCacheMock).toHaveBeenCalledTimes(0);
+
+  expect(failedMock).toHaveBeenCalledTimes(0);
 });

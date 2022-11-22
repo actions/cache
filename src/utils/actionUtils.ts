@@ -76,6 +76,14 @@ export function getInputAsInt(
     return value;
 }
 
+export function getInputAsBoolean(
+  name: string,
+  options?: core.InputOptions
+) : boolean {
+  console.log("ReadOnly was: " + core.getInput(name, options));
+  return !!core.getInput(name, options);
+}
+
 export function isCacheFeatureAvailable(): boolean {
     if (!cache.isFeatureAvailable()) {
         if (isGhes()) {

@@ -13,6 +13,7 @@ interface CacheInput {
     path: string;
     key: string;
     restoreKeys?: string[];
+    readOnly?: boolean;
 }
 
 export function setInputs(input: CacheInput): void {
@@ -20,6 +21,7 @@ export function setInputs(input: CacheInput): void {
     setInput(Inputs.Key, input.key);
     input.restoreKeys &&
         setInput(Inputs.RestoreKeys, input.restoreKeys.join("\n"));
+    input.readOnly && setInput(Inputs.ReadOnly, "true");
 }
 
 export function clearInputs(): void {

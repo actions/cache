@@ -44,6 +44,11 @@ async function run(): Promise<void> {
             required: true
         });
 
+        if (utils.getInputAsBoolean(Inputs.ReadOnly)) {
+          core.info(`Cache is read-only, skipping save.`);
+          return;
+        }
+
         const cacheId = await cache.saveCache(cachePaths, primaryKey, {
             uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
         });
