@@ -15,7 +15,7 @@ inputs:
   strict-restore:
     description: 'Fail the workflow if the cache is not found for the given key.'
     required: false
-    default: "false"
+    default: "no"
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
