@@ -36,7 +36,7 @@ async function run(): Promise<void> {
         );
 
         //Check if user wants to save cache despite of failure in any previous job
-        const saveCache = process.env[Inputs.SaveCacheOnAnyFailure];
+        const saveCache = core.getInput(Inputs.SaveCacheOnAnyFailure);
         if (saveCache === "yes") {
             core.debug(`save cache input variable is set to yes`);
             core.exportVariable(Variables.SaveCacheOnAnyFailure, saveCache);
