@@ -3,8 +3,7 @@ export enum Inputs {
     Path = "path",
     RestoreKeys = "restore-keys",
     UploadChunkSize = "upload-chunk-size",
-    StrictRestore = "strict-restore",
-    SaveCacheOnAnyFailure = "saveCacheOnAnyFailure"
+    StrictRestore = "strict-restore"
 }
 
 export enum Outputs {
@@ -13,8 +12,7 @@ export enum Outputs {
 
 export enum State {
     CachePrimaryKey = "CACHE_KEY",
-    CacheMatchedKey = "CACHE_RESULT",
-    SaveCache = "SAVE_CACHE"
+    CacheMatchedKey = "CACHE_RESULT"
 }
 
 export enum Events {
@@ -23,4 +21,7 @@ export enum Events {
     PullRequest = "pull_request"
 }
 
+export enum Variables {
+    SaveCacheOnAnyFailure = "SAVE_CACHE_ON_ANY_FAILURE"
+}
 export const RefKey = "GITHUB_REF";

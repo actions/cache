@@ -4940,7 +4940,7 @@ exports.checkBypass = checkBypass;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
+exports.RefKey = exports.Variables = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
 var Inputs;
 (function (Inputs) {
     Inputs["Key"] = "key";
@@ -4948,7 +4948,6 @@ var Inputs;
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
     Inputs["StrictRestore"] = "strict-restore";
-    Inputs["SaveCacheOnAnyFailure"] = "saveCacheOnAnyFailure";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -4958,7 +4957,6 @@ var State;
 (function (State) {
     State["CachePrimaryKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_RESULT";
-    State["SaveCache"] = "SAVE_CACHE";
 })(State = exports.State || (exports.State = {}));
 var Events;
 (function (Events) {
@@ -4966,6 +4964,10 @@ var Events;
     Events["Push"] = "push";
     Events["PullRequest"] = "pull_request";
 })(Events = exports.Events || (exports.Events = {}));
+var Variables;
+(function (Variables) {
+    Variables["SaveCacheOnAnyFailure"] = "SAVE_CACHE_ON_ANY_FAILURE";
+})(Variables = exports.Variables || (exports.Variables = {}));
 exports.RefKey = "GITHUB_REF";
 
 
@@ -47300,8 +47302,6 @@ function run() {
                 return;
             }
             const state = utils.getCacheState();
-            core.info(core.getState(constants_1.State.SaveCache));
-            core.info(core.getState(constants_1.State.CachePrimaryKey));
             // Inputs are re-evaluted before the post action, so we want the original key used for restore
             const primaryKey = core.getState(constants_1.State.CachePrimaryKey) || core.getInput(constants_1.Inputs.Key);
             if (!primaryKey) {

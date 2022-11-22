@@ -25,8 +25,7 @@ async function run(): Promise<void> {
         }
 
         const state = utils.getCacheState();
-        core.info(core.getState(State.SaveCache));
-        core.info(core.getState(State.CachePrimaryKey));
+
         // Inputs are re-evaluted before the post action, so we want the original key used for restore
         const primaryKey =
             core.getState(State.CachePrimaryKey) || core.getInput(Inputs.Key);

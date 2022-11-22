@@ -1,7 +1,7 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
-import { Events, Inputs, State } from "./constants";
+import { Events, Inputs, State, Variables } from "./constants";
 import * as utils from "./utils/actionUtils";
 
 async function run(): Promise<void> {
@@ -36,14 +36,12 @@ async function run(): Promise<void> {
         );
 
         //Check if user wants to save cache despite of failure in any previous job
-        const saveCache = core.getInput(Inputs.SaveCacheOnAnyFailure);
+        const saveCache = process.env[Variables.SaveCacheOnAnyFailure];
         if (saveCache === "yes") {
-            core.saveState(State.SaveCache, saveCache);
+            // core.exportVariable(Variables.SaveCacheOnAnyFailure, saveCache);
             core.info(
-                `Input saveCacheOnAnyFailure is set to yes, the cache will be saved despite of any failure in the build.`
+                `Environment Variable ${Variables.SaveCacheOnAnyFailure} is set to yes, the cache will be saved despite of any failure in the build.`
             );
-            core.info(core.getState(State.SaveCache));
-            core.info(core.getState(State.CachePrimaryKey));
         }
 
         if (!cacheKey) {

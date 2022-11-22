@@ -4940,7 +4940,7 @@ exports.checkBypass = checkBypass;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
+exports.RefKey = exports.Variables = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
 var Inputs;
 (function (Inputs) {
     Inputs["Key"] = "key";
@@ -4948,7 +4948,6 @@ var Inputs;
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
     Inputs["StrictRestore"] = "strict-restore";
-    Inputs["SaveCacheOnAnyFailure"] = "saveCacheOnAnyFailure";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -4958,7 +4957,6 @@ var State;
 (function (State) {
     State["CachePrimaryKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_RESULT";
-    State["SaveCache"] = "SAVE_CACHE";
 })(State = exports.State || (exports.State = {}));
 var Events;
 (function (Events) {
@@ -4966,6 +4964,10 @@ var Events;
     Events["Push"] = "push";
     Events["PullRequest"] = "pull_request";
 })(Events = exports.Events || (exports.Events = {}));
+var Variables;
+(function (Variables) {
+    Variables["SaveCacheOnAnyFailure"] = "SAVE_CACHE_ON_ANY_FAILURE";
+})(Variables = exports.Variables || (exports.Variables = {}));
 exports.RefKey = "GITHUB_REF";
 
 
@@ -48988,12 +48990,10 @@ function run() {
             });
             const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys);
             //Check if user wants to save cache despite of failure in any previous job
-            const saveCache = core.getInput(constants_1.Inputs.SaveCacheOnAnyFailure);
+            const saveCache = process.env[constants_1.Variables.SaveCacheOnAnyFailure];
             if (saveCache === "yes") {
-                core.saveState(constants_1.State.SaveCache, saveCache);
-                core.info(`Input saveCacheOnAnyFailure is set to yes, the cache will be saved despite of any failure in the build.`);
-                core.info(core.getState(constants_1.State.SaveCache));
-                core.info(core.getState(constants_1.State.CachePrimaryKey));
+                // core.exportVariable(Variables.SaveCacheOnAnyFailure, saveCache);
+                core.info(`Environment Variable ${constants_1.Variables.SaveCacheOnAnyFailure} is set to yes, the cache will be saved despite of any failure in the build.`);
             }
             if (!cacheKey) {
                 if (core.getInput(constants_1.Inputs.StrictRestore) == "true") {
