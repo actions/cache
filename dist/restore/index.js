@@ -48993,6 +48993,7 @@ function run() {
             //Check if user wants to save cache despite of failure in any previous job
             const saveCache = process.env[constants_1.Inputs.SaveCacheOnAnyFailure];
             if (saveCache === "yes") {
+                core.debug(`save cache input variable is set to yes`);
                 core.exportVariable(constants_1.Variables.SaveCacheOnAnyFailure, saveCache);
                 core.info(`Input Variable ${constants_1.Variables.SaveCacheOnAnyFailure} is set to yes, the cache will be saved despite of any failure in the build.`);
             }
