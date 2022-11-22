@@ -46,7 +46,7 @@ async function run(): Promise<void> {
         }
 
         if (!cacheKey) {
-            if (core.getInput(Inputs.StrictRestore) == "true") {
+            if (core.getInput(Inputs.StrictRestore) == "yes") {
                 throw new Error(
                     `Cache with the given input key ${primaryKey} is not found, hence exiting the workflow as the strict-restore requirement is not met.`
                 );
@@ -67,7 +67,7 @@ async function run(): Promise<void> {
         const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
         utils.setCacheHitOutput(isExactKeyMatch);
 
-        if (!isExactKeyMatch && core.getInput(Inputs.StrictRestore) == "true") {
+        if (!isExactKeyMatch && core.getInput(Inputs.StrictRestore) == "yes") {
             throw new Error(
                 `Restored cache key doesn't match the given input key ${primaryKey}, hence exiting the workflow as the strict-restore requirement is not met.`
             );

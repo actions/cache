@@ -48998,7 +48998,7 @@ function run() {
                 core.info(`Input Variable ${constants_1.Variables.SaveCacheOnAnyFailure} is set to yes, the cache will be saved despite of any failure in the build.`);
             }
             if (!cacheKey) {
-                if (core.getInput(constants_1.Inputs.StrictRestore) == "true") {
+                if (core.getInput(constants_1.Inputs.StrictRestore) == "yes") {
                     throw new Error(`Cache with the given input key ${primaryKey} is not found, hence exiting the workflow as the strict-restore requirement is not met.`);
                 }
                 core.info(`Cache not found for input keys: ${[
@@ -49011,7 +49011,7 @@ function run() {
             utils.setCacheState(cacheKey);
             const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
             utils.setCacheHitOutput(isExactKeyMatch);
-            if (!isExactKeyMatch && core.getInput(constants_1.Inputs.StrictRestore) == "true") {
+            if (!isExactKeyMatch && core.getInput(constants_1.Inputs.StrictRestore) == "yes") {
                 throw new Error(`Restored cache key doesn't match the given input key ${primaryKey}, hence exiting the workflow as the strict-restore requirement is not met.`);
             }
             core.info(`Cache restored from key: ${cacheKey}`);
