@@ -36,11 +36,11 @@ async function run(): Promise<void> {
         );
 
         //Check if user wants to save cache despite of failure in any previous job
-        const saveCache = process.env[Variables.SaveCacheOnAnyFailure];
+        const saveCache = process.env[Inputs.SaveCacheOnAnyFailure];
         if (saveCache === "yes") {
-            // core.exportVariable(Variables.SaveCacheOnAnyFailure, saveCache);
+            core.exportVariable(Variables.SaveCacheOnAnyFailure, saveCache);
             core.info(
-                `Environment Variable ${Variables.SaveCacheOnAnyFailure} is set to yes, the cache will be saved despite of any failure in the build.`
+                `Input Variable ${Variables.SaveCacheOnAnyFailure} is set to yes, the cache will be saved despite of any failure in the build.`
             );
         }
 

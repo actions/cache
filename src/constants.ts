@@ -3,7 +3,8 @@ export enum Inputs {
     Path = "path",
     RestoreKeys = "restore-keys",
     UploadChunkSize = "upload-chunk-size",
-    StrictRestore = "strict-restore"
+    StrictRestore = "strict-restore",
+    SaveCacheOnAnyFailure = "save-cache-on-any-failure"
 }
 
 export enum Outputs {

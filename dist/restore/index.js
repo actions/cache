@@ -4948,6 +4948,7 @@ var Inputs;
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
     Inputs["StrictRestore"] = "strict-restore";
+    Inputs["SaveCacheOnAnyFailure"] = "save-cache-on-any-failure";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -48990,10 +48991,10 @@ function run() {
             });
             const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys);
             //Check if user wants to save cache despite of failure in any previous job
-            const saveCache = process.env[constants_1.Variables.SaveCacheOnAnyFailure];
+            const saveCache = process.env[constants_1.Inputs.SaveCacheOnAnyFailure];
             if (saveCache === "yes") {
-                // core.exportVariable(Variables.SaveCacheOnAnyFailure, saveCache);
-                core.info(`Environment Variable ${constants_1.Variables.SaveCacheOnAnyFailure} is set to yes, the cache will be saved despite of any failure in the build.`);
+                core.exportVariable(constants_1.Variables.SaveCacheOnAnyFailure, saveCache);
+                core.info(`Input Variable ${constants_1.Variables.SaveCacheOnAnyFailure} is set to yes, the cache will be saved despite of any failure in the build.`);
             }
             if (!cacheKey) {
                 if (core.getInput(constants_1.Inputs.StrictRestore) == "true") {
