@@ -1,0 +1,19 @@
+name: 'Save Cache'
+description: 'Save Cache artifacts like dependencies and build outputs to improve workflow execution time'
+author: 'GitHub'
+inputs:
+  path:
+    description: 'A list of files, directories, and wildcard patterns to cache and restore'
+    required: true
+  key:
+    description: 'An explicit key for restoring and saving the cache'
+    required: true
+  upload-chunk-size:
+    description: 'The chunk size used to split up large files during upload, in bytes'
+    required: false
+runs:
+  using: 'node16'
+  main: '../dist/save/index.js'
+branding:
+  icon: 'archive'
+  color: 'gray-dark'
