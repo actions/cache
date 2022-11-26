@@ -4947,6 +4947,7 @@ var Inputs;
     Inputs["Path"] = "path";
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
+    Inputs["ReevaluateKey"] = "reevaluate-key";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -47287,6 +47288,7 @@ const utils = __importStar(__webpack_require__(443));
 // throw an uncaught exception.  Instead of failing this action, just warn.
 process.on("uncaughtException", e => utils.logWarning(e.message));
 function run() {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             if (!utils.isCacheFeatureAvailable()) {
@@ -47297,11 +47299,18 @@ function run() {
                 return;
             }
             const state = utils.getCacheState();
-            // Inputs are re-evaluted before the post action, so we want the original key used for restore
-            const primaryKey = core.getState(constants_1.State.CachePrimaryKey);
-            if (!primaryKey) {
-                utils.logWarning(`Error retrieving key from state.`);
-                return;
+            let primaryKey;
+            if (((_a = core.getInput(constants_1.Inputs.ReevaluateKey)) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === "true") {
+                // Inputs are re-evaluated before the post action
+                primaryKey = core.getInput(constants_1.Inputs.Key);
+            }
+            else {
+                // Get the original key used for restore from the cache
+                primaryKey = core.getState(constants_1.State.CachePrimaryKey);
+                if (!primaryKey) {
+                    utils.logWarning(`Error retrieving key from state.`);
+                    return;
+                }
             }
             if (utils.isExactKeyMatch(primaryKey, state)) {
                 core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
