@@ -4,8 +4,17 @@ import * as core from "@actions/core";
 import { Events, Inputs, State } from "./constants";
 import * as utils from "./utils/actionUtils";
 
+// Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
+// @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
+// throw an uncaught exception.  Instead of failing this action, just warn.
+process.on("uncaughtException", e => utils.logWarning(e.message));
+
 async function run(): Promise<void> {
     try {
+        if (!utils.isCacheFeatureAvailable()) {
+            return;
+        }
+
         if (!utils.isValidEvent()) {
             utils.logWarning(
                 `Event Validation Error: The event type ${
@@ -35,19 +44,15 @@ async function run(): Promise<void> {
             required: true
         });
 
-        try {
-            await cache.saveCache(cachePaths, primaryKey);
-        } catch (error) {
-            if (error.name === cache.ValidationError.name) {
-                throw error;
-            } else if (error.name === cache.ReserveCacheError.name) {
-                core.info(error.message);
-            } else {
-                utils.logWarning(error.message);
-            }
+        const cacheId = await cache.saveCache(cachePaths, primaryKey, {
+            uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
+        });
+
+        if (cacheId != -1) {
+            core.info(`Cache saved with key: ${primaryKey}`);
         }
-    } catch (error) {
-        utils.logWarning(error.message);
+    } catch (error: unknown) {
+        utils.logWarning((error as Error).message);
     }
 }
 

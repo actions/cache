@@ -1,6 +1,6 @@
 {
   "name": "cache",
-  "version": "1.1.2",
+  "version": "3.0.11",
   "private": true,
   "description": "Cache dependencies and build outputs",
   "main": "dist/restore/index.js",
@@ -23,29 +23,29 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.2.0",
-    "@actions/exec": "^1.0.1",
-    "@actions/io": "^1.0.1",
-    "@actions/cache": "^0.2.1"
+    "@actions/cache": "^3.0.5",
+    "@actions/core": "^1.10.0",
+    "@actions/exec": "^1.1.1",
+    "@actions/io": "^1.1.2"
   },
   "devDependencies": {
-    "@types/jest": "^24.0.13",
+    "@types/jest": "^27.5.0",
     "@types/nock": "^11.1.0",
-    "@types/node": "^12.0.4",
-    "@typescript-eslint/eslint-plugin": "^2.7.0",
-    "@typescript-eslint/parser": "^2.7.0",
+    "@types/node": "^16.11.33",
+    "@typescript-eslint/eslint-plugin": "^5.22.0",
+    "@typescript-eslint/parser": "^5.22.0",
     "@zeit/ncc": "^0.20.5",
-    "eslint": "^6.6.0",
-    "eslint-config-prettier": "^6.5.0",
-    "eslint-plugin-import": "^2.18.2",
-    "eslint-plugin-jest": "^23.0.3",
-    "eslint-plugin-prettier": "^3.1.1",
-    "eslint-plugin-simple-import-sort": "^5.0.2",
-    "jest": "^24.8.0",
-    "jest-circus": "^24.7.1",
-    "nock": "^11.7.0",
-    "prettier": "^1.19.1",
-    "ts-jest": "^24.0.2",
-    "typescript": "^3.7.3"
+    "eslint": "^8.14.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jest": "^26.1.5",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-simple-import-sort": "^7.0.0",
+    "jest": "^28.0.3",
+    "jest-circus": "^27.5.1",
+    "nock": "^13.2.4",
+    "prettier": "^2.6.2",
+    "ts-jest": "^28.0.2",
+    "typescript": "^4.6.4"
   }
 }
