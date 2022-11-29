@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 
-import { Inputs } from "./constants";
-import restore from "./restore";
+import { Inputs } from "../constants";
+import restore from "../restore";
 
 async function runRestoreAction(): Promise<void> {
     if (core.getInput(Inputs.SaveOnAnyFailure) != "") {
