@@ -20,9 +20,9 @@ async function runRestoreAction(): Promise<void> {
 }
 
 core.info("before runRestoreAction");
-// runRestoreAction();
+runRestoreAction();
 core.info("after runRestoreAction");
 
-export default runRestoreAction;
+// export default runRestoreAction;
 
 core.info("after export default runRestoreAction");

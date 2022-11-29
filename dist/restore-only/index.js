@@ -36773,9 +36773,9 @@ function runRestoreAction() {
     });
 }
 core.info("before runRestoreAction");
-// runRestoreAction();
+runRestoreAction();
 core.info("after runRestoreAction");
-exports.default = runRestoreAction;
+// export default runRestoreAction;
 core.info("after export default runRestoreAction");
 
 
