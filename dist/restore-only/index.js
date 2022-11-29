@@ -36762,10 +36762,10 @@ const restore_1 = __importDefault(__webpack_require__(778));
 function runRestoreAction() {
     return __awaiter(this, void 0, void 0, function* () {
         if (core.getInput(constants_1.Inputs.SaveOnAnyFailure) != "") {
-            core.info(`Input ${constants_1.Inputs.SaveOnAnyFailure} value is passed in the input, this input will be ignored as you are using restore-only action`);
+            core.warning(`${constants_1.Inputs.SaveOnAnyFailure} value is passed in the input, this input is invalid for the restore-only action and hence will be ignored`);
         }
         if (core.getInput(constants_1.Inputs.UploadChunkSize) != "") {
-            core.info(`Input ${constants_1.Inputs.UploadChunkSize} value is passed in the input, this input will be ignored as you are using restore-only action`);
+            core.warning(`${constants_1.Inputs.UploadChunkSize} value is passed in the input, this input is invalid for the restore-only action and hence will be ignored`);
         }
         yield (0, restore_1.default)();
     });

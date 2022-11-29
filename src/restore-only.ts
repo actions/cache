@@ -5,13 +5,13 @@ import run from "./restore";
 
 async function runRestoreAction(): Promise<void> {
     if (core.getInput(Inputs.SaveOnAnyFailure) != "") {
-        core.info(
-            `Input ${Inputs.SaveOnAnyFailure} value is passed in the input, this input will be ignored as you are using restore-only action`
+        core.warning(
+            `${Inputs.SaveOnAnyFailure} value is passed in the input, this input is invalid for the restore-only action and hence will be ignored`
         );
     }
     if (core.getInput(Inputs.UploadChunkSize) != "") {
-        core.info(
-            `Input ${Inputs.UploadChunkSize} value is passed in the input, this input will be ignored as you are using restore-only action`
+        core.warning(
+            `${Inputs.UploadChunkSize} value is passed in the input, this input is invalid for the restore-only action and hence will be ignored`
         );
     }
     await run();
