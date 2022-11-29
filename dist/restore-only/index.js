@@ -36773,7 +36773,7 @@ function runRestoreAction() {
     });
 }
 core.info("before runRestoreAction");
-runRestoreAction();
+// runRestoreAction();
 core.info("after runRestoreAction");
 exports.default = runRestoreAction;
 core.info("after export default runRestoreAction");
