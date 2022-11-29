@@ -36767,11 +36767,16 @@ function runRestoreAction() {
         if (core.getInput(constants_1.Inputs.UploadChunkSize) != "") {
             core.warning(`${constants_1.Inputs.UploadChunkSize} value is passed in the input, this input is invalid for the restore-only action and hence will be ignored`);
         }
+        core.info("before run");
         yield (0, restore_1.default)();
+        core.info("after run");
     });
 }
+core.info("before runRestoreAction");
 runRestoreAction();
+core.info("after runRestoreAction");
 exports.default = runRestoreAction;
+core.info("after export default runRestoreAction");
 
 
 /***/ }),

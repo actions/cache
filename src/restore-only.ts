@@ -14,9 +14,15 @@ async function runRestoreAction(): Promise<void> {
             `${Inputs.UploadChunkSize} value is passed in the input, this input is invalid for the restore-only action and hence will be ignored`
         );
     }
+    core.info("before run");
     await run();
+    core.info("after run");
 }
 
+core.info("before runRestoreAction");
 runRestoreAction();
+core.info("after runRestoreAction");
 
 export default runRestoreAction;
+
+core.info("after export default runRestoreAction");
