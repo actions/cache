@@ -20,7 +20,8 @@ outputs:
     description: 'A boolean value to indicate an exact match was found for the primary key'
 runs:
   using: 'node16'
-  main: '../dist/restore-only/index.js'
+  main: '../dist/restore/index.js'
 branding:
   icon: 'archive'
   color: 'gray-dark'
+  
