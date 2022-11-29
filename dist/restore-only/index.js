@@ -36775,7 +36775,6 @@ function runRestoreAction() {
 core.info("before runRestoreAction");
 runRestoreAction();
 core.info("after runRestoreAction");
-// export default runRestoreAction;
 core.info("after export default runRestoreAction");
 
 

@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 
 import { Inputs } from "./constants";
-import run from "./restore";
+import restore from "./restore";
 
 async function runRestoreAction(): Promise<void> {
     if (core.getInput(Inputs.SaveOnAnyFailure) != "") {
@@ -15,14 +15,12 @@ async function runRestoreAction(): Promise<void> {
         );
     }
     core.info("before run");
-    await run();
+    await restore();
     core.info("after run");
 }
 
 core.info("before runRestoreAction");
 runRestoreAction();
 core.info("after runRestoreAction");
-
-// export default runRestoreAction;
 
 core.info("after export default runRestoreAction");
