@@ -49015,14 +49015,14 @@ function run() {
             });
             const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys);
             //Check if user wants to save cache despite of failure in any previous job
-            const saveCache = core.getBooleanInput(constants_1.Inputs.SaveOnAnyFailure);
-            if (saveCache == true) {
+            const saveCache = core.getInput(constants_1.Inputs.SaveOnAnyFailure).toLowerCase();
+            if (saveCache == "true") {
                 core.debug(`Exporting environment variable ${constants_1.Variables.SaveCacheOnAnyFailure}`);
                 core.exportVariable(constants_1.Variables.SaveCacheOnAnyFailure, saveCache);
                 core.info(`Input Variable ${constants_1.Variables.SaveCacheOnAnyFailure} is set to true, the cache will be saved despite of any failure in the build.`);
             }
             if (!cacheKey) {
-                if (core.getBooleanInput(constants_1.Inputs.FailOnCacheMiss) == true) {
+                if (core.getInput(constants_1.Inputs.FailOnCacheMiss).toLowerCase() == "true") {
                     throw new Error(`Cache with the given input key ${primaryKey} is not found, hence exiting the workflow as the fail-on-cache-miss requirement is not met.`);
                 }
                 core.info(`Cache not found for input keys: ${[

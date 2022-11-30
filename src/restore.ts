@@ -36,8 +36,8 @@ async function run(): Promise<void> {
         );
 
         //Check if user wants to save cache despite of failure in any previous job
-        const saveCache = core.getBooleanInput(Inputs.SaveOnAnyFailure);
-        if (saveCache == true) {
+        const saveCache = core.getInput(Inputs.SaveOnAnyFailure).toLowerCase();
+        if (saveCache == "true") {
             core.debug(
                 `Exporting environment variable ${Variables.SaveCacheOnAnyFailure}`
             );
@@ -48,7 +48,7 @@ async function run(): Promise<void> {
         }
 
         if (!cacheKey) {
-            if (core.getBooleanInput(Inputs.FailOnCacheMiss) == true) {
+            if (core.getInput(Inputs.FailOnCacheMiss).toLowerCase() == "true") {
                 throw new Error(
                     `Cache with the given input key ${primaryKey} is not found, hence exiting the workflow as the fail-on-cache-miss requirement is not met.`
                 );
