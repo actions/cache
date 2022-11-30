@@ -24,7 +24,8 @@ export function setInputs(input: CacheInput): void {
     setInput(Inputs.FailOnCacheMiss, "false");
     input.restoreKeys &&
         setInput(Inputs.RestoreKeys, input.restoreKeys.join("\n"));
-    input.strictRestore && setInput(Inputs.FailOnCacheMiss, input.strictRestore);
+    input.strictRestore &&
+        setInput(Inputs.FailOnCacheMiss, input.strictRestore);
     input.saveOnAnyFailure &&
         setInput(Inputs.SaveOnAnyFailure, input.saveOnAnyFailure);
 }
