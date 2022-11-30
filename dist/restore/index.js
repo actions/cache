@@ -49015,14 +49015,14 @@ function run() {
             });
             const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys);
             //Check if user wants to save cache despite of failure in any previous job
-            const saveCache = core.getInput(constants_1.Inputs.SaveOnAnyFailure);
-            if (saveCache === "yes") {
-                core.debug(`save cache input variable is set to yes`);
+            const saveCache = core.getBooleanInput(constants_1.Inputs.SaveOnAnyFailure);
+            if (saveCache == true) {
+                core.debug(`Exporting environment variable ${constants_1.Variables.SaveCacheOnAnyFailure}`);
                 core.exportVariable(constants_1.Variables.SaveCacheOnAnyFailure, saveCache);
-                core.info(`Input Variable ${constants_1.Variables.SaveCacheOnAnyFailure} is set to yes, the cache will be saved despite of any failure in the build.`);
+                core.info(`Input Variable ${constants_1.Variables.SaveCacheOnAnyFailure} is set to true, the cache will be saved despite of any failure in the build.`);
             }
             if (!cacheKey) {
-                if (core.getInput(constants_1.Inputs.StrictRestore) == "yes") {
+                if (core.getBooleanInput(constants_1.Inputs.StrictRestore) == true) {
                     throw new Error(`Cache with the given input key ${primaryKey} is not found, hence exiting the workflow as the strict-restore requirement is not met.`);
                 }
                 core.info(`Cache not found for input keys: ${[
@@ -49035,7 +49035,8 @@ function run() {
             utils.setCacheState(cacheKey);
             const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
             utils.setCacheHitOutput(isExactKeyMatch);
-            if (!isExactKeyMatch && core.getInput(constants_1.Inputs.StrictRestore) == "yes") {
+            if (!isExactKeyMatch &&
+                core.getBooleanInput(constants_1.Inputs.StrictRestore) == true) {
                 throw new Error(`Restored cache key doesn't match the given input key ${primaryKey}, hence exiting the workflow as the strict-restore requirement is not met.`);
             }
             core.info(`Cache restored from key: ${cacheKey}`);
