@@ -333,7 +333,7 @@ test("restore with enabling save on any failure feature", async () => {
         path: path,
         key,
         restoreKeys: [restoreKey],
-        saveOnAnyFailure: "true"
+        saveOnAnyFailure: true
     });
 
     const debugMock = jest.spyOn(core, "debug");
@@ -374,7 +374,7 @@ test("Fail restore when fail on cache miss is enabled and primary key not found"
         path: path,
         key,
         restoreKeys: [restoreKey],
-        strictRestore: "true"
+        failOnCacheMiss: true
     });
 
     const failedMock = jest.spyOn(core, "setFailed");
@@ -408,7 +408,7 @@ test("Fail restore when fail on cache miss is enabled and primary key doesn't ma
         path: path,
         key,
         restoreKeys: [restoreKey],
-        strictRestore: "true"
+        failOnCacheMiss: true
     });
 
     const failedMock = jest.spyOn(core, "setFailed");

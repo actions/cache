@@ -13,8 +13,8 @@ interface CacheInput {
     path: string;
     key: string;
     restoreKeys?: string[];
-    strictRestore?: string;
-    saveOnAnyFailure?: string;
+    failOnCacheMiss?: boolean;
+    saveOnAnyFailure?: boolean;
 }
 
 export function setInputs(input: CacheInput): void {
@@ -24,10 +24,10 @@ export function setInputs(input: CacheInput): void {
     setInput(Inputs.FailOnCacheMiss, "false");
     input.restoreKeys &&
         setInput(Inputs.RestoreKeys, input.restoreKeys.join("\n"));
-    input.strictRestore &&
-        setInput(Inputs.FailOnCacheMiss, input.strictRestore);
+    input.failOnCacheMiss &&
+        setInput(Inputs.FailOnCacheMiss, String(input.failOnCacheMiss));
     input.saveOnAnyFailure &&
-        setInput(Inputs.SaveOnAnyFailure, input.saveOnAnyFailure);
+        setInput(Inputs.SaveOnAnyFailure, String(input.saveOnAnyFailure));
 }
 
 export function clearInputs(): void {
