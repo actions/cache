@@ -21,10 +21,10 @@ export function setInputs(input: CacheInput): void {
     setInput(Inputs.Path, input.path);
     setInput(Inputs.Key, input.key);
     setInput(Inputs.SaveOnAnyFailure, "false");
-    setInput(Inputs.StrictRestore, "false");
+    setInput(Inputs.FailOnCacheMiss, "false");
     input.restoreKeys &&
         setInput(Inputs.RestoreKeys, input.restoreKeys.join("\n"));
-    input.strictRestore && setInput(Inputs.StrictRestore, input.strictRestore);
+    input.strictRestore && setInput(Inputs.FailOnCacheMiss, input.strictRestore);
     input.saveOnAnyFailure &&
         setInput(Inputs.SaveOnAnyFailure, input.saveOnAnyFailure);
 }
@@ -33,7 +33,7 @@ export function clearInputs(): void {
     delete process.env[getInputName(Inputs.Path)];
     delete process.env[getInputName(Inputs.Key)];
     delete process.env[getInputName(Inputs.RestoreKeys)];
-    delete process.env[getInputName(Inputs.StrictRestore)];
+    delete process.env[getInputName(Inputs.FailOnCacheMiss)];
     delete process.env[getInputName(Inputs.SaveOnAnyFailure)];
     delete process.env[getInputName(Inputs.UploadChunkSize)];
 }

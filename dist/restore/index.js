@@ -4971,7 +4971,7 @@ var Inputs;
     Inputs["Path"] = "path";
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
-    Inputs["StrictRestore"] = "strict-restore";
+    Inputs["FailOnCacheMiss"] = "fail-on-cache-miss";
     Inputs["SaveOnAnyFailure"] = "save-on-any-failure";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
@@ -49022,8 +49022,8 @@ function run() {
                 core.info(`Input Variable ${constants_1.Variables.SaveCacheOnAnyFailure} is set to true, the cache will be saved despite of any failure in the build.`);
             }
             if (!cacheKey) {
-                if (core.getBooleanInput(constants_1.Inputs.StrictRestore) == true) {
-                    throw new Error(`Cache with the given input key ${primaryKey} is not found, hence exiting the workflow as the strict-restore requirement is not met.`);
+                if (core.getBooleanInput(constants_1.Inputs.FailOnCacheMiss) == true) {
+                    throw new Error(`Cache with the given input key ${primaryKey} is not found, hence exiting the workflow as the fail-on-cache-miss requirement is not met.`);
                 }
                 core.info(`Cache not found for input keys: ${[
                     primaryKey,
@@ -49036,8 +49036,8 @@ function run() {
             const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
             utils.setCacheHitOutput(isExactKeyMatch);
             if (!isExactKeyMatch &&
-                core.getBooleanInput(constants_1.Inputs.StrictRestore) == true) {
-                throw new Error(`Restored cache key doesn't match the given input key ${primaryKey}, hence exiting the workflow as the strict-restore requirement is not met.`);
+                core.getBooleanInput(constants_1.Inputs.FailOnCacheMiss) == true) {
+                throw new Error(`Restored cache key doesn't match the given input key ${primaryKey}, hence exiting the workflow as the fail-on-cache-miss requirement is not met.`);
             }
             core.info(`Cache restored from key: ${cacheKey}`);
         }

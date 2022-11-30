@@ -3,7 +3,7 @@ export enum Inputs {
     Path = "path",
     RestoreKeys = "restore-keys",
     UploadChunkSize = "upload-chunk-size",
-    StrictRestore = "strict-restore",
+    FailOnCacheMiss = "fail-on-cache-miss",
     SaveOnAnyFailure = "save-on-any-failure"
 }
 

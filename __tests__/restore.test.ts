@@ -366,7 +366,7 @@ test("restore with enabling save on any failure feature", async () => {
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
-test("Fail restore with strict restore enabled when primary key not found", async () => {
+test("Fail restore when fail on cache miss is enabled and primary key not found", async () => {
     const path = "node_modules";
     const key = "node-test";
     const restoreKey = "node-";
@@ -395,12 +395,12 @@ test("Fail restore with strict restore enabled when primary key not found", asyn
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(0);
 
     expect(failedMock).toHaveBeenCalledWith(
-        `Cache with the given input key ${key} is not found, hence exiting the workflow as the strict-restore requirement is not met.`
+        `Cache with the given input key ${key} is not found, hence exiting the workflow as the fail-on-cache-miss requirement is not met.`
     );
     expect(failedMock).toHaveBeenCalledTimes(1);
 });
 
-test("Fail restore with strict restore enabled when primary key doesn't match restored key", async () => {
+test("Fail restore when fail on cache miss is enabled and primary key doesn't match restored key", async () => {
     const path = "node_modules";
     const key = "node-test";
     const restoreKey = "node-";
@@ -430,7 +430,7 @@ test("Fail restore with strict restore enabled when primary key doesn't match re
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
 
     expect(failedMock).toHaveBeenCalledWith(
-        `Restored cache key doesn't match the given input key ${key}, hence exiting the workflow as the strict-restore requirement is not met.`
+        `Restored cache key doesn't match the given input key ${key}, hence exiting the workflow as the fail-on-cache-miss requirement is not met.`
     );
     expect(failedMock).toHaveBeenCalledTimes(1);
 });
