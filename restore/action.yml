@@ -3,10 +3,10 @@ description: 'Restore Cache artifacts like dependencies and build outputs to imp
 author: 'GitHub'
 inputs:
   path:
-    description: 'A list of files, directories, and wildcard patterns to cache and restore'
+    description: 'The same list of files, directories, and wildcard patterns to restore cache that were used while saving it'
     required: true
   key:
-    description: 'An explicit key for restoring and saving the cache'
+    description: 'An explicit key for restoring the cache'
     required: true
   restore-keys:
     description: 'An ordered list of keys to use for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
