@@ -423,3 +423,39 @@ test("save with no primary key in state reads key from input", async () => {
     expect(logWarningMock).toHaveBeenCalledTimes(0);
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
+
+test("save when save on any failure is true", async () => {
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const savedCacheKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const primaryKey = "Linux-node-";
+    const inputPath = "node_modules";
+
+    jest.spyOn(core, "getState")
+        // Cache Entry State
+        .mockImplementationOnce(() => {
+            return savedCacheKey;
+        })
+        // Cache Key State
+        .mockImplementationOnce(() => {
+            return primaryKey;
+        });
+
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.UploadChunkSize, "4000000");
+    testUtils.setInput(Inputs.SaveOnAnyFailure, "true");
+
+    const cacheId = 4;
+    const saveCacheMock = jest
+        .spyOn(cache, "saveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(cacheId);
+        });
+
+    await run();
+
+    expect(saveCacheMock).toHaveBeenCalledTimes(1);
+    expect(logWarningMock).toHaveBeenCalledTimes(0);
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
