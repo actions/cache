@@ -34,7 +34,7 @@ module.exports =
 /******/ 	// the startup function
 /******/ 	function startup() {
 /******/ 		// Load entry module and return exports
-/******/ 		return __webpack_require__(681);
+/******/ 		return __webpack_require__(973);
 /******/ 	};
 /******/
 /******/ 	// run startup
@@ -3701,7 +3701,30 @@ exports.DiagAPI = DiagAPI;
 /* 121 */,
 /* 122 */,
 /* 123 */,
-/* 124 */,
+/* 124 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+//# sourceMappingURL=tracer_provider.js.map
+
+/***/ }),
 /* 125 */,
 /* 126 */,
 /* 127 */,
@@ -4958,45 +4981,7 @@ exports.checkBypass = checkBypass;
 /* 193 */,
 /* 194 */,
 /* 195 */,
-/* 196 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.RefKey = exports.Variables = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
-var Inputs;
-(function (Inputs) {
-    Inputs["Key"] = "key";
-    Inputs["Path"] = "path";
-    Inputs["RestoreKeys"] = "restore-keys";
-    Inputs["UploadChunkSize"] = "upload-chunk-size";
-    Inputs["FailOnCacheMiss"] = "fail-on-cache-miss";
-    Inputs["SaveOnAnyFailure"] = "save-on-any-failure";
-})(Inputs = exports.Inputs || (exports.Inputs = {}));
-var Outputs;
-(function (Outputs) {
-    Outputs["CacheHit"] = "cache-hit";
-})(Outputs = exports.Outputs || (exports.Outputs = {}));
-var State;
-(function (State) {
-    State["CachePrimaryKey"] = "CACHE_KEY";
-    State["CacheMatchedKey"] = "CACHE_RESULT";
-})(State = exports.State || (exports.State = {}));
-var Events;
-(function (Events) {
-    Events["Key"] = "GITHUB_EVENT_NAME";
-    Events["Push"] = "push";
-    Events["PullRequest"] = "pull_request";
-})(Events = exports.Events || (exports.Events = {}));
-var Variables;
-(function (Variables) {
-    Variables["SaveCacheOnAnyFailure"] = "SAVE_CACHE_ON_ANY_FAILURE";
-})(Variables = exports.Variables || (exports.Variables = {}));
-exports.RefKey = "GITHUB_REF";
-
-
-/***/ }),
+/* 196 */,
 /* 197 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -38359,7 +38344,7 @@ __exportStar(__webpack_require__(220), exports);
 __exportStar(__webpack_require__(932), exports);
 __exportStar(__webpack_require__(975), exports);
 __exportStar(__webpack_require__(207), exports);
-__exportStar(__webpack_require__(694), exports);
+__exportStar(__webpack_require__(124), exports);
 __exportStar(__webpack_require__(695), exports);
 var spancontext_utils_1 = __webpack_require__(629);
 Object.defineProperty(exports, "isSpanContextValid", { enumerable: true, get: function () { return spancontext_utils_1.isSpanContextValid; } });
@@ -38431,7 +38416,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.isCacheFeatureAvailable = exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.getCacheState = exports.setOutputAndState = exports.setCacheHitOutput = exports.setCacheState = exports.isExactKeyMatch = exports.isGhes = void 0;
 const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
-const constants_1 = __webpack_require__(196);
+const constants_1 = __webpack_require__(694);
 function isGhes() {
     const ghUrl = new URL(process.env["GITHUB_SERVER_URL"] || "https://github.com");
     return ghUrl.hostname.toUpperCase() !== "GITHUB.COM";
@@ -47310,7 +47295,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
-const constants_1 = __webpack_require__(196);
+const constants_1 = __webpack_require__(694);
 const save_only_1 = __webpack_require__(973);
 const utils = __importStar(__webpack_require__(443));
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
@@ -47619,23 +47604,38 @@ exports.saveCache = saveCache;
 
 "use strict";
 
-/*
- * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 Object.defineProperty(exports, "__esModule", { value: true });
-//# sourceMappingURL=tracer_provider.js.map
+exports.RefKey = exports.Variables = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
+var Inputs;
+(function (Inputs) {
+    Inputs["Key"] = "key";
+    Inputs["Path"] = "path";
+    Inputs["RestoreKeys"] = "restore-keys";
+    Inputs["UploadChunkSize"] = "upload-chunk-size";
+    Inputs["FailOnCacheMiss"] = "fail-on-cache-miss";
+    Inputs["SaveOnAnyFailure"] = "save-on-any-failure";
+})(Inputs = exports.Inputs || (exports.Inputs = {}));
+var Outputs;
+(function (Outputs) {
+    Outputs["CacheHit"] = "cache-hit";
+})(Outputs = exports.Outputs || (exports.Outputs = {}));
+var State;
+(function (State) {
+    State["CachePrimaryKey"] = "CACHE_KEY";
+    State["CacheMatchedKey"] = "CACHE_RESULT";
+})(State = exports.State || (exports.State = {}));
+var Events;
+(function (Events) {
+    Events["Key"] = "GITHUB_EVENT_NAME";
+    Events["Push"] = "push";
+    Events["PullRequest"] = "pull_request";
+})(Events = exports.Events || (exports.Events = {}));
+var Variables;
+(function (Variables) {
+    Variables["SaveCacheOnAnyFailure"] = "SAVE_CACHE_ON_ANY_FAILURE";
+})(Variables = exports.Variables || (exports.Variables = {}));
+exports.RefKey = "GITHUB_REF";
+
 
 /***/ }),
 /* 695 */
@@ -55267,7 +55267,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.saveOnly = void 0;
 const core = __importStar(__webpack_require__(470));
-const constants_1 = __webpack_require__(196);
+const constants_1 = __webpack_require__(694);
 const save_1 = __importDefault(__webpack_require__(681));
 const utils = __importStar(__webpack_require__(443));
 function runSaveAction() {

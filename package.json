@@ -5,7 +5,7 @@
   "description": "Cache dependencies and build outputs",
   "main": "dist/restore/index.js",
   "scripts": {
-    "build": "tsc && ncc build -o dist/restore src/restore.ts && ncc build -o dist/save src/save.ts",
+    "build": "tsc && ncc build -o dist/restore src/restore.ts && ncc build -o dist/save src/save.ts && ncc build -o dist/save-only src/save-only.ts",
     "test": "tsc --noEmit && jest --coverage",
     "lint": "eslint **/*.ts --cache",
     "format": "prettier --write **/*.ts",

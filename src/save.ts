@@ -2,6 +2,7 @@ import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
 import { Events, Inputs, State } from "./constants";
+import { saveOnly } from "./save-only";
 import * as utils from "./utils/actionUtils";
 
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
@@ -28,7 +29,9 @@ async function run(): Promise<void> {
 
         // Inputs are re-evaluted before the post action, so we want the original key used for restore
         const primaryKey =
-            core.getState(State.CachePrimaryKey) || core.getInput(Inputs.Key);
+            saveOnly === true
+                ? core.getInput(Inputs.Key)
+                : core.getState(State.CachePrimaryKey);
 
         if (!primaryKey) {
             utils.logWarning(`Error retrieving key from state.`);
@@ -57,7 +60,5 @@ async function run(): Promise<void> {
         utils.logWarning((error as Error).message);
     }
 }
-
-run();
 
 export default run;
