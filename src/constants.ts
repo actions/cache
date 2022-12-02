@@ -2,13 +2,13 @@ export enum Inputs {
     Key = "key",
     Path = "path",
     RestoreKeys = "restore-keys",
-    UploadChunkSize = "upload-chunk-size",
-    FailOnCacheMiss = "fail-on-cache-miss",
-    SaveOnAnyFailure = "save-on-any-failure"
+    UploadChunkSize = "upload-chunk-size"
 }
 
 export enum Outputs {
-    CacheHit = "cache-hit"
+    CacheHit = "cache-hit",
+    Key = "key",
+    Path = "path"
 }
 
 export enum State {
@@ -20,10 +20,6 @@ export enum Events {
     Key = "GITHUB_EVENT_NAME",
     Push = "push",
     PullRequest = "pull_request"
-}
-
-export enum Variables {
-    SaveCacheOnAnyFailure = "SAVE_CACHE_ON_ANY_FAILURE"
 }
 
 export const RefKey = "GITHUB_REF";

@@ -3402,7 +3402,7 @@ const http_client_1 = __webpack_require__(425);
 const auth_1 = __webpack_require__(554);
 const crypto = __importStar(__webpack_require__(417));
 const fs = __importStar(__webpack_require__(747));
-const url_1 = __webpack_require__(835);
+const url_1 = __webpack_require__(414);
 const utils = __importStar(__webpack_require__(15));
 const constants_1 = __webpack_require__(931);
 const downloadUtils_1 = __webpack_require__(251);
@@ -3701,7 +3701,30 @@ exports.DiagAPI = DiagAPI;
 /* 121 */,
 /* 122 */,
 /* 123 */,
-/* 124 */,
+/* 124 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+//# sourceMappingURL=tracer_provider.js.map
+
+/***/ }),
 /* 125 */,
 /* 126 */,
 /* 127 */,
@@ -4958,45 +4981,7 @@ exports.checkBypass = checkBypass;
 /* 193 */,
 /* 194 */,
 /* 195 */,
-/* 196 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.RefKey = exports.Variables = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
-var Inputs;
-(function (Inputs) {
-    Inputs["Key"] = "key";
-    Inputs["Path"] = "path";
-    Inputs["RestoreKeys"] = "restore-keys";
-    Inputs["UploadChunkSize"] = "upload-chunk-size";
-    Inputs["FailOnCacheMiss"] = "fail-on-cache-miss";
-    Inputs["SaveOnAnyFailure"] = "save-on-any-failure";
-})(Inputs = exports.Inputs || (exports.Inputs = {}));
-var Outputs;
-(function (Outputs) {
-    Outputs["CacheHit"] = "cache-hit";
-})(Outputs = exports.Outputs || (exports.Outputs = {}));
-var State;
-(function (State) {
-    State["CachePrimaryKey"] = "CACHE_KEY";
-    State["CacheMatchedKey"] = "CACHE_RESULT";
-})(State = exports.State || (exports.State = {}));
-var Events;
-(function (Events) {
-    Events["Key"] = "GITHUB_EVENT_NAME";
-    Events["Push"] = "push";
-    Events["PullRequest"] = "pull_request";
-})(Events = exports.Events || (exports.Events = {}));
-var Variables;
-(function (Variables) {
-    Variables["SaveCacheOnAnyFailure"] = "SAVE_CACHE_ON_ANY_FAILURE";
-})(Variables = exports.Variables || (exports.Variables = {}));
-exports.RefKey = "GITHUB_REF";
-
-
-/***/ }),
+/* 196 */,
 /* 197 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -35024,7 +35009,7 @@ exports.Path = Path;
  */
 
 const punycode = __webpack_require__(815);
-const urlParse = __webpack_require__(835).parse;
+const urlParse = __webpack_require__(414).parse;
 const util = __webpack_require__(669);
 const pubsuffix = __webpack_require__(562);
 const Store = __webpack_require__(338).Store;
@@ -36819,7 +36804,12 @@ module.exports = __webpack_require__(141);
 
 
 /***/ }),
-/* 414 */,
+/* 414 */
+/***/ (function(module) {
+
+module.exports = require("url");
+
+/***/ }),
 /* 415 */,
 /* 416 */,
 /* 417 */
@@ -38359,7 +38349,7 @@ __exportStar(__webpack_require__(220), exports);
 __exportStar(__webpack_require__(932), exports);
 __exportStar(__webpack_require__(975), exports);
 __exportStar(__webpack_require__(207), exports);
-__exportStar(__webpack_require__(694), exports);
+__exportStar(__webpack_require__(124), exports);
 __exportStar(__webpack_require__(695), exports);
 var spancontext_utils_1 = __webpack_require__(629);
 Object.defineProperty(exports, "isSpanContextValid", { enumerable: true, get: function () { return spancontext_utils_1.isSpanContextValid; } });
@@ -38431,7 +38421,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.isCacheFeatureAvailable = exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.getCacheState = exports.setOutputAndState = exports.setCacheHitOutput = exports.setCacheState = exports.isExactKeyMatch = exports.isGhes = void 0;
 const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
-const constants_1 = __webpack_require__(196);
+const constants_1 = __webpack_require__(694);
 function isGhes() {
     const ghUrl = new URL(process.env["GITHUB_SERVER_URL"] || "https://github.com");
     return ghUrl.hostname.toUpperCase() !== "GITHUB.COM";
@@ -38619,7 +38609,7 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var Stream = _interopDefault(__webpack_require__(794));
 var http = _interopDefault(__webpack_require__(605));
-var Url = _interopDefault(__webpack_require__(835));
+var Url = _interopDefault(__webpack_require__(414));
 var whatwgUrl = _interopDefault(__webpack_require__(70));
 var https = _interopDefault(__webpack_require__(211));
 var zlib = _interopDefault(__webpack_require__(761));
@@ -47531,23 +47521,34 @@ exports.saveCache = saveCache;
 
 "use strict";
 
-/*
- * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 Object.defineProperty(exports, "__esModule", { value: true });
-//# sourceMappingURL=tracer_provider.js.map
+exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
+var Inputs;
+(function (Inputs) {
+    Inputs["Key"] = "key";
+    Inputs["Path"] = "path";
+    Inputs["RestoreKeys"] = "restore-keys";
+    Inputs["UploadChunkSize"] = "upload-chunk-size";
+})(Inputs = exports.Inputs || (exports.Inputs = {}));
+var Outputs;
+(function (Outputs) {
+    Outputs["CacheHit"] = "cache-hit";
+    Outputs["Key"] = "key";
+    Outputs["Path"] = "path";
+})(Outputs = exports.Outputs || (exports.Outputs = {}));
+var State;
+(function (State) {
+    State["CachePrimaryKey"] = "CACHE_KEY";
+    State["CacheMatchedKey"] = "CACHE_RESULT";
+})(State = exports.State || (exports.State = {}));
+var Events;
+(function (Events) {
+    Events["Key"] = "GITHUB_EVENT_NAME";
+    Events["Push"] = "push";
+    Events["PullRequest"] = "pull_request";
+})(Events = exports.Events || (exports.Events = {}));
+exports.RefKey = "GITHUB_REF";
+
 
 /***/ }),
 /* 695 */
@@ -48990,64 +48991,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
-const constants_1 = __webpack_require__(196);
+const constants_1 = __webpack_require__(694);
+const restoreImpl_1 = __importDefault(__webpack_require__(835));
 const utils = __importStar(__webpack_require__(443));
-function run() {
+function restore() {
     return __awaiter(this, void 0, void 0, function* () {
-        try {
-            if (!utils.isCacheFeatureAvailable()) {
-                utils.setCacheHitOutput(false);
-                return;
-            }
-            // Validate inputs, this can cause task failure
-            if (!utils.isValidEvent()) {
-                utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
-                return;
-            }
-            const primaryKey = core.getInput(constants_1.Inputs.Key, { required: true });
-            core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
-            const restoreKeys = utils.getInputAsArray(constants_1.Inputs.RestoreKeys);
-            const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
-                required: true
-            });
-            const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys);
-            //Check if user wants to save cache despite of failure in any previous job
-            const saveCache = core.getInput(constants_1.Inputs.SaveOnAnyFailure).toLowerCase();
-            if (saveCache == "true") {
-                core.debug(`Exporting environment variable ${constants_1.Variables.SaveCacheOnAnyFailure}`);
-                core.exportVariable(constants_1.Variables.SaveCacheOnAnyFailure, saveCache);
-                core.info(`Input Variable ${constants_1.Variables.SaveCacheOnAnyFailure} is set to true, the cache will be saved despite of any failure in the build.`);
-            }
-            if (!cacheKey) {
-                if (core.getInput(constants_1.Inputs.FailOnCacheMiss).toLowerCase() == "true") {
-                    throw new Error(`Cache with the given input key ${primaryKey} is not found, hence exiting the workflow as the fail-on-cache-miss requirement is not met.`);
-                }
-                core.info(`Cache not found for input keys: ${[
-                    primaryKey,
-                    ...restoreKeys
-                ].join(", ")}`);
-                return;
-            }
-            // Store the matched cache key
+        const cacheKey = yield (0, restoreImpl_1.default)();
+        if (cacheKey) {
+            // Store the matched cache key in states
             utils.setCacheState(cacheKey);
-            const isExactKeyMatch = utils.isExactKeyMatch(primaryKey, cacheKey);
+            const isExactKeyMatch = utils.isExactKeyMatch(core.getInput(constants_1.Inputs.Key, { required: true }), cacheKey);
             utils.setCacheHitOutput(isExactKeyMatch);
-            if (!isExactKeyMatch &&
-                core.getBooleanInput(constants_1.Inputs.FailOnCacheMiss) == true) {
-                throw new Error(`Restored cache key doesn't match the given input key ${primaryKey}, hence exiting the workflow as the fail-on-cache-miss requirement is not met.`);
-            }
             core.info(`Cache restored from key: ${cacheKey}`);
-        }
-        catch (error) {
-            core.setFailed(error.message);
         }
     });
 }
-run();
-exports.default = run;
+exports.default = restore;
 
 
 /***/ }),
@@ -49489,7 +49453,7 @@ var util = __webpack_require__(669);
 var path = __webpack_require__(622);
 var http = __webpack_require__(605);
 var https = __webpack_require__(211);
-var parseUrl = __webpack_require__(835).parse;
+var parseUrl = __webpack_require__(414).parse;
 var fs = __webpack_require__(747);
 var Stream = __webpack_require__(794).Stream;
 var mime = __webpack_require__(779);
@@ -50655,9 +50619,82 @@ exports.VERSION = '1.0.4';
 /* 833 */,
 /* 834 */,
 /* 835 */
-/***/ (function(module) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
-module.exports = require("url");
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const cache = __importStar(__webpack_require__(692));
+const core = __importStar(__webpack_require__(470));
+const constants_1 = __webpack_require__(694);
+const utils = __importStar(__webpack_require__(443));
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            if (!utils.isCacheFeatureAvailable()) {
+                utils.setCacheHitOutput(false);
+                return;
+            }
+            // Validate inputs, this can cause task failure
+            if (!utils.isValidEvent()) {
+                utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
+                return;
+            }
+            const primaryKey = core.getInput(constants_1.Inputs.Key, { required: true });
+            core.saveState(constants_1.State.CachePrimaryKey, primaryKey);
+            const restoreKeys = utils.getInputAsArray(constants_1.Inputs.RestoreKeys);
+            const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
+                required: true
+            });
+            const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys);
+            if (!cacheKey) {
+                core.info(`Cache not found for input keys: ${[
+                    primaryKey,
+                    ...restoreKeys
+                ].join(", ")}`);
+                return;
+            }
+            return cacheKey;
+        }
+        catch (error) {
+            core.setFailed(error.message);
+        }
+    });
+}
+exports.default = run;
+
 
 /***/ }),
 /* 836 */,
@@ -55792,7 +55829,7 @@ var stream = __webpack_require__(794);
 var FormData = __webpack_require__(790);
 var node_fetch = __webpack_require__(454);
 var coreTracing = __webpack_require__(263);
-var url = __webpack_require__(835);
+var url = __webpack_require__(414);
 __webpack_require__(97);
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }

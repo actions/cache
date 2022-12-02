@@ -14,14 +14,6 @@ inputs:
   upload-chunk-size:
     description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
-  exit-on-cache-miss:
-    description: 'Fail the workflow if the cache is not found for the primary key'
-    required: false
-    default: false
-  save-on-any-failure:
-    description: 'Save cache (on cache miss) despite of any failure during the workflow run'
-    required: false
-    default: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
@@ -29,7 +21,7 @@ runs:
   using: 'node16'
   main: 'dist/restore/index.js'
   post: 'dist/save/index.js'
-  post-if: (success() || (env.SAVE_CACHE_ON_ANY_FAILURE == 'yes'))
+  post-if: success()
 branding:
   icon: 'archive'
   color: 'gray-dark'
