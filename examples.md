@@ -315,6 +315,7 @@ If using `npm config` to retrieve the cache directory, ensure you run [actions/s
 ```yaml
 - name: Get npm cache directory
   id: npm-cache-dir
+  shell: bash
   run: |
     echo "dir=$(npm config get cache)" >> $GITHUB_OUTPUT
 - uses: actions/cache@v3
@@ -342,6 +343,7 @@ The yarn cache directory will depend on your operating system and version of `ya
 ```yaml
 - name: Get yarn cache directory path
   id: yarn-cache-dir-path
+  shell: bash
   run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
 
 - uses: actions/cache@v3
@@ -360,6 +362,7 @@ The yarn 2 cache directory will depend on your config. See https://yarnpkg.com/c
 ```yaml
 - name: Get yarn cache directory path
   id: yarn-cache-dir-path
+  shell: bash
   run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
 
 - uses: actions/cache@v3
@@ -404,6 +407,7 @@ Esy allows you to export built dependencies and import pre-built dependencies.
 ```yaml
 - name: Get Composer Cache Directory
   id: composer-cache
+  shell: bash
   run: |
     echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 - uses: actions/cache@v3
@@ -496,6 +500,7 @@ jobs:
 ```yaml
 - name: Get pip cache dir
   id: pip-cache
+  shell: bash
   run: |
     echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
 
