@@ -8,6 +8,10 @@ This action allows caching dependencies and build outputs to improve workflow ex
 
 See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows).
 
+[Restore action](./restore/README.md)
+
+[Save action](./save/README.md)
+
 ## What's New
 ### v3
 * Added support for caching from GHES 3.5.
