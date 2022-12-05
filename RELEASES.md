@@ -40,3 +40,6 @@
 ### 3.0.11
 - Update toolkit version to 3.0.5 to include `@actions/core@^1.10.0`
 - Update `@actions/cache` to use updated `saveState` and `setOutput` functions from `@actions/core@^1.10.0`
+
+### 3.1.0-beta.1
+- Update `@actions/cache` on windows to use gnu tar and zstd by default and fallback to bsdtar and zstd if gnu tar is not available. ([issue](https://github.com/actions/cache/issues/984))
