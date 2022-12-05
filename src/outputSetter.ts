@@ -1,0 +1,16 @@
+import * as core from "@actions/core";
+
+export interface IOutputSetter {
+    setOutput(key: string, value: string): void;
+    setState(key: string, value: string): void;
+}
+
+export class StateOutputSetter implements IOutputSetter {
+    setOutput = core.setOutput;
+    setState = core.saveState;
+}
+
+export class NonStateOuputSetter implements IOutputSetter {
+    setOutput = core.setOutput;
+    setState = core.setOutput;
+}
