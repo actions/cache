@@ -5,4 +5,6 @@ async function restoreOnly(): Promise<void> {
     await run(new NonStateOutputSetter());
 }
 
+restoreOnly();
+
 export default restoreOnly;

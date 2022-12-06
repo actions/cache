@@ -5,4 +5,6 @@ async function restore(): Promise<void> {
     await run(new StateOutputSetter());
 }
 
+restore();
+
 export default restore;
