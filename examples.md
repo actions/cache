@@ -313,21 +313,6 @@ After [deprecation](https://github.blog/changelog/2022-10-11-github-actions-depr
 
 >Note: It is not recommended to cache `node_modules`, as it can break across Node versions and won't work with `npm ci`
 
-### **Get npm cache directory using default shells**
-### Linux or Mac
-```yaml
-- name: Get npm cache directory
-  id: npm-cache
-  run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
-```
-
-### Windows
-```yaml
-- name: Get npm cache directory
-  id: npm-cache
-  run: echo "dir=$(npm config get cache)" >> ${env:GITHUB_OUTPUT}
-```
-
 ### **Get npm cache directory using same shell**
 ### Bash shell
 ```yaml
