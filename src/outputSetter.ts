@@ -10,7 +10,7 @@ export class StateOutputSetter implements IOutputSetter {
     setState = core.saveState;
 }
 
-export class NonStateOuputSetter implements IOutputSetter {
+export class NonStateOutputSetter implements IOutputSetter {
     setOutput = core.setOutput;
     setState = core.setOutput;
 }
