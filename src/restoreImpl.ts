@@ -5,7 +5,7 @@ import { Events, Inputs, Outputs, State } from "./constants";
 import { IStateProvider } from "./stateProvider";
 import * as utils from "./utils/actionUtils";
 
-async function restoreImpl(outputter: IStateProvider): Promise<string | undefined> {
+async function restoreImpl(stateProvider: IStateProvider): Promise<string | undefined> {
     try {
         if (!utils.isCacheFeatureAvailable()) {
             utils.setCacheHitOutput(false);
@@ -48,7 +48,7 @@ async function restoreImpl(outputter: IStateProvider): Promise<string | undefine
         }
 
         // Store the matched cache key in states
-        outputter.setState(State.CacheMatchedKey, cacheKey);
+        stateProvider.setState(State.CacheMatchedKey, cacheKey);
 
         const isExactKeyMatch = utils.isExactKeyMatch(
             core.getInput(Inputs.Key, { required: true }),

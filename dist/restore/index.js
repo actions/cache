@@ -3701,7 +3701,30 @@ exports.DiagAPI = DiagAPI;
 /* 121 */,
 /* 122 */,
 /* 123 */,
-/* 124 */,
+/* 124 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+//# sourceMappingURL=tracer_provider.js.map
+
+/***/ }),
 /* 125 */,
 /* 126 */,
 /* 127 */,
@@ -4958,41 +4981,7 @@ exports.checkBypass = checkBypass;
 /* 193 */,
 /* 194 */,
 /* 195 */,
-/* 196 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
-var Inputs;
-(function (Inputs) {
-    Inputs["Key"] = "key";
-    Inputs["Path"] = "path";
-    Inputs["RestoreKeys"] = "restore-keys";
-    Inputs["UploadChunkSize"] = "upload-chunk-size";
-})(Inputs = exports.Inputs || (exports.Inputs = {}));
-var Outputs;
-(function (Outputs) {
-    Outputs["CacheHit"] = "cache-hit";
-    Outputs["Key"] = "key";
-    Outputs["Path"] = "path";
-})(Outputs = exports.Outputs || (exports.Outputs = {}));
-var State;
-(function (State) {
-    State["CachePrimaryKey"] = "CACHE_KEY";
-    State["CacheMatchedKey"] = "CACHE_RESULT";
-})(State = exports.State || (exports.State = {}));
-var Events;
-(function (Events) {
-    Events["Key"] = "GITHUB_EVENT_NAME";
-    Events["Push"] = "push";
-    Events["PullRequest"] = "pull_request";
-})(Events = exports.Events || (exports.Events = {}));
-exports.RefKey = "GITHUB_REF";
-
-
-/***/ }),
+/* 196 */,
 /* 197 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -38360,7 +38349,7 @@ __exportStar(__webpack_require__(220), exports);
 __exportStar(__webpack_require__(932), exports);
 __exportStar(__webpack_require__(975), exports);
 __exportStar(__webpack_require__(207), exports);
-__exportStar(__webpack_require__(694), exports);
+__exportStar(__webpack_require__(124), exports);
 __exportStar(__webpack_require__(695), exports);
 var spancontext_utils_1 = __webpack_require__(629);
 Object.defineProperty(exports, "isSpanContextValid", { enumerable: true, get: function () { return spancontext_utils_1.isSpanContextValid; } });
@@ -38432,7 +38421,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.isCacheFeatureAvailable = exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.setCacheHitOutput = exports.isExactKeyMatch = exports.isGhes = void 0;
 const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
-const constants_1 = __webpack_require__(196);
+const constants_1 = __webpack_require__(694);
 function isGhes() {
     const ghUrl = new URL(process.env["GITHUB_SERVER_URL"] || "https://github.com");
     return ghUrl.hostname.toUpperCase() !== "GITHUB.COM";
@@ -47581,21 +47570,6 @@ exports.saveCache = saveCache;
 
 "use strict";
 
-/*
- * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
 var Inputs;
@@ -50700,9 +50674,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
-const constants_1 = __webpack_require__(196);
+const constants_1 = __webpack_require__(694);
 const utils = __importStar(__webpack_require__(443));
-function restoreImpl(outputter) {
+function restoreImpl(stateProvider) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             if (!utils.isCacheFeatureAvailable()) {
@@ -50715,7 +50689,7 @@ function restoreImpl(outputter) {
                 return;
             }
             const primaryKey = core.getInput(constants_1.Inputs.Key, { required: true });
-            outputter.setState(constants_1.State.CachePrimaryKey, primaryKey);
+            stateProvider.setState(constants_1.State.CachePrimaryKey, primaryKey);
             const restoreKeys = utils.getInputAsArray(constants_1.Inputs.RestoreKeys);
             const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
                 required: true
@@ -50729,7 +50703,7 @@ function restoreImpl(outputter) {
                 return;
             }
             // Store the matched cache key in states
-            outputter.setState(constants_1.State.CacheMatchedKey, cacheKey);
+            stateProvider.setState(constants_1.State.CacheMatchedKey, cacheKey);
             const isExactKeyMatch = utils.isExactKeyMatch(core.getInput(constants_1.Inputs.Key, { required: true }), cacheKey);
             core.setOutput(constants_1.Outputs.CacheHit, isExactKeyMatch.toString());
             core.info(`Cache restored from key: ${cacheKey}`);
@@ -55055,54 +55029,7 @@ exports._globalThis = typeof globalThis === 'object' ? globalThis : global;
 
 /***/ }),
 /* 957 */,
-/* 958 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.NonStateOutputSetter = exports.StateOutputSetter = void 0;
-const core = __importStar(__webpack_require__(470));
-class StateOutputSetter {
-    constructor() {
-        this.setOutput = core.setOutput;
-        this.setState = core.saveState;
-    }
-}
-exports.StateOutputSetter = StateOutputSetter;
-class NonStateOutputSetter {
-    constructor() {
-        this.setOutput = core.setOutput;
-        this.setState = core.setOutput;
-    }
-}
-exports.NonStateOutputSetter = NonStateOutputSetter;
-
-
-/***/ }),
+/* 958 */,
 /* 959 */,
 /* 960 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
