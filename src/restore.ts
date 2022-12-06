@@ -1,8 +1,10 @@
-import { StateOutputSetter } from "./outputSetter";
-import run from "./restoreImpl";
+import { StateProvider } from "./stateProvider";
+import restoreImpl from "./restoreImpl";
 
-async function restore(): Promise<void> {
-    await run(new StateOutputSetter());
+async function run(): Promise<void> {
+    await restoreImpl(new StateProvider());
 }
 
-export default restore;
+run();
+
+export default run;

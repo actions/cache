@@ -6,9 +6,7 @@ export enum Inputs {
 }
 
 export enum Outputs {
-    CacheHit = "cache-hit",
-    Key = "key",
-    Path = "path"
+    CacheHit = "cache-hit"
 }
 
 export enum State {

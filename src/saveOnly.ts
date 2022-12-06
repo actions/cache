@@ -1,8 +1,8 @@
 import saveImpl from "./saveImpl";
-import { StateProvider } from "./stateProvider";
+import { NullStateProvider } from "./stateProvider";
 
 async function run(): Promise<void> {
-    await saveImpl(new StateProvider());
+    await saveImpl(new NullStateProvider());
 }
 
 run();

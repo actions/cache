@@ -2,10 +2,10 @@ import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
 import { Events, Inputs, Outputs, State } from "./constants";
-import { IOutputSetter } from "./outputSetter";
+import { IStateProvider } from "./stateProvider";
 import * as utils from "./utils/actionUtils";
 
-async function run(outputter: IOutputSetter): Promise<string | undefined> {
+async function restoreImpl(outputter: IStateProvider): Promise<string | undefined> {
     try {
         if (!utils.isCacheFeatureAvailable()) {
             utils.setCacheHitOutput(false);
@@ -48,15 +48,14 @@ async function run(outputter: IOutputSetter): Promise<string | undefined> {
         }
 
         // Store the matched cache key in states
-        //utils.setCacheState(cacheKey);
         outputter.setState(State.CacheMatchedKey, cacheKey);
 
         const isExactKeyMatch = utils.isExactKeyMatch(
             core.getInput(Inputs.Key, { required: true }),
             cacheKey
         );
-        //utils.setCacheHitOutput(isExactKeyMatch);
-        outputter.setOutput(Outputs.CacheHit, isExactKeyMatch.toString());
+
+        core.setOutput(Outputs.CacheHit, isExactKeyMatch.toString());
         core.info(`Cache restored from key: ${cacheKey}`);
 
         return cacheKey;
@@ -65,4 +64,4 @@ async function run(outputter: IOutputSetter): Promise<string | undefined> {
     }
 }
 
-export default run;
+export default restoreImpl;
