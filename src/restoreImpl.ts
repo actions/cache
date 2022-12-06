@@ -48,14 +48,12 @@ async function run(outputter: IOutputSetter): Promise<void> {
         }
 
         // Store the matched cache key in states
-        //utils.setCacheState(cacheKey);
         outputter.setState(State.CacheMatchedKey, cacheKey);
 
         const isExactKeyMatch = utils.isExactKeyMatch(
             core.getInput(Inputs.Key, { required: true }),
             cacheKey
         );
-        //utils.setCacheHitOutput(isExactKeyMatch);
         outputter.setOutput(Outputs.CacheHit, isExactKeyMatch.toString());
         core.info(`Cache restored from key: ${cacheKey}`);
 
