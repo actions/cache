@@ -23,7 +23,7 @@ async function restoreImpl(outputter: IStateProvider): Promise<string | undefine
         }
 
         const primaryKey = core.getInput(Inputs.Key, { required: true });
-        outputter.setState(State.CachePrimaryKey, primaryKey);
+        stateProvider.setState(State.CachePrimaryKey, primaryKey);
 
         const restoreKeys = utils.getInputAsArray(Inputs.RestoreKeys);
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
