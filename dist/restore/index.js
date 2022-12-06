@@ -48978,6 +48978,7 @@ function restore() {
         yield (0, restoreImpl_1.default)(new outputSetter_1.StateOutputSetter());
     });
 }
+restore();
 exports.default = restore;
 
 
@@ -50654,13 +50655,11 @@ function run(outputter) {
                 return;
             }
             // Store the matched cache key in states
-            //utils.setCacheState(cacheKey);
             outputter.setState(constants_1.State.CacheMatchedKey, cacheKey);
             const isExactKeyMatch = utils.isExactKeyMatch(core.getInput(constants_1.Inputs.Key, { required: true }), cacheKey);
-            //utils.setCacheHitOutput(isExactKeyMatch);
             outputter.setOutput(constants_1.Outputs.CacheHit, isExactKeyMatch.toString());
             core.info(`Cache restored from key: ${cacheKey}`);
-            return cacheKey;
+            return;
         }
         catch (error) {
             core.setFailed(error.message);
