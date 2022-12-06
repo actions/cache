@@ -5,7 +5,7 @@ import { Events, Inputs, Outputs, State } from "./constants";
 import { IOutputSetter } from "./outputSetter";
 import * as utils from "./utils/actionUtils";
 
-async function run(outputter: IOutputSetter): Promise<string | undefined> {
+async function run(outputter: IOutputSetter): Promise<void> {
     try {
         if (!utils.isCacheFeatureAvailable()) {
             utils.setCacheHitOutput(false);
@@ -59,7 +59,7 @@ async function run(outputter: IOutputSetter): Promise<string | undefined> {
         outputter.setOutput(Outputs.CacheHit, isExactKeyMatch.toString());
         core.info(`Cache restored from key: ${cacheKey}`);
 
-        return cacheKey;
+        return;
     } catch (error: unknown) {
         core.setFailed((error as Error).message);
     }
