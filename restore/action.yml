@@ -16,10 +16,8 @@ outputs:
     description: 'A boolean value to indicate an exact match was found for the primary key'
   key:
     description: 'Key passed in the input to use in subsequent steps of the workflow'
-    required: false
   matched-key:
     description: 'Cache key restored'
-    required: false
 runs:
   using: 'node16'
   main: '../dist/restore/index.js'
