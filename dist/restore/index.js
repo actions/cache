@@ -47582,6 +47582,8 @@ var Inputs;
 var Outputs;
 (function (Outputs) {
     Outputs["CacheHit"] = "cache-hit";
+    Outputs["Key"] = "key";
+    Outputs["MatchedKey"] = "matched-key";
 })(Outputs = exports.Outputs || (exports.Outputs = {}));
 var State;
 (function (State) {

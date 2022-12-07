@@ -6,7 +6,9 @@ export enum Inputs {
 }
 
 export enum Outputs {
-    CacheHit = "cache-hit"
+    CacheHit = "cache-hit",
+    Key = "key",
+    MatchedKey = "matched-key"
 }
 
 export enum State {

@@ -5,7 +5,9 @@ import { Events, Inputs, Outputs, State } from "./constants";
 import { IStateProvider } from "./stateProvider";
 import * as utils from "./utils/actionUtils";
 
-async function restoreImpl(stateProvider: IStateProvider): Promise<string | undefined> {
+async function restoreImpl(
+    stateProvider: IStateProvider
+): Promise<string | undefined> {
     try {
         if (!utils.isCacheFeatureAvailable()) {
             utils.setCacheHitOutput(false);
