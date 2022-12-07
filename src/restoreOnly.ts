@@ -1,10 +1,10 @@
-import { NonStateOutputSetter } from "./outputSetter";
-import run from "./restoreImpl";
+import restoreImpl from "./restoreImpl";
+import { NullStateProvider } from "./stateProvider";
 
-async function restoreOnly(): Promise<void> {
-    await run(new NonStateOutputSetter());
+async function run(): Promise<void> {
+    await restoreImpl(new NullStateProvider());
 }
 
-restoreOnly();
+run();
 
-export default restoreOnly;
+export default run;

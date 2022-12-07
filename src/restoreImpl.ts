@@ -2,10 +2,10 @@ import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
 import { Events, Inputs, Outputs, State } from "./constants";
-import { IOutputSetter } from "./outputSetter";
+import { IStateProvider } from "./stateProvider";
 import * as utils from "./utils/actionUtils";
 
-async function run(outputter: IOutputSetter): Promise<void> {
+async function restoreImpl(stateProvider: IStateProvider): Promise<string | undefined> {
     try {
         if (!utils.isCacheFeatureAvailable()) {
             utils.setCacheHitOutput(false);
@@ -23,7 +23,7 @@ async function run(outputter: IOutputSetter): Promise<void> {
         }
 
         const primaryKey = core.getInput(Inputs.Key, { required: true });
-        outputter.setState(State.CachePrimaryKey, primaryKey);
+        stateProvider.setState(State.CachePrimaryKey, primaryKey);
 
         const restoreKeys = utils.getInputAsArray(Inputs.RestoreKeys);
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
@@ -48,19 +48,20 @@ async function run(outputter: IOutputSetter): Promise<void> {
         }
 
         // Store the matched cache key in states
-        outputter.setState(State.CacheMatchedKey, cacheKey);
+        stateProvider.setState(State.CacheMatchedKey, cacheKey);
 
         const isExactKeyMatch = utils.isExactKeyMatch(
             core.getInput(Inputs.Key, { required: true }),
             cacheKey
         );
-        outputter.setOutput(Outputs.CacheHit, isExactKeyMatch.toString());
+
+        core.setOutput(Outputs.CacheHit, isExactKeyMatch.toString());
         core.info(`Cache restored from key: ${cacheKey}`);
 
-        return;
+        return cacheKey;
     } catch (error: unknown) {
         core.setFailed((error as Error).message);
     }
 }
 
-export default run;
+export default restoreImpl;
