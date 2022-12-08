@@ -50706,6 +50706,7 @@ function restoreImpl(stateProvider) {
             }
             // Store the matched cache key in states
             stateProvider.setState(constants_1.State.CacheMatchedKey, cacheKey);
+            core.debug("setState: " + constants_1.State.CacheMatchedKey + " " + cacheKey);
             const isExactKeyMatch = utils.isExactKeyMatch(core.getInput(constants_1.Inputs.Key, { required: true }), cacheKey);
             core.setOutput(constants_1.Outputs.CacheHit, isExactKeyMatch.toString());
             core.info(`Cache restored from key: ${cacheKey}`);

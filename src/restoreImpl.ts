@@ -51,6 +51,7 @@ async function restoreImpl(
 
         // Store the matched cache key in states
         stateProvider.setState(State.CacheMatchedKey, cacheKey);
+        core.debug("setState: " + State.CacheMatchedKey + " " + cacheKey);
 
         const isExactKeyMatch = utils.isExactKeyMatch(
             core.getInput(Inputs.Key, { required: true }),
