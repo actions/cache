@@ -15,10 +15,6 @@ beforeAll(() => {
         return jest.requireActual("@actions/core").getInput(name, options);
     });
 
-    jest.spyOn(actionUtils, "getCacheState").mockImplementation(() => {
-        return jest.requireActual("../src/utils/actionUtils").getCacheState();
-    });
-
     jest.spyOn(actionUtils, "getInputAsArray").mockImplementation(
         (name, options) => {
             return jest
@@ -86,11 +82,11 @@ test("save with no primary key in state outputs warning", async () => {
     jest.spyOn(core, "getState")
         // Cache Entry State
         .mockImplementationOnce(() => {
-            return savedCacheKey;
+            return "";
         })
         // Cache Key State
         .mockImplementationOnce(() => {
-            return "";
+            return savedCacheKey;
         });
     const saveCacheMock = jest.spyOn(cache, "saveCache");
 
