@@ -47138,6 +47138,7 @@ const path = __importStar(__webpack_require__(622));
 const utils = __importStar(__webpack_require__(15));
 const cacheHttpClient = __importStar(__webpack_require__(114));
 const tar_1 = __webpack_require__(434);
+const constants_1 = __webpack_require__(931);
 class ValidationError extends Error {
     constructor(message) {
         super(message);
@@ -47199,13 +47200,33 @@ function restoreCache(paths, primaryKey, restoreKeys, options) {
         for (const key of keys) {
             checkKey(key);
         }
-        const compressionMethod = yield utils.getCompressionMethod();
+        let cacheEntry;
+        let compressionMethod = yield utils.getCompressionMethod();
         let archivePath = '';
         try {
-            // path are needed to compute version
-            const cacheEntry = yield cacheHttpClient.getCacheEntry(keys, paths, {
-                compressionMethod
-            });
+            try {
+                // path are needed to compute version
+                cacheEntry = yield cacheHttpClient.getCacheEntry(keys, paths, {
+                    compressionMethod
+                });
+            }
+            catch (error) {
+                // This is to support the old cache entry created
+                // by the old version of the cache action on windows.
+                if (process.platform === 'win32' &&
+                    compressionMethod !== constants_1.CompressionMethod.Gzip) {
+                    compressionMethod = constants_1.CompressionMethod.Gzip;
+                    cacheEntry = yield cacheHttpClient.getCacheEntry(keys, paths, {
+                        compressionMethod
+                    });
+                    if (!(cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.archiveLocation)) {
+                        throw error;
+                    }
+                }
+                else {
+                    throw error;
+                }
+            }
             if (!(cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.archiveLocation)) {
                 // Cache not found
                 return undefined;
