@@ -3,7 +3,7 @@ import * as core from "@actions/core";
 import { State } from "./constants";
 
 export interface IStateProvider {
-    setState(key: string, value: string): void;
+    setState(key: string, value: string, outputKey?: string): void;
     getState(key: string): string;
 
     getCacheState(): string | undefined;
@@ -21,7 +21,7 @@ class StateProviderBase implements IStateProvider {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
-    setState = (key: string, value: string) => {};
+    setState = (key: string, value: string, outputKey?: string) => {};
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getState = (key: string) => "";
@@ -33,7 +33,11 @@ export class StateProvider extends StateProviderBase {
 }
 
 export class NullStateProvider extends StateProviderBase {
-    setState = core.setOutput;
+    setState = (key: string, value: string, outputKey?: string) => {
+        if (outputKey) {
+            core.setOutput(outputKey, value);
+        }
+    };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getState = (key: string) => "";
 }

@@ -2,7 +2,7 @@ import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
 import { Events, Inputs, State } from "./constants";
-import { IStateProvider } from "./stateProvider";
+import { IStateProvider, StateProvider } from "./stateProvider";
 import * as utils from "./utils/actionUtils";
 
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
@@ -32,14 +32,20 @@ async function saveImpl(stateProvider: IStateProvider): Promise<void> {
             core.getInput(Inputs.Key);
 
         if (!primaryKey) {
-            utils.logWarning(`Error retrieving key from state.`);
+            if (stateProvider instanceof StateProvider) {
+                utils.logWarning(`Error retrieving key from state.`);
+            } else {
+                utils.logWarning(`Error retrieving key from input.`);
+            }
             return;
         }
 
         // If matched restore key is same as primary key, then do not save cache
         // NO-OP in case of SaveOnly action
-        const state = stateProvider.getCacheState();
-        if (utils.isExactKeyMatch(primaryKey, state)) {
+        const restoredKey =
+            stateProvider.getCacheState() || core.getInput(Inputs.RestoredKey);
+
+        if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
             core.info(
                 `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
             );

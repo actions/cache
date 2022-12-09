@@ -11,7 +11,7 @@ inputs:
   upload-chunk-size:
     description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
-  matched-key:
+  restored-key:
     description: 'Cache key restored from the restore action'
     required: false
 runs:

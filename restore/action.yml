@@ -14,7 +14,7 @@ inputs:
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
-  key:
+  inputted-key:
     description: 'Key passed in the input to use in subsequent steps of the workflow'
   matched-key:
     description: 'Cache key restored'

@@ -1,14 +1,15 @@
 export enum Inputs {
-    Key = "key",
-    Path = "path",
-    RestoreKeys = "restore-keys",
-    UploadChunkSize = "upload-chunk-size"
+    Key = "key", // Input from cache, restore, save action
+    Path = "path", // Input from cache, restore, save action
+    RestoreKeys = "restore-keys", // Input from cache, restore action
+    UploadChunkSize = "upload-chunk-size", // Input from cache, save action
+    RestoredKey = "restored-key" // Input from save action
 }
 
 export enum Outputs {
-    CacheHit = "cache-hit",
-    Key = "key",
-    MatchedKey = "matched-key"
+    CacheHit = "cache-hit", // Output from cache, restore action
+    InputtedKey = "inputted-key", // Output from restore action
+    MatchedKey = "matched-key" // Output from restore action
 }
 
 export enum State {

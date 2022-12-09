@@ -4950,12 +4950,13 @@ var Inputs;
     Inputs["Path"] = "path";
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
+    Inputs["RestoredKey"] = "restored-key"; // Input from save action
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
     Outputs["CacheHit"] = "cache-hit";
-    Outputs["Key"] = "key";
-    Outputs["MatchedKey"] = "matched-key";
+    Outputs["InputtedKey"] = "inputted-key";
+    Outputs["MatchedKey"] = "matched-key"; // Output from restore action
 })(Outputs = exports.Outputs || (exports.Outputs = {}));
 var State;
 (function (State) {
@@ -9360,7 +9361,7 @@ const constants_1 = __webpack_require__(196);
 class StateProviderBase {
     constructor() {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
-        this.setState = (key, value) => { };
+        this.setState = (key, value, outputKey) => { };
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         this.getState = (key) => "";
     }
@@ -9384,7 +9385,11 @@ exports.StateProvider = StateProvider;
 class NullStateProvider extends StateProviderBase {
     constructor() {
         super(...arguments);
-        this.setState = core.setOutput;
+        this.setState = (key, value, outputKey) => {
+            if (outputKey) {
+                core.setOutput(outputKey, value);
+            }
+        };
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         this.getState = (key) => "";
     }
@@ -50462,7 +50467,7 @@ function restoreImpl(stateProvider) {
                 return;
             }
             const primaryKey = core.getInput(constants_1.Inputs.Key, { required: true });
-            stateProvider.setState(constants_1.State.CachePrimaryKey, primaryKey);
+            stateProvider.setState(constants_1.State.CachePrimaryKey, primaryKey, constants_1.Outputs.InputtedKey);
             const restoreKeys = utils.getInputAsArray(constants_1.Inputs.RestoreKeys);
             const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
                 required: true
@@ -50476,7 +50481,7 @@ function restoreImpl(stateProvider) {
                 return;
             }
             // Store the matched cache key in states
-            stateProvider.setState(constants_1.State.CacheMatchedKey, cacheKey);
+            stateProvider.setState(constants_1.State.CacheMatchedKey, cacheKey, constants_1.Outputs.MatchedKey);
             const isExactKeyMatch = utils.isExactKeyMatch(core.getInput(constants_1.Inputs.Key, { required: true }), cacheKey);
             core.setOutput(constants_1.Outputs.CacheHit, isExactKeyMatch.toString());
             core.info(`Cache restored from key: ${cacheKey}`);

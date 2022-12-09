@@ -4950,12 +4950,13 @@ var Inputs;
     Inputs["Path"] = "path";
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
+    Inputs["RestoredKey"] = "restored-key"; // Input from save action
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
     Outputs["CacheHit"] = "cache-hit";
-    Outputs["Key"] = "key";
-    Outputs["MatchedKey"] = "matched-key";
+    Outputs["InputtedKey"] = "inputted-key";
+    Outputs["MatchedKey"] = "matched-key"; // Output from restore action
 })(Outputs = exports.Outputs || (exports.Outputs = {}));
 var State;
 (function (State) {
@@ -9360,7 +9361,7 @@ const constants_1 = __webpack_require__(196);
 class StateProviderBase {
     constructor() {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
-        this.setState = (key, value) => { };
+        this.setState = (key, value, outputKey) => { };
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         this.getState = (key) => "";
     }
@@ -9384,7 +9385,11 @@ exports.StateProvider = StateProvider;
 class NullStateProvider extends StateProviderBase {
     constructor() {
         super(...arguments);
-        this.setState = core.setOutput;
+        this.setState = (key, value, outputKey) => {
+            if (outputKey) {
+                core.setOutput(outputKey, value);
+            }
+        };
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         this.getState = (key) => "";
     }
@@ -41046,6 +41051,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(196);
+const stateProvider_1 = __webpack_require__(309);
 const utils = __importStar(__webpack_require__(443));
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
 // @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
@@ -41066,13 +41072,18 @@ function saveImpl(stateProvider) {
             const primaryKey = stateProvider.getState(constants_1.State.CachePrimaryKey) ||
                 core.getInput(constants_1.Inputs.Key);
             if (!primaryKey) {
-                utils.logWarning(`Error retrieving key from state.`);
+                if (stateProvider instanceof stateProvider_1.StateProvider) {
+                    utils.logWarning(`Error retrieving key from state.`);
+                }
+                else {
+                    utils.logWarning(`Error retrieving key from input.`);
+                }
                 return;
             }
             // If matched restore key is same as primary key, then do not save cache
             // NO-OP in case of SaveOnly action
-            const state = stateProvider.getCacheState();
-            if (utils.isExactKeyMatch(primaryKey, state)) {
+            const restoredKey = stateProvider.getCacheState() || core.getInput(constants_1.Inputs.RestoredKey);
+            if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
                 core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
                 return;
             }
