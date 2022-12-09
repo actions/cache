@@ -3,7 +3,6 @@ import * as core from "@actions/core";
 import { State } from "./constants";
 
 export interface IStateProvider {
-    //setOutput(key: string, value: string): void;
     setState(key: string, value: string): void;
     getState(key: string): string;
 
@@ -29,13 +28,11 @@ class StateProviderBase implements IStateProvider {
 }
 
 export class StateProvider extends StateProviderBase {
-    //setOutput = core.setOutput;
     setState = core.saveState;
     getState = core.getState;
 }
 
 export class NullStateProvider extends StateProviderBase {
-    //setOutput = core.setOutput;
     setState = core.setOutput;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getState = (key: string) => "";

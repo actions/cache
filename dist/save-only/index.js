@@ -9405,7 +9405,6 @@ class StateProviderBase {
 class StateProvider extends StateProviderBase {
     constructor() {
         super(...arguments);
-        //setOutput = core.setOutput;
         this.setState = core.saveState;
         this.getState = core.getState;
     }
@@ -9414,7 +9413,6 @@ exports.StateProvider = StateProvider;
 class NullStateProvider extends StateProviderBase {
     constructor() {
         super(...arguments);
-        //setOutput = core.setOutput;
         this.setState = core.setOutput;
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         this.getState = (key) => "";
