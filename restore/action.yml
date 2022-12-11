@@ -14,9 +14,9 @@ inputs:
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
-  inputted-key:
-    description: 'Key passed in the input to use in subsequent steps of the workflow'
-  matched-key:
+  cache-primary-key:
+    description: 'Cache primary key passed in the input to use in subsequent steps of the workflow'
+  cache-restore-key:
     description: 'Cache key restored'
 runs:
   using: 'node16'

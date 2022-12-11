@@ -1,15 +1,14 @@
 export enum Inputs {
-    Key = "key", // Input from cache, restore, save action
-    Path = "path", // Input from cache, restore, save action
-    RestoreKeys = "restore-keys", // Input from cache, restore action
-    UploadChunkSize = "upload-chunk-size", // Input from cache, save action
-    RestoredKey = "restored-key" // Input from save action
+    Key = "key", // Input for cache, restore, save action
+    Path = "path", // Input for cache, restore, save action
+    RestoreKeys = "restore-keys", // Input for cache, restore action
+    UploadChunkSize = "upload-chunk-size" // Input for cache, save action
 }
 
 export enum Outputs {
     CacheHit = "cache-hit", // Output from cache, restore action
-    InputtedKey = "inputted-key", // Output from restore action
-    MatchedKey = "matched-key" // Output from restore action
+    CachePrimaryKey = "cache-primary-key", // Output from restore action
+    CacheRestoreKey = "cache-restore-key" // Output from restore action
 }
 
 export enum State {
@@ -24,3 +23,8 @@ export enum Events {
 }
 
 export const RefKey = "GITHUB_REF";
+
+export const stateToOutputMap = new Map<string, string>([
+    [State.CacheMatchedKey, Outputs.CacheRestoreKey],
+    [State.CachePrimaryKey, Outputs.CachePrimaryKey]
+]);

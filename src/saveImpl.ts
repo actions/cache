@@ -42,8 +42,7 @@ async function saveImpl(stateProvider: IStateProvider): Promise<void> {
 
         // If matched restore key is same as primary key, then do not save cache
         // NO-OP in case of SaveOnly action
-        const restoredKey =
-            stateProvider.getCacheState() || core.getInput(Inputs.RestoredKey);
+        const restoredKey = stateProvider.getCacheState();
 
         if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
             core.info(

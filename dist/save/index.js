@@ -4943,20 +4943,19 @@ exports.checkBypass = checkBypass;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
+exports.stateToOutputMap = exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
 var Inputs;
 (function (Inputs) {
     Inputs["Key"] = "key";
     Inputs["Path"] = "path";
     Inputs["RestoreKeys"] = "restore-keys";
-    Inputs["UploadChunkSize"] = "upload-chunk-size";
-    Inputs["RestoredKey"] = "restored-key"; // Input from save action
+    Inputs["UploadChunkSize"] = "upload-chunk-size"; // Input for cache, save action
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
     Outputs["CacheHit"] = "cache-hit";
-    Outputs["InputtedKey"] = "inputted-key";
-    Outputs["MatchedKey"] = "matched-key"; // Output from restore action
+    Outputs["CachePrimaryKey"] = "cache-primary-key";
+    Outputs["CacheRestoreKey"] = "cache-restore-key"; // Output from restore action
 })(Outputs = exports.Outputs || (exports.Outputs = {}));
 var State;
 (function (State) {
@@ -4970,6 +4969,10 @@ var Events;
     Events["PullRequest"] = "pull_request";
 })(Events = exports.Events || (exports.Events = {}));
 exports.RefKey = "GITHUB_REF";
+exports.stateToOutputMap = new Map([
+    [State.CacheMatchedKey, Outputs.CacheRestoreKey],
+    [State.CachePrimaryKey, Outputs.CachePrimaryKey]
+]);
 
 
 /***/ }),
@@ -9361,7 +9364,7 @@ const constants_1 = __webpack_require__(196);
 class StateProviderBase {
     constructor() {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
-        this.setState = (key, value, outputKey) => { };
+        this.setState = (key, value) => { };
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         this.getState = (key) => "";
     }
@@ -9385,10 +9388,8 @@ exports.StateProvider = StateProvider;
 class NullStateProvider extends StateProviderBase {
     constructor() {
         super(...arguments);
-        this.setState = (key, value, outputKey) => {
-            if (outputKey) {
-                core.setOutput(outputKey, value);
-            }
+        this.setState = (key, value) => {
+            core.setOutput(constants_1.stateToOutputMap.get(key), value);
         };
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         this.getState = (key) => "";
@@ -41082,7 +41083,7 @@ function saveImpl(stateProvider) {
             }
             // If matched restore key is same as primary key, then do not save cache
             // NO-OP in case of SaveOnly action
-            const restoredKey = stateProvider.getCacheState() || core.getInput(constants_1.Inputs.RestoredKey);
+            const restoredKey = stateProvider.getCacheState();
             if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
                 core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
                 return;

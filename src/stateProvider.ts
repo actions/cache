@@ -1,9 +1,9 @@
 import * as core from "@actions/core";
 
-import { State } from "./constants";
+import { State, stateToOutputMap } from "./constants";
 
 export interface IStateProvider {
-    setState(key: string, value: string, outputKey?: string): void;
+    setState(key: string, value: string): void;
     getState(key: string): string;
 
     getCacheState(): string | undefined;
@@ -21,7 +21,7 @@ class StateProviderBase implements IStateProvider {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
-    setState = (key: string, value: string, outputKey?: string) => {};
+    setState = (key: string, value: string) => {};
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getState = (key: string) => "";
@@ -33,10 +33,8 @@ export class StateProvider extends StateProviderBase {
 }
 
 export class NullStateProvider extends StateProviderBase {
-    setState = (key: string, value: string, outputKey?: string) => {
-        if (outputKey) {
-            core.setOutput(outputKey, value);
-        }
+    setState = (key: string, value: string) => {
+        core.setOutput(stateToOutputMap.get(key) as string, value);
     };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getState = (key: string) => "";

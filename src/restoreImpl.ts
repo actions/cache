@@ -25,11 +25,7 @@ async function restoreImpl(
         }
 
         const primaryKey = core.getInput(Inputs.Key, { required: true });
-        stateProvider.setState(
-            State.CachePrimaryKey,
-            primaryKey,
-            Outputs.InputtedKey
-        );
+        stateProvider.setState(State.CachePrimaryKey, primaryKey);
 
         const restoreKeys = utils.getInputAsArray(Inputs.RestoreKeys);
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
@@ -54,11 +50,7 @@ async function restoreImpl(
         }
 
         // Store the matched cache key in states
-        stateProvider.setState(
-            State.CacheMatchedKey,
-            cacheKey,
-            Outputs.MatchedKey
-        );
+        stateProvider.setState(State.CacheMatchedKey, cacheKey);
 
         const isExactKeyMatch = utils.isExactKeyMatch(
             core.getInput(Inputs.Key, { required: true }),
