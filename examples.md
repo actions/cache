@@ -317,7 +317,7 @@ After [deprecation](https://github.blog/changelog/2022-10-11-github-actions-depr
 ### Bash shell
 ```yaml
 - name: Get npm cache directory
-  id: npm-cache
+  id: npm-cache-dir
   shell: bash
   run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
 ```
