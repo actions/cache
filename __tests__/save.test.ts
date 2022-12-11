@@ -15,6 +15,10 @@ beforeAll(() => {
         return jest.requireActual("@actions/core").getInput(name, options);
     });
 
+    jest.spyOn(core, "getState").mockImplementation(name => {
+        return jest.requireActual("@actions/core").getState(name);
+    });
+
     jest.spyOn(actionUtils, "getInputAsArray").mockImplementation(
         (name, options) => {
             return jest
@@ -70,11 +74,11 @@ test("save with valid inputs uploads a cache", async () => {
     jest.spyOn(core, "getState")
         // Cache Entry State
         .mockImplementationOnce(() => {
-            return savedCacheKey;
+            return primaryKey;
         })
         // Cache Key State
         .mockImplementationOnce(() => {
-            return primaryKey;
+            return savedCacheKey;
         });
 
     const inputPath = "node_modules";
