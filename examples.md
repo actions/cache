@@ -325,7 +325,7 @@ After [deprecation](https://github.blog/changelog/2022-10-11-github-actions-depr
 ### PWSH shell
 ```yaml
 - name: Get npm cache directory
-  id: npm-cache
+  id: npm-cache-dir
   shell: pwsh
   run: echo "dir=$(npm config get cache)" >> ${env:GITHUB_OUTPUT}
 ```
