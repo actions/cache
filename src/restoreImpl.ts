@@ -10,7 +10,7 @@ async function restoreImpl(
 ): Promise<string | undefined> {
     try {
         if (!utils.isCacheFeatureAvailable()) {
-            utils.setCacheHitOutput(false);
+            core.setOutput(Outputs.CacheHit, "false");
             return;
         }
 
