@@ -1,7 +1,7 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
-import { Outputs, RefKey } from "../constants";
+import { RefKey } from "../constants";
 
 export function isGhes(): boolean {
     const ghUrl = new URL(
@@ -17,10 +17,6 @@ export function isExactKeyMatch(key: string, cacheKey?: string): boolean {
             sensitivity: "accent"
         }) === 0
     );
-}
-
-export function setCacheHitOutput(isCacheHit: boolean): void {
-    core.setOutput(Outputs.CacheHit, isCacheHit.toString());
 }
 
 export function logWarning(message: string): void {

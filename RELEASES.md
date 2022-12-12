@@ -46,3 +46,6 @@
 
 ### 3.1.0-beta.2
 - Added support for fallback to gzip to restore old caches on windows.
+
+### 3.1.0-beta.3
+- Bug fixes for bsdtar fallback if gnutar not available and gzip fallback if cache saved using old cache action on windows.

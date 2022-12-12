@@ -3461,6 +3461,7 @@ function getCacheEntry(keys, paths, options) {
         const resource = `cache?keys=${encodeURIComponent(keys.join(','))}&version=${version}`;
         const response = yield requestUtils_1.retryTypedResponse('getCacheEntry', () => __awaiter(this, void 0, void 0, function* () { return httpClient.getJson(getCacheApiUrl(resource)); }));
         if (response.statusCode === 204) {
+            // Cache not found
             return null;
         }
         if (!requestUtils_1.isSuccessStatusCode(response.statusCode)) {
@@ -3469,6 +3470,7 @@ function getCacheEntry(keys, paths, options) {
         const cacheResult = response.result;
         const cacheDownloadUrl = cacheResult === null || cacheResult === void 0 ? void 0 : cacheResult.archiveLocation;
         if (!cacheDownloadUrl) {
+            // Cache achiveLocation not found. This should never happen, and hence bail out.
             throw new Error('Cache not found.');
         }
         core.setSecret(cacheDownloadUrl);
@@ -38138,7 +38140,7 @@ const path = __importStar(__webpack_require__(622));
 const utils = __importStar(__webpack_require__(15));
 const constants_1 = __webpack_require__(931);
 const IS_WINDOWS = process.platform === 'win32';
-// Function also mutates the args array. For non-mutation call with passing an empty array.
+// Returns tar path and type: BSD or GNU
 function getTarPath() {
     return __awaiter(this, void 0, void 0, function* () {
         switch (process.platform) {
@@ -38170,6 +38172,7 @@ function getTarPath() {
             default:
                 break;
         }
+        // Default assumption is GNU tar is present in path
         return {
             path: yield io.which('tar', true),
             type: constants_1.ArchiveToolType.GNU
@@ -38183,6 +38186,7 @@ function getTarArgs(tarPath, compressionMethod, type, archivePath = '') {
         const cacheFileName = utils.getCacheFileName(compressionMethod);
         const tarFile = 'cache.tar';
         const workingDirectory = getWorkingDirectory();
+        // Speficic args for BSD tar on windows for workaround
         const BSD_TAR_ZSTD = tarPath.type === constants_1.ArchiveToolType.BSD &&
             compressionMethod !== constants_1.CompressionMethod.Gzip &&
             IS_WINDOWS;
@@ -38220,8 +38224,10 @@ function getTarArgs(tarPath, compressionMethod, type, archivePath = '') {
         return args;
     });
 }
-function getArgs(compressionMethod, type, archivePath = '') {
+// Returns commands to run tar and compression program
+function getCommands(compressionMethod, type, archivePath = '') {
     return __awaiter(this, void 0, void 0, function* () {
+        let args;
         const tarPath = yield getTarPath();
         const tarArgs = yield getTarArgs(tarPath, compressionMethod, type, archivePath);
         const compressionArgs = type !== 'create'
@@ -38231,11 +38237,15 @@ function getArgs(compressionMethod, type, archivePath = '') {
             compressionMethod !== constants_1.CompressionMethod.Gzip &&
             IS_WINDOWS;
         if (BSD_TAR_ZSTD && type !== 'create') {
-            return [...compressionArgs, ...tarArgs].join(' ');
+            args = [[...compressionArgs].join(' '), [...tarArgs].join(' ')];
         }
         else {
-            return [...tarArgs, ...compressionArgs].join(' ');
+            args = [[...tarArgs].join(' '), [...compressionArgs].join(' ')];
         }
+        if (BSD_TAR_ZSTD) {
+            return args;
+        }
+        return [args.join(' ')];
     });
 }
 function getWorkingDirectory() {
@@ -38258,8 +38268,7 @@ function getDecompressionProgram(tarPath, compressionMethod, archivePath) {
                     ? [
                         'zstd -d --long=30 -o',
                         constants_1.TarFilename,
-                        archivePath.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
-                        '&&'
+                        archivePath.replace(new RegExp(`\\${path.sep}`, 'g'), '/')
                     ]
                     : [
                         '--use-compress-program',
@@ -38270,8 +38279,7 @@ function getDecompressionProgram(tarPath, compressionMethod, archivePath) {
                     ? [
                         'zstd -d -o',
                         constants_1.TarFilename,
-                        archivePath.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
-                        '&&'
+                        archivePath.replace(new RegExp(`\\${path.sep}`, 'g'), '/')
                     ]
                     : ['--use-compress-program', IS_WINDOWS ? '"zstd -d"' : 'unzstd'];
             default:
@@ -38279,6 +38287,7 @@ function getDecompressionProgram(tarPath, compressionMethod, archivePath) {
         }
     });
 }
+// Used for creating the archive
 // -T#: Compress using # working thread. If # is 0, attempt to detect and use the number of physical CPU cores.
 // zstdmt is equivalent to 'zstd -T0'
 // --long=#: Enables long distance matching with # bits. Maximum is 30 (1GB) on 32-bit OS and 31 (2GB) on 64-bit.
@@ -38294,7 +38303,6 @@ function getCompressionProgram(tarPath, compressionMethod) {
             case constants_1.CompressionMethod.Zstd:
                 return BSD_TAR_ZSTD
                     ? [
-                        '&&',
                         'zstd -T0 --long=30 -o',
                         cacheFileName.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
                         constants_1.TarFilename
@@ -38306,7 +38314,6 @@ function getCompressionProgram(tarPath, compressionMethod) {
             case constants_1.CompressionMethod.ZstdWithoutLong:
                 return BSD_TAR_ZSTD
                     ? [
-                        '&&',
                         'zstd -T0 -o',
                         cacheFileName.replace(new RegExp(`\\${path.sep}`, 'g'), '/'),
                         constants_1.TarFilename
@@ -38317,44 +38324,45 @@ function getCompressionProgram(tarPath, compressionMethod) {
         }
     });
 }
-function listTar(archivePath, compressionMethod) {
+// Executes all commands as separate processes
+function execCommands(commands, cwd) {
     return __awaiter(this, void 0, void 0, function* () {
-        const args = yield getArgs(compressionMethod, 'list', archivePath);
-        try {
-            yield exec_1.exec(args);
-        }
-        catch (error) {
-            throw new Error(`Tar failed with error: ${error === null || error === void 0 ? void 0 : error.message}`);
+        for (const command of commands) {
+            try {
+                yield exec_1.exec(command, undefined, { cwd });
+            }
+            catch (error) {
+                throw new Error(`${command.split(' ')[0]} failed with error: ${error === null || error === void 0 ? void 0 : error.message}`);
+            }
         }
     });
 }
+// List the contents of a tar
+function listTar(archivePath, compressionMethod) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const commands = yield getCommands(compressionMethod, 'list', archivePath);
+        yield execCommands(commands);
+    });
+}
 exports.listTar = listTar;
+// Extract a tar
 function extractTar(archivePath, compressionMethod) {
     return __awaiter(this, void 0, void 0, function* () {
         // Create directory to extract tar into
         const workingDirectory = getWorkingDirectory();
         yield io.mkdirP(workingDirectory);
-        const args = yield getArgs(compressionMethod, 'extract', archivePath);
-        try {
-            yield exec_1.exec(args);
-        }
-        catch (error) {
-            throw new Error(`Tar failed with error: ${error === null || error === void 0 ? void 0 : error.message}`);
-        }
+        const commands = yield getCommands(compressionMethod, 'extract', archivePath);
+        yield execCommands(commands);
     });
 }
 exports.extractTar = extractTar;
+// Create a tar
 function createTar(archiveFolder, sourceDirectories, compressionMethod) {
     return __awaiter(this, void 0, void 0, function* () {
         // Write source directories to manifest.txt to avoid command length limits
         fs_1.writeFileSync(path.join(archiveFolder, constants_1.ManifestFilename), sourceDirectories.join('\n'));
-        const args = yield getArgs(compressionMethod, 'create');
-        try {
-            yield exec_1.exec(args, undefined, { cwd: archiveFolder });
-        }
-        catch (error) {
-            throw new Error(`Tar failed with error: ${error === null || error === void 0 ? void 0 : error.message}`);
-        }
+        const commands = yield getCommands(compressionMethod, 'create');
+        yield execCommands(commands, archiveFolder);
     });
 }
 exports.createTar = createTar;
@@ -38589,7 +38597,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isCacheFeatureAvailable = exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.setCacheHitOutput = exports.isExactKeyMatch = exports.isGhes = void 0;
+exports.isCacheFeatureAvailable = exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.isExactKeyMatch = exports.isGhes = void 0;
 const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(196);
@@ -38605,10 +38613,6 @@ function isExactKeyMatch(key, cacheKey) {
         }) === 0);
 }
 exports.isExactKeyMatch = isExactKeyMatch;
-function setCacheHitOutput(isCacheHit) {
-    core.setOutput(constants_1.Outputs.CacheHit, isCacheHit.toString());
-}
-exports.setCacheHitOutput = setCacheHitOutput;
 function logWarning(message) {
     const warningPrefix = "[warning]";
     core.info(`${warningPrefix}${message}`);
@@ -47321,15 +47325,12 @@ function restoreCache(paths, primaryKey, restoreKeys, options) {
         let compressionMethod = yield utils.getCompressionMethod();
         let archivePath = '';
         try {
-            try {
-                // path are needed to compute version
-                cacheEntry = yield cacheHttpClient.getCacheEntry(keys, paths, {
-                    compressionMethod
-                });
-            }
-            catch (error) {
-                // This is to support the old cache entry created
-                // by the old version of the cache action on windows.
+            // path are needed to compute version
+            cacheEntry = yield cacheHttpClient.getCacheEntry(keys, paths, {
+                compressionMethod
+            });
+            if (!(cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.archiveLocation)) {
+                // This is to support the old cache entry created by gzip on windows.
                 if (process.platform === 'win32' &&
                     compressionMethod !== constants_1.CompressionMethod.Gzip) {
                     compressionMethod = constants_1.CompressionMethod.Gzip;
@@ -47337,16 +47338,14 @@ function restoreCache(paths, primaryKey, restoreKeys, options) {
                         compressionMethod
                     });
                     if (!(cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.archiveLocation)) {
-                        throw error;
+                        return undefined;
                     }
+                    core.debug("Couldn't find cache entry with zstd compression, falling back to gzip compression.");
                 }
                 else {
-                    throw error;
+                    // Cache not found
+                    return undefined;
                 }
-            }
-            if (!(cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.archiveLocation)) {
-                // Cache not found
-                return undefined;
             }
             archivePath = path.join(yield utils.createTempDirectory(), utils.getCacheFileName(compressionMethod));
             core.debug(`Archive Path: ${archivePath}`);

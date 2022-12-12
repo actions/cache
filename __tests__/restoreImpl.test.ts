@@ -66,13 +66,13 @@ test("restore without AC available should no-op", async () => {
     );
 
     const restoreCacheMock = jest.spyOn(cache, "restoreCache");
-    const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
+    const setCacheHitOutputMock = jest.spyOn(core, "setOutput");
 
     await run(new StateProvider());
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(0);
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
-    expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "false");
 });
 
 test("restore on GHES without AC available should no-op", async () => {
@@ -82,13 +82,13 @@ test("restore on GHES without AC available should no-op", async () => {
     );
 
     const restoreCacheMock = jest.spyOn(cache, "restoreCache");
-    const setCacheHitOutputMock = jest.spyOn(actionUtils, "setCacheHitOutput");
+    const setCacheHitOutputMock = jest.spyOn(core, "setOutput");
 
     await run(new StateProvider());
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(0);
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
-    expect(setCacheHitOutputMock).toHaveBeenCalledWith(false);
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "false");
 });
 
 test("restore on GHES with AC available ", async () => {
