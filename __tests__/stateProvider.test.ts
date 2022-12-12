@@ -61,8 +61,8 @@ test("NullStateProvider saves outputs", async () => {
         });
     const cacheMatchedKey = "node-cache";
     const nullStateProvider: IStateProvider = new NullStateProvider();
-    nullStateProvider.setState("outputKey", "outputValue");
-    nullStateProvider.setState(State.CacheMatchedKey, cacheMatchedKey);
+    nullStateProvider.setState(State.CacheMatchedKey, "outputValue");
+    nullStateProvider.setState(State.CachePrimaryKey, cacheMatchedKey);
     nullStateProvider.getState("outputKey");
     nullStateProvider.getCacheState();
 
