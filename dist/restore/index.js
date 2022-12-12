@@ -49012,6 +49012,7 @@ function run() {
                     primaryKey,
                     ...restoreKeys
                 ].join(", ")}`);
+                utils.setCacheHitOutput(false);
                 return;
             }
             // Store the matched cache key
