@@ -16,7 +16,8 @@ It is very important to use the same `key` and `path` that were used by either `
 ## Outputs
 
 * `cache-hit` - A boolean value to indicate an exact match was found for the key. 
-* `key` - 
+* `cache-primary-key` - Cache primary key passed in the input to use in subsequent steps of the workflow
+* `cache-restore-key` - Cache key restored
 
 > **Note**
 `cache-hit` will be set to `true` only when cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.
