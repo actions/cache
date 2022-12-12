@@ -1,4 +1,4 @@
-name: 'Save Cache'
+name: 'Save Only Cache'
 description: 'Save Cache artifacts like dependencies and build outputs to improve workflow execution time'
 author: 'GitHub'
 inputs:
@@ -13,7 +13,7 @@ inputs:
     required: false
 runs:
   using: 'node16'
-  main: '../dist/save/index.js'
+  main: '../dist/save-only/index.js'
 branding:
   icon: 'archive'
   color: 'gray-dark'

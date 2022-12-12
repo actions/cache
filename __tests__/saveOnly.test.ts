@@ -2,7 +2,7 @@ import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
 import { Events, Inputs, RefKey } from "../src/constants";
-import run from "../src/save";
+import run from "../src/saveOnly";
 import * as actionUtils from "../src/utils/actionUtils";
 import * as testUtils from "../src/utils/testUtils";
 
@@ -15,8 +15,8 @@ beforeAll(() => {
         return jest.requireActual("@actions/core").getInput(name, options);
     });
 
-    jest.spyOn(core, "getState").mockImplementation(name => {
-        return jest.requireActual("@actions/core").getState(name);
+    jest.spyOn(core, "setOutput").mockImplementation((key, value) => {
+        return jest.requireActual("@actions/core").getInput(key, value);
     });
 
     jest.spyOn(actionUtils, "getInputAsArray").mockImplementation(
@@ -69,19 +69,9 @@ test("save with valid inputs uploads a cache", async () => {
     const failedMock = jest.spyOn(core, "setFailed");
 
     const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
-    const savedCacheKey = "Linux-node-";
-
-    jest.spyOn(core, "getState")
-        // Cache Entry State
-        .mockImplementationOnce(() => {
-            return primaryKey;
-        })
-        // Cache Key State
-        .mockImplementationOnce(() => {
-            return savedCacheKey;
-        });
 
     const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Key, primaryKey);
     testUtils.setInput(Inputs.Path, inputPath);
     testUtils.setInput(Inputs.UploadChunkSize, "4000000");
 

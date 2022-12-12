@@ -34,7 +34,7 @@ module.exports =
 /******/ 	// the startup function
 /******/ 	function startup() {
 /******/ 		// Load entry module and return exports
-/******/ 		return __webpack_require__(778);
+/******/ 		return __webpack_require__(14);
 /******/ 	};
 /******/
 /******/ 	// run startup
@@ -1038,7 +1038,36 @@ class ExecState extends events.EventEmitter {
 /* 11 */,
 /* 12 */,
 /* 13 */,
-/* 14 */,
+/* 14 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const saveImpl_1 = __importDefault(__webpack_require__(471));
+const stateProvider_1 = __webpack_require__(309);
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield (0, saveImpl_1.default)(new stateProvider_1.NullStateProvider());
+    });
+}
+run();
+exports.default = run;
+
+
+/***/ }),
 /* 15 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -3381,7 +3410,7 @@ const http_client_1 = __webpack_require__(425);
 const auth_1 = __webpack_require__(554);
 const crypto = __importStar(__webpack_require__(417));
 const fs = __importStar(__webpack_require__(747));
-const url_1 = __webpack_require__(414);
+const url_1 = __webpack_require__(835);
 const utils = __importStar(__webpack_require__(15));
 const constants_1 = __webpack_require__(931);
 const downloadUtils_1 = __webpack_require__(251);
@@ -35072,7 +35101,7 @@ exports.Path = Path;
  */
 
 const punycode = __webpack_require__(815);
-const urlParse = __webpack_require__(414).parse;
+const urlParse = __webpack_require__(835).parse;
 const util = __webpack_require__(669);
 const pubsuffix = __webpack_require__(562);
 const Store = __webpack_require__(338).Store;
@@ -36867,12 +36896,7 @@ module.exports = __webpack_require__(141);
 
 
 /***/ }),
-/* 414 */
-/***/ (function(module) {
-
-module.exports = require("url");
-
-/***/ }),
+/* 414 */,
 /* 415 */,
 /* 416 */,
 /* 417 */
@@ -38736,7 +38760,7 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var Stream = _interopDefault(__webpack_require__(794));
 var http = _interopDefault(__webpack_require__(605));
-var Url = _interopDefault(__webpack_require__(414));
+var Url = _interopDefault(__webpack_require__(835));
 var whatwgUrl = _interopDefault(__webpack_require__(70));
 var https = _interopDefault(__webpack_require__(211));
 var zlib = _interopDefault(__webpack_require__(761));
@@ -41016,7 +41040,96 @@ Object.defineProperty(exports, "toPlatformPath", { enumerable: true, get: functi
 //# sourceMappingURL=core.js.map
 
 /***/ }),
-/* 471 */,
+/* 471 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const cache = __importStar(__webpack_require__(692));
+const core = __importStar(__webpack_require__(470));
+const constants_1 = __webpack_require__(196);
+const utils = __importStar(__webpack_require__(443));
+// Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
+// @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
+// throw an uncaught exception.  Instead of failing this action, just warn.
+process.on("uncaughtException", e => utils.logWarning(e.message));
+function saveImpl(stateProvider) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            if (!utils.isCacheFeatureAvailable()) {
+                return;
+            }
+            if (!utils.isValidEvent()) {
+                utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
+                return;
+            }
+            // If restore has stored a primary key in state, reuse that
+            // Else re-evaluate from inputs
+            const primaryKey = stateProvider.getState(constants_1.State.CachePrimaryKey) ||
+                core.getInput(constants_1.Inputs.Key);
+            if (!primaryKey) {
+                utils.logWarning(`Key is not specified.`);
+                return;
+            }
+            // If matched restore key is same as primary key, then do not save cache
+            // NO-OP in case of SaveOnly action
+            const restoredKey = stateProvider.getCacheState();
+            if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
+                core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
+                return;
+            }
+            const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
+                required: true
+            });
+            const cacheId = yield cache.saveCache(cachePaths, primaryKey, {
+                uploadChunkSize: utils.getInputAsInt(constants_1.Inputs.UploadChunkSize)
+            });
+            if (cacheId != -1) {
+                core.info(`Cache saved with key: ${primaryKey}`);
+            }
+        }
+        catch (error) {
+            utils.logWarning(error.message);
+        }
+    });
+}
+exports.default = saveImpl;
+
+
+/***/ }),
 /* 472 */,
 /* 473 */,
 /* 474 */,
@@ -48780,36 +48893,7 @@ module.exports = function(dst, src) {
 /* 775 */,
 /* 776 */,
 /* 777 */,
-/* 778 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const restoreImpl_1 = __importDefault(__webpack_require__(835));
-const stateProvider_1 = __webpack_require__(309);
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        yield (0, restoreImpl_1.default)(new stateProvider_1.StateProvider());
-    });
-}
-run();
-exports.default = run;
-
-
-/***/ }),
+/* 778 */,
 /* 779 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -49248,7 +49332,7 @@ var util = __webpack_require__(669);
 var path = __webpack_require__(622);
 var http = __webpack_require__(605);
 var https = __webpack_require__(211);
-var parseUrl = __webpack_require__(414).parse;
+var parseUrl = __webpack_require__(835).parse;
 var fs = __webpack_require__(747);
 var Stream = __webpack_require__(794).Stream;
 var mime = __webpack_require__(779);
@@ -50414,87 +50498,9 @@ exports.VERSION = '1.0.4';
 /* 833 */,
 /* 834 */,
 /* 835 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
+/***/ (function(module) {
 
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const cache = __importStar(__webpack_require__(692));
-const core = __importStar(__webpack_require__(470));
-const constants_1 = __webpack_require__(196);
-const utils = __importStar(__webpack_require__(443));
-function restoreImpl(stateProvider) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            if (!utils.isCacheFeatureAvailable()) {
-                utils.setCacheHitOutput(false);
-                return;
-            }
-            // Validate inputs, this can cause task failure
-            if (!utils.isValidEvent()) {
-                utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
-                return;
-            }
-            const primaryKey = core.getInput(constants_1.Inputs.Key, { required: true });
-            stateProvider.setState(constants_1.State.CachePrimaryKey, primaryKey);
-            const restoreKeys = utils.getInputAsArray(constants_1.Inputs.RestoreKeys);
-            const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
-                required: true
-            });
-            const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys);
-            if (!cacheKey) {
-                core.info(`Cache not found for input keys: ${[
-                    primaryKey,
-                    ...restoreKeys
-                ].join(", ")}`);
-                return;
-            }
-            // Store the matched cache key in states
-            stateProvider.setState(constants_1.State.CacheMatchedKey, cacheKey);
-            const isExactKeyMatch = utils.isExactKeyMatch(core.getInput(constants_1.Inputs.Key, { required: true }), cacheKey);
-            core.setOutput(constants_1.Outputs.CacheHit, isExactKeyMatch.toString());
-            core.info(`Cache restored from key: ${cacheKey}`);
-            return cacheKey;
-        }
-        catch (error) {
-            core.setFailed(error.message);
-        }
-    });
-}
-exports.default = restoreImpl;
-
+module.exports = require("url");
 
 /***/ }),
 /* 836 */,
@@ -55640,7 +55646,7 @@ var stream = __webpack_require__(794);
 var FormData = __webpack_require__(790);
 var node_fetch = __webpack_require__(454);
 var coreTracing = __webpack_require__(263);
-var url = __webpack_require__(414);
+var url = __webpack_require__(835);
 __webpack_require__(97);
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }

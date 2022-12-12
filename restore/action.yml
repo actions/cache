@@ -1,4 +1,4 @@
-name: 'Restore Cache'
+name: 'Restore Only Cache'
 description: 'Restore Cache artifacts like dependencies and build outputs to improve workflow execution time'
 author: 'GitHub'
 inputs:
@@ -11,17 +11,16 @@ inputs:
   restore-keys:
     description: 'An ordered list of keys to use for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
     required: false
-  exit-on-cache-miss:
-    description: 'Fail the workflow if the cache is not found for the primary key'
-    required: false
-    default: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
+  cache-primary-key:
+    description: 'Cache primary key passed in the input to use in subsequent steps of the workflow'
+  cache-restore-key:
+    description: 'Cache key restored'
 runs:
   using: 'node16'
-  main: '../dist/restore/index.js'
+  main: '../dist/restore-only/index.js'
 branding:
   icon: 'archive'
   color: 'gray-dark'
-  
