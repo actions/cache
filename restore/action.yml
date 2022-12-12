@@ -17,7 +17,7 @@ outputs:
   cache-primary-key:
     description: 'Cache primary key passed in the input to use in subsequent steps of the workflow'
   cache-restore-key:
-    description: 'Cache key restored'
+    description: 'Restore key which was used to restore the cache. It will not be set in case there was an exact match with primary key itself'
 runs:
   using: 'node16'
   main: '../dist/restore-only/index.js'
