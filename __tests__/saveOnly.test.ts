@@ -15,6 +15,10 @@ beforeAll(() => {
         return jest.requireActual("@actions/core").getInput(name, options);
     });
 
+    jest.spyOn(core, "setOutput").mockImplementation((key, value) => {
+        return jest.requireActual("@actions/core").getInput(key, value);
+    });
+
     jest.spyOn(actionUtils, "getInputAsArray").mockImplementation(
         (name, options) => {
             return jest

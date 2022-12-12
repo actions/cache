@@ -23,8 +23,3 @@ export enum Events {
 }
 
 export const RefKey = "GITHUB_REF";
-
-export const stateToOutputMap = new Map<string, string>([
-    [State.CacheMatchedKey, Outputs.CacheRestoreKey],
-    [State.CachePrimaryKey, Outputs.CachePrimaryKey]
-]);

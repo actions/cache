@@ -94,9 +94,7 @@ test("save with no primary key in state outputs warning", async () => {
     await run(new StateProvider());
 
     expect(saveCacheMock).toHaveBeenCalledTimes(0);
-    expect(logWarningMock).toHaveBeenCalledWith(
-        `Error retrieving key from state.`
-    );
+    expect(logWarningMock).toHaveBeenCalledWith(`Key is not specified.`);
     expect(logWarningMock).toHaveBeenCalledTimes(1);
     expect(failedMock).toHaveBeenCalledTimes(0);
 });

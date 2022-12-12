@@ -4943,7 +4943,7 @@ exports.checkBypass = checkBypass;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.stateToOutputMap = exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
+exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
 var Inputs;
 (function (Inputs) {
     Inputs["Key"] = "key";
@@ -4969,10 +4969,6 @@ var Events;
     Events["PullRequest"] = "pull_request";
 })(Events = exports.Events || (exports.Events = {}));
 exports.RefKey = "GITHUB_REF";
-exports.stateToOutputMap = new Map([
-    [State.CacheMatchedKey, Outputs.CacheRestoreKey],
-    [State.CachePrimaryKey, Outputs.CachePrimaryKey]
-]);
 
 
 /***/ }),
@@ -9388,8 +9384,12 @@ exports.StateProvider = StateProvider;
 class NullStateProvider extends StateProviderBase {
     constructor() {
         super(...arguments);
+        this.stateToOutputMap = new Map([
+            [constants_1.State.CacheMatchedKey, constants_1.Outputs.CacheRestoreKey],
+            [constants_1.State.CachePrimaryKey, constants_1.Outputs.CachePrimaryKey]
+        ]);
         this.setState = (key, value) => {
-            core.setOutput(constants_1.stateToOutputMap.get(key), value);
+            core.setOutput(this.stateToOutputMap.get(key), value);
         };
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         this.getState = (key) => "";

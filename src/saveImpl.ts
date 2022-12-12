@@ -2,7 +2,7 @@ import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
 import { Events, Inputs, State } from "./constants";
-import { IStateProvider, StateProvider } from "./stateProvider";
+import { IStateProvider } from "./stateProvider";
 import * as utils from "./utils/actionUtils";
 
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
@@ -32,11 +32,7 @@ async function saveImpl(stateProvider: IStateProvider): Promise<void> {
             core.getInput(Inputs.Key);
 
         if (!primaryKey) {
-            if (stateProvider instanceof StateProvider) {
-                utils.logWarning(`Error retrieving key from state.`);
-            } else {
-                utils.logWarning(`Error retrieving key from input.`);
-            }
+            utils.logWarning(`Key is not specified.`);
             return;
         }
 
