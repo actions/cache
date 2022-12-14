@@ -14,7 +14,6 @@ This action has no outputs.
 
 ## Use cases
 
-As this is a newly introduced action to give users more control in their workflows, below are some use cases where one can use this action.
 
 ### Only save cache
 
