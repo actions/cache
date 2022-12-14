@@ -1,6 +1,6 @@
 # Save action
 
-The save action saves cache just like the post step of the `cache` action, except it can be run individually now without having to call the restore step. The save action needs to be called with required inputs, the `key` with which the cache needs to be stored and the `path` that needs to be cached.
+The save action, as the name suggest, saves a cache. It acts similar to the `cache` action except that it doesn't necessarily first do a restore. This action can provide you a granular control to only save a cache without having to necessarily restore it, or to do a restore anywhere in the workflow job and not only in post phase.
 
 ## Inputs
 
