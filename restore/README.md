@@ -1,6 +1,6 @@
 # Restore action
 
-The restore action restores cache just like the main `cache` action, except it doesn't save the cache. So for cases where users only want to restore cache and not save anything in return, this action is pretty helpful. Moreover, this action accepts the same set of inputs as the `cache` action.
+The restore action, as the name suggest, restores a cache. It acts similar to the`cache` action except that it doesn't have a post step to save the cache. This action can provide you a granular control to only restore a cache without having to necessarily save it.  It accepts the same set of inputs as the `cache` action.
 
 ## Inputs
 
