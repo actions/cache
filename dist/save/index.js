@@ -4957,7 +4957,7 @@ var Outputs;
 (function (Outputs) {
     Outputs["CacheHit"] = "cache-hit";
     Outputs["CachePrimaryKey"] = "cache-primary-key";
-    Outputs["CacheRestoreKey"] = "cache-restore-key"; // Output from restore action
+    Outputs["CacheMatchedKey"] = "cache-matched-key"; // Output from restore action
 })(Outputs = exports.Outputs || (exports.Outputs = {}));
 var State;
 (function (State) {
@@ -9387,7 +9387,7 @@ class NullStateProvider extends StateProviderBase {
     constructor() {
         super(...arguments);
         this.stateToOutputMap = new Map([
-            [constants_1.State.CacheMatchedKey, constants_1.Outputs.CacheRestoreKey],
+            [constants_1.State.CacheMatchedKey, constants_1.Outputs.CacheMatchedKey],
             [constants_1.State.CachePrimaryKey, constants_1.Outputs.CachePrimaryKey]
         ]);
         this.setState = (key, value) => {

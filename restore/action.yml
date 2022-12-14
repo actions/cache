@@ -16,8 +16,8 @@ outputs:
     description: 'A boolean value to indicate an exact match was found for the primary key'
   cache-primary-key:
     description: 'A resolved cache key for which cache match was attempted'
-  cache-restore-key:
-    description: 'Restore key which was used to restore the cache. It will not be set in case there was an exact match with primary key itself'
+  cache-matched-key:
+    description: 'Key of the cache that was restored, it could either be the primary key on cache-hit or a partial/complete match of one of the restore keys'
 runs:
   using: 'node16'
   main: '../dist/restore-only/index.js'

@@ -34,7 +34,7 @@ export class StateProvider extends StateProviderBase {
 
 export class NullStateProvider extends StateProviderBase {
     stateToOutputMap = new Map<string, string>([
-        [State.CacheMatchedKey, Outputs.CacheRestoreKey],
+        [State.CacheMatchedKey, Outputs.CacheMatchedKey],
         [State.CachePrimaryKey, Outputs.CachePrimaryKey]
     ]);
 

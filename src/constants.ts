@@ -8,7 +8,7 @@ export enum Inputs {
 export enum Outputs {
     CacheHit = "cache-hit", // Output from cache, restore action
     CachePrimaryKey = "cache-primary-key", // Output from restore action
-    CacheRestoreKey = "cache-restore-key" // Output from restore action
+    CacheMatchedKey = "cache-matched-key" // Output from restore action
 }
 
 export enum State {
