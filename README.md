@@ -2,15 +2,17 @@
 
 This action allows caching dependencies and build outputs to improve workflow execution time.
 
+In addition to `actions/cache` action, other two actions are also available
+
+[Restore action](./restore/README.md)
+[Save action](./save/README.md)
+
 [![Tests](https://github.com/actions/cache/actions/workflows/workflow.yml/badge.svg)](https://github.com/actions/cache/actions/workflows/workflow.yml)
 
 ## Documentation
 
 See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows).
 
-[Restore action](./restore/README.md)
-
-[Save action](./save/README.md)
 
 ## What's New
 ### v3
