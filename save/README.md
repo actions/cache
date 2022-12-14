@@ -39,11 +39,9 @@ steps:
 
 ### Re-evaluate cache key while saving
 
-Some technologies like dot-net generate the lockfiles during the build time, due to which the already evaluated `${{ hashFiles('**/lockfiles') }}` hash doesn't match the actual hash. Using save action with the same key will not re-evaluate the key as the hash was generated during restores. However passing the expression to re-evaluate the hash would generate a new key in the save action now as save would be called after the build step.
+With save action, the key can now be re-evaluated while executing the action. This helps in cases where the lockfiles are generated during the build.
 
-In other words, you can reuse the output of `restore` action in the input of the `save` action to input the same key. Otherwise, you can pass the hash logic for the key (ex. `${{ hashFiles('**/lockfiles') }}`) and let the save action re-evaluate the key just before executing.
-
-Let's say we have a restore step that computes key at runtime.
+Let's say we have a restore step that computes key at runtime
 
 ```
 uses: actions/cache/restore@v3
