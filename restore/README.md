@@ -116,3 +116,11 @@ steps:
   - name: Build
     run: /build.sh
 ```
+
+## Tips
+
+Since this action comes with its own set of pros and cons, we are listing some of the ways by which you can tackle the limitations.
+
+### Reusing primary key and restored key in the save action
+
+One of the limitation you might experience is passing the same input in both `actions/cache/restore` and `actions/cache/save` action. To avoid this, you can make use of the `outputs` from the restore action to reuse the same primary key and also the key of the cache that was restored. This way changing any key in the restore action will automatically reflect in the subsequent actions where the same input is being used.
