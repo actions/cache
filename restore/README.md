@@ -119,7 +119,6 @@ steps:
 
 ## Tips
 
-Since this action comes with its own set of pros and cons, we are listing some of the ways by which you can tackle the limitations.
 
 ### Reusing primary key and restored key in the save action
 
