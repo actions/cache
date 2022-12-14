@@ -16,8 +16,8 @@ It is very important to use the same `key` and `path` that were used by either `
 ## Outputs
 
 * `cache-hit` - A boolean value to indicate an exact match was found for the key. 
-* `cache-primary-key` - Cache primary key passed in the input to use in subsequent steps of the workflow
-* `cache-restore-key` - Cache key restored
+* `cache-primary-key` - Cache primary key passed in the input to use in subsequent steps of the workflow.
+* `cache-matched-key` -  Key of the cache that was restored, it could either be the primary key on cache-hit or a partial/complete match of one of the restore keys.
 
 > **Note**
 `cache-hit` will be set to `true` only when cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.
@@ -124,3 +124,7 @@ Since this action comes with its own set of pros and cons, we are listing some o
 ### Reusing primary key and restored key in the save action
 
 One of the limitation you might experience is passing the same input in both `actions/cache/restore` and `actions/cache/save` action. To avoid this, you can make use of the `outputs` from the restore action to reuse the same primary key and also the key of the cache that was restored. This way changing any key in the restore action will automatically reflect in the subsequent actions where the same input is being used.
+
+### Using restore action outputs to make save action behave just like the cache action
+
+The outputs `cache-primary-key` and `cache-matched-key` can be used to check if the restored cache is same as the given primary key. Alternatively, the `cache-hit` output can also be used to check if the restored was a complete match or a partially restored cache.
