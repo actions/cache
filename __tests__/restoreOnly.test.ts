@@ -132,7 +132,7 @@ test("restore with cache found for key", async () => {
 
     expect(outputMock).toHaveBeenCalledWith("cache-primary-key", key);
     expect(outputMock).toHaveBeenCalledWith("cache-hit", "true");
-    expect(outputMock).toHaveBeenCalledWith("cache-restore-key", key);
+    expect(outputMock).toHaveBeenCalledWith("cache-matched-key", key);
 
     expect(outputMock).toHaveBeenCalledTimes(3);
 
@@ -166,7 +166,7 @@ test("restore with cache found for restore key", async () => {
 
     expect(outputMock).toHaveBeenCalledWith("cache-primary-key", key);
     expect(outputMock).toHaveBeenCalledWith("cache-hit", "false");
-    expect(outputMock).toHaveBeenCalledWith("cache-restore-key", restoreKey);
+    expect(outputMock).toHaveBeenCalledWith("cache-matched-key", restoreKey);
 
     expect(outputMock).toHaveBeenCalledTimes(3);
 
