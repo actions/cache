@@ -40,9 +40,9 @@ steps:
 
 ### Re-evaluate cache key while saving
 
-Some technologies like dot-net generate the lockfiles during the build time, due to which the already evaluated `${{ hashFiles('**/lockfiles') }}` hash doesn't match the actual hash. Using save action with the same key will not re-evaluate the key as hash would be calculated after the build step hence allowing the hash to be latest. 
+Some technologies like dot-net generate the lockfiles during the build time, due to which the already evaluated `${{ hashFiles('**/lockfiles') }}` hash doesn't match the actual hash. Using save action with the same key will not re-evaluate the key as the hash was generated during restores. However passing the expression to re-evaluate the hash would generate a new key in the save action now as save would be called after the build step.
 
-We will also be making the restore inputted `key` available as output of `restore` action to be reused in the input of the `save` action. This way the user has to control to reuse the same key or get it re-evaluated based on their choice.
+In other words, you can reuse the output of `restore` action in the input of the `save` action to input the same key. Otherwise, you can pass the hash logic for the key (ex. `${{ hashFiles('**/lockfiles') }}`) and let the save action re-evaluate the key just before executing.
 
 Let's say we have a restore step that computes key at runtime.
 
@@ -70,8 +70,6 @@ with:
 ### Always save cache
 
 There are instances where some flaky test cases would fail the entire workflow and users would get frustrated because the builds would run for hours and the cache couldn't get saved as the workflow failed in between. For such use-cases, users would now have the ability to use `actions/cache/save` action to save the cache by using `if: always()` condition. This way the cache will always be saved if generated, or a warning will be thrown that nothing is found on the cache path. Users can also use the `if` condition to only execute the `actions/cache/save` action depending on the output of the previous steps. This way they get more control on when to save the cache.
-
-Inspired from: https://github.com/actions/cache/issues/92, https://github.com/actions/cache/issues/272, https://github.com/actions/cache/issues/849
 
 ```
 steps:
