@@ -1,11 +1,11 @@
 {
   "name": "cache",
-  "version": "3.1.0-beta.3",
+  "version": "3.2.0-beta.1",
   "private": true,
   "description": "Cache dependencies and build outputs",
   "main": "dist/restore/index.js",
   "scripts": {
-    "build": "tsc && ncc build -o dist/restore src/restore.ts && ncc build -o dist/save src/save.ts",
+    "build": "tsc && ncc build -o dist/restore src/restore.ts && ncc build -o dist/save src/save.ts && ncc build -o dist/restore-only src/restoreOnly.ts && ncc build -o dist/save-only src/saveOnly.ts",
     "test": "tsc --noEmit && jest --coverage",
     "lint": "eslint **/*.ts --cache",
     "format": "prettier --write **/*.ts",
