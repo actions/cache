@@ -7,11 +7,6 @@ The restore action, as the name suggest, restores a cache. It acts similar to th
 * `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `key` - String used while saving cache for restoring the cache
 * `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
-> **Note**
-It is very important to use the same `key` and `path` that were used by either `actions/cache` or `actions/cache/save` while saving the cache.
-
-### Environment Variables
-* `SEGMENT_DOWNLOAD_TIMEOUT_MINS` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](https://github.com/actions/cache/blob/main/workarounds.md#cache-segment-restore-timeout)
 
 ## Outputs
 
@@ -21,6 +16,9 @@ It is very important to use the same `key` and `path` that were used by either `
 
 > **Note**
 `cache-hit` will be set to `true` only when cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.
+
+### Environment Variables
+* `SEGMENT_DOWNLOAD_TIMEOUT_MINS` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](https://github.com/actions/cache/blob/main/workarounds.md#cache-segment-restore-timeout)
 
 ## Use cases
 
@@ -120,10 +118,14 @@ steps:
 ## Tips
 
 
-### Reusing primary key and restored key in the save action
+#### Reusing primary key and restored key in the save action
 
 Usually you may want to use same `key` in both actions/cache/restore` and `actions/cache/save` action. To achieve this, use `outputs` from the restore action to reuse the same primary key (or the key of the cache that was restored).
 
-### Using restore action outputs to make save action behave just like the cache action
+#### Using restore action outputs to make save action behave just like the cache action
 
 The outputs `cache-primary-key` and `cache-matched-key` can be used to check if the restored cache is same as the given primary key. Alternatively, the `cache-hit` output can also be used to check if the restored was a complete match or a partially restored cache.
+
+#### Ensuring proper restores and save happen across the actions
+
+It is very important to use the same `key` and `path` that were used by either `actions/cache` or `actions/cache/save` while saving the cache. Learn more about cache key [naming](https://github.com/actions/cache#creating-a-cache-key) and [versioning](https://github.com/actions/cache#cache-version) here.
