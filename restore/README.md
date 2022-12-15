@@ -28,7 +28,7 @@ As this is a newly introduced action to give users more control in their workflo
 
 In case you are using another workflow to create and save your cache that can be reused by other jobs in your repository, this action will take care of your restore only needs.
 
-```
+```yaml
 steps:
   - uses: actions/checkout@v3
 
@@ -57,7 +57,7 @@ In case of multi-module projects, where the built artifact of one project needs 
 
 
 #### Step 1 - Build the parent module and save it
-```
+```yaml
 steps:
   - uses: actions/checkout@v3
 
@@ -72,7 +72,7 @@ steps:
 ```
 
 #### Step 2 - Restore the built artifact from cache using the same key and path
-```
+```yaml
 steps:
   - uses: actions/checkout@v3
 
@@ -97,7 +97,7 @@ steps:
 
 You can use the output of this action to exit the workflow on cache miss. This way you can restrict your workflow to only initiate the build when `cache-hit` occurs, in other words, cache with exact key is found.
 
-```
+```yaml
 steps:
   - uses: actions/checkout@v3
 
