@@ -2,7 +2,7 @@
 
 This action allows caching dependencies and build outputs to improve workflow execution time.
 
-In addition to `actions/cache` action, other two actions are also available
+In addition to this `cache` action, other two actions are also available
 
 [Restore action](./restore/README.md)
 
