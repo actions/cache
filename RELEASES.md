@@ -49,3 +49,6 @@
 
 ### 3.1.0-beta.3
 - Bug fixes for bsdtar fallback if gnutar not available and gzip fallback if cache saved using old cache action on windows.
+
+### 3.2.0-beta.1
+- Added two new actions - [restore](restore/action.yml) and [save](save/action.yml) for granular control on cache.
