@@ -25,7 +25,7 @@ afterEach(() => {
 });
 
 test("StateProvider saves states", async () => {
-    let states = new Map<string, string>();
+    const states = new Map<string, string>();
     const getStateMock = jest
         .spyOn(core, "getState")
         .mockImplementation(key => states.get(key) || "");
@@ -47,8 +47,8 @@ test("StateProvider saves states", async () => {
     const stateProvider: IStateProvider = new StateProvider();
     stateProvider.setState("stateKey", "stateValue");
     stateProvider.setState(State.CacheMatchedKey, cacheMatchedKey);
-    let stateValue = stateProvider.getState("stateKey");
-    let cacheStateValue = stateProvider.getCacheState();
+    const stateValue = stateProvider.getState("stateKey");
+    const cacheStateValue = stateProvider.getCacheState();
 
     expect(stateValue).toBe("stateValue");
     expect(cacheStateValue).toBe(cacheMatchedKey);
