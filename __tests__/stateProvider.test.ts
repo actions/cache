@@ -25,16 +25,15 @@ afterEach(() => {
 });
 
 test("StateProvider saves states", async () => {
+    let states = new Map<string, string>();
     const getStateMock = jest
         .spyOn(core, "getState")
-        .mockImplementation(name =>
-            jest.requireActual("@actions/core").getState(name)
-        );
+        .mockImplementation(key => states.get(key) || "");
 
     const saveStateMock = jest
         .spyOn(core, "saveState")
         .mockImplementation((key, value) => {
-            return jest.requireActual("@actions/core").saveState(key, value);
+            states.set(key, value);
         });
 
     const setOutputMock = jest
@@ -48,9 +47,11 @@ test("StateProvider saves states", async () => {
     const stateProvider: IStateProvider = new StateProvider();
     stateProvider.setState("stateKey", "stateValue");
     stateProvider.setState(State.CacheMatchedKey, cacheMatchedKey);
-    stateProvider.getState("stateKey");
-    stateProvider.getCacheState();
+    let stateValue = stateProvider.getState("stateKey");
+    let cacheStateValue = stateProvider.getCacheState();
 
+    expect(stateValue).toBe("stateValue");
+    expect(cacheStateValue).toBe(cacheMatchedKey);
     expect(getStateMock).toHaveBeenCalledTimes(2);
     expect(saveStateMock).toHaveBeenCalledTimes(2);
     expect(setOutputMock).toHaveBeenCalledTimes(0);
