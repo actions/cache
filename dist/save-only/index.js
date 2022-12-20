@@ -1079,8 +1079,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const cache_1 = __webpack_require__(692);
-const core = __importStar(__webpack_require__(470));
 const saveImpl_1 = __importDefault(__webpack_require__(471));
 const stateProvider_1 = __webpack_require__(309);
 const utils = __importStar(__webpack_require__(443));
@@ -1094,13 +1092,7 @@ function run() {
             yield (0, saveImpl_1.default)(new stateProvider_1.NullStateProvider());
         }
         catch (error) {
-            const typedError = error;
-            if (typedError.name === cache_1.ReserveCacheError.name) {
-                core.info(`Failed to save: ${typedError.message}`);
-            }
-            else {
-                utils.logWarning(error.message);
-            }
+            utils.logWarning(error.message);
         }
     });
 }
