@@ -41057,47 +41057,38 @@ const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(196);
 const utils = __importStar(__webpack_require__(443));
-// Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
-// @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
-// throw an uncaught exception.  Instead of failing this action, just warn.
-process.on("uncaughtException", e => utils.logWarning(e.message));
 function saveImpl(stateProvider) {
     return __awaiter(this, void 0, void 0, function* () {
-        try {
-            if (!utils.isCacheFeatureAvailable()) {
-                return;
-            }
-            if (!utils.isValidEvent()) {
-                utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
-                return;
-            }
-            // If restore has stored a primary key in state, reuse that
-            // Else re-evaluate from inputs
-            const primaryKey = stateProvider.getState(constants_1.State.CachePrimaryKey) ||
-                core.getInput(constants_1.Inputs.Key);
-            if (!primaryKey) {
-                utils.logWarning(`Key is not specified.`);
-                return;
-            }
-            // If matched restore key is same as primary key, then do not save cache
-            // NO-OP in case of SaveOnly action
-            const restoredKey = stateProvider.getCacheState();
-            if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
-                core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
-                return;
-            }
-            const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
-                required: true
-            });
-            const cacheId = yield cache.saveCache(cachePaths, primaryKey, {
-                uploadChunkSize: utils.getInputAsInt(constants_1.Inputs.UploadChunkSize)
-            });
-            if (cacheId != -1) {
-                core.info(`Cache saved with key: ${primaryKey}`);
-            }
+        if (!utils.isCacheFeatureAvailable()) {
+            return;
         }
-        catch (error) {
-            utils.logWarning(error.message);
+        if (!utils.isValidEvent()) {
+            utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
+            return;
+        }
+        // If restore has stored a primary key in state, reuse that
+        // Else re-evaluate from inputs
+        const primaryKey = stateProvider.getState(constants_1.State.CachePrimaryKey) ||
+            core.getInput(constants_1.Inputs.Key);
+        if (!primaryKey) {
+            utils.logWarning(`Key is not specified.`);
+            return;
+        }
+        // If matched restore key is same as primary key, then do not save cache
+        // NO-OP in case of SaveOnly action
+        const restoredKey = stateProvider.getCacheState();
+        if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
+            core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
+            return;
+        }
+        const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
+            required: true
+        });
+        const cacheId = yield cache.saveCache(cachePaths, primaryKey, {
+            uploadChunkSize: utils.getInputAsInt(constants_1.Inputs.UploadChunkSize)
+        });
+        if (cacheId != -1) {
+            core.info(`Cache saved with key: ${primaryKey}`);
         }
     });
 }
@@ -47169,6 +47160,29 @@ exports.default = _default;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -47184,9 +47198,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const saveImpl_1 = __importDefault(__webpack_require__(471));
 const stateProvider_1 = __webpack_require__(309);
+const utils = __importStar(__webpack_require__(443));
+// Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
+// @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
+// throw an uncaught exception.  Instead of failing this action, just warn.
+process.on("uncaughtException", e => utils.logWarning(e.message));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
-        yield (0, saveImpl_1.default)(new stateProvider_1.StateProvider());
+        try {
+            yield (0, saveImpl_1.default)(new stateProvider_1.StateProvider());
+        }
+        catch (error) {
+            utils.logWarning(error.message);
+        }
     });
 }
 run();
@@ -47438,11 +47462,9 @@ function saveCache(paths, key, options) {
         }
         catch (error) {
             const typedError = error;
-            if (typedError.name === ValidationError.name) {
+            if (typedError.name === ValidationError.name ||
+                typedError.name === ReserveCacheError.name) {
                 throw error;
-            }
-            else if (typedError.name === ReserveCacheError.name) {
-                core.info(`Failed to save: ${typedError.message}`);
             }
             else {
                 core.warning(`Failed to save: ${typedError.message}`);
