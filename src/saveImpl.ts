@@ -10,10 +10,11 @@ import * as utils from "./utils/actionUtils";
 // throw an uncaught exception.  Instead of failing this action, just warn.
 process.on("uncaughtException", e => utils.logWarning(e.message));
 
-async function saveImpl(stateProvider: IStateProvider): Promise<void> {
+async function saveImpl(stateProvider: IStateProvider): Promise<number> {
+    let cacheId;
     try {
         if (!utils.isCacheFeatureAvailable()) {
-            return;
+            return 0;
         }
 
         if (!utils.isValidEvent()) {
@@ -22,7 +23,7 @@ async function saveImpl(stateProvider: IStateProvider): Promise<void> {
                     process.env[Events.Key]
                 } is not supported because it's not tied to a branch or tag ref.`
             );
-            return;
+            return 0;
         }
 
         // If restore has stored a primary key in state, reuse that
@@ -33,7 +34,7 @@ async function saveImpl(stateProvider: IStateProvider): Promise<void> {
 
         if (!primaryKey) {
             utils.logWarning(`Key is not specified.`);
-            return;
+            return 0;
         }
 
         // If matched restore key is same as primary key, then do not save cache
@@ -44,14 +45,14 @@ async function saveImpl(stateProvider: IStateProvider): Promise<void> {
             core.info(
                 `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
             );
-            return;
+            return 0;
         }
 
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
             required: true
         });
 
-        const cacheId = await cache.saveCache(cachePaths, primaryKey, {
+        cacheId = await cache.saveCache(cachePaths, primaryKey, {
             uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
         });
 
@@ -61,6 +62,7 @@ async function saveImpl(stateProvider: IStateProvider): Promise<void> {
     } catch (error: unknown) {
         utils.logWarning((error as Error).message);
     }
+    return cacheId;
 }
 
 export default saveImpl;
