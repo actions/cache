@@ -56,7 +56,6 @@ async function saveImpl(stateProvider: IStateProvider): Promise<number | void> {
             uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
         });
 
-        // -1 refers to cache not saved
         if (cacheId != -1) {
             core.info(`Cache saved with key: ${primaryKey}`);
         }

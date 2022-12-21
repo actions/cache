@@ -41149,7 +41149,6 @@ function saveImpl(stateProvider) {
             cacheId = yield cache.saveCache(cachePaths, primaryKey, {
                 uploadChunkSize: utils.getInputAsInt(constants_1.Inputs.UploadChunkSize)
             });
-            // -1 refers to cache not saved
             if (cacheId != -1) {
                 core.info(`Cache saved with key: ${primaryKey}`);
             }
