@@ -41122,11 +41122,11 @@ function saveImpl(stateProvider) {
         let cacheId;
         try {
             if (!utils.isCacheFeatureAvailable()) {
-                return 0;
+                return -2; //-2 refers as safe to ignore for the caller
             }
             if (!utils.isValidEvent()) {
                 utils.logWarning(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
-                return 0;
+                return -2;
             }
             // If restore has stored a primary key in state, reuse that
             // Else re-evaluate from inputs
@@ -41134,14 +41134,14 @@ function saveImpl(stateProvider) {
                 core.getInput(constants_1.Inputs.Key);
             if (!primaryKey) {
                 utils.logWarning(`Key is not specified.`);
-                return 0;
+                return -2;
             }
             // If matched restore key is same as primary key, then do not save cache
             // NO-OP in case of SaveOnly action
             const restoredKey = stateProvider.getCacheState();
             if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
                 core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
-                return 0;
+                return -2;
             }
             const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
                 required: true
@@ -41149,6 +41149,7 @@ function saveImpl(stateProvider) {
             cacheId = yield cache.saveCache(cachePaths, primaryKey, {
                 uploadChunkSize: utils.getInputAsInt(constants_1.Inputs.UploadChunkSize)
             });
+            // -1 refers to cache not saved
             if (cacheId != -1) {
                 core.info(`Cache saved with key: ${primaryKey}`);
             }

@@ -14,7 +14,7 @@ async function saveImpl(stateProvider: IStateProvider): Promise<number> {
     let cacheId;
     try {
         if (!utils.isCacheFeatureAvailable()) {
-            return 0;
+            return -2; //-2 refers as safe to ignore for the caller
         }
 
         if (!utils.isValidEvent()) {
@@ -23,7 +23,7 @@ async function saveImpl(stateProvider: IStateProvider): Promise<number> {
                     process.env[Events.Key]
                 } is not supported because it's not tied to a branch or tag ref.`
             );
-            return 0;
+            return -2;
         }
 
         // If restore has stored a primary key in state, reuse that
@@ -34,7 +34,7 @@ async function saveImpl(stateProvider: IStateProvider): Promise<number> {
 
         if (!primaryKey) {
             utils.logWarning(`Key is not specified.`);
-            return 0;
+            return -2;
         }
 
         // If matched restore key is same as primary key, then do not save cache
@@ -45,7 +45,7 @@ async function saveImpl(stateProvider: IStateProvider): Promise<number> {
             core.info(
                 `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
             );
-            return 0;
+            return -2;
         }
 
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
@@ -56,6 +56,7 @@ async function saveImpl(stateProvider: IStateProvider): Promise<number> {
             uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
         });
 
+        // -1 refers to cache not saved
         if (cacheId != -1) {
             core.info(`Cache saved with key: ${primaryKey}`);
         }
