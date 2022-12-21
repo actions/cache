@@ -10,7 +10,8 @@ import * as utils from "./utils/actionUtils";
 // throw an uncaught exception.  Instead of failing this action, just warn.
 process.on("uncaughtException", e => utils.logWarning(e.message));
 
-async function saveImpl(stateProvider: IStateProvider): Promise<void> {
+async function saveImpl(stateProvider: IStateProvider): Promise<number | void> {
+    let cacheId = -1;
     try {
         if (!utils.isCacheFeatureAvailable()) {
             return;
@@ -51,7 +52,7 @@ async function saveImpl(stateProvider: IStateProvider): Promise<void> {
             required: true
         });
 
-        const cacheId = await cache.saveCache(cachePaths, primaryKey, {
+        cacheId = await cache.saveCache(cachePaths, primaryKey, {
             uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
         });
 
@@ -61,6 +62,7 @@ async function saveImpl(stateProvider: IStateProvider): Promise<void> {
     } catch (error: unknown) {
         utils.logWarning((error as Error).message);
     }
+    return cacheId;
 }
 
 export default saveImpl;

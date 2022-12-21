@@ -41063,6 +41063,7 @@ const utils = __importStar(__webpack_require__(443));
 process.on("uncaughtException", e => utils.logWarning(e.message));
 function saveImpl(stateProvider) {
     return __awaiter(this, void 0, void 0, function* () {
+        let cacheId = -1;
         try {
             if (!utils.isCacheFeatureAvailable()) {
                 return;
@@ -41089,7 +41090,7 @@ function saveImpl(stateProvider) {
             const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
                 required: true
             });
-            const cacheId = yield cache.saveCache(cachePaths, primaryKey, {
+            cacheId = yield cache.saveCache(cachePaths, primaryKey, {
                 uploadChunkSize: utils.getInputAsInt(constants_1.Inputs.UploadChunkSize)
             });
             if (cacheId != -1) {
@@ -41099,6 +41100,7 @@ function saveImpl(stateProvider) {
         catch (error) {
             utils.logWarning(error.message);
         }
+        return cacheId;
     });
 }
 exports.default = saveImpl;
