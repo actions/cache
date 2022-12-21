@@ -34,7 +34,7 @@ module.exports =
 /******/ 	// the startup function
 /******/ 	function startup() {
 /******/ 		// Load entry module and return exports
-/******/ 		return __webpack_require__(778);
+/******/ 		return __webpack_require__(443);
 /******/ 	};
 /******/
 /******/ 	// run startup
@@ -10017,7 +10017,94 @@ module.exports = require("assert");
 /***/ }),
 /* 358 */,
 /* 359 */,
-/* 360 */,
+/* 360 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.isCacheFeatureAvailable = exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.isExactKeyMatch = exports.isGhes = void 0;
+const cache = __importStar(__webpack_require__(692));
+const core = __importStar(__webpack_require__(470));
+const constants_1 = __webpack_require__(196);
+function isGhes() {
+    const ghUrl = new URL(process.env["GITHUB_SERVER_URL"] || "https://github.com");
+    return ghUrl.hostname.toUpperCase() !== "GITHUB.COM";
+}
+exports.isGhes = isGhes;
+function isExactKeyMatch(key, cacheKey) {
+    return !!(cacheKey &&
+        cacheKey.localeCompare(key, undefined, {
+            sensitivity: "accent"
+        }) === 0);
+}
+exports.isExactKeyMatch = isExactKeyMatch;
+function logWarning(message) {
+    const warningPrefix = "[warning]";
+    core.info(`${warningPrefix}${message}`);
+}
+exports.logWarning = logWarning;
+// Cache token authorized for all events that are tied to a ref
+// See GitHub Context https://help.github.com/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions#github-context
+function isValidEvent() {
+    return constants_1.RefKey in process.env && Boolean(process.env[constants_1.RefKey]);
+}
+exports.isValidEvent = isValidEvent;
+function getInputAsArray(name, options) {
+    return core
+        .getInput(name, options)
+        .split("\n")
+        .map(s => s.replace(/^!\s+/, "!").trim())
+        .filter(x => x !== "");
+}
+exports.getInputAsArray = getInputAsArray;
+function getInputAsInt(name, options) {
+    const value = parseInt(core.getInput(name, options));
+    if (isNaN(value) || value < 0) {
+        return undefined;
+    }
+    return value;
+}
+exports.getInputAsInt = getInputAsInt;
+function isCacheFeatureAvailable() {
+    if (cache.isFeatureAvailable()) {
+        return true;
+    }
+    if (isGhes()) {
+        logWarning(`Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.
+Otherwise please upgrade to GHES version >= 3.5 and If you are also using Github Connect, please unretire the actions/cache namespace before upgrade (see https://docs.github.com/en/enterprise-server@3.5/admin/github-actions/managing-access-to-actions-from-githubcom/enabling-automatic-access-to-githubcom-actions-using-github-connect#automatic-retirement-of-namespaces-for-actions-accessed-on-githubcom)`);
+        return false;
+    }
+    logWarning("An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.");
+    return false;
+}
+exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
+
+
+/***/ }),
 /* 361 */,
 /* 362 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
@@ -38458,86 +38545,28 @@ exports.default = {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isCacheFeatureAvailable = exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.isExactKeyMatch = exports.isGhes = void 0;
-const cache = __importStar(__webpack_require__(692));
-const core = __importStar(__webpack_require__(470));
-const constants_1 = __webpack_require__(196);
-function isGhes() {
-    const ghUrl = new URL(process.env["GITHUB_SERVER_URL"] || "https://github.com");
-    return ghUrl.hostname.toUpperCase() !== "GITHUB.COM";
+const restoreImpl_1 = __importDefault(__webpack_require__(835));
+const stateProvider_1 = __webpack_require__(309);
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield (0, restoreImpl_1.default)(new stateProvider_1.NullStateProvider());
+    });
 }
-exports.isGhes = isGhes;
-function isExactKeyMatch(key, cacheKey) {
-    return !!(cacheKey &&
-        cacheKey.localeCompare(key, undefined, {
-            sensitivity: "accent"
-        }) === 0);
-}
-exports.isExactKeyMatch = isExactKeyMatch;
-function logWarning(message) {
-    const warningPrefix = "[warning]";
-    core.info(`${warningPrefix}${message}`);
-}
-exports.logWarning = logWarning;
-// Cache token authorized for all events that are tied to a ref
-// See GitHub Context https://help.github.com/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions#github-context
-function isValidEvent() {
-    return constants_1.RefKey in process.env && Boolean(process.env[constants_1.RefKey]);
-}
-exports.isValidEvent = isValidEvent;
-function getInputAsArray(name, options) {
-    return core
-        .getInput(name, options)
-        .split("\n")
-        .map(s => s.replace(/^!\s+/, "!").trim())
-        .filter(x => x !== "");
-}
-exports.getInputAsArray = getInputAsArray;
-function getInputAsInt(name, options) {
-    const value = parseInt(core.getInput(name, options));
-    if (isNaN(value) || value < 0) {
-        return undefined;
-    }
-    return value;
-}
-exports.getInputAsInt = getInputAsInt;
-function isCacheFeatureAvailable() {
-    if (cache.isFeatureAvailable()) {
-        return true;
-    }
-    if (isGhes()) {
-        logWarning(`Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.
-Otherwise please upgrade to GHES version >= 3.5 and If you are also using Github Connect, please unretire the actions/cache namespace before upgrade (see https://docs.github.com/en/enterprise-server@3.5/admin/github-actions/managing-access-to-actions-from-githubcom/enabling-automatic-access-to-githubcom-actions-using-github-connect#automatic-retirement-of-namespaces-for-actions-accessed-on-githubcom)`);
-        return false;
-    }
-    logWarning("An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.");
-    return false;
-}
-exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
+run();
+exports.default = run;
 
 
 /***/ }),
@@ -48672,36 +48701,7 @@ module.exports = function(dst, src) {
 /* 775 */,
 /* 776 */,
 /* 777 */,
-/* 778 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const restoreImpl_1 = __importDefault(__webpack_require__(835));
-const stateProvider_1 = __webpack_require__(309);
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        yield (0, restoreImpl_1.default)(new stateProvider_1.StateProvider());
-    });
-}
-run();
-exports.default = run;
-
-
-/***/ }),
+/* 778 */,
 /* 779 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -50346,7 +50346,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(196);
-const utils = __importStar(__webpack_require__(443));
+const utils = __importStar(__webpack_require__(360));
 function restoreImpl(stateProvider) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
