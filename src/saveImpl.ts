@@ -10,11 +10,11 @@ import * as utils from "./utils/actionUtils";
 // throw an uncaught exception.  Instead of failing this action, just warn.
 process.on("uncaughtException", e => utils.logWarning(e.message));
 
-async function saveImpl(stateProvider: IStateProvider): Promise<number> {
-    let cacheId;
+async function saveImpl(stateProvider: IStateProvider): Promise<number | void> {
+    let cacheId = -1;
     try {
         if (!utils.isCacheFeatureAvailable()) {
-            return -2; //-2 refers as safe to ignore for the caller
+            return;
         }
 
         if (!utils.isValidEvent()) {
@@ -23,7 +23,7 @@ async function saveImpl(stateProvider: IStateProvider): Promise<number> {
                     process.env[Events.Key]
                 } is not supported because it's not tied to a branch or tag ref.`
             );
-            return -2;
+            return;
         }
 
         // If restore has stored a primary key in state, reuse that
@@ -34,7 +34,7 @@ async function saveImpl(stateProvider: IStateProvider): Promise<number> {
 
         if (!primaryKey) {
             utils.logWarning(`Key is not specified.`);
-            return -2;
+            return;
         }
 
         // If matched restore key is same as primary key, then do not save cache
@@ -45,7 +45,7 @@ async function saveImpl(stateProvider: IStateProvider): Promise<number> {
             core.info(
                 `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
             );
-            return -2;
+            return;
         }
 
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
