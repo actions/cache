@@ -2,11 +2,18 @@
 
 This action allows caching dependencies and build outputs to improve workflow execution time.
 
+In addition to this `cache` action, other two actions are also available
+
+[Restore action](./restore/README.md)
+
+[Save action](./save/README.md)
+
 [![Tests](https://github.com/actions/cache/actions/workflows/workflow.yml/badge.svg)](https://github.com/actions/cache/actions/workflows/workflow.yml)
 
 ## Documentation
 
 See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows).
+
 
 ## What's New
 ### v3
@@ -20,6 +27,7 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 * Fixed the download stuck problem by introducing a timeout of 1 hour for cache downloads.
 * Fix zstd not working for windows on gnu tar in issues.
 * Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MINS`. Default is 60 minutes.
+* Two new actions available for granular control over caches - [restore](restore/action.yml) and [save](save/action.yml)
 
 Refer [here](https://github.com/actions/cache/blob/v2/README.md) for previous versions
 
