@@ -52,3 +52,6 @@
 
 ### 3.2.0-beta.1
 - Added two new actions - [restore](restore/action.yml) and [save](save/action.yml) for granular control on cache.
+
+### 3.2.0
+- Released the two new actions - [restore](restore/action.yml) and [save](save/action.yml) for granular control on cache
