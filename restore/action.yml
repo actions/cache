@@ -15,6 +15,10 @@ inputs:
     description: 'An optional boolean when enabled, allows windows runners to restore caches that were saved on other platforms'
     default: 'false'
     required: false
+  fail-on-cache-miss:
+    description: 'Fail the workflow if the cache is not found for the primary key'
+    required: false
+    default: "false"
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'

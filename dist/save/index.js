@@ -4978,7 +4978,8 @@ var Inputs;
     Inputs["Path"] = "path";
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
-    Inputs["EnableCrossOsArchive"] = "enableCrossOsArchive"; // Input for cache, restore, save action
+    Inputs["EnableCrossOsArchive"] = "enableCrossOsArchive";
+    Inputs["FailOnCacheMiss"] = "fail-on-cache-miss"; // Input for cache, restore action
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {

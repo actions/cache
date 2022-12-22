@@ -4978,7 +4978,8 @@ var Inputs;
     Inputs["Path"] = "path";
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
-    Inputs["EnableCrossOsArchive"] = "enableCrossOsArchive"; // Input for cache, restore, save action
+    Inputs["EnableCrossOsArchive"] = "enableCrossOsArchive";
+    Inputs["FailOnCacheMiss"] = "fail-on-cache-miss"; // Input for cache, restore action
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -50497,6 +50498,9 @@ function restoreImpl(stateProvider) {
             const enableCrossOsArchive = utils.getInputAsBool(constants_1.Inputs.EnableCrossOsArchive);
             const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys, {}, enableCrossOsArchive);
             if (!cacheKey) {
+                if (core.getBooleanInput(constants_1.Inputs.FailOnCacheMiss) == true) {
+                    throw new Error(`Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`);
+                }
                 core.info(`Cache not found for input keys: ${[
                     primaryKey,
                     ...restoreKeys
@@ -50507,6 +50511,10 @@ function restoreImpl(stateProvider) {
             stateProvider.setState(constants_1.State.CacheMatchedKey, cacheKey);
             const isExactKeyMatch = utils.isExactKeyMatch(core.getInput(constants_1.Inputs.Key, { required: true }), cacheKey);
             core.setOutput(constants_1.Outputs.CacheHit, isExactKeyMatch.toString());
+            if (!isExactKeyMatch &&
+                core.getBooleanInput(constants_1.Inputs.FailOnCacheMiss) == true) {
+                throw new Error(`Restored cache key doesn't match the given input key. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`);
+            }
             core.info(`Cache restored from key: ${cacheKey}`);
             return cacheKey;
         }

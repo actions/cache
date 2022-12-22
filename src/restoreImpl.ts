@@ -44,6 +44,11 @@ async function restoreImpl(
         );
 
         if (!cacheKey) {
+            if (core.getBooleanInput(Inputs.FailOnCacheMiss) == true) {
+                throw new Error(
+                    `Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`
+                );
+            }
             core.info(
                 `Cache not found for input keys: ${[
                     primaryKey,
@@ -63,6 +68,15 @@ async function restoreImpl(
         );
 
         core.setOutput(Outputs.CacheHit, isExactKeyMatch.toString());
+        if (
+            !isExactKeyMatch &&
+            core.getBooleanInput(Inputs.FailOnCacheMiss) == true
+        ) {
+            throw new Error(
+                `Restored cache key doesn't match the given input key. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`
+            );
+        }
+
         core.info(`Cache restored from key: ${cacheKey}`);
 
         return cacheKey;
