@@ -19,24 +19,6 @@ A cache today is immutable and cannot be updated. But some use cases require the
 ## Use cache across feature branches
 Reusing cache across feature branches is not allowed today to provide cache [isolation](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#restrictions-for-accessing-a-cache). However if both feature branches are from the default branch, a good way to achieve this is to ensure that the default branch has a cache. This cache will then be consumable by both feature branches.
 
-## Improving cache restore performance on Windows/Using cross-os caching
-Currently, cache restore is slow on Windows due to tar being inherently slow and the compression algorithm `gzip` in use. `zstd` is the default algorithm in use on linux and macos. It was disabled on Windows due to issues with bsd tar(libarchive), the tar implementation in use on Windows. 
-
-To improve cache restore performance, we can re-enable `zstd` as the compression algorithm using the following workaround. Add the following step to your workflow before the cache step:
-
-```yaml
-    - if: ${{ runner.os == 'Windows' }}
-      name: Use GNU tar
-      shell: cmd
-      run: |
-        echo "Adding GNU tar to PATH"
-        echo C:\Program Files\Git\usr\bin>>"%GITHUB_PATH%"
-```
-
-The `cache` action will use GNU tar instead of bsd tar on Windows. This should work on all Github Hosted runners as it is. For self-hosted runners, please ensure you have GNU tar and `zstd` installed.
-
-The above workaround is also needed if you wish to use cross-os caching since difference of compression algorithms will result in different cache versions for the same cache key. So the above workaround will ensure `zstd` is used for caching on all platforms thus resulting in the same cache version for the same cache key.
-
 ## Force deletion of caches overriding default cache eviction policy
 Caches have [branch scope restriction](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#restrictions-for-accessing-a-cache) in place. This means that if caches for a specific branch are using a lot of storage quota, it may result into more frequently used caches from `default` branch getting thrashed. For example, if there are many pull requests happening on a repo and are creating caches, these cannot be used in default branch scope but will still occupy a lot of space till they get cleaned up by [eviction policy](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#usage-limits-and-eviction-policy). But sometime we want to clean them up on a faster cadence so as to ensure default branch is not thrashing. In order to achieve this, [gh-actions-cache cli](https://github.com/actions/gh-actions-cache/) can be used to delete caches for specific branches.
 
