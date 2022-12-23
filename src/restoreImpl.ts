@@ -39,7 +39,7 @@ async function restoreImpl(
             cachePaths,
             primaryKey,
             restoreKeys,
-            {},
+            { dryRun: core.getBooleanInput(Inputs.DryRun) },
             enableCrossOsArchive
         );
 

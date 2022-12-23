@@ -122,7 +122,15 @@ test("restore on GHES with AC available ", async () => {
     await run(new StateProvider());
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, [], {}, false);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        [path],
+        key,
+        [],
+        {
+            dryRun: false
+        },
+        false
+    );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
@@ -172,7 +180,9 @@ test("restore with too many keys should fail", async () => {
         [path],
         key,
         restoreKeys,
-        {},
+        {
+            dryRun: false
+        },
         false
     );
     expect(failedMock).toHaveBeenCalledWith(
@@ -192,7 +202,15 @@ test("restore with large key should fail", async () => {
     const restoreCacheMock = jest.spyOn(cache, "restoreCache");
     await run(new StateProvider());
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, [], {}, false);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        [path],
+        key,
+        [],
+        {
+            dryRun: false
+        },
+        false
+    );
     expect(failedMock).toHaveBeenCalledWith(
         `Key Validation Error: ${key} cannot be larger than 512 characters.`
     );
@@ -210,7 +228,15 @@ test("restore with invalid key should fail", async () => {
     const restoreCacheMock = jest.spyOn(cache, "restoreCache");
     await run(new StateProvider());
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, [], {}, false);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        [path],
+        key,
+        [],
+        {
+            dryRun: false
+        },
+        false
+    );
     expect(failedMock).toHaveBeenCalledWith(
         `Key Validation Error: ${key} cannot contain commas.`
     );
@@ -237,7 +263,15 @@ test("restore with no cache found", async () => {
     await run(new StateProvider());
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, [], {}, false);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        [path],
+        key,
+        [],
+        {
+            dryRun: false
+        },
+        false
+    );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
     expect(failedMock).toHaveBeenCalledTimes(0);
@@ -274,7 +308,9 @@ test("restore with restore keys and no cache found", async () => {
         [path],
         key,
         [restoreKey],
-        {},
+        {
+            dryRun: false
+        },
         false
     );
 
@@ -308,7 +344,15 @@ test("restore with cache found for key", async () => {
     await run(new StateProvider());
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, [], {}, false);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        [path],
+        key,
+        [],
+        {
+            dryRun: false
+        },
+        false
+    );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
@@ -346,7 +390,9 @@ test("restore with cache found for restore key", async () => {
         [path],
         key,
         [restoreKey],
-        {},
+        {
+            dryRun: false
+        },
         false
     );
 

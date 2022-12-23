@@ -3,7 +3,8 @@ export enum Inputs {
     Path = "path", // Input for cache, restore, save action
     RestoreKeys = "restore-keys", // Input for cache, restore action
     UploadChunkSize = "upload-chunk-size", // Input for cache, save action
-    EnableCrossOsArchive = "enableCrossOsArchive" // Input for cache, restore, save action
+    EnableCrossOsArchive = "enableCrossOsArchive", // Input for cache, restore, save action
+    DryRun = "dry-run" // Input for cache, restore action
 }
 
 export enum Outputs {

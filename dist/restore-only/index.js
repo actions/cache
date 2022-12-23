@@ -4978,7 +4978,8 @@ var Inputs;
     Inputs["Path"] = "path";
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
-    Inputs["EnableCrossOsArchive"] = "enableCrossOsArchive"; // Input for cache, restore, save action
+    Inputs["EnableCrossOsArchive"] = "enableCrossOsArchive";
+    Inputs["DryRun"] = "dry-run"; // Input for cache, restore action
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -50504,7 +50505,7 @@ function restoreImpl(stateProvider) {
                 required: true
             });
             const enableCrossOsArchive = utils.getInputAsBool(constants_1.Inputs.EnableCrossOsArchive);
-            const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys, {}, enableCrossOsArchive);
+            const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys, { dryRun: core.getBooleanInput(constants_1.Inputs.DryRun) }, enableCrossOsArchive);
             if (!cacheKey) {
                 core.info(`Cache not found for input keys: ${[
                     primaryKey,
