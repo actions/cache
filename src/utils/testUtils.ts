@@ -14,7 +14,7 @@ interface CacheInput {
     key: string;
     restoreKeys?: string[];
     enableCrossOsArchive?: boolean;
-    failOnCacheMiss?: boolean;
+    failOnCacheMiss?: string;
 }
 
 export function setInputs(input: CacheInput): void {
@@ -29,7 +29,7 @@ export function setInputs(input: CacheInput): void {
             input.enableCrossOsArchive.toString()
         );
     input.failOnCacheMiss &&
-        setInput(Inputs.FailOnCacheMiss, String(input.failOnCacheMiss));
+        setInput(Inputs.FailOnCacheMiss, input.failOnCacheMiss);
 }
 
 export function clearInputs(): void {
