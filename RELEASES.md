@@ -55,3 +55,8 @@
 
 ### 3.2.0
 - Released the two new actions - [restore](restore/action.yml) and [save](save/action.yml) for granular control on cache
+
+### 3.2.1
+- Update `@actions/cache` on windows to use gnu tar and zstd by default and fallback to bsdtar and zstd if gnu tar is not available. ([issue](https://github.com/actions/cache/issues/984))
+- Added support for fallback to gzip to restore old caches on windows.
+- Added logs for cache version in case of a cache miss.
