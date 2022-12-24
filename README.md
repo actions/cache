@@ -98,6 +98,7 @@ Every programming language and framework has its own way of caching.
 
 See [Examples](examples.md) for a list of `actions/cache` implementations for use with:
 
+- [C++ - Conan](./examples.md#c---conan)
 - [C# - NuGet](./examples.md#c---nuget)
 - [Clojure - Lein Deps](./examples.md#clojure---lein-deps)
 - [D - DUB](./examples.md#d---dub)
