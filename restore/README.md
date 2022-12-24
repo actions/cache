@@ -120,7 +120,7 @@ steps:
 
 #### Reusing primary key and restored key in the save action
 
-Usually you may want to use same `key` in both actions/cache/restore` and `actions/cache/save` action. To achieve this, use `outputs` from the restore action to reuse the same primary key (or the key of the cache that was restored).
+Usually you may want to use same `key` in both `actions/cache/restore` and `actions/cache/save` action. To achieve this, use `outputs` from the restore action to reuse the same primary key (or the key of the cache that was restored).
 
 #### Using restore action outputs to make save action behave just like the cache action
 
