@@ -245,7 +245,6 @@ Following are some of the known practices/workarounds which community has used t
 - [Cache segment restore timeout](./tips-and-workarounds.md#cache-segment-restore-timeout)
 - [Update a cache](./tips-and-workarounds.md#update-a-cache)
 - [Use cache across feature branches](./tips-and-workarounds.md#use-cache-across-feature-branches)
-- [Improving cache restore performance on Windows/Using cross-os caching](./tips-and-workarounds.md#improving-cache-restore-performance-on-windows-using-cross-os-caching)
 - [Force deletion of caches overriding default cache eviction policy](./tips-and-workarounds.md#force-deletion-of-caches-overriding-default-cache-eviction-policy)
 
 #### Windows environment variables
