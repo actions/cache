@@ -63,3 +63,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 </details>
+
+## Cross OS cache
+From `v3.2.1` cache is cross os compatible. This means that a cache created on `ubuntu-latest` can be used by `windows-latest` and vice versa. This is useful when you want to cache dependencies which is available on different the OSs. This will help reduce the consumption of the cache quota. Things to keep in mind:
+- Only cache those files which are compatible across OSs.
+- Don't cache symlinks as they work differently on different OSs so would cause issues during cache restore.
+- Put runner OS in the cache key if that cache is not ment to be used across OSs.

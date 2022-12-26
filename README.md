@@ -246,6 +246,7 @@ Following are some of the known practices/workarounds which community has used t
 - [Update a cache](./tips-and-workarounds.md#update-a-cache)
 - [Use cache across feature branches](./tips-and-workarounds.md#use-cache-across-feature-branches)
 - [Force deletion of caches overriding default cache eviction policy](./tips-and-workarounds.md#force-deletion-of-caches-overriding-default-cache-eviction-policy)
+- [Cross OS cache](./tips-and-workarounds.md#cross-os-cache)
 
 #### Windows environment variables
 Please note that Windows environment variables (like `%LocalAppData%`) will NOT be expanded by this action. Instead, prefer using `~` in your paths which will expand to HOME directory. For example, instead of `%LocalAppData%`, use `~\AppData\Local`. For a list of supported default environment variables, see [this](https://docs.github.com/en/actions/learn-github-actions/environment-variables) page. 
