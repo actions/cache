@@ -54,7 +54,7 @@ Case 1: Where an user would want to reuse the key as it is
 ```yaml
 uses: actions/cache/save@v3
 with:
-    key: steps.restore-cache.output.key
+    key: ${{ steps.restore-cache.outputs.key }}
 ```
 
 Case 2: Where the user would want to re-evaluate the key
