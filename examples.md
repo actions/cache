@@ -647,12 +647,12 @@ whenever possible:
 
 ```yaml
 env:
-  MINT_PATH: mint/lib
-  MINT_LINK_PATH: mint/bin
+  MINT_PATH: .mint/lib
+  MINT_LINK_PATH: .mint/bin
 steps:
-  - uses: actions/cache@v2
+  - uses: actions/cache@v3
     with:
-      path: mint
+      path: .mint
       key: ${{ runner.os }}-mint-${{ hashFiles('**/Mintfile') }}
       restore-keys: |
         ${{ runner.os }}-mint-
