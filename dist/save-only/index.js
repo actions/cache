@@ -9461,6 +9461,9 @@ exports.StateProvider = StateProvider;
 class NullStateProvider extends StateProviderBase {
     constructor() {
         super(...arguments);
+        this.stateToInputMap = new Map([
+            [constants_1.State.CachePrimaryKey, constants_1.Inputs.Key]
+        ]);
         this.stateToOutputMap = new Map([
             [constants_1.State.CacheMatchedKey, constants_1.Outputs.CacheMatchedKey],
             [constants_1.State.CachePrimaryKey, constants_1.Outputs.CachePrimaryKey]
@@ -9468,8 +9471,9 @@ class NullStateProvider extends StateProviderBase {
         this.setState = (key, value) => {
             core.setOutput(this.stateToOutputMap.get(key), value);
         };
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        this.getState = (key) => "";
+        this.getState = (key) => {
+            return core.getInput(this.stateToInputMap.get(key));
+        };
     }
 }
 exports.NullStateProvider = NullStateProvider;
@@ -41059,8 +41063,7 @@ function saveImpl(stateProvider) {
             }
             // If restore has stored a primary key in state, reuse that
             // Else re-evaluate from inputs
-            const primaryKey = stateProvider.getState(constants_1.State.CachePrimaryKey) ||
-                core.getInput(constants_1.Inputs.Key);
+            const primaryKey = stateProvider.getState(constants_1.State.CachePrimaryKey);
             if (!primaryKey) {
                 utils.logWarning(`Key is not specified.`);
                 return;

@@ -58,11 +58,17 @@ test("StateProvider saves states", async () => {
 });
 
 test("NullStateProvider saves outputs", async () => {
+    const states = new Map<string, string>();
+
+    const getInputMock = jest
+        .spyOn(core, "getInput")
+        .mockImplementation(key => states.get(key) || "");
+
     const getStateMock = jest
         .spyOn(core, "getState")
-        .mockImplementation(name =>
-            jest.requireActual("@actions/core").getState(name)
-        );
+        .mockImplementation(key => {
+            return jest.requireActual("@actions/core").getState(key);
+        });
 
     const setOutputMock = jest
         .spyOn(core, "setOutput")
@@ -73,7 +79,7 @@ test("NullStateProvider saves outputs", async () => {
     const saveStateMock = jest
         .spyOn(core, "saveState")
         .mockImplementation((key, value) => {
-            return jest.requireActual("@actions/core").saveState(key, value);
+            states.set(key, value);
         });
 
     const cacheMatchedKey = "node-cache";
@@ -84,6 +90,7 @@ test("NullStateProvider saves outputs", async () => {
     nullStateProvider.getCacheState();
 
     expect(getStateMock).toHaveBeenCalledTimes(0);
+    expect(getInputMock).toHaveBeenCalledTimes(2);
     expect(setOutputMock).toHaveBeenCalledTimes(2);
     expect(saveStateMock).toHaveBeenCalledTimes(0);
 });

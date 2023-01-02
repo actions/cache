@@ -9,6 +9,10 @@ export function setInput(name: string, value: string): void {
     process.env[getInputName(name)] = value;
 }
 
+export function getInput(name: string): string {
+    return process.env[getInputName(name)] as string;
+}
+
 interface CacheInput {
     path: string;
     key: string;

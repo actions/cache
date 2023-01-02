@@ -9405,6 +9405,9 @@ exports.StateProvider = StateProvider;
 class NullStateProvider extends StateProviderBase {
     constructor() {
         super(...arguments);
+        this.stateToInputMap = new Map([
+            [constants_1.State.CachePrimaryKey, constants_1.Inputs.Key]
+        ]);
         this.stateToOutputMap = new Map([
             [constants_1.State.CacheMatchedKey, constants_1.Outputs.CacheMatchedKey],
             [constants_1.State.CachePrimaryKey, constants_1.Outputs.CachePrimaryKey]
@@ -9412,8 +9415,9 @@ class NullStateProvider extends StateProviderBase {
         this.setState = (key, value) => {
             core.setOutput(this.stateToOutputMap.get(key), value);
         };
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        this.getState = (key) => "";
+        this.getState = (key) => {
+            return core.getInput(this.stateToInputMap.get(key));
+        };
     }
 }
 exports.NullStateProvider = NullStateProvider;

@@ -11,12 +11,8 @@ jest.mock("@actions/cache");
 jest.mock("../src/utils/actionUtils");
 
 beforeAll(() => {
-    jest.spyOn(core, "getInput").mockImplementation((name, options) => {
-        return jest.requireActual("@actions/core").getInput(name, options);
-    });
-
-    jest.spyOn(core, "setOutput").mockImplementation((key, value) => {
-        return jest.requireActual("@actions/core").getInput(key, value);
+    jest.spyOn(core, "getInput").mockImplementation(name => {
+        return testUtils.getInput(name);
     });
 
     jest.spyOn(actionUtils, "getInputAsArray").mockImplementation(
