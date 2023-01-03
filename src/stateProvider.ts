@@ -43,10 +43,15 @@ export class NullStateProvider extends StateProviderBase {
     ]);
 
     setState = (key: string, value: string) => {
-        core.setOutput(this.stateToOutputMap.get(key) as string, value);
+        if (this.stateToOutputMap.has(key)) {
+            core.setOutput(this.stateToOutputMap.get(key) as string, value);
+        }
     };
 
     getState = (key: string) => {
+        if (!this.stateToInputMap.has(key)) {
+            return "";
+        }
         return core.getInput(this.stateToInputMap.get(key) as string);
     };
 }

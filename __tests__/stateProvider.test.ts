@@ -1,11 +1,12 @@
 import * as core from "@actions/core";
 
-import { Events, RefKey, State } from "../src/constants";
+import { Events, Inputs, RefKey, State } from "../src/constants";
 import {
     IStateProvider,
     NullStateProvider,
     StateProvider
 } from "../src/stateProvider";
+import * as testUtils from "../src/utils/testUtils";
 
 jest.mock("@actions/core");
 
@@ -62,7 +63,7 @@ test("NullStateProvider saves outputs", async () => {
 
     const getInputMock = jest
         .spyOn(core, "getInput")
-        .mockImplementation(key => states.get(key) || "");
+        .mockImplementation(key => testUtils.getInput(key));
 
     const getStateMock = jest
         .spyOn(core, "getState")
@@ -73,7 +74,7 @@ test("NullStateProvider saves outputs", async () => {
     const setOutputMock = jest
         .spyOn(core, "setOutput")
         .mockImplementation((key, value) => {
-            return jest.requireActual("@actions/core").setOutput(key, value);
+            states.set(key, value);
         });
 
     const saveStateMock = jest
@@ -83,14 +84,18 @@ test("NullStateProvider saves outputs", async () => {
         });
 
     const cacheMatchedKey = "node-cache";
+    const cachePrimaryKey = "primary-key";
     const nullStateProvider: IStateProvider = new NullStateProvider();
-    nullStateProvider.setState(State.CacheMatchedKey, "outputValue");
-    nullStateProvider.setState(State.CachePrimaryKey, cacheMatchedKey);
-    nullStateProvider.getState("outputKey");
-    nullStateProvider.getCacheState();
+    testUtils.setInput(Inputs.Key, cachePrimaryKey);
+    nullStateProvider.setState(State.CachePrimaryKey, cachePrimaryKey);
+    nullStateProvider.setState(State.CacheMatchedKey, cacheMatchedKey);
+    const output1 = nullStateProvider.getState(State.CachePrimaryKey);
+    const output2 = nullStateProvider.getCacheState();
 
     expect(getStateMock).toHaveBeenCalledTimes(0);
-    expect(getInputMock).toHaveBeenCalledTimes(2);
+    expect(getInputMock).toHaveBeenCalledTimes(1);
+    expect(output1).toBe("primary-key");
+    expect(output2).toBe(undefined);
     expect(setOutputMock).toHaveBeenCalledTimes(2);
     expect(saveStateMock).toHaveBeenCalledTimes(0);
 });

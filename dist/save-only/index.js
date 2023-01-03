@@ -9469,9 +9469,14 @@ class NullStateProvider extends StateProviderBase {
             [constants_1.State.CachePrimaryKey, constants_1.Outputs.CachePrimaryKey]
         ]);
         this.setState = (key, value) => {
-            core.setOutput(this.stateToOutputMap.get(key), value);
+            if (this.stateToOutputMap.has(key)) {
+                core.setOutput(this.stateToOutputMap.get(key), value);
+            }
         };
         this.getState = (key) => {
+            if (!this.stateToInputMap.has(key)) {
+                return "";
+            }
             return core.getInput(this.stateToInputMap.get(key));
         };
     }
