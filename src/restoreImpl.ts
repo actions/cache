@@ -17,8 +17,7 @@ async function restoreImpl(
         // Validate inputs, this can cause task failure
         if (!utils.isValidEvent()) {
             utils.logWarning(
-                `Event Validation Error: The event type ${
-                    process.env[Events.Key]
+                `Event Validation Error: The event type ${process.env[Events.Key]
                 } is not supported because it's not tied to a branch or tag ref.`
             );
             return;
@@ -31,11 +30,14 @@ async function restoreImpl(
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
             required: true
         });
+        const enableCrossOsArchive = utils.getInputAsBool(Inputs.EnableCrossOsArchive);
 
         const cacheKey = await cache.restoreCache(
             cachePaths,
             primaryKey,
-            restoreKeys
+            restoreKeys,
+            {},
+            enableCrossOsArchive
         );
 
         if (!cacheKey) {

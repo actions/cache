@@ -14,6 +14,10 @@ inputs:
   upload-chunk-size:
     description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
+  enableCrossOsArchive:
+    description: 'An optional boolean enabled to save and restore cache on windows which could be restored and saved on any platform'
+    default: 'false'
+    required: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'

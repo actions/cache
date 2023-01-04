@@ -11,6 +11,10 @@ inputs:
   restore-keys:
     description: 'An ordered list of keys to use for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
     required: false
+  enableCrossOsArchive:
+    description: 'An optional boolean enabled to restore cache on windows which could be saved on any platform'
+    default: 'false'
+    required: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'

@@ -11,6 +11,10 @@ inputs:
   upload-chunk-size:
     description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
+  enableCrossOsArchive:
+    description: 'An optional boolean enabled to save cache on windows which could be restored on any platform'
+    default: 'false'
+    required: false
 runs:
   using: 'node16'
   main: '../dist/save-only/index.js'

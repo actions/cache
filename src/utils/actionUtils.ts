@@ -52,6 +52,13 @@ export function getInputAsInt(
     return value;
 }
 
+export function getInputAsBool(
+    name: string,
+    options?: core.InputOptions
+): boolean {
+    return core.getBooleanInput(name, options);
+}
+
 export function isCacheFeatureAvailable(): boolean {
     if (cache.isFeatureAvailable()) {
         return true;
