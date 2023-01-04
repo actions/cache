@@ -1,8 +1,8 @@
 # Cache Recipes
 
-This document focuses on gathering all the common use cases that will help the users of `actions/cache`
-- Know the use cases that can be tackled and sample workflows on how to tackle them
-- Optimise their workflows to use the cache inputs and outputs better
+This document lists some of the strategies (and example workflows if possible) which can be used
+- to solve some common use cases
+- to effectively leverage the step inputs and outputs
 
 ## Actions Cache Basics
 
