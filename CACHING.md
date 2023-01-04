@@ -87,19 +87,57 @@ Refer [matching the key](https://docs.github.com/en/actions/using-workflows/cach
 ## Restore action
 
 ### Sample workflow for restore action
+<!-- Explain how the outputs differ depending on caches found, not found or partially found -->
+
+### Restore only on cache hit (else fail the workflow)
+
+### Make cache read only / Reuse cache from centralized job
 
 ## Save action
 
 ### Sample workflow for save action
+<!-- Explain the different ways of taking the inputs here 
+Saving with hardcoded key - Basic save
+Saving with key outputted from restore action
+Saving with key re-evaluated at save step
+-->
 
 ## Restore followed by save
 
-## Save followed by restore
+<!--
+Basic restore save example
+- Using default cache action
+- Using restore and save actions together with possibilities.
+Restore save example with advanced controls
+- Using if conditions to achieve use cases that we solved 
+- Fail workflow on cache miss
+- Force rewrite cache by deleting cache between steps using cli
+-->
 
+## Save followed by restore
+<!--
+- Use case for saving first and restoring across child/subsequent jobs
+- A complex workflow with save and restore actions called multiple times.
+- Save cache on any failure.
+-->
+
+## Storage & CLI
+
+<!--
+Mention about the storage quota
+UI - how it can be used to view the storage info
+CLI - how it can be used in workflows to take care of the cache storage and management
+-->
 
 ## Optimisation
 
-## Storage
+<!-- 
+1. Key optimisation examples - create good keys to get more cache match.
+2. Storage optimisation examples - avoid recreation of caches whenever not needed.
+3. Branch optimisation examples where cache can be restored from default branches but need not be stored for feature branches
+4. Cross OS?
+-->
 
 ## Snippets
 
+<!-- Similar to available in README but updating set-output method and adding new package managers. -->
