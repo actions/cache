@@ -10,6 +10,7 @@ The cache action works using the following set of inputs and outputs as mentione
 
 ### Keys
 
+A `key`, also referred as `primary key` is a value with which cache is restored or saved. If cache is not found with the primary key, the same key is used to save the cache in the `actions/cache` action.
 #### Static keys
 
 ```yaml
@@ -56,6 +57,12 @@ Cache key by combination of multiple options:
 
 The [GitHub Context](https://docs.github.com/en/actions/learn-github-actions/contexts#github-context) can be used to create keys using the workflows metadata.
 
+### Restore keys
+
+Restore keys are a set of keys that are looked for when cache with primary key is not found. The first matching cache is downloaded when restore keys are provided.
+
+The restore keys can be provided as a complete name, or a prefix, read more [here](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#matching-a-cache-key) on how a cache key is matched using restore keys.
+
 ### Paths
 
 The path(s) in the cache action define(s) the path/directory that needs to be cached. The directory can reside on the runner or containers inside runners. The path to dependencies can either be a fix path or a glob pattern that's matched with existing directory structure and evaluated at runtime. Refer [@actions/glob](https://github.com/actions/toolkit/tree/main/packages/glob#patterns) to get more information about the patterns.
@@ -82,9 +89,25 @@ Refer [matching the key](https://docs.github.com/en/actions/using-workflows/cach
 
 ## Cache action
 
+The cache action allows caching dependencies and build outputs to improve workflow execution time.
+
+It has a `main` step and a `post` step. In the `main` step, the cache is restored if it exists for the input `key`, `path` combination (refer [scope](#scope)). If the cache doesn't exist or a partial match is found, the cache is saved in the `post` step.
+
+**Usage**
+
+```yaml
+  - uses: actions/cache@v3
+```
+
 ### Sample workflow for cache action
 
 ## Restore action
+
+**Usage**
+
+```yaml
+  - uses: actions/cache/restore@v3
+```
 
 ### Sample workflow for restore action
 <!-- Explain how the outputs differ depending on caches found, not found or partially found -->
@@ -94,6 +117,12 @@ Refer [matching the key](https://docs.github.com/en/actions/using-workflows/cach
 ### Make cache read only / Reuse cache from centralized job
 
 ## Save action
+
+**Usage**
+
+```yaml
+  - uses: actions/cache/restore@v3
+```
 
 ### Sample workflow for save action
 <!-- Explain the different ways of taking the inputs here 
