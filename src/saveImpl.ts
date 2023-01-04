@@ -19,7 +19,8 @@ async function saveImpl(stateProvider: IStateProvider): Promise<number | void> {
 
         if (!utils.isValidEvent()) {
             utils.logWarning(
-                `Event Validation Error: The event type ${process.env[Events.Key]
+                `Event Validation Error: The event type ${
+                    process.env[Events.Key]
                 } is not supported because it's not tied to a branch or tag ref.`
             );
             return;
@@ -51,7 +52,9 @@ async function saveImpl(stateProvider: IStateProvider): Promise<number | void> {
             required: true
         });
 
-        const enableCrossOsArchive = utils.getInputAsBool(Inputs.EnableCrossOsArchive);
+        const enableCrossOsArchive = utils.getInputAsBool(
+            Inputs.EnableCrossOsArchive
+        );
 
         cacheId = await cache.saveCache(
             cachePaths,
