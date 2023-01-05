@@ -15,7 +15,7 @@ inputs:
     description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
   enableCrossOsArchive:
-    description: 'An optional boolean when enabled, allows windows runners to save/restore caches that can be restored/saved respectively on other platforms'
+    description: 'An optional boolean when enabled, allows windows runners to save or restore caches that can be restored or saved respectively on other platforms'
     default: 'false'
     required: false
 outputs:
