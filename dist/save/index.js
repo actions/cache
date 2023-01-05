@@ -38641,7 +38641,8 @@ function getInputAsInt(name, options) {
 }
 exports.getInputAsInt = getInputAsInt;
 function getInputAsBool(name, options) {
-    return core.getBooleanInput(name, options);
+    const result = core.getInput(name, options);
+    return result.toLowerCase() === "true";
 }
 exports.getInputAsBool = getInputAsBool;
 function isCacheFeatureAvailable() {

@@ -12,7 +12,7 @@ inputs:
     description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
   enableCrossOsArchive:
-    description: 'An optional boolean enabled to save cache on windows which could be restored on any platform'
+    description: 'An optional boolean to enable saving a cache on Windows which may be restored later on another platform'
     default: 'false'
     required: false
 runs:

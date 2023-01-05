@@ -56,7 +56,8 @@ export function getInputAsBool(
     name: string,
     options?: core.InputOptions
 ): boolean {
-    return core.getBooleanInput(name, options);
+    const result = core.getInput(name, options);
+    return result.toLowerCase() === "true";
 }
 
 export function isCacheFeatureAvailable(): boolean {
