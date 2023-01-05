@@ -12,7 +12,7 @@ inputs:
     description: 'An ordered list of keys to use for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
     required: false
   enableCrossOsArchive:
-    description: 'An optional boolean when enabled, allows windows runners to restore caches that may be saved on other platforms'
+    description: 'An optional boolean when enabled, allows windows runners to restore caches that were saved on other platforms'
     default: 'false'
     required: false
 outputs:
