@@ -164,9 +164,14 @@ test("save on GHES with AC available", async () => {
     await run(new StateProvider());
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith([inputPath], primaryKey, {
-        uploadChunkSize: 4000000
-    }, false);
+    expect(saveCacheMock).toHaveBeenCalledWith(
+        [inputPath],
+        primaryKey,
+        {
+            uploadChunkSize: 4000000
+        },
+        false
+    );
 
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
