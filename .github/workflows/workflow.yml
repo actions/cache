@@ -25,18 +25,7 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: 16.x
-    - name: Determine npm cache directory
-      id: npm-cache
-      shell: bash
-      run: |
-          echo "dir=$(npm config get cache)">>$GITHUB_OUTPUT
-    - name: Restore npm cache
-      uses: actions/cache@v3
-      with:
-        path: ${{ steps.npm-cache.outputs.dir }}
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
+        cache: npm
     - run: npm ci
     - name: Prettier Format Check
       run: npm run format-check

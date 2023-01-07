@@ -2,11 +2,18 @@
 
 This action allows caching dependencies and build outputs to improve workflow execution time.
 
+In addition to this `cache` action, other two actions are also available
+
+[Restore action](./restore/README.md)
+
+[Save action](./save/README.md)
+
 [![Tests](https://github.com/actions/cache/actions/workflows/workflow.yml/badge.svg)](https://github.com/actions/cache/actions/workflows/workflow.yml)
 
 ## Documentation
 
 See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows).
+
 
 ## What's New
 ### v3
@@ -20,6 +27,7 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 * Fixed the download stuck problem by introducing a timeout of 1 hour for cache downloads.
 * Fix zstd not working for windows on gnu tar in issues.
 * Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MINS`. Default is 60 minutes.
+* Two new actions available for granular control over caches - [restore](restore/action.yml) and [save](save/action.yml)
 
 Refer [here](https://github.com/actions/cache/blob/v2/README.md) for previous versions
 
@@ -37,7 +45,7 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 * `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
 
 #### Environment Variables
-* `SEGMENT_DOWNLOAD_TIMEOUT_MINS` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](#cache-segment-restore-timeout)
+* `SEGMENT_DOWNLOAD_TIMEOUT_MINS` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](https://github.com/actions/cache/blob/main/tips-and-workarounds.md#cache-segment-restore-timeout)
 
 ### Outputs
 
@@ -113,12 +121,13 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 - [Swift, Objective-C - Carthage](./examples.md#swift-objective-c---carthage)
 - [Swift, Objective-C - CocoaPods](./examples.md#swift-objective-c---cocoapods)
 - [Swift - Swift Package Manager](./examples.md#swift---swift-package-manager)
+- [Swift - Mint](./examples.md#swift---mint)
 
 ## Creating a cache key
 
 A cache key can include any of the contexts, functions, literals, and operators supported by GitHub Actions.
 
-For example, using the [`hashFiles`](https://help.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#hashfiles) function allows you to create a new cache when dependencies change.
+For example, using the [`hashFiles`](https://docs.github.com/en/actions/learn-github-actions/expressions#hashfiles) function allows you to create a new cache when dependencies change.
 
 ```yaml
   - uses: actions/cache@v3
@@ -233,10 +242,11 @@ jobs:
 ## Known practices and workarounds
 Following are some of the known practices/workarounds which community has used to fulfill specific requirements. You may choose to use them if suits your use case. Note these are not necessarily the only or the recommended solution.
 
-- [Cache segment restore timeout](./workarounds.md#cache-segment-restore-timeout)
-- [Update a cache](./workarounds.md#update-a-cache)
-- [Use cache across feature branches](./workarounds.md#use-cache-across-feature-branches)
-- [Improving cache restore performance on Windows/Using cross-os caching](./workarounds.md#improving-cache-restore-performance-on-windows-using-cross-os-caching)
+- [Cache segment restore timeout](./tips-and-workarounds.md#cache-segment-restore-timeout)
+- [Update a cache](./tips-and-workarounds.md#update-a-cache)
+- [Use cache across feature branches](./tips-and-workarounds.md#use-cache-across-feature-branches)
+- [Improving cache restore performance on Windows/Using cross-os caching](./tips-and-workarounds.md#improving-cache-restore-performance-on-windows-using-cross-os-caching)
+- [Force deletion of caches overriding default cache eviction policy](./tips-and-workarounds.md#force-deletion-of-caches-overriding-default-cache-eviction-policy)
 
 #### Windows environment variables
 Please note that Windows environment variables (like `%LocalAppData%`) will NOT be expanded by this action. Instead, prefer using `~` in your paths which will expand to HOME directory. For example, instead of `%LocalAppData%`, use `~\AppData\Local`. For a list of supported default environment variables, see [this](https://docs.github.com/en/actions/learn-github-actions/environment-variables) page. 

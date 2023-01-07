@@ -38,6 +38,7 @@
 - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 - [Swift - Swift Package Manager](#swift---swift-package-manager)
+- [Swift - Mint](#swift---mint)
 
 ## C# - NuGet
 
@@ -309,15 +310,29 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 For npm, cache files are stored in `~/.npm` on Posix, or `~\AppData\npm-cache` on Windows, but it's possible to use `npm config get cache` to find the path on any platform. See [the npm docs](https://docs.npmjs.com/cli/cache#cache) for more details.
 
 If using `npm config` to retrieve the cache directory, ensure you run [actions/setup-node](https://github.com/actions/setup-node) first to ensure your `npm` version is correct.
+After [deprecation](https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/) of save-state and set-output commands, the correct way to set output is using `${GITHUB_OUTPUT}`. For linux, we can use `${GITHUB_OUTPUT}` whereas for windows we need to use `${env:GITHUB_OUTPUT}` due to two different default shells in these two different OS ie `bash` and `pwsh` respectively.
 
 >Note: It is not recommended to cache `node_modules`, as it can break across Node versions and won't work with `npm ci`
 
+### **Get npm cache directory using same shell**
+### Bash shell
 ```yaml
 - name: Get npm cache directory
   id: npm-cache-dir
   shell: bash
-  run: |
-    echo "dir=$(npm config get cache)" >> $GITHUB_OUTPUT
+  run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
+```
+
+### PWSH shell
+```yaml
+- name: Get npm cache directory
+  id: npm-cache-dir
+  shell: pwsh
+  run: echo "dir=$(npm config get cache)" >> ${env:GITHUB_OUTPUT}
+```
+`Get npm cache directory` step can then be used with `actions/cache` as shown below
+
+```yaml
 - uses: actions/cache@v3
   id: npm-cache # use this to check for `cache-hit` ==> if: steps.npm-cache.outputs.cache-hit != 'true'
   with:
@@ -630,4 +645,19 @@ whenever possible:
     key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
     restore-keys: |
       ${{ runner.os }}-spm-
+```
+
+## Swift - Mint
+
+```yaml
+env:
+  MINT_PATH: .mint/lib
+  MINT_LINK_PATH: .mint/bin
+steps:
+  - uses: actions/cache@v3
+    with:
+      path: .mint
+      key: ${{ runner.os }}-mint-${{ hashFiles('**/Mintfile') }}
+      restore-keys: |
+        ${{ runner.os }}-mint-
 ```
