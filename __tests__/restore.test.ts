@@ -232,7 +232,7 @@ test("restore with dry-run set", async () => {
     testUtils.setInputs({
         path: path,
         key,
-        dryRun: "true"
+        dryRun: true
     });
 
     const infoMock = jest.spyOn(core, "info");

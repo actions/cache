@@ -50505,7 +50505,8 @@ function restoreImpl(stateProvider) {
                 required: true
             });
             const enableCrossOsArchive = utils.getInputAsBool(constants_1.Inputs.EnableCrossOsArchive);
-            const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys, { dryRun: core.getBooleanInput(constants_1.Inputs.DryRun) }, enableCrossOsArchive);
+            const dryRun = utils.getInputAsBool(constants_1.Inputs.DryRun);
+            const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys, { dryRun: dryRun }, enableCrossOsArchive);
             if (!cacheKey) {
                 core.info(`Cache not found for input keys: ${[
                     primaryKey,
