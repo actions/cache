@@ -34,6 +34,7 @@ async function restoreImpl(
         const enableCrossOsArchive = utils.getInputAsBool(
             Inputs.EnableCrossOsArchive
         );
+        const failOnCacheMiss = utils.getInputAsBool(Inputs.FailOnCacheMiss);
 
         const cacheKey = await cache.restoreCache(
             cachePaths,
@@ -44,7 +45,7 @@ async function restoreImpl(
         );
 
         if (!cacheKey) {
-            if (core.getBooleanInput(Inputs.FailOnCacheMiss)) {
+            if (failOnCacheMiss) {
                 throw new Error(
                     `Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`
                 );
@@ -68,7 +69,7 @@ async function restoreImpl(
         );
 
         core.setOutput(Outputs.CacheHit, isExactKeyMatch.toString());
-        if (!isExactKeyMatch && core.getBooleanInput(Inputs.FailOnCacheMiss)) {
+        if (!isExactKeyMatch && failOnCacheMiss) {
             throw new Error(
                 `Restored cache key doesn't match the given input key. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`
             );

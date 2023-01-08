@@ -50496,9 +50496,10 @@ function restoreImpl(stateProvider) {
                 required: true
             });
             const enableCrossOsArchive = utils.getInputAsBool(constants_1.Inputs.EnableCrossOsArchive);
+            const failOnCacheMiss = utils.getInputAsBool(constants_1.Inputs.FailOnCacheMiss);
             const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys, {}, enableCrossOsArchive);
             if (!cacheKey) {
-                if (core.getBooleanInput(constants_1.Inputs.FailOnCacheMiss)) {
+                if (failOnCacheMiss) {
                     throw new Error(`Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`);
                 }
                 core.info(`Cache not found for input keys: ${[
@@ -50511,7 +50512,7 @@ function restoreImpl(stateProvider) {
             stateProvider.setState(constants_1.State.CacheMatchedKey, cacheKey);
             const isExactKeyMatch = utils.isExactKeyMatch(core.getInput(constants_1.Inputs.Key, { required: true }), cacheKey);
             core.setOutput(constants_1.Outputs.CacheHit, isExactKeyMatch.toString());
-            if (!isExactKeyMatch && core.getBooleanInput(constants_1.Inputs.FailOnCacheMiss)) {
+            if (!isExactKeyMatch && failOnCacheMiss) {
                 throw new Error(`Restored cache key doesn't match the given input key. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`);
             }
             core.info(`Cache restored from key: ${cacheKey}`);

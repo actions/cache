@@ -11,15 +11,15 @@ inputs:
   restore-keys:
     description: 'An ordered list of keys to use for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
     required: false
-  fail-on-cache-miss:
-    description: 'Fail the workflow if the cache is not found for the primary key'
-    required: false
-    default: "false"
   upload-chunk-size:
     description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
   enableCrossOsArchive:
     description: 'An optional boolean when enabled, allows windows runners to save or restore caches that can be restored or saved respectively on other platforms'
+    default: 'false'
+    required: false
+  fail-on-cache-miss:
+    description: 'Fail the workflow if the cache is not found for the primary key'
     default: 'false'
     required: false
 outputs:

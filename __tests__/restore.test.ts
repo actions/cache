@@ -214,7 +214,7 @@ test("Fail restore when fail on cache miss is enabled and primary key not found"
         path: path,
         key,
         restoreKeys: [restoreKey],
-        failOnCacheMiss: "true"
+        failOnCacheMiss: true
     });
 
     const failedMock = jest.spyOn(core, "setFailed");
@@ -229,7 +229,13 @@ test("Fail restore when fail on cache miss is enabled and primary key not found"
     await run();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, [restoreKey]);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        [path],
+        key,
+        [restoreKey],
+        {},
+        false
+    );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(0);
@@ -248,7 +254,7 @@ test("Fail restore when fail on cache miss is enabled and primary key doesn't ma
         path: path,
         key,
         restoreKeys: [restoreKey],
-        failOnCacheMiss: "true"
+        failOnCacheMiss: true
     });
 
     const failedMock = jest.spyOn(core, "setFailed");
@@ -263,7 +269,13 @@ test("Fail restore when fail on cache miss is enabled and primary key doesn't ma
     await run();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, [restoreKey]);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        [path],
+        key,
+        [restoreKey],
+        {},
+        false
+    );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
