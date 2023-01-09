@@ -50512,9 +50512,6 @@ function restoreImpl(stateProvider) {
             stateProvider.setState(constants_1.State.CacheMatchedKey, cacheKey);
             const isExactKeyMatch = utils.isExactKeyMatch(core.getInput(constants_1.Inputs.Key, { required: true }), cacheKey);
             core.setOutput(constants_1.Outputs.CacheHit, isExactKeyMatch.toString());
-            if (!isExactKeyMatch && failOnCacheMiss) {
-                throw new Error(`Restored cache key doesn't match the given input key. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`);
-            }
             core.info(`Cache restored from key: ${cacheKey}`);
             return cacheKey;
         }

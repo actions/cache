@@ -69,12 +69,6 @@ async function restoreImpl(
         );
 
         core.setOutput(Outputs.CacheHit, isExactKeyMatch.toString());
-        if (!isExactKeyMatch && failOnCacheMiss) {
-            throw new Error(
-                `Restored cache key doesn't match the given input key. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`
-            );
-        }
-
         core.info(`Cache restored from key: ${cacheKey}`);
 
         return cacheKey;

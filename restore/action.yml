@@ -16,7 +16,7 @@ inputs:
     default: 'false'
     required: false
   fail-on-cache-miss:
-    description: 'Fail the workflow if the cache is not found for the primary key or no cache is found at all'
+    description: 'Fail the workflow if no cache entry is not found'
     default: 'false'
     required: false
 outputs:
