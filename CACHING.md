@@ -17,7 +17,7 @@ jobs:
 
 In your workflows, you can use different strategies to name your key depending on your use case so that the cache is scoped properly based on the need. If you wish to create OS specific caches, or caches based on the lockfiles, commit SHA, workflow run id, etc. then you can generate the keys dynamically at run-time. Below are some of the tips to strategically name your cache using the [cache](https://github.com/actions/cache) or [restore](https://github.com/actions/cache/tree/main/restore) action.
 
-**Updating cache for any change in the dependencies**
+### Updating cache for any change in the dependencies
 One of the most common use case is to use hash for lockfile as key. This way same cache will be restored for same lockfiles until there's any change in the lockfile/dependencies.
 ```yaml
   - uses: actions/cache@v3
@@ -28,7 +28,7 @@ One of the most common use case is to use hash for lockfile as key. This way sam
       key: cache-${{ hashFiles('**/lockfiles') }}
 ```
 
-**Using restore keys to download the closest matching cache**
+### Using restore keys to download the closest matching cache
 If cache is not found matching the primary key, restore keys will be used to download the closest matching cache that was recently created. This way most of the dependencies can be downloaded from the restore key hence saving some build time.
 
 ```yaml
@@ -44,8 +44,8 @@ If cache is not found matching the primary key, restore keys will be used to dow
 
 The restore keys can be provided as a complete name, or a prefix, read more [here](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#matching-a-cache-key) on how a cache key is matched using restore keys.
 
-**Separating the caches by Operating System**
-Caches can be stored separately for different Operating Systems. This can be used in combination with hashfiles in case multiple caches are being generated per OS. 
+### Separate caches by Operating System
+In case of workflows with matrix running for multiple Operating Systems, the caches can be stored separately for each of them. This can be used in combination with hashfiles in case multiple caches are being generated per OS. 
 ```yaml
   - uses: actions/cache@v3
     with:
@@ -55,13 +55,13 @@ Caches can be stored separately for different Operating Systems. This can be use
       key: ${{ runner.os }}-cache
 ```
 
-**Limiting cache to only the current workflow/attempt**
+### Limiting cache to only the current workflow/attempt
 Caches scoped to the particular workflow run id or run attempt can be stored and referred by using the run id/attempt
 ```yaml
     key: cache-${{ github.run_id }}-${{ github.run_attempt }}
 ```
 
-**Limiting cache for a particular commit** 
+### Limiting cache for a particular commit
 For very short term or isolated use cases, where cache is supposed to be short lived, commit sha can be used.
 ```yaml
   - uses: actions/cache@v3
@@ -72,7 +72,7 @@ For very short term or isolated use cases, where cache is supposed to be short l
       key: cache-${{ github.sha }}
 ```
 
-**Using multiple factors while forming a key depening on the need**
+### Using multiple factors while forming a key depening on the need
 Cache key can be formed by combination of more than one metadata, evaluated info.
 ```yaml
   - uses: actions/cache@v3
@@ -207,7 +207,7 @@ steps:
 
 ## Restoring and saving caches
 
-## Restoring and saving cache using a single action
+### Restoring and saving cache using a single action
 
 The [cache](https://github.com/actions/cache/tree/main#cache) action allows caching dependencies and restoring them using a single action. It has a `main` step and a `post` step. In the `main` step, the cache is restored if it exists for the input `key`, `path` combination (refer [scope](#scope)). If cache is not found for the given `key` input, then cache is restored using [restore keys](#restore-keys) . If the cache doesn't exist or is restored using `restore-keys`, the cache is saved in the `post` step of this action.
 
@@ -223,6 +223,22 @@ The [cache](https://github.com/actions/cache/tree/main#cache) action allows cach
 ```
 
 The `cache` action provides one output `cache-hit` which is set to `true` when cache is restored using primary key and `false` when cache is restored using `restore-keys` or no cache is restored.
+
+### Download remaining dependencies in case of cache miss
+
+In case cache gets download using restore keys, there's a chance that some dependencies might be missing. It might also be possible that no cache was restored because there was no match. In such cases, the output `cache-hit` is set to `false`. We can make use of this output to download the remaining dependencies.
+
+```yaml
+  - uses: actions/cache@v3
+    with:
+      path: |
+        path/to/dependencies
+        some/other/dependencies
+      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+  - name: Install Dependencies
+    if: steps.cache.outputs.cache-hit != 'true'
+    run: ./install-dependencies.sh
+```
 
 ### Using combination of restore and save actions
 
@@ -253,7 +269,7 @@ steps:
   - uses: actions/checkout@v3
 
   - name: Build
-    run: /build-parent-module.sh
+    run: ./build-parent-module.sh
 
   - uses: actions/cache/save@v3
     id: cache
@@ -275,11 +291,11 @@ steps:
 
   - name: Install Dependencies
     if: steps.cache.outputs.cache-hit != 'true'
-    run: /install.sh
+    run: ./install.sh
       
   - name: Build
-    run: /build-child-module.sh
+    run: ./build-child-module.sh
 
   - name: Publish package to public
-    run: /publish.sh
+    run: ./publish.sh
 ```
