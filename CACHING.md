@@ -99,6 +99,42 @@ The [GitHub Context](https://docs.github.com/en/actions/learn-github-actions/con
 
 ## Restoring Cache
 
+### Know paths better
+
+While setting paths for caching dependencies it is important to give correct path depending on the image you are using and if you are running the action inside or outside the container. Below are some paths one should keep in mind while writing their workflow files.
+
+#### Ubuntu Paths
+
+```yaml
+process.env['RUNNER_TEMP']=/home/runner/work/_temp 
+process.cwd()=/home/runner/work/repo/repo
+Home directory = /home/runner
+${{ github.workspace }} = /home/runner/work/repo/repo
+```
+
+#### Windows Paths
+
+```yaml
+process.env['RUNNER_TEMP']=D:\a\_temp 
+process.cwd()=D:\a\repo\repo 
+Home directory = C:\Users\runneradmin
+${{ github.workspace }} = D:\a\repo\repo
+```
+
+#### MacOS Paths
+
+```yaml
+process.env['RUNNER_TEMP']=/Users/runner/work/_temp 
+process.cwd()=/Users/runner/work/repo/repo 
+Home directory = /Users/runner
+${{ github.workspace }} = /Users/runner/work/repo/repo
+```
+
+Where:
+Home directory  = `~/`.
+cwd() = Current working directory where code executes by default.
+RUNNER_TEMP = Environment variable defined for temporary storage location.
+
 ### Make cache read only / Reuse cache from centralized job
 
 In case you are using a centralized job to create and save your cache that can be reused by other jobs in your repository, this action will take care of your restore only needs and make the cache read-only.
