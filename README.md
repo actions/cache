@@ -28,6 +28,7 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 * Fix zstd not working for windows on gnu tar in issues.
 * Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MINS`. Default is 60 minutes.
 * Two new actions available for granular control over caches - [restore](restore/action.yml) and [save](save/action.yml)
+* Support cross-os caching as an opt-in feature. See [Cross OS caching](./tips-and-workarounds.md#cross-os-cache) for more info.
 
 Refer [here](https://github.com/actions/cache/blob/v2/README.md) for previous versions
 
@@ -43,9 +44,10 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 * `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `key` - An explicit key for restoring and saving the cache
 * `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
+* `enableCrossOsArchive` - An optional boolean when enabled, allows Windows runners to save or restore caches that can be restored or saved respectively on other platforms. Default: false
 
 #### Environment Variables
-* `SEGMENT_DOWNLOAD_TIMEOUT_MINS` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](https://github.com/actions/cache/blob/main/workarounds.md#cache-segment-restore-timeout)
+* `SEGMENT_DOWNLOAD_TIMEOUT_MINS` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](https://github.com/actions/cache/blob/main/tips-and-workarounds.md#cache-segment-restore-timeout)
 
 ### Outputs
 
@@ -245,7 +247,7 @@ Following are some of the known practices/workarounds which community has used t
 - [Cache segment restore timeout](./tips-and-workarounds.md#cache-segment-restore-timeout)
 - [Update a cache](./tips-and-workarounds.md#update-a-cache)
 - [Use cache across feature branches](./tips-and-workarounds.md#use-cache-across-feature-branches)
-- [Improving cache restore performance on Windows/Using cross-os caching](./tips-and-workarounds.md#improving-cache-restore-performance-on-windows-using-cross-os-caching)
+- [Cross OS cache](./tips-and-workarounds.md#cross-os-cache)
 - [Force deletion of caches overriding default cache eviction policy](./tips-and-workarounds.md#force-deletion-of-caches-overriding-default-cache-eviction-policy)
 
 #### Windows environment variables

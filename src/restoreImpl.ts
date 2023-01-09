@@ -31,11 +31,16 @@ async function restoreImpl(
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
             required: true
         });
+        const enableCrossOsArchive = utils.getInputAsBool(
+            Inputs.EnableCrossOsArchive
+        );
 
         const cacheKey = await cache.restoreCache(
             cachePaths,
             primaryKey,
-            restoreKeys
+            restoreKeys,
+            {},
+            enableCrossOsArchive
         );
 
         if (!cacheKey) {

@@ -35,6 +35,14 @@ beforeAll(() => {
         }
     );
 
+    jest.spyOn(actionUtils, "getInputAsBool").mockImplementation(
+        (name, options) => {
+            return jest
+                .requireActual("../src/utils/actionUtils")
+                .getInputAsBool(name, options);
+        }
+    );
+
     jest.spyOn(actionUtils, "isExactKeyMatch").mockImplementation(
         (key, cacheResult) => {
             return jest
@@ -85,9 +93,14 @@ test("save with valid inputs uploads a cache", async () => {
     await run();
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith([inputPath], primaryKey, {
-        uploadChunkSize: 4000000
-    });
+    expect(saveCacheMock).toHaveBeenCalledWith(
+        [inputPath],
+        primaryKey,
+        {
+            uploadChunkSize: 4000000
+        },
+        false
+    );
 
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
@@ -112,9 +125,14 @@ test("save failing logs the warning message", async () => {
     await run();
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith([inputPath], primaryKey, {
-        uploadChunkSize: 4000000
-    });
+    expect(saveCacheMock).toHaveBeenCalledWith(
+        [inputPath],
+        primaryKey,
+        {
+            uploadChunkSize: 4000000
+        },
+        false
+    );
 
     expect(warningMock).toHaveBeenCalledTimes(1);
     expect(warningMock).toHaveBeenCalledWith("Cache save failed.");
