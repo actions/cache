@@ -307,7 +307,7 @@ In case cache gets download using restore keys, there's a chance that some depen
       key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
 ```
 
-### Saving intermediate private build artifacts and restoring in another workflow
+### Saving cache once and reusing in multiple workflows
 
 In case of multi-module projects, where the built artifact of one project needs to be reused in subsequent child modules, the need of rebuilding the parent module again and again with every build can be eliminated. The `actions/cache` or `actions/cache/save` action can be used to build and save the parent module artifact once, and restored multiple times while building the child modules.
 
