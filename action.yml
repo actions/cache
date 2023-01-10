@@ -19,7 +19,7 @@ inputs:
     default: 'false'
     required: false
   fail-on-cache-miss:
-    description: 'Fail the workflow if no cache entry is not found'
+    description: 'Fail the workflow if cache entry is not found'
     default: 'false'
     required: false
 outputs:

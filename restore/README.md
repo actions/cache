@@ -7,7 +7,7 @@ The restore action, as the name suggest, restores a cache. It acts similar to th
 * `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `key` - String used while saving cache for restoring the cache
 * `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
-* `fail-on-cache-miss` - Fail the workflow if no cache entry is not found
+* `fail-on-cache-miss` - Fail the workflow if cache entry is not found
 
 ## Outputs
 
@@ -96,7 +96,7 @@ steps:
 
 ### Exit workflow on cache miss
 
-You can use `fail-on-cache-miss: true` to exit the workflow on a cache miss. This way you can restrict your workflow to only initiate the build when a cache with the exact key is found. Make sure to leave `restore-keys` empty!
+You can use `fail-on-cache-miss: true` to exit the workflow on a cache miss. This way you can restrict your workflow to only initiate the build when a cache is matched. Also, if you want to fail if cache did not match primary key, additionally leave `restore-keys` empty!
 
 ```yaml
 steps:
