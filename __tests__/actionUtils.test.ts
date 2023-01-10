@@ -174,6 +174,26 @@ test("getInputAsInt throws if required and value missing", () => {
     ).toThrowError();
 });
 
+test("getInputAsBool returns false if input not set", () => {
+    expect(actionUtils.getInputAsBool("undefined")).toBe(false);
+});
+
+test("getInputAsBool returns value if input is valid", () => {
+    testUtils.setInput("foo", "true");
+    expect(actionUtils.getInputAsBool("foo")).toBe(true);
+});
+
+test("getInputAsBool returns false if input is invalid or NaN", () => {
+    testUtils.setInput("foo", "bar");
+    expect(actionUtils.getInputAsBool("foo")).toBe(false);
+});
+
+test("getInputAsBool throws if required and value missing", () => {
+    expect(() =>
+        actionUtils.getInputAsBool("undefined2", { required: true })
+    ).toThrowError();
+});
+
 test("isCacheFeatureAvailable for ac enabled", () => {
     jest.spyOn(cache, "isFeatureAvailable").mockImplementation(() => true);
 

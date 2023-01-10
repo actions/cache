@@ -32,6 +32,14 @@ beforeAll(() => {
         }
     );
 
+    jest.spyOn(actionUtils, "getInputAsBool").mockImplementation(
+        (name, options) => {
+            return jest
+                .requireActual("../src/utils/actionUtils")
+                .getInputAsBool(name, options);
+        }
+    );
+
     jest.spyOn(actionUtils, "isExactKeyMatch").mockImplementation(
         (key, cacheResult) => {
             return jest
@@ -47,6 +55,7 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
+    jest.restoreAllMocks();
     process.env[Events.Key] = Events.Push;
     process.env[RefKey] = "refs/heads/feature-branch";
 
@@ -155,9 +164,14 @@ test("save on GHES with AC available", async () => {
     await run(new StateProvider());
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith([inputPath], primaryKey, {
-        uploadChunkSize: 4000000
-    });
+    expect(saveCacheMock).toHaveBeenCalledWith(
+        [inputPath],
+        primaryKey,
+        {
+            uploadChunkSize: 4000000
+        },
+        false
+    );
 
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
@@ -251,7 +265,8 @@ test("save with large cache outputs warning", async () => {
     expect(saveCacheMock).toHaveBeenCalledWith(
         [inputPath],
         primaryKey,
-        expect.anything()
+        expect.anything(),
+        false
     );
 
     expect(logWarningMock).toHaveBeenCalledTimes(1);
@@ -297,7 +312,8 @@ test("save with reserve cache failure outputs warning", async () => {
     expect(saveCacheMock).toHaveBeenCalledWith(
         [inputPath],
         primaryKey,
-        expect.anything()
+        expect.anything(),
+        false
     );
 
     expect(logWarningMock).toHaveBeenCalledWith(
@@ -339,7 +355,8 @@ test("save with server error outputs warning", async () => {
     expect(saveCacheMock).toHaveBeenCalledWith(
         [inputPath],
         primaryKey,
-        expect.anything()
+        expect.anything(),
+        false
     );
 
     expect(logWarningMock).toHaveBeenCalledTimes(1);
@@ -378,9 +395,14 @@ test("save with valid inputs uploads a cache", async () => {
     await run(new StateProvider());
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith([inputPath], primaryKey, {
-        uploadChunkSize: 4000000
-    });
+    expect(saveCacheMock).toHaveBeenCalledWith(
+        [inputPath],
+        primaryKey,
+        {
+            uploadChunkSize: 4000000
+        },
+        false
+    );
 
     expect(failedMock).toHaveBeenCalledTimes(0);
 });

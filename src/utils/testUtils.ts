@@ -13,6 +13,7 @@ interface CacheInput {
     path: string;
     key: string;
     restoreKeys?: string[];
+    enableCrossOsArchive?: boolean;
 }
 
 export function setInputs(input: CacheInput): void {
@@ -20,6 +21,11 @@ export function setInputs(input: CacheInput): void {
     setInput(Inputs.Key, input.key);
     input.restoreKeys &&
         setInput(Inputs.RestoreKeys, input.restoreKeys.join("\n"));
+    input.enableCrossOsArchive !== undefined &&
+        setInput(
+            Inputs.EnableCrossOsArchive,
+            input.enableCrossOsArchive.toString()
+        );
 }
 
 export function clearInputs(): void {
@@ -27,4 +33,5 @@ export function clearInputs(): void {
     delete process.env[getInputName(Inputs.Key)];
     delete process.env[getInputName(Inputs.RestoreKeys)];
     delete process.env[getInputName(Inputs.UploadChunkSize)];
+    delete process.env[getInputName(Inputs.EnableCrossOsArchive)];
 }
