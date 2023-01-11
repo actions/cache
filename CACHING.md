@@ -240,7 +240,9 @@ with:
 
 ### Saving cache even if the build fails
 
-There are instances where some flaky test cases would fail the entire workflow and users would get frustrated because the builds would run for hours and the cache couldn't get saved as the workflow failed in between. For such use-cases, users would now have the ability to use `actions/cache/save` action to save the cache by using `if: always()` condition. This way the cache will always be saved if generated, or a warning will be thrown that nothing is found on the cache path. Users can also use the `if` condition to only execute the `actions/cache/save` action depending on the output of the previous steps. This way they get more control on when to save the cache.
+There can be cases where a cache should be saved even if the build job fails. For example, a job can fail due to flaky tests but the caches can still be re-used. You can use `actions/cache/save` action to save the cache by using `if: always()` condition. 
+
+Similarly, `actions/cache/save` action can be conditionally used based on the output of the previous steps. This way you get more control on when to save the cache.
 
 ```yaml
 steps:
