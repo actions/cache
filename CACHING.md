@@ -108,10 +108,10 @@ Below are GiHub hosted runner specific paths one should take care of when writin
 #### Ubuntu Paths
 
 ```yaml
-process.env['RUNNER_TEMP']=/home/runner/work/_temp 
-process.cwd()=/home/runner/work/repo/repo
-Home directory = /home/runner
-${{ github.workspace }} = /home/runner/work/repo/repo
+Home directory (`~/`) = `/home/runner`
+`${{ github.workspace }}` = `/home/runner/work/repo/repo`
+`process.env['RUNNER_TEMP']`=`/home/runner/work/_temp` 
+`process.cwd()` = `/home/runner/work/repo/repo`
 ```
 
 #### Windows Paths
