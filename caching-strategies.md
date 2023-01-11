@@ -1,4 +1,4 @@
-# Cache Recipes
+# Caching Strategies
 
 This document lists some of the strategies (and example workflows if possible) which can be used
 
@@ -70,7 +70,6 @@ Caches scoped to the particular workflow run id or run attempt can be stored and
     key: cache-${{ github.run_id }}-${{ github.run_attempt }}
 ```
 
-
 On similar lines, commit sha can be used to create a very specialized and short lived cache.
 
 ```yaml
@@ -101,7 +100,7 @@ The [GitHub Context](https://docs.github.com/en/actions/learn-github-actions/con
 
 ### Understanding how to choose path
 
-While setting paths for caching dependencies it is important to give correct path depending on the hosted runner you are using or whether the action is running in a container job. Assigning different `path` for save and restore will result in cache miss. 
+While setting paths for caching dependencies it is important to give correct path depending on the hosted runner you are using or whether the action is running in a container job. Assigning different `path` for save and restore will result in cache miss.
 
 Below are GiHub hosted runner specific paths one should take care of when writing a workflow which saves/restores caches across OS.
 
@@ -109,7 +108,7 @@ Below are GiHub hosted runner specific paths one should take care of when writin
 
 Home directory (`~/`) = `/home/runner`
 `${{ github.workspace }}` = `/home/runner/work/repo/repo`
-`process.env['RUNNER_TEMP']`=`/home/runner/work/_temp` 
+`process.env['RUNNER_TEMP']`=`/home/runner/work/_temp`
 `process.cwd()` = `/home/runner/work/repo/repo`
 
 #### Windows Paths
@@ -235,7 +234,7 @@ with:
 
 ### Saving cache even if the build fails
 
-There can be cases where a cache should be saved even if the build job fails. For example, a job can fail due to flaky tests but the caches can still be re-used. You can use `actions/cache/save` action to save the cache by using `if: always()` condition. 
+There can be cases where a cache should be saved even if the build job fails. For example, a job can fail due to flaky tests but the caches can still be re-used. You can use `actions/cache/save` action to save the cache by using `if: always()` condition.
 
 Similarly, `actions/cache/save` action can be conditionally used based on the output of the previous steps. This way you get more control on when to save the cache.
 
@@ -252,99 +251,4 @@ steps:
     with:
       path: path/to/dependencies
       key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
-```
-
-## Restoring and saving caches
-
-### Restoring and saving cache using a single action
-
-The [cache](https://github.com/actions/cache) action allows caching dependencies and restoring them using a single action. It has a `main` step and a `post` step. In the `main` step, the cache is restored if it exists for the input `key`, `path` combination. If cache is not found for the given `key` input, then cache is restored using `restore keys`. If the cache doesn't exist or is restored using `restore-keys`, the cache is saved in the `post` step of this action.
-
-```yaml
-  - uses: actions/cache@v3
-    with:
-      path: |
-        path/to/dependencies
-        some/other/dependencies
-      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
-```
-
-The `cache` action provides one output `cache-hit` which is set to `true` when cache is restored using primary key and `false` when cache is restored using `restore-keys` or no cache is restored.
-
-### Download remaining dependencies in case of cache miss
-
-In case cache gets download using restore keys, there's a chance that some dependencies might be missing. It might also be possible that no cache was restored because there was no match. In such cases, the output `cache-hit` is set to `false`. We can make use of this output to download the remaining dependencies.
-
-```yaml
-  - uses: actions/cache@v3
-    with:
-      path: |
-        path/to/dependencies
-        some/other/dependencies
-      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
-  - name: Install Dependencies
-    if: steps.cache.outputs.cache-hit != 'true'
-    run: ./install-dependencies.sh
-```
-
-### Using combination of restore and save actions
-
-```yaml
-  - uses: actions/cache/restore@v3
-    with:
-      path: |
-        path/to/dependencies
-        some/other/dependencies
-      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
-  - name: build
-    run: ./install.sh
-  - uses: actions/cache/save@v3
-    with:
-      path: |
-        path/to/dependencies
-        some/other/dependencies
-      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
-```
-
-### Saving cache once and reusing in multiple workflows
-
-In case of multi-module projects, where the built artifact of one project needs to be reused in subsequent child modules, the need of rebuilding the parent module again and again with every build can be eliminated. The `actions/cache` or `actions/cache/save` action can be used to build and save the parent module artifact once, and restored multiple times while building the child modules.
-
-#### Step 1 - Build the parent module and save it
-
-```yaml
-steps:
-  - uses: actions/checkout@v3
-
-  - name: Build
-    run: ./build-parent-module.sh
-
-  - uses: actions/cache/save@v3
-    id: cache
-    with:
-      path: path/to/dependencies
-      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
-```
-
-#### Step 2 - Restore the built artifact from cache using the same key and path
-
-```yaml
-steps:
-  - uses: actions/checkout@v3
-
-  - uses: actions/cache/restore@v3
-    id: cache
-    with:
-      path: path/to/dependencies
-      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
-
-  - name: Install Dependencies
-    if: steps.cache.outputs.cache-hit != 'true'
-    run: ./install.sh
-      
-  - name: Build
-    run: ./build-child-module.sh
-
-  - name: Publish package to public
-    run: ./publish.sh
 ```
