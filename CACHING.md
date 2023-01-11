@@ -62,7 +62,7 @@ In case of workflows with matrix running for multiple Operating Systems, the cac
       key: ${{ runner.os }}-cache
 ```
 
-### Limiting cache to only the current workflow/attempt
+### Creating a short lived cache
 
 Caches scoped to the particular workflow run id or run attempt can be stored and referred by using the run id/attempt. This is an effective way to have a short lived cache.
 
