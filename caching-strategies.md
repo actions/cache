@@ -6,7 +6,7 @@ This document lists some of the strategies (and example workflows if possible) w
 - to solve some common use cases around saving and restoring caches
 - to leverage the step inputs and outputs more effectively
 
-## Strategically using keys
+## Choosing the right key
 
 ```yaml
 jobs:
