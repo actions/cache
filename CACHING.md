@@ -211,7 +211,7 @@ If you want to avoid re-computing the cache key again in `save` action, the outp
 
 ### Re-evaluate cache key while saving cache
 
-With save action, the key can now be re-evaluated while executing the action. This helps in cases where the lockfiles are generated during the build.
+On the other hand, the key can also be explicitly re-computed while executing the save action. This helps in cases where the lockfiles are generated during the build.
 
 Let's say we have a restore step that computes key at runtime
 
