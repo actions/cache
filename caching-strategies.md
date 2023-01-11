@@ -260,53 +260,38 @@ In case of multi-module projects, where the built artifact of one project needs 
 #### Step 1 - Build the parent module and save it
 
 ```yaml
-name: Saving Primes
+steps:
+  - uses: actions/checkout@v3
 
-on: push
+  - name: Build
+    run: ./build-parent-module.sh
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Generate primes
-      run: ./generate-primes.sh
-      
-    - name: Save Primes
-      id: cache-primes-save
-    - uses: actions/cache/save@v3
-      with:
-        path: |
-          path/to/dependencies
-          some/other/dependencies
-        key: ${{ runner.os }}-primes
+  - uses: actions/cache/save@v3
+    id: cache
+    with:
+      path: path/to/dependencies
+      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
 ```
 
 #### Step 2 - Restore the built artifact from cache using the same key and path
 
 ```yaml
-name: Restoring Primes
+steps:
+  - uses: actions/checkout@v3
 
-on: push
+  - uses: actions/cache/restore@v3
+    id: cache
+    with:
+      path: path/to/dependencies
+      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+  - name: Install Dependencies
+    if: steps.cache.outputs.cache-hit != 'true'
+    run: ./install.sh
+      
+  - name: Build
+    run: ./build-child-module.sh
 
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Restoring Primes
-      id: cache-primes-restore
-    - uses: actions/cache/restore@v3
-      with:
-        path: |
-          path/to/dependencies
-          some/other/dependencies
-        key: ${{ runner.os }}-primes
-    .
-    .
-    . //remaining workflow steps continued
+  - name: Publish package to public
+    run: ./publish.sh
 ```
