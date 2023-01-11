@@ -107,35 +107,30 @@ Below are GiHub hosted runner specific paths one should take care of when writin
 
 #### Ubuntu Paths
 
-```yaml
 Home directory (`~/`) = `/home/runner`
 `${{ github.workspace }}` = `/home/runner/work/repo/repo`
 `process.env['RUNNER_TEMP']`=`/home/runner/work/_temp` 
 `process.cwd()` = `/home/runner/work/repo/repo`
-```
 
 #### Windows Paths
 
-```yaml
-process.env['RUNNER_TEMP']=D:\a\_temp 
-process.cwd()=D:\a\repo\repo 
-Home directory = C:\Users\runneradmin
-${{ github.workspace }} = D:\a\repo\repo
-```
+Home directory (`~/`) = `C:\Users\runneradmin`
+`${{ github.workspace }}` = `D:\a\repo\repo`
+`process.env['RUNNER_TEMP']` = `D:\a\_temp`
+`process.cwd()` = `D:\a\repo\repo`
 
 #### MacOS Paths
 
-```yaml
-process.env['RUNNER_TEMP']=/Users/runner/work/_temp 
-process.cwd()=/Users/runner/work/repo/repo 
-Home directory = /Users/runner
-${{ github.workspace }} = /Users/runner/work/repo/repo
-```
+Home directory (`~/`) = `/Users/runner`
+`${{ github.workspace }}` = `/Users/runner/work/repo/repo`
+`process.env['RUNNER_TEMP']` = `/Users/runner/work/_temp`
+`process.cwd()` = `/Users/runner/work/repo/repo`
 
 Where:
-Home directory  = `~/`.
-cwd() = Current working directory where code executes by default.
-RUNNER_TEMP = Environment variable defined for temporary storage location.
+
+`cwd()` = Current working directory where the repository code resides.
+
+`RUNNER_TEMP` = Environment variable defined for temporary storage location.
 
 ### Make cache read only / Reuse cache from centralized job
 
