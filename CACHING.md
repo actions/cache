@@ -70,7 +70,6 @@ Caches scoped to the particular workflow run id or run attempt can be stored and
     key: cache-${{ github.run_id }}-${{ github.run_attempt }}
 ```
 
-### Limiting cache for a particular commit
 
 For very short term or isolated use cases, where cache is supposed to be short lived, commit sha can be used.
 
