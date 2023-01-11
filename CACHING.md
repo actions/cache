@@ -71,7 +71,7 @@ Caches scoped to the particular workflow run id or run attempt can be stored and
 ```
 
 
-For very short term or isolated use cases, where cache is supposed to be short lived, commit sha can be used.
+On similar lines, commit sha can be used to create a very specialized and short lived cache.
 
 ```yaml
   - uses: actions/cache@v3
