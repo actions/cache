@@ -34,7 +34,7 @@ One of the most common use case is to use hash for lockfile as key. This way sam
 
 ### Using restore keys to download the closest matching cache
 
-If cache is not found matching the primary key, restore keys will be used to download the closest matching cache that was recently created. This way most of the dependencies can be downloaded from the restore key hence saving some build time.
+If cache is not found matching the primary key, restore keys can be used to download the closest matching cache that was recently created. This ensures that the build/install step will need to additionally fetch just a handful of newer dependencies, and hence saving build time.
 
 ```yaml
   - uses: actions/cache@v3
