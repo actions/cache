@@ -2,8 +2,9 @@
 
 This document lists some of the strategies (and example workflows if possible) which can be used
 
-- to solve some common use cases
-- to effectively leverage the step inputs and outputs
+- to use an effective cache key and/or path
+- to solve some common use cases around saving and restoring caches
+- to leverage the step inputs and outputs more effectively
 
 ## Strategically using keys
 
