@@ -21,7 +21,7 @@ In your workflows, you can use different strategies to name your key depending o
 
 ### Updating cache for any change in the dependencies
 
-One of the most common use case is to use hash for lockfile as key. This way same cache will be restored for same lockfiles until there's any change in the lockfile/dependencies.
+One of the most common use case is to use hash for lockfile as key. This way, same cache will be restored for a lockfile until there's a change in dependencies listed in lockfile.
 
 ```yaml
   - uses: actions/cache@v3
