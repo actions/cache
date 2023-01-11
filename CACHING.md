@@ -17,7 +17,7 @@ jobs:
         key: ${{ some-metadata }}-cache
 ```
 
-In your workflows, you can use different strategies to name your key depending on your use case so that the cache is scoped properly based on the need. If you wish to create OS specific caches, or caches based on the lockfiles, commit SHA, workflow run id, etc. then you can generate the keys dynamically at run-time. Below are some of the tips to strategically name your cache using the [cache](https://github.com/actions/cache) or [restore](https://github.com/actions/cache/tree/main/restore) action.
+In your workflows, you can use different strategies to name your key depending on your use case so that the cache is scoped appropriately for your need. For example, you can have cache specific to OS, or based on the lockfile or commit SHA or even workflow run.
 
 ### Updating cache for any change in the dependencies
 
