@@ -99,7 +99,7 @@ The [GitHub Context](https://docs.github.com/en/actions/learn-github-actions/con
 
 ## Restoring Cache
 
-### Know paths better
+### Understanding how to choose path
 
 While setting paths for caching dependencies it is important to give correct path depending on the image you are using and if you are running the action inside or outside the container. Below are some paths one should keep in mind while writing their workflow files.
 
