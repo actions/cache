@@ -56,7 +56,8 @@ If you are using this inside a container, a POSIX-compliant `tar` needs to be in
 
 * `cache-hit` - A boolean value to indicate an exact match was found for the key.
 
-> Note: `cache-hit` will be set to `true` only when cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.
+> **Note** 
+> `cache-hit` will be set to `true` only when cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.
 
 See [Skipping steps based on cache-hit](#skipping-steps-based-on-cache-hit) for info on using this output
 
