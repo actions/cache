@@ -41,6 +41,8 @@ Create a workflow `.yml` file in your repositories `.github/workflows` directory
 
 If you are using this inside a container, a POSIX-compliant `tar` needs to be included and accessible in the execution path.
 
+If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are required for [Cross-OS caching](https://github.com/actions/cache/blob/main/tips-and-workarounds.md#cross-os-cache) to work. They are also recommended to be installed in general so the performance is on par with `hosted` Windows runners.
+
 ### Inputs
 
 * `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
