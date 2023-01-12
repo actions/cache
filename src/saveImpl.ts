@@ -52,9 +52,16 @@ async function saveImpl(stateProvider: IStateProvider): Promise<number | void> {
             required: true
         });
 
-        cacheId = await cache.saveCache(cachePaths, primaryKey, {
-            uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
-        });
+        const enableCrossOsArchive = utils.getInputAsBool(
+            Inputs.EnableCrossOsArchive
+        );
+
+        cacheId = await cache.saveCache(
+            cachePaths,
+            primaryKey,
+            { uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize) },
+            enableCrossOsArchive
+        );
 
         if (cacheId != -1) {
             core.info(`Cache saved with key: ${primaryKey}`);

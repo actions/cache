@@ -38,6 +38,7 @@
 - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 - [Swift - Swift Package Manager](#swift---swift-package-manager)
+- [Swift - Mint](#swift---mint)
 
 ## C# - NuGet
 
@@ -640,4 +641,19 @@ whenever possible:
     key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
     restore-keys: |
       ${{ runner.os }}-spm-
+```
+
+## Swift - Mint
+
+```yaml
+env:
+  MINT_PATH: .mint/lib
+  MINT_LINK_PATH: .mint/bin
+steps:
+  - uses: actions/cache@v3
+    with:
+      path: .mint
+      key: ${{ runner.os }}-mint-${{ hashFiles('**/Mintfile') }}
+      restore-keys: |
+        ${{ runner.os }}-mint-
 ```
