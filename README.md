@@ -49,7 +49,7 @@ If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are requir
 * `key` - An explicit key for restoring and saving the cache. Refer [creating a cache key](#creating-a-cache-key).
 * `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
 * `enableCrossOsArchive` - An optional boolean when enabled, allows Windows runners to save or restore caches that can be restored or saved respectively on other platforms. Default: false
-* `fail-on-cache-miss` - Fail the workflow if cache entry is not found
+* `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: false
 
 #### Environment Variables
 
