@@ -18,7 +18,7 @@ inputs:
     description: 'An optional boolean when enabled, allows windows runners to save or restore caches that can be restored or saved respectively on other platforms'
     default: 'false'
     required: false
-  dry-run:
+  lookup-only:
     description: 'Skip downloading cache. Only check if cache entry exists'
     default: 'false'
     required: false

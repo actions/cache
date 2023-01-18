@@ -127,7 +127,7 @@ test("restore on GHES with AC available ", async () => {
         key,
         [],
         {
-            dryRun: false
+            lookupOnly: false
         },
         false
     );
@@ -181,7 +181,7 @@ test("restore with too many keys should fail", async () => {
         key,
         restoreKeys,
         {
-            dryRun: false
+            lookupOnly: false
         },
         false
     );
@@ -207,7 +207,7 @@ test("restore with large key should fail", async () => {
         key,
         [],
         {
-            dryRun: false
+            lookupOnly: false
         },
         false
     );
@@ -233,7 +233,7 @@ test("restore with invalid key should fail", async () => {
         key,
         [],
         {
-            dryRun: false
+            lookupOnly: false
         },
         false
     );
@@ -268,7 +268,7 @@ test("restore with no cache found", async () => {
         key,
         [],
         {
-            dryRun: false
+            lookupOnly: false
         },
         false
     );
@@ -309,7 +309,7 @@ test("restore with restore keys and no cache found", async () => {
         key,
         [restoreKey],
         {
-            dryRun: false
+            lookupOnly: false
         },
         false
     );
@@ -349,7 +349,7 @@ test("restore with cache found for key", async () => {
         key,
         [],
         {
-            dryRun: false
+            lookupOnly: false
         },
         false
     );
@@ -391,7 +391,7 @@ test("restore with cache found for restore key", async () => {
         key,
         [restoreKey],
         {
-            dryRun: false
+            lookupOnly: false
         },
         false
     );

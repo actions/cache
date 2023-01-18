@@ -34,13 +34,13 @@ async function restoreImpl(
         const enableCrossOsArchive = utils.getInputAsBool(
             Inputs.EnableCrossOsArchive
         );
-        const dryRun = utils.getInputAsBool(Inputs.DryRun);
+        const lookupOnly = utils.getInputAsBool(Inputs.LookupOnly);
 
         const cacheKey = await cache.restoreCache(
             cachePaths,
             primaryKey,
             restoreKeys,
-            { dryRun: dryRun },
+            { lookupOnly: lookupOnly },
             enableCrossOsArchive
         );
 

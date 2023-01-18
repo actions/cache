@@ -5035,7 +5035,7 @@ var Inputs;
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
     Inputs["EnableCrossOsArchive"] = "enableCrossOsArchive";
-    Inputs["DryRun"] = "dry-run"; // Input for cache, restore action
+    Inputs["LookupOnly"] = "lookup-only"; // Input for cache, restore action
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -41922,7 +41922,7 @@ function getDownloadOptions(copy) {
         downloadConcurrency: 8,
         timeoutInMs: 30000,
         segmentTimeoutInMs: 3600000,
-        dryRun: false
+        lookupOnly: false
     };
     if (copy) {
         if (typeof copy.useAzureSdk === 'boolean') {
@@ -41937,8 +41937,8 @@ function getDownloadOptions(copy) {
         if (typeof copy.segmentTimeoutInMs === 'number') {
             result.segmentTimeoutInMs = copy.segmentTimeoutInMs;
         }
-        if (typeof copy.dryRun === 'boolean') {
-            result.dryRun = copy.dryRun;
+        if (typeof copy.lookupOnly === 'boolean') {
+            result.lookupOnly = copy.lookupOnly;
         }
     }
     const segmentDownloadTimeoutMins = process.env['SEGMENT_DOWNLOAD_TIMEOUT_MINS'];
@@ -41952,7 +41952,7 @@ function getDownloadOptions(copy) {
     core.debug(`Request timeout (ms): ${result.timeoutInMs}`);
     core.debug(`Cache segment download timeout mins env var: ${process.env['SEGMENT_DOWNLOAD_TIMEOUT_MINS']}`);
     core.debug(`Segment download timeout (ms): ${result.segmentTimeoutInMs}`);
-    core.debug(`Dry run: ${result.dryRun}`);
+    core.debug(`Lookup only: ${result.lookupOnly}`);
     return result;
 }
 exports.getDownloadOptions = getDownloadOptions;
@@ -47401,8 +47401,8 @@ function restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArch
                 // Cache not found
                 return undefined;
             }
-            if (options === null || options === void 0 ? void 0 : options.dryRun) {
-                core.info('Dry run - skipping download');
+            if (options === null || options === void 0 ? void 0 : options.lookupOnly) {
+                core.info('Lookup only - skipping download');
                 return cacheEntry.cacheKey;
             }
             archivePath = path.join(yield utils.createTempDirectory(), utils.getCacheFileName(compressionMethod));

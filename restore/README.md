@@ -7,7 +7,7 @@ The restore action, as the name suggest, restores a cache. It acts similar to th
 * `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `key` - String used while saving cache for restoring the cache
 * `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
-* `dry-run` - Skip downloading cache. Only check if cache entry exists. Default: false
+* `lookup-only` - Skip downloading cache. Only check if cache entry exists. Default: false
 
 ## Outputs
 

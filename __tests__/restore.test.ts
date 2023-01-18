@@ -79,7 +79,7 @@ test("restore with no cache found", async () => {
         key,
         [],
         {
-            dryRun: false
+            lookupOnly: false
         },
         false
     );
@@ -122,7 +122,7 @@ test("restore with restore keys and no cache found", async () => {
         key,
         [restoreKey],
         {
-            dryRun: false
+            lookupOnly: false
         },
         false
     );
@@ -164,7 +164,7 @@ test("restore with cache found for key", async () => {
         key,
         [],
         {
-            dryRun: false
+            lookupOnly: false
         },
         false
     );
@@ -209,7 +209,7 @@ test("restore with cache found for restore key", async () => {
         key,
         [restoreKey],
         {
-            dryRun: false
+            lookupOnly: false
         },
         false
     );
@@ -232,7 +232,7 @@ test("restore with dry-run set", async () => {
     testUtils.setInputs({
         path: path,
         key,
-        dryRun: true
+        lookupOnly: true
     });
 
     const infoMock = jest.spyOn(core, "info");
@@ -253,7 +253,7 @@ test("restore with dry-run set", async () => {
         key,
         [],
         {
-            dryRun: true
+            lookupOnly: true
         },
         false
     );

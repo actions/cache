@@ -14,7 +14,7 @@ interface CacheInput {
     key: string;
     restoreKeys?: string[];
     enableCrossOsArchive?: boolean;
-    dryRun?: boolean;
+    lookupOnly?: boolean;
 }
 
 export function setInputs(input: CacheInput): void {
@@ -27,8 +27,8 @@ export function setInputs(input: CacheInput): void {
             Inputs.EnableCrossOsArchive,
             input.enableCrossOsArchive.toString()
         );
-    input.dryRun !== undefined &&
-        setInput(Inputs.DryRun, input.dryRun.toString());
+    input.lookupOnly !== undefined &&
+        setInput(Inputs.LookupOnly, input.lookupOnly.toString());
 }
 
 export function clearInputs(): void {
@@ -37,5 +37,5 @@ export function clearInputs(): void {
     delete process.env[getInputName(Inputs.RestoreKeys)];
     delete process.env[getInputName(Inputs.UploadChunkSize)];
     delete process.env[getInputName(Inputs.EnableCrossOsArchive)];
-    delete process.env[getInputName(Inputs.DryRun)];
+    delete process.env[getInputName(Inputs.LookupOnly)];
 }
