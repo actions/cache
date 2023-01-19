@@ -128,7 +128,7 @@ jobs:
     .
     - name: Save Primes
       id: cache-primes-save
-    - uses: actions/cache/save@v3
+      uses: actions/cache/save@v3
       with:
         path: |
           path/to/dependencies
