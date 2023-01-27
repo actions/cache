@@ -1,6 +1,6 @@
 ---
 name: events
-version: 3.2.0
+version: 3.3.0
 type: npm
 summary: Node's event emitter for all engines.
 homepage: https://github.com/Gozala/events#readme
@@ -33,5 +33,6 @@ licenses:
 - sources: Readme.md
   text: |-
     [MIT](./LICENSE)
+
     [node.js docs]: https://nodejs.org/dist/v11.13.0/docs/api/events.html
 notices: []

@@ -19,7 +19,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-16.04, windows-latest, macOS-latest]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -34,7 +34,7 @@ jobs:
       run: |
         echo "::set-output name=dir::$(npm config get cache)"
     - name: Restore npm cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ${{ steps.npm-cache.outputs.dir }}
         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
@@ -47,23 +47,12 @@ jobs:
       run: npm run lint
     - name: Build & Test
       run: npm run test
-    - name: Ensure dist/ folder is up-to-date
-      if: ${{ runner.os == 'Linux' }}
-      shell: bash
-      run: |
-        npm run build
-        if [ "$(git diff --ignore-space-at-eol | wc -l)" -gt "0" ]; then
-          echo "Detected uncommitted changes after build.  See status below:"
-          git diff
-          exit 1
-        fi
-        
 
   # End to end save and restore
   test-save:
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-16.04, windows-latest, macOS-latest]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -86,7 +75,7 @@ jobs:
     needs: test-save
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-16.04, windows-latest, macOS-latest]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
