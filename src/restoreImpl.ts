@@ -34,6 +34,7 @@ async function restoreImpl(
         const enableCrossOsArchive = utils.getInputAsBool(
             Inputs.EnableCrossOsArchive
         );
+        const failOnCacheMiss = utils.getInputAsBool(Inputs.FailOnCacheMiss);
         const lookupOnly = utils.getInputAsBool(Inputs.LookupOnly);
 
         const cacheKey = await cache.restoreCache(
@@ -45,6 +46,11 @@ async function restoreImpl(
         );
 
         if (!cacheKey) {
+            if (failOnCacheMiss) {
+                throw new Error(
+                    `Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`
+                );
+            }
             core.info(
                 `Cache not found for input keys: ${[
                     primaryKey,

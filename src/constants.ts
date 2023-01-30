@@ -4,6 +4,7 @@ export enum Inputs {
     RestoreKeys = "restore-keys", // Input for cache, restore action
     UploadChunkSize = "upload-chunk-size", // Input for cache, save action
     EnableCrossOsArchive = "enableCrossOsArchive", // Input for cache, restore, save action
+    FailOnCacheMiss = "fail-on-cache-miss", // Input for cache, restore action
     LookupOnly = "lookup-only" // Input for cache, restore action
 }
 

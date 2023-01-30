@@ -182,7 +182,7 @@ steps:
 
 ### Reusing primary key from restore cache as input to save action
 
-If you want to avoid re-computing the cache key again in `save` action, the outputs from `restore` action can be used as input to the `restore` action.
+If you want to avoid re-computing the cache key again in `save` action, the outputs from `restore` action can be used as input to the `save` action.
 
 ```yaml
   - uses: actions/cache/restore@v3
