@@ -357,7 +357,7 @@ test("restore with fail on cache miss disabled and no cache found", async () => 
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
-test("restore with dry-run set", async () => {
+test("restore with lookup-only set", async () => {
     const path = "node_modules";
     const key = "node-test";
     testUtils.setInputs({
