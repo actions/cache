@@ -30,6 +30,7 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 * Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MINS`. Default is 60 minutes.
 * Two new actions available for granular control over caches - [restore](restore/action.yml) and [save](save/action.yml)
 * Support cross-os caching as an opt-in feature. See [Cross OS caching](./tips-and-workarounds.md#cross-os-cache) for more info.
+* Added option to fail job on cache miss. See [Exit workflow on cache miss](./restore/README.md#exit-workflow-on-cache-miss) for more info.
 
 Refer [here](https://github.com/actions/cache/blob/v2/README.md) for previous versions
 
