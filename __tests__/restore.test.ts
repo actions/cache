@@ -290,3 +290,43 @@ test("restore when fail on cache miss is enabled and primary key doesn't match r
     );
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
+
+test("restore with fail on cache miss disabled and no cache found", async () => {
+    const path = "node_modules";
+    const key = "node-test";
+    const restoreKey = "node-";
+    testUtils.setInputs({
+        path: path,
+        key,
+        restoreKeys: [restoreKey],
+        failOnCacheMiss: false
+    });
+
+    const infoMock = jest.spyOn(core, "info");
+    const failedMock = jest.spyOn(core, "setFailed");
+    const stateMock = jest.spyOn(core, "saveState");
+    const restoreCacheMock = jest
+        .spyOn(cache, "restoreCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(undefined);
+        });
+
+    await run();
+
+    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        [path],
+        key,
+        [restoreKey],
+        {},
+        false
+    );
+
+    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
+    expect(stateMock).toHaveBeenCalledTimes(1);
+
+    expect(infoMock).toHaveBeenCalledWith(
+        `Cache not found for input keys: ${key}, ${restoreKey}`
+    );
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
