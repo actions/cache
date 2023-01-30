@@ -50486,7 +50486,7 @@ const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(196);
 const utils = __importStar(__webpack_require__(360));
-function restoreImpl(stateProvider) {
+function restoreImpl(stateProvider, restoreOptions) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             if (!utils.isCacheFeatureAvailable()) {
@@ -50506,7 +50506,7 @@ function restoreImpl(stateProvider) {
             });
             const enableCrossOsArchive = utils.getInputAsBool(constants_1.Inputs.EnableCrossOsArchive);
             const failOnCacheMiss = utils.getInputAsBool(constants_1.Inputs.FailOnCacheMiss);
-            const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys, {}, enableCrossOsArchive);
+            const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys, { lookupOnly: restoreOptions === null || restoreOptions === void 0 ? void 0 : restoreOptions.lookupOnly }, enableCrossOsArchive);
             if (!cacheKey) {
                 if (failOnCacheMiss) {
                     throw new Error(`Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`);

@@ -2,11 +2,13 @@ import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
 import { Events, Inputs, Outputs, State } from "./constants";
+import { RestoreOptions } from "./options";
 import { IStateProvider } from "./stateProvider";
 import * as utils from "./utils/actionUtils";
 
 async function restoreImpl(
-    stateProvider: IStateProvider
+    stateProvider: IStateProvider,
+    restoreOptions?: RestoreOptions
 ): Promise<string | undefined> {
     try {
         if (!utils.isCacheFeatureAvailable()) {
@@ -40,7 +42,7 @@ async function restoreImpl(
             cachePaths,
             primaryKey,
             restoreKeys,
-            {},
+            { lookupOnly: restoreOptions?.lookupOnly },
             enableCrossOsArchive
         );
 
