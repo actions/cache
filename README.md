@@ -118,7 +118,7 @@ jobs:
 
     - name: Restore cached Primes
       id: cache-primes-restore
-    - uses: actions/cache/restore@v3
+      uses: actions/cache/restore@v3
       with:
         path: |
           path/to/dependencies
@@ -129,7 +129,7 @@ jobs:
     .
     - name: Save Primes
       id: cache-primes-save
-    - uses: actions/cache/save@v3
+      uses: actions/cache/save@v3
       with:
         path: |
           path/to/dependencies
