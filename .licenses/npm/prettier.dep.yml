@@ -1,10 +1,11 @@
 ---
 name: prettier
-version: 2.8.0
+version: 2.8.8
 type: npm
 summary: Prettier is an opinionated code formatter
 homepage: https://prettier.io
 license: other
+review_changed_license: false
 licenses:
 - sources: LICENSE
   text: "# Prettier license\n\nPrettier is released under the MIT license:\n\nCopyright
@@ -23,9 +24,13 @@ licenses:
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.\n\n## Licenses of bundled dependencies\n\nThe published Prettier artifact
     additionally contains code with the following licenses:\nMIT, ISC, BSD-2-Clause,
-    BSD-3-Clause, Apache-2.0, 0BSD\n\n## Bundled dependencies\n\n### @angular/compiler@v12.2.16\n\nLicense:
+    BSD-3-Clause, Apache-2.0, 0BSD\n\n## Bundled dependencies\n\n### 
+    
+    
+    
+    @angular/compiler@v12.2.16\n\nLicense:
     MIT\nBy: angular\nRepository: <https://github.com/angular/angular.git>\n\n----------------------------------------\n\n###
-    @babel/code-frame@v7.16.7\n\nLicense: MIT\nBy: The Babel Team\nRepository: <https://github.com/babel/babel.git>\n\n>
+    @babel/code-frame@v7.18.6\n\nLicense: MIT\nBy: The Babel Team\nRepository: <https://github.com/babel/babel.git>\n\n>
     MIT License\n>\n> Copyright (c) 2014-present Sebastian McKenzie and other contributors\n>\n>
     Permission is hereby granted, free of charge, to any person obtaining\n> a copy
     of this software and associated documentation files (the\n> \"Software\"), to
@@ -40,7 +45,7 @@ licenses:
     IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\n> LIABLE FOR ANY CLAIM,
     DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\n> OF CONTRACT, TORT OR OTHERWISE,
     ARISING FROM, OUT OF OR IN CONNECTION\n> WITH THE SOFTWARE OR THE USE OR OTHER
-    DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n### @babel/helper-validator-identifier@v7.18.6\n\nLicense:
+    DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n### @babel/helper-validator-identifier@v7.19.1\n\nLicense:
     MIT\nBy: The Babel Team\nRepository: <https://github.com/babel/babel.git>\n\n>
     MIT License\n>\n> Copyright (c) 2014-present Sebastian McKenzie and other contributors\n>\n>
     Permission is hereby granted, free of charge, to any person obtaining\n> a copy
@@ -56,7 +61,7 @@ licenses:
     IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\n> LIABLE FOR ANY CLAIM,
     DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\n> OF CONTRACT, TORT OR OTHERWISE,
     ARISING FROM, OUT OF OR IN CONNECTION\n> WITH THE SOFTWARE OR THE USE OR OTHER
-    DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n### @babel/highlight@v7.16.10\n\nLicense:
+    DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n### @babel/highlight@v7.18.6\n\nLicense:
     MIT\nBy: The Babel Team\nRepository: <https://github.com/babel/babel.git>\n\n>
     MIT License\n>\n> Copyright (c) 2014-present Sebastian McKenzie and other contributors\n>\n>
     Permission is hereby granted, free of charge, to any person obtaining\n> a copy
@@ -72,7 +77,7 @@ licenses:
     IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\n> LIABLE FOR ANY CLAIM,
     DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\n> OF CONTRACT, TORT OR OTHERWISE,
     ARISING FROM, OUT OF OR IN CONNECTION\n> WITH THE SOFTWARE OR THE USE OR OTHER
-    DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n### @babel/parser@v7.20.1\n\nLicense:
+    DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n### @babel/parser@v7.21.3\n\nLicense:
     MIT\nBy: The Babel Team\nRepository: <https://github.com/babel/babel.git>\n\n>
     Copyright (C) 2012-2014 by various contributors (see AUTHORS)\n>\n> Permission
     is hereby granted, free of charge, to any person obtaining a copy\n> of this software
@@ -189,8 +194,8 @@ licenses:
     BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n> LIABILITY, WHETHER IN AN ACTION OF
     CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n> OUT OF OR IN CONNECTION WITH THE
     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n> SOFTWARE.\n\n----------------------------------------\n\n###
-    @typescript-eslint/types@v5.44.0\n\nLicense: MIT\nRepository: <https://github.com/typescript-eslint/typescript-eslint.git>\n\n>
-    MIT License\n>\n> Copyright (c) 2019 TypeScript ESLint and other contributors\n>\n>
+    @typescript-eslint/types@v5.55.0\n\nLicense: MIT\nRepository: <https://github.com/typescript-eslint/typescript-eslint.git>\n\n>
+    MIT License\n>\n> Copyright (c) 2019 typescript-eslint and other contributors\n>\n>
     Permission is hereby granted, free of charge, to any person obtaining a copy\n>
     of this software and associated documentation files (the \"Software\"), to deal\n>
     in the Software without restriction, including without limitation the rights\n>
@@ -204,16 +209,16 @@ licenses:
     EVENT SHALL THE\n> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
     OR OTHER\n> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
     FROM,\n> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-    IN THE\n> SOFTWARE.\n\n----------------------------------------\n\n### @typescript-eslint/typescript-estree@v5.44.0\n\nLicense:
+    IN THE\n> SOFTWARE.\n\n----------------------------------------\n\n### @typescript-eslint/typescript-estree@v5.55.0\n\nLicense:
     BSD-2-Clause\nRepository: <https://github.com/typescript-eslint/typescript-eslint.git>\n\n>
     TypeScript ESTree\n>\n> Originally extracted from:\n>\n> TypeScript ESLint Parser\n>
     Copyright JS Foundation and other contributors, https://js.foundation\n>\n> Redistribution
     and use in source and binary forms, with or without\n> modification, are permitted
-    provided that the following conditions are met:\n>\n>   * Redistributions of source
-    code must retain the above copyright\n>     notice, this list of conditions and
-    the following disclaimer.\n>   * Redistributions in binary form must reproduce
-    the above copyright\n>     notice, this list of conditions and the following disclaimer
-    in the\n>     documentation and/or other materials provided with the distribution.\n>\n>
+    provided that the following conditions are met:\n>\n> - Redistributions of source
+    code must retain the above copyright\n>   notice, this list of conditions and
+    the following disclaimer.\n> - Redistributions in binary form must reproduce the
+    above copyright\n>   notice, this list of conditions and the following disclaimer
+    in the\n>   documentation and/or other materials provided with the distribution.\n>\n>
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\n>
     AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\n> IMPLIED
     WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE\n> ARE DISCLAIMED.
@@ -224,8 +229,8 @@ licenses:
     IN CONTRACT, STRICT LIABILITY, OR TORT\n> (INCLUDING NEGLIGENCE OR OTHERWISE)
     ARISING IN ANY WAY OUT OF THE USE OF\n> THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.\n\n----------------------------------------\n\n###
-    @typescript-eslint/visitor-keys@v5.44.0\n\nLicense: MIT\nRepository: <https://github.com/typescript-eslint/typescript-eslint.git>\n\n>
-    MIT License\n>\n> Copyright (c) 2019 TypeScript ESLint and other contributors\n>\n>
+    @typescript-eslint/visitor-keys@v5.55.0\n\nLicense: MIT\nRepository: <https://github.com/typescript-eslint/typescript-eslint.git>\n\n>
+    MIT License\n>\n> Copyright (c) 2019 typescript-eslint and other contributors\n>\n>
     Permission is hereby granted, free of charge, to any person obtaining a copy\n>
     of this software and associated documentation files (the \"Software\"), to deal\n>
     in the Software without restriction, including without limitation the rights\n>
@@ -239,7 +244,7 @@ licenses:
     EVENT SHALL THE\n> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
     OR OTHER\n> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
     FROM,\n> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-    IN THE\n> SOFTWARE.\n\n----------------------------------------\n\n### acorn@v8.8.0\n\nLicense:
+    IN THE\n> SOFTWARE.\n\n----------------------------------------\n\n### acorn@v8.8.1\n\nLicense:
     MIT\nRepository: <https://github.com/acornjs/acorn.git>\n\n> MIT License\n>\n>
     Copyright (C) 2012-2022 by various contributors (see AUTHORS)\n>\n> Permission
     is hereby granted, free of charge, to any person obtaining a copy\n> of this software
@@ -726,88 +731,89 @@ licenses:
     BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n> LIABILITY, WHETHER IN AN ACTION OF
     CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n> OUT OF OR IN CONNECTION WITH THE
     SOFTWARE OR THE USE OR OTHER DEALINGS IN\n> THE SOFTWARE.\n\n----------------------------------------\n\n###
-    defaults@v1.0.3\n\nLicense: MIT\nBy: Elijah Insua\nRepository: <git://github.com/tmpvar/defaults.git>\n\n>
-    The MIT License (MIT)\n>\n> Copyright (c) 2015 Elijah Insua\n>\n> Permission is
-    hereby granted, free of charge, to any person obtaining a copy\n> of this software
-    and associated documentation files (the \"Software\"), to deal\n> in the Software
-    without restriction, including without limitation the rights\n> to use, copy,
-    modify, merge, publish, distribute, sublicense, and/or sell\n> copies of the Software,
-    and to permit persons to whom the Software is\n> furnished to do so, subject to
-    the following conditions:\n>\n> The above copyright notice and this permission
-    notice shall be included in\n> all copies or substantial portions of the Software.\n>\n>
-    THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n>
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n> FITNESS
-    FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n> AUTHORS
-    OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n> LIABILITY, WHETHER
-    IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n> OUT OF OR IN CONNECTION
-    WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\n> THE SOFTWARE.\n\n----------------------------------------\n\n###
-    del@v6.0.0\n\nLicense: MIT\nBy: Sindre Sorhus\n\n> MIT License\n>\n> Copyright
-    (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n>\n> Permission
-    is hereby granted, free of charge, to any person obtaining a copy of this software
-    and associated documentation files (the \"Software\"), to deal in the Software
-    without restriction, including without limitation the rights to use, copy, modify,
-    merge, publish, distribute, sublicense, and/or sell copies of the Software, and
-    to permit persons to whom the Software is furnished to do so, subject to the following
-    conditions:\n>\n> The above copyright notice and this permission notice shall
-    be included in all copies or substantial portions of the Software.\n>\n> THE SOFTWARE
-    IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-    BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-    PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-    BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
-    THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n###
-    detect-newline@v3.1.0\n\nLicense: MIT\nBy: Sindre Sorhus\n\n> MIT License\n>\n>
-    Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n>\n>
-    Permission is hereby granted, free of charge, to any person obtaining a copy of
-    this software and associated documentation files (the \"Software\"), to deal in
-    the Software without restriction, including without limitation the rights to use,
-    copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the
-    Software, and to permit persons to whom the Software is furnished to do so, subject
-    to the following conditions:\n>\n> The above copyright notice and this permission
-    notice shall be included in all copies or substantial portions of the Software.\n>\n>
-    THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-    PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n###
-    diff@v5.0.0\n\nLicense: BSD-3-Clause\nRepository: <git://github.com/kpdecker/jsdiff.git>\n\n>
-    Software License Agreement (BSD License)\n>\n> Copyright (c) 2009-2015, Kevin
-    Decker <kpdecker@gmail.com>\n>\n> All rights reserved.\n>\n> Redistribution and
-    use of this software in source and binary forms, with or without modification,\n>
-    are permitted provided that the following conditions are met:\n>\n> * Redistributions
-    of source code must retain the above\n>   copyright notice, this list of conditions
-    and the\n>   following disclaimer.\n>\n> * Redistributions in binary form must
-    reproduce the above\n>   copyright notice, this list of conditions and the\n>
-    \  following disclaimer in the documentation and/or other\n>   materials provided
-    with the distribution.\n>\n> * Neither the name of Kevin Decker nor the names
-    of its\n>   contributors may be used to endorse or promote products\n>   derived
-    from this software without specific prior\n>   written permission.\n>\n> THIS
-    SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY
-    EXPRESS OR\n> IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-    OF MERCHANTABILITY AND\n> FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN
-    NO EVENT SHALL THE COPYRIGHT OWNER OR\n> CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-    INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\n> DAMAGES (INCLUDING,
-    BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n>
-    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-    LIABILITY, WHETHER\n> IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-    OR OTHERWISE) ARISING IN ANY WAY OUT\n> OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-    OF THE POSSIBILITY OF SUCH DAMAGE.\n\n----------------------------------------\n\n###
-    dir-glob@v3.0.1\n\nLicense: MIT\nBy: Kevin Mårtensson\n\n> MIT License\n>\n> Copyright
-    (c) Kevin Mårtensson <kevinmartensson@gmail.com> (github.com/kevva)\n>\n> Permission
-    is hereby granted, free of charge, to any person obtaining a copy of this software
-    and associated documentation files (the \"Software\"), to deal in the Software
-    without restriction, including without limitation the rights to use, copy, modify,
-    merge, publish, distribute, sublicense, and/or sell copies of the Software, and
-    to permit persons to whom the Software is furnished to do so, subject to the following
-    conditions:\n>\n> The above copyright notice and this permission notice shall
-    be included in all copies or substantial portions of the Software.\n>\n> THE SOFTWARE
-    IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-    BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-    PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-    BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
-    THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n###
+    defaults@v1.0.4\n\nLicense: MIT\nBy: Elijah Insua\nRepository: <git://github.com/sindresorhus/node-defaults.git>\n\n>
+    The MIT License (MIT)\n>\n> Copyright (c) 2022 Sindre Sorhus\n> Copyright (c)
+    2015 Elijah Insua\n>\n> Permission is hereby granted, free of charge, to any person
+    obtaining a copy\n> of this software and associated documentation files (the \"Software\"),
+    to deal\n> in the Software without restriction, including without limitation the
+    rights\n> to use, copy, modify, merge, publish, distribute, sublicense, and/or
+    sell\n> copies of the Software, and to permit persons to whom the Software is\n>
+    furnished to do so, subject to the following conditions:\n>\n> The above copyright
+    notice and this permission notice shall be included in\n> all copies or substantial
+    portions of the Software.\n>\n> THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY
+    OF ANY KIND, EXPRESS OR\n> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+    OF MERCHANTABILITY,\n> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+    NO EVENT SHALL THE\n> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
+    OR OTHER\n> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+    FROM,\n> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+    IN\n> THE SOFTWARE.\n\n----------------------------------------\n\n### del@v6.1.1\n\nLicense:
+    MIT\nBy: Sindre Sorhus\n\n> MIT License\n>\n> Copyright (c) Sindre Sorhus <sindresorhus@gmail.com>
+    (https://sindresorhus.com)\n>\n> Permission is hereby granted, free of charge,
+    to any person obtaining a copy of this software and associated documentation files
+    (the \"Software\"), to deal in the Software without restriction, including without
+    limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+    and/or sell copies of the Software, and to permit persons to whom the Software
+    is furnished to do so, subject to the following conditions:\n>\n> The above copyright
+    notice and this permission notice shall be included in all copies or substantial
+    portions of the Software.\n>\n> THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY
+    OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+    SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.\n\n----------------------------------------\n\n### detect-newline@v3.1.0\n\nLicense:
+    MIT\nBy: Sindre Sorhus\n\n> MIT License\n>\n> Copyright (c) Sindre Sorhus <sindresorhus@gmail.com>
+    (sindresorhus.com)\n>\n> Permission is hereby granted, free of charge, to any
+    person obtaining a copy of this software and associated documentation files (the
+    \"Software\"), to deal in the Software without restriction, including without
+    limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+    and/or sell copies of the Software, and to permit persons to whom the Software
+    is furnished to do so, subject to the following conditions:\n>\n> The above copyright
+    notice and this permission notice shall be included in all copies or substantial
+    portions of the Software.\n>\n> THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY
+    OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+    SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.\n\n----------------------------------------\n\n### diff@v5.0.0\n\nLicense:
+    BSD-3-Clause\nRepository: <git://github.com/kpdecker/jsdiff.git>\n\n> Software
+    License Agreement (BSD License)\n>\n> Copyright (c) 2009-2015, Kevin Decker <kpdecker@gmail.com>\n>\n>
+    All rights reserved.\n>\n> Redistribution and use of this software in source and
+    binary forms, with or without modification,\n> are permitted provided that the
+    following conditions are met:\n>\n> * Redistributions of source code must retain
+    the above\n>   copyright notice, this list of conditions and the\n>   following
+    disclaimer.\n>\n> * Redistributions in binary form must reproduce the above\n>
+    \  copyright notice, this list of conditions and the\n>   following disclaimer
+    in the documentation and/or other\n>   materials provided with the distribution.\n>\n>
+    * Neither the name of Kevin Decker nor the names of its\n>   contributors may
+    be used to endorse or promote products\n>   derived from this software without
+    specific prior\n>   written permission.\n>\n> THIS SOFTWARE IS PROVIDED BY THE
+    COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR\n> IMPLIED WARRANTIES,
+    INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND\n>
+    FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+    OWNER OR\n> CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+    EXEMPLARY, OR CONSEQUENTIAL\n> DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+    OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n> DATA, OR PROFITS; OR BUSINESS
+    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER\n> IN CONTRACT,
+    STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+    OUT\n> OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+    DAMAGE.\n\n----------------------------------------\n\n### dir-glob@v3.0.1\n\nLicense:
+    MIT\nBy: Kevin Mårtensson\n\n> MIT License\n>\n> Copyright (c) Kevin Mårtensson
+    <kevinmartensson@gmail.com> (github.com/kevva)\n>\n> Permission is hereby granted,
+    free of charge, to any person obtaining a copy of this software and associated
+    documentation files (the \"Software\"), to deal in the Software without restriction,
+    including without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to permit persons
+    to whom the Software is furnished to do so, subject to the following conditions:\n>\n>
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.\n>\n> THE SOFTWARE IS PROVIDED
+    \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+    LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE
+    AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+    FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT
+    OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+    OR OTHER DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n###
     editorconfig@v0.15.3\n\nLicense: MIT\nBy: EditorConfig Team\nRepository: <git://github.com/editorconfig/editorconfig-core-js.git>\n\n>
     Copyright © 2012 EditorConfig Team\n>\n> Permission is hereby granted, free of
     charge, to any person obtaining a copy\n> of this software and associated documentation
@@ -823,7 +829,7 @@ licenses:
     LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n> LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
     TORT OR OTHERWISE, ARISING FROM,\n> OUT OF OR IN CONNECTION WITH THE SOFTWARE
     OR THE USE OR OTHER DEALINGS IN\n> THE SOFTWARE.\n\n----------------------------------------\n\n###
-    editorconfig-to-prettier@v0.2.0\n\nLicense: ISC\nBy: Joseph Frazier\nRepository:
+    editorconfig-to-prettier@v1.0.0\n\nLicense: ISC\nBy: Joseph Frazier\nRepository:
     <git+https://github.com/josephfrazier/editorconfig-to-prettier.git>\n\n----------------------------------------\n\n###
     emoji-regex@v9.2.2\n\nLicense: MIT\nBy: Mathias Bynens\nRepository: <https://github.com/mathiasbynens/emoji-regex.git>\n\n>
     Copyright Mathias Bynens <https://mathiasbynens.be/>\n>\n> Permission is hereby
@@ -1030,7 +1036,7 @@ licenses:
     under the License is distributed on an \"AS IS\" BASIS,\n>    WITHOUT WARRANTIES
     OR CONDITIONS OF ANY KIND, either express or implied.\n>    See the License for
     the specific language governing permissions and\n>    limitations under the License.\n\n----------------------------------------\n\n###
-    espree@v9.4.0\n\nLicense: BSD-2-Clause\nBy: Nicholas C. Zakas\n\n> BSD 2-Clause
+    espree@v9.4.1\n\nLicense: BSD-2-Clause\nBy: Nicholas C. Zakas\n\n> BSD 2-Clause
     License\n>\n> Copyright (c) Open JS Foundation\n> All rights reserved.\n>\n> Redistribution
     and use in source and binary forms, with or without\n> modification, are permitted
     provided that the following conditions are met:\n>\n> 1. Redistributions of source
@@ -1095,7 +1101,7 @@ licenses:
     OR COPYRIGHT HOLDERS BE\n> LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
     IN AN ACTION\n> OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\n>
     WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n###
-    fast-glob@v3.2.11\n\nLicense: MIT\nBy: Denis Malinochkin\n\n> The MIT License
+    fast-glob@v3.2.12\n\nLicense: MIT\nBy: Denis Malinochkin\n\n> The MIT License
     (MIT)\n>\n> Copyright (c) Denis Malinochkin\n>\n> Permission is hereby granted,
     free of charge, to any person obtaining a copy\n> of this software and associated
     documentation files (the \"Software\"), to deal\n> in the Software without restriction,
@@ -1127,7 +1133,7 @@ licenses:
     BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\n> IN AN ACTION OF
     CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\n> CONNECTION WITH THE
     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n###
-    fastq@v1.13.0\n\nLicense: ISC\nBy: Matteo Collina\nRepository: <git+https://github.com/mcollina/fastq.git>\n\n>
+    fastq@v1.14.0\n\nLicense: ISC\nBy: Matteo Collina\nRepository: <git+https://github.com/mcollina/fastq.git>\n\n>
     Copyright (c) 2015-2020, Matteo Collina <matteo.collina@gmail.com>\n>\n> Permission
     to use, copy, modify, and/or distribute this software for any\n> purpose with
     or without fee is hereby granted, provided that the above\n> copyright notice
@@ -1228,7 +1234,7 @@ licenses:
     BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n> LIABILITY, WHETHER IN AN ACTION OF
     CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n> OUT OF OR IN CONNECTION WITH THE
     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n> SOFTWARE.\n\n----------------------------------------\n\n###
-    flatted@v3.2.5\n\nLicense: ISC\nBy: Andrea Giammarchi\nRepository: <git+https://github.com/WebReflection/flatted.git>\n\n>
+    flatted@v3.2.7\n\nLicense: ISC\nBy: Andrea Giammarchi\nRepository: <git+https://github.com/WebReflection/flatted.git>\n\n>
     ISC License\n>\n> Copyright (c) 2018-2020, Andrea Giammarchi, @WebReflection\n>\n>
     Permission to use, copy, modify, and/or distribute this software for any\n> purpose
     with or without fee is hereby granted, provided that the above\n> copyright notice
@@ -1328,7 +1334,7 @@ licenses:
     SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.\n\n----------------------------------------\n\n### glob@v7.2.0\n\nLicense:
+    SOFTWARE.\n\n----------------------------------------\n\n### glob@v7.2.3\n\nLicense:
     ISC\nBy: Isaac Z. Schlueter\nRepository: <git://github.com/isaacs/node-glob.git>\n\n>
     The ISC License\n>\n> Copyright (c) Isaac Z. Schlueter and Contributors\n>\n>
     Permission to use, copy, modify, and/or distribute this software for any\n> purpose
@@ -1368,11 +1374,11 @@ licenses:
     SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.\n\n----------------------------------------\n\n### graceful-fs@v4.2.9\n\nLicense:
+    SOFTWARE.\n\n----------------------------------------\n\n### graceful-fs@v4.2.10\n\nLicense:
     ISC\nRepository: <https://github.com/isaacs/node-graceful-fs>\n\n> The ISC License\n>\n>
-    Copyright (c) Isaac Z. Schlueter, Ben Noordhuis, and Contributors\n>\n> Permission
-    to use, copy, modify, and/or distribute this software for any\n> purpose with
-    or without fee is hereby granted, provided that the above\n> copyright notice
+    Copyright (c) 2011-2022 Isaac Z. Schlueter, Ben Noordhuis, and Contributors\n>\n>
+    Permission to use, copy, modify, and/or distribute this software for any\n> purpose
+    with or without fee is hereby granted, provided that the above\n> copyright notice
     and this permission notice appear in all copies.\n>\n> THE SOFTWARE IS PROVIDED
     \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES\n> WITH REGARD TO THIS SOFTWARE
     INCLUDING ALL IMPLIED WARRANTIES OF\n> MERCHANTABILITY AND FITNESS. IN NO EVENT
@@ -1441,21 +1447,6 @@ licenses:
     IN AN ACTION OF CONTRACT,\n> TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
     WITH THE\n> SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n###
     html-tag-names@v2.0.1\n\nLicense: MIT\nBy: Titus Wormer\n\n> (The MIT License)\n>\n>
-    Copyright (c) 2016 Titus Wormer <tituswormer@gmail.com>\n>\n> Permission is hereby
-    granted, free of charge, to any person obtaining\n> a copy of this software and
-    associated documentation files (the\n> 'Software'), to deal in the Software without
-    restriction, including\n> without limitation the rights to use, copy, modify,
-    merge, publish,\n> distribute, sublicense, and/or sell copies of the Software,
-    and to\n> permit persons to whom the Software is furnished to do so, subject to\n>
-    the following conditions:\n>\n> The above copyright notice and this permission
-    notice shall be\n> included in all copies or substantial portions of the Software.\n>\n>
-    THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,\n> EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\n> MERCHANTABILITY, FITNESS
-    FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\n> IN NO EVENT SHALL THE AUTHORS
-    OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\n> CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-    IN AN ACTION OF CONTRACT,\n> TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-    WITH THE\n> SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n###
-    html-void-elements@v2.0.1\n\nLicense: MIT\nBy: Titus Wormer\n\n> (The MIT License)\n>\n>
     Copyright (c) 2016 Titus Wormer <tituswormer@gmail.com>\n>\n> Permission is hereby
     granted, free of charge, to any person obtaining\n> a copy of this software and
     associated documentation files (the\n> 'Software'), to deal in the Software without
@@ -1630,38 +1621,53 @@ licenses:
     IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\n> LIABLE FOR ANY CLAIM,
     DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\n> OF CONTRACT, TORT OR OTHERWISE,
     ARISING FROM, OUT OF OR IN CONNECTION\n> WITH THE SOFTWARE OR THE USE OR OTHER
-    DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n### import-fresh@v3.3.0\n\nLicense:
-    MIT\nBy: Sindre Sorhus\n\n> MIT License\n>\n> Copyright (c) Sindre Sorhus <sindresorhus@gmail.com>
-    (https://sindresorhus.com)\n>\n> Permission is hereby granted, free of charge,
-    to any person obtaining a copy of this software and associated documentation files
-    (the \"Software\"), to deal in the Software without restriction, including without
-    limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-    and/or sell copies of the Software, and to permit persons to whom the Software
-    is furnished to do so, subject to the following conditions:\n>\n> The above copyright
-    notice and this permission notice shall be included in all copies or substantial
-    portions of the Software.\n>\n> THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY
-    OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-    SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.\n\n----------------------------------------\n\n### indent-string@v4.0.0\n\nLicense:
-    MIT\nBy: Sindre Sorhus\n\n> MIT License\n>\n> Copyright (c) Sindre Sorhus <sindresorhus@gmail.com>
-    (sindresorhus.com)\n>\n> Permission is hereby granted, free of charge, to any
-    person obtaining a copy of this software and associated documentation files (the
-    \"Software\"), to deal in the Software without restriction, including without
-    limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-    and/or sell copies of the Software, and to permit persons to whom the Software
-    is furnished to do so, subject to the following conditions:\n>\n> The above copyright
-    notice and this permission notice shall be included in all copies or substantial
-    portions of the Software.\n>\n> THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY
-    OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-    SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.\n\n----------------------------------------\n\n### indexes-of@v1.0.1\n\nLicense:
-    MIT\nBy: Dominic Tarr\nRepository: <git://github.com/dominictarr/indexes-of.git>\n\n>
+    DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n### ignore@v5.2.4\n\nLicense:
+    MIT\nBy: kael\nRepository: <git@github.com:kaelzhang/node-ignore.git>\n\n> Copyright
+    (c) 2013 Kael Zhang <i@kael.me>, contributors\n> http://kael.me/\n>\n> Permission
+    is hereby granted, free of charge, to any person obtaining\n> a copy of this software
+    and associated documentation files (the\n> \"Software\"), to deal in the Software
+    without restriction, including\n> without limitation the rights to use, copy,
+    modify, merge, publish,\n> distribute, sublicense, and/or sell copies of the Software,
+    and to\n> permit persons to whom the Software is furnished to do so, subject to\n>
+    the following conditions:\n>\n> The above copyright notice and this permission
+    notice shall be\n> included in all copies or substantial portions of the Software.\n>\n>
+    THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\n> EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\n> MERCHANTABILITY, FITNESS
+    FOR A PARTICULAR PURPOSE AND\n> NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+    OR COPYRIGHT HOLDERS BE\n> LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+    IN AN ACTION\n> OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\n>
+    WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n###
+    import-fresh@v3.3.0\n\nLicense: MIT\nBy: Sindre Sorhus\n\n> MIT License\n>\n>
+    Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n>\n>
+    Permission is hereby granted, free of charge, to any person obtaining a copy of
+    this software and associated documentation files (the \"Software\"), to deal in
+    the Software without restriction, including without limitation the rights to use,
+    copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the
+    Software, and to permit persons to whom the Software is furnished to do so, subject
+    to the following conditions:\n>\n> The above copyright notice and this permission
+    notice shall be included in all copies or substantial portions of the Software.\n>\n>
+    THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+    PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n###
+    indent-string@v4.0.0\n\nLicense: MIT\nBy: Sindre Sorhus\n\n> MIT License\n>\n>
+    Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n>\n>
+    Permission is hereby granted, free of charge, to any person obtaining a copy of
+    this software and associated documentation files (the \"Software\"), to deal in
+    the Software without restriction, including without limitation the rights to use,
+    copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the
+    Software, and to permit persons to whom the Software is furnished to do so, subject
+    to the following conditions:\n>\n> The above copyright notice and this permission
+    notice shall be included in all copies or substantial portions of the Software.\n>\n>
+    THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+    PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n----------------------------------------\n\n###
+    indexes-of@v1.0.1\n\nLicense: MIT\nBy: Dominic Tarr\nRepository: <git://github.com/dominictarr/indexes-of.git>\n\n>
     Copyright (c) 2013 Dominic Tarr\n>\n> Permission is hereby granted, free of charge,
     \n> to any person obtaining a copy of this software and \n> associated documentation
     files (the \"Software\"), to \n> deal in the Software without restriction, including
@@ -1758,7 +1764,7 @@ licenses:
     OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n> LIABILITY, WHETHER
     IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n> OUT OF OR IN CONNECTION
     WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\n> THE SOFTWARE.\n\n----------------------------------------\n\n###
-    is-core-module@v2.8.1\n\nLicense: MIT\nBy: Jordan Harband\nRepository: <git+https://github.com/inspect-js/is-core-module.git>\n\n>
+    is-core-module@v2.11.0\n\nLicense: MIT\nBy: Jordan Harband\nRepository: <git+https://github.com/inspect-js/is-core-module.git>\n\n>
     The MIT License (MIT)\n>\n> Copyright (c) 2014 Dave Justice\n>\n> Permission is
     hereby granted, free of charge, to any person obtaining a copy of\n> this software
     and associated documentation files (the \"Software\"), to deal in\n> the Software
@@ -2011,7 +2017,7 @@ licenses:
     SOFTWARE OR THE USE OR OTHER\n> DEALINGS IN THE SOFTWARE.\n>\n> ---\n>\n> This
     library is a fork of 'better-json-errors' by Kat Marchán, extended and\n> distributed
     under the terms of the MIT license above.\n\n----------------------------------------\n\n###
-    json5@v2.2.1\n\nLicense: MIT\nBy: Aseem Kishore\nRepository: <git+https://github.com/json5/json5.git>\n\n>
+    json5@v2.2.2\n\nLicense: MIT\nBy: Aseem Kishore\nRepository: <git+https://github.com/json5/json5.git>\n\n>
     MIT License\n>\n> Copyright (c) 2012-2018 Aseem Kishore, and [others].\n>\n> Permission
     is hereby granted, free of charge, to any person obtaining a copy\n> of this software
     and associated documentation files (the \"Software\"), to deal\n> in the Software
@@ -2758,7 +2764,7 @@ licenses:
     OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n> LIABILITY, WHETHER
     IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n> OUT OF OR IN CONNECTION
     WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\n> THE SOFTWARE.\n\n----------------------------------------\n\n###
-    resolve@v1.22.0\n\nLicense: MIT\nBy: James Halliday\nRepository: <git://github.com/browserify/resolve.git>\n\n>
+    resolve@v1.22.1\n\nLicense: MIT\nBy: James Halliday\nRepository: <git://github.com/browserify/resolve.git>\n\n>
     MIT License\n>\n> Copyright (c) 2012 James Halliday\n>\n> Permission is hereby
     granted, free of charge, to any person obtaining a copy\n> of this software and
     associated documentation files (the \"Software\"), to deal\n> in the Software
@@ -2871,6 +2877,17 @@ licenses:
     OR OTHER TORTIOUS ACTION, ARISING OUT OF OR\n> IN CONNECTION WITH THE USE OR PERFORMANCE
     OF THIS SOFTWARE.\n\n----------------------------------------\n\n### semver@v7.3.7\n\nLicense:
     ISC\nBy: GitHub Inc.\nRepository: <https://github.com/npm/node-semver.git>\n\n>
+    The ISC License\n>\n> Copyright (c) Isaac Z. Schlueter and Contributors\n>\n>
+    Permission to use, copy, modify, and/or distribute this software for any\n> purpose
+    with or without fee is hereby granted, provided that the above\n> copyright notice
+    and this permission notice appear in all copies.\n>\n> THE SOFTWARE IS PROVIDED
+    \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES\n> WITH REGARD TO THIS SOFTWARE
+    INCLUDING ALL IMPLIED WARRANTIES OF\n> MERCHANTABILITY AND FITNESS. IN NO EVENT
+    SHALL THE AUTHOR BE LIABLE FOR\n> ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+    DAMAGES OR ANY DAMAGES\n> WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+    WHETHER IN AN\n> ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
+    OUT OF OR\n> IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.\n\n----------------------------------------\n\n###
+    semver@v7.3.8\n\nLicense: ISC\nBy: GitHub Inc.\nRepository: <https://github.com/npm/node-semver.git>\n\n>
     The ISC License\n>\n> Copyright (c) Isaac Z. Schlueter and Contributors\n>\n>
     Permission to use, copy, modify, and/or distribute this software for any\n> purpose
     with or without fee is hereby granted, provided that the above\n> copyright notice
@@ -3154,7 +3171,7 @@ licenses:
     AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n> LIABILITY,
     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n> OUT OF OR
     IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n> SOFTWARE.\n\n----------------------------------------\n\n###
-    typescript@v4.9.3\n\nLicense: Apache-2.0\nBy: Microsoft Corp.\nRepository: <https://github.com/Microsoft/TypeScript.git>\n\n>
+    typescript@v5.0.2\n\nLicense: Apache-2.0\nBy: Microsoft Corp.\nRepository: <https://github.com/Microsoft/TypeScript.git>\n\n>
     Apache License\n> \n> Version 2.0, January 2004\n> \n> http://www.apache.org/licenses/
     \n> \n> TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n> \n> 1.
     Definitions.\n> \n> \"License\" shall mean the terms and conditions for use, reproduction,

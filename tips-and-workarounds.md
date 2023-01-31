@@ -21,7 +21,8 @@ A cache today is immutable and cannot be updated. But some use cases require the
   ```
 
   Please note that this will create a new cache on every run and hence will consume the cache [quota](./README.md#cache-limits).
-  
+* As a way to get around this limitation, the `refresh-cache` option exists. The way this works is, after matching a key and restoring a cache, it makes a request directly to the Github API and deletes the contents of that cache entry, then leaving said key free to be updated.
+
 ## Use cache across feature branches
 
 Reusing cache across feature branches is not allowed today to provide cache [isolation](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#restrictions-for-accessing-a-cache). However if both feature branches are from the default branch, a good way to achieve this is to ensure that the default branch has a cache. This cache will then be consumable by both feature branches.
