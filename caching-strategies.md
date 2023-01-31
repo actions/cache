@@ -1,10 +1,10 @@
 # Caching Strategies
 
-This document lists some of the strategies (and example workflows if possible) which can be used
+This document lists some of the strategies (and example workflows if possible) which can be used to ...
 
-- to use an effective cache key and/or path
-- to solve some common use cases around saving and restoring caches
-- to leverage the step inputs and outputs more effectively
+- use an effective cache key and/or path
+- solve some common use cases around saving and restoring caches
+- leverage the step inputs and outputs more effectively
 
 ## Choosing the right key
 
@@ -118,7 +118,7 @@ Home directory (`~/`) = `C:\Users\runneradmin`
 `process.env['RUNNER_TEMP']` = `D:\a\_temp`
 `process.cwd()` = `D:\a\repo\repo`
 
-#### MacOS Paths
+#### macOS Paths
 
 Home directory (`~/`) = `/Users/runner`
 `${{ github.workspace }}` = `/Users/runner/work/repo/repo`
