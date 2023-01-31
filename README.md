@@ -50,7 +50,7 @@ If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are requir
 * `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
 * `enableCrossOsArchive` - An optional boolean when enabled, allows Windows runners to save or restore caches that can be restored or saved respectively on other platforms. Default: `false`
-* `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: false
+* `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: `false`
 
 #### Environment Variables
 
