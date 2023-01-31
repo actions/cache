@@ -50,6 +50,7 @@ Read more about the change & access the migration guide: [reference to the annou
 
 ### v3
 
+* Added a workaround to allow updating/refreshing existing caches, via the `refresh-cache` option and requiring a valid Github API token.
 * Integrated with the new cache service (v2) APIs.
 * Added support for caching in GHES 3.5+.
 * Fixed download issue for files > 2GB during restore.
@@ -90,10 +91,12 @@ If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are requir
 * `enableCrossOsArchive` - An optional boolean when enabled, allows Windows runners to save or restore caches that can be restored or saved respectively on other platforms. Default: `false`
 * `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: `false`
 * `lookup-only` - If true, only checks if cache entry exists and skips download. Does not change save cache behavior. Default: `false`
+* `refresh-cache` -  An optional boolean, when enabled it will result in a matched key being deleted after being restored, allowing it to be reused with refreshed/updated content. Default: false
 
 #### Environment Variables
 
 * `SEGMENT_DOWNLOAD_TIMEOUT_MINS` - Segment download timeout (in minutes, default `10`) to abort download of the segment if not completed in the defined number of minutes. [Read more](https://github.com/actions/cache/blob/main/tips-and-workarounds.md#cache-segment-restore-timeout)
+* `GITHUB_TOKEN` - A Github API token, required for authenticating to the API when the `refresh-cache` option is enabled.
 
 ### Outputs
 
