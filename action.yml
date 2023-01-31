@@ -35,7 +35,7 @@ inputs:
       A separate `actions/cache/restore` step should be used instead.
       See https://github.com/actions/cache/tree/main/save#always-save-cache for more details.
   refresh-cache:
-    description: 'Whether to try and refresh existing caches (requires GITHUB_TOKEN to be present in env)'
+    description: 'An optional boolean, when enabled it will result in a matched key being deleted after being restored, allowing it to be reused with refreshed/updated content. Default: false'
     required: false
     default: 'false'
 outputs:
