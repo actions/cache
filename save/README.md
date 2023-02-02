@@ -1,14 +1,16 @@
 # Save action
 
-The save action, as the name suggest, saves a cache. It acts similar to the `cache` action except that it doesn't necessarily first do a restore. This action can provide you a granular control to only save a cache without having to necessarily restore it, or to do a restore anywhere in the workflow job and not only in post phase.
+The save action saves a cache. It works similarly to the `cache` action except that it doesn't first do a restore. This action provides granular ability to save a cache without having to restore it, or to do a save at any stage of the workflow job -- not only in post phase.
 
-## Inputs
+## Documentation
 
-* `key` - 'An explicit key for saving the cache'
-* `path` - 'A list of files, directories, and wildcard patterns to cache'
-* `upload-chunk-size` - 'The chunk size used to split up large files during upload, in bytes'
+### Inputs
 
-## Outputs
+* `key` - An explicit key for a cache entry. See [creating a cache key](../README.md#creating-a-cache-key).
+* `path` - A list of files, directories, and wildcard patterns to cache. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
+* `upload-chunk-size` - The chunk size used to split up large files during upload, in bytes
+
+### Outputs
 
 This action has no outputs.
 
@@ -17,7 +19,7 @@ This action has no outputs.
 
 ### Only save cache
 
-In case you are using separate jobs for generating common artifacts and sharing them across different jobs, this action will help you with your save only needs.
+If you are using separate jobs for generating common artifacts and sharing them across jobs, this action will take care of your cache saving needs.
 
 ```yaml
 steps:
@@ -38,9 +40,11 @@ steps:
 
 ### Re-evaluate cache key while saving
 
-With save action, the key can now be re-evaluated while executing the action. This helps in cases where the lockfiles are generated during the build.
+With this save action, the key can now be re-evaluated while executing the action. This helps in cases where lockfiles are generated during the build.
 
-Let's say we have a restore step that computes key at runtime
+Let's say we have a restore step that computes a key at runtime.
+
+#### Restore a cache
 
 ```yaml
 uses: actions/cache/restore@v3
@@ -49,14 +53,15 @@ with:
     key: cache-${{ hashFiles('**/lockfiles') }}
 ```
 
-Case 1: Where an user would want to reuse the key as it is
+#### Case 1 - Where a user would want to reuse the key as it is
 ```yaml
 uses: actions/cache/save@v3
 with:
     key: ${{ steps.restore-cache.outputs.cache-primary-key }}
 ```
 
-Case 2: Where the user would want to re-evaluate the key
+#### Case 2 - Where the user would want to re-evaluate the key
+
 ```yaml
 uses: actions/cache/save@v3
 with:
@@ -65,7 +70,7 @@ with:
 
 ### Always save cache
 
-There are instances where some flaky test cases would fail the entire workflow and users would get frustrated because the builds would run for hours and the cache couldn't get saved as the workflow failed in between. For such use-cases, users would now have the ability to use `actions/cache/save` action to save the cache by using `if: always()` condition. This way the cache will always be saved if generated, or a warning will be thrown that nothing is found on the cache path. Users can also use the `if` condition to only execute the `actions/cache/save` action depending on the output of the previous steps. This way they get more control on when to save the cache.
+There are instances where some flaky test cases would fail the entire workflow and users would get frustrated because the builds would run for hours and the cache couldn't be saved as the workflow failed in between. For such use-cases, users now have the ability to use the `actions/cache/save` action to save the cache by using an `if: always()` condition. This way the cache will always be saved if generated, or a warning will be generated that nothing is found on the cache path. Users can also use the `if` condition to only execute the `actions/cache/save` action depending on the output of previous steps. This way they get more control of when to save the cache.
 
 ```yaml
 steps:
