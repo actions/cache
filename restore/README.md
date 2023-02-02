@@ -13,7 +13,7 @@ The restore action restores a cache. It works similarly to the `cache` action ex
 
 ### Outputs
 
-* `cache-hit` - A boolean value to indicate an exact match was found for the key. 
+* `cache-hit` - A boolean value to indicate an exact match was found for the key.
 * `cache-primary-key` - Cache primary key passed in the input to use in subsequent steps of the workflow.
 * `cache-matched-key` - Key of the cache that was restored, it could either be the primary key on cache-hit or a partial/complete match of one of the restore keys.
 
@@ -21,6 +21,7 @@ The restore action restores a cache. It works similarly to the `cache` action ex
 `cache-hit` will be set to `true` only when cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.
 
 ### Environment Variables
+
 * `SEGMENT_DOWNLOAD_TIMEOUT_MINS` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](https://github.com/actions/cache/blob/main/tips-and-workarounds.md#cache-segment-restore-timeout)
 
 ## Use cases
@@ -58,8 +59,8 @@ Once the cache is restored, unlike `actions/cache`, this action won't run a post
 
 In case of multi-module projects, where the built artifact of one project needs to be reused in subsequent child modules, the need to rebuild the parent module again and again with every build can be eliminated. The `actions/cache` or `actions/cache/save` action can be used to build and save the parent module artifact once, and it can be restored multiple times while building the child modules.
 
-
 #### Step 1 - Build the parent module and save it
+
 ```yaml
 steps:
   - uses: actions/checkout@v3
@@ -75,6 +76,7 @@ steps:
 ```
 
 #### Step 2 - Restore the built artifact from cache using the same key and path
+
 ```yaml
 steps:
   - uses: actions/checkout@v3
@@ -119,15 +121,14 @@ steps:
 
 ## Tips
 
-
-#### Reusing primary key and restored key in the save action
+### Reusing primary key and restored key in the save action
 
 Usually you may want to use the same `key` with both `actions/cache/restore` and `actions/cache/save` actions. To achieve this, use `outputs` from the `restore` action to reuse the same primary key (or the key of the cache that was restored).
 
-#### Using restore action outputs to make save action behave just like the cache action
+### Using restore action outputs to make save action behave just like the cache action
 
 The outputs `cache-primary-key` and `cache-matched-key` can be used to check if the restored cache is same as the given primary key. Alternatively, the `cache-hit` output can also be used to check if the restored was a complete match or a partially restored cache.
 
-#### Ensuring proper restores and save happen across the actions
+### Ensuring proper restores and save happen across the actions
 
 It is very important to use the same `key` and `path` that were used by either `actions/cache` or `actions/cache/save` while saving the cache. Learn more about cache key [naming](https://github.com/actions/cache#creating-a-cache-key) and [versioning](https://github.com/actions/cache#cache-version) here.
