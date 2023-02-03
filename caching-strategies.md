@@ -107,22 +107,31 @@ Below are GiHub hosted runner specific paths one should take care of when writin
 #### Ubuntu Paths
 
 Home directory (`~/`) = `/home/runner`
+
 `${{ github.workspace }}` = `/home/runner/work/repo/repo`
+
 `process.env['RUNNER_TEMP']`=`/home/runner/work/_temp`
+
 `process.cwd()` = `/home/runner/work/repo/repo`
 
 #### Windows Paths
 
 Home directory (`~/`) = `C:\Users\runneradmin`
+
 `${{ github.workspace }}` = `D:\a\repo\repo`
+
 `process.env['RUNNER_TEMP']` = `D:\a\_temp`
+
 `process.cwd()` = `D:\a\repo\repo`
 
 #### macOS Paths
 
 Home directory (`~/`) = `/Users/runner`
+
 `${{ github.workspace }}` = `/Users/runner/work/repo/repo`
+
 `process.env['RUNNER_TEMP']` = `/Users/runner/work/_temp`
+
 `process.cwd()` = `/Users/runner/work/repo/repo`
 
 Where:
