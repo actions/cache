@@ -200,7 +200,7 @@ If you want to avoid re-computing the cache key again in `save` action, the outp
       path: |
         path/to/dependencies
         some/other/dependencies
-      key: ${{ steps.restore-cache.outputs.key }}
+      key: ${{ steps.restore-cache.outputs.cache-primary-key }}
 ```
 
 ### Re-evaluate cache key while saving cache
@@ -221,7 +221,7 @@ Case 1: Where an user would want to reuse the key as it is
 ```yaml
 uses: actions/cache/save@v3
 with:
-    key: ${{ steps.restore-cache.outputs.key }}
+    key: ${{ steps.restore-cache.outputs.cache-primary-key }}
 ```
 
 Case 2: Where the user would want to re-evaluate the key

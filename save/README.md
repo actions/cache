@@ -26,10 +26,9 @@ steps:
   - uses: actions/checkout@v3
 
   - name: Install Dependencies
-    if: steps.cache.outputs.cache-hit != 'true'
     run: /install.sh
 
-  - name: Build common artifacts
+  - name: Build artifacts
     run: /build.sh
 
   - uses: actions/cache/save@v3
