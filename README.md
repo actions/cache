@@ -1,12 +1,12 @@
-# cache
+# Cache action
 
 This action allows caching dependencies and build outputs to improve workflow execution time.
 
-In addition to this `cache` action, other two actions are also available
+Two other actions are available in addition to the primary `cache` action:
 
-[Restore action](./restore/README.md)
+* [Restore action](./restore/README.md)
 
-[Save action](./save/README.md)
+* [Save action](./save/README.md)
 
 [![Tests](https://github.com/actions/cache/actions/workflows/workflow.yml/badge.svg)](https://github.com/actions/cache/actions/workflows/workflow.yml)
 
@@ -18,7 +18,7 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 
 ### v3
 
-* Added support for caching from GHES 3.5.
+* Added support for caching in GHES 3.5+.
 * Fixed download issue for files > 2GB during restore.
 * Updated the minimum runner version support from node 12 -> node 16.
 * Fixed avoiding empty cache save when no files are available for caching.
@@ -28,30 +28,30 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 * Fixed the download stuck problem by introducing a timeout of 1 hour for cache downloads.
 * Fix zstd not working for windows on gnu tar in issues.
 * Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MINS`. Default is 60 minutes.
-* Two new actions available for granular control over caches - [restore](restore/action.yml) and [save](save/action.yml)
+* New actions are available for granular control over caches - [restore](restore/action.yml) and [save](save/action.yml).
 * Support cross-os caching as an opt-in feature. See [Cross OS caching](./tips-and-workarounds.md#cross-os-cache) for more info.
 * Added option to fail job on cache miss. See [Exit workflow on cache miss](./restore/README.md#exit-workflow-on-cache-miss) for more info.
 * Added new [check](check/action.yml) action to check if a check entry exists without downloading it.
 
-Refer [here](https://github.com/actions/cache/blob/v2/README.md) for previous versions
+See the [v2 README.md](https://github.com/actions/cache/blob/v2/README.md) for older updates.
 
 ## Usage
 
 ### Pre-requisites
 
-Create a workflow `.yml` file in your repositories `.github/workflows` directory. An [example workflow](#example-cache-workflow) is available below. For more information, reference the GitHub Help Documentation for [Creating a workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
+Create a workflow `.yml` file in your repository's `.github/workflows` directory. An [example workflow](#example-cache-workflow) is available below. For more information, see the GitHub Help Documentation for [Creating a workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
 
-If you are using this inside a container, a POSIX-compliant `tar` needs to be included and accessible in the execution path.
+If you are using this inside a container, a POSIX-compliant `tar` needs to be included and accessible from the execution path.
 
 If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are required for [Cross-OS caching](https://github.com/actions/cache/blob/main/tips-and-workarounds.md#cross-os-cache) to work. They are also recommended to be installed in general so the performance is on par with `hosted` Windows runners.
 
 ### Inputs
 
+* `key` - An explicit key for a cache entry. See [creating a cache key](#creating-a-cache-key).
 * `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
-* `key` - An explicit key for restoring and saving the cache. Refer [creating a cache key](#creating-a-cache-key).
 * `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
-* `enableCrossOsArchive` - An optional boolean when enabled, allows Windows runners to save or restore caches that can be restored or saved respectively on other platforms. Default: false
-* `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: false
+* `enableCrossOsArchive` - An optional boolean when enabled, allows Windows runners to save or restore caches that can be restored or saved respectively on other platforms. Default: `false`
+* `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: `false`
 
 #### Environment Variables
 
@@ -61,13 +61,13 @@ If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are requir
 
 * `cache-hit` - A boolean value to indicate an exact match was found for the key.
 
-> Note: `cache-hit` will be set to `true` only when cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.
+    > **Note** `cache-hit` will only be set to `true` when a cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.
 
 See [Skipping steps based on cache-hit](#skipping-steps-based-on-cache-hit) for info on using this output
 
 ### Cache scopes
 
-The cache is scoped to the key, [version](#cache-version) and branch. The default branch cache is available to other branches.
+The cache is scoped to the key, [version](#cache-version), and branch. The default branch cache is available to other branches.
 
 See [Matching a cache key](https://help.github.com/en/actions/configuring-and-managing-workflows/caching-dependencies-to-speed-up-workflows#matching-a-cache-key) for more info.
 
@@ -102,9 +102,9 @@ jobs:
       run: /primes.sh -d prime-numbers
 ```
 
-The `cache` action provides one output `cache-hit` which is set to `true` when cache is restored using primary key and `false` when cache is restored using `restore-keys` or no cache is restored.
+The `cache` action provides a `cache-hit` output which is set to `true` when the cache is restored using the primary `key` and `false` when the cache is restored using `restore-keys` or no cache is restored.
 
-#### Using combination of restore and save actions
+#### Using a combination of restore and save actions
 
 ```yaml
 name: Caching Primes
@@ -144,7 +144,7 @@ jobs:
 
 ## Caching Strategies
 
-With introduction of two new actions `restore` and `save`, a lot of caching use cases can now be achieved. Please refer the [caching strategies](./caching-strategies.md) document for understanding how you can use the actions strategically to achieve the desired goal.
+With the introduction of the `restore` and `save` actions, a lot of caching use cases can now be achieved. Please see the [caching strategies](./caching-strategies.md) document for understanding how you can use the actions strategically to achieve the desired goal.
 
 ## Implementation Examples
 
@@ -217,7 +217,7 @@ A repository can have up to 10GB of caches. Once the 10GB limit is reached, olde
 
 ## Skipping steps based on cache-hit
 
-Using the `cache-hit` output, subsequent steps (such as install or build) can be skipped when a cache hit occurs on the key.  It is recommended to install the missing/updated dependencies in case of a partial key match when the key is dependent on the `hash` of the package file.
+Using the `cache-hit` output, subsequent steps (such as install or build) can be skipped when a cache hit occurs on the key.  It is recommended to install missing/updated dependencies in case of a partial key match when the key is dependent on the `hash` of the package file.
 
 Example:
 
@@ -236,13 +236,13 @@ steps:
     run: /install.sh
 ```
 
-> Note: The `id` defined in `actions/cache` must match the `id` in the `if` statement (i.e. `steps.[ID].outputs.cache-hit`)
+> **Note** The `id` defined in `actions/cache` must match the `id` in the `if` statement (i.e. `steps.[ID].outputs.cache-hit`)
 
 ## Cache Version
 
-Cache version is a hash [generated](https://github.com/actions/toolkit/blob/500d0b42fee2552ae9eeb5933091fe2fbf14e72d/packages/cache/src/internal/cacheHttpClient.ts#L73-L90) for a combination of compression tool used (Gzip, Zstd, etc. based on the runner OS) and the `path` of directories being cached. If two caches have different versions, they are identified as unique caches while matching. This for example, means that a cache created on `windows-latest` runner can't be restored on `ubuntu-latest` as cache `Version`s are different.
+Cache version is a hash [generated](https://github.com/actions/toolkit/blob/500d0b42fee2552ae9eeb5933091fe2fbf14e72d/packages/cache/src/internal/cacheHttpClient.ts#L73-L90) for a combination of compression tool used (Gzip, Zstd, etc. based on the runner OS) and the `path` of directories being cached. If two caches have different versions, they are identified as unique caches while matching. This, for example, means that a cache created on a `windows-latest` runner can't be restored on `ubuntu-latest` as cache `Version`s are different.
 
-> Pro tip: [List caches](https://docs.github.com/en/rest/actions/cache#list-github-actions-caches-for-a-repository) API can be used to get the version of a cache. This can be helpful to troubleshoot cache miss due to version.
+> Pro tip: The [list caches](https://docs.github.com/en/rest/actions/cache#list-github-actions-caches-for-a-repository) API can be used to get the version of a cache. This can be helpful to troubleshoot cache miss due to version.
 
 <details>
   <summary>Example</summary>
@@ -298,7 +298,7 @@ jobs:
 
 ## Known practices and workarounds
 
-Following are some of the known practices/workarounds which community has used to fulfill specific requirements. You may choose to use them if suits your use case. Note these are not necessarily the only or the recommended solution.
+There are a number of community practices/workarounds to fulfill specific requirements. You may choose to use them if they suit your use case. Note these are not necessarily the only solution or even a recommended solution.
 
 * [Cache segment restore timeout](./tips-and-workarounds.md#cache-segment-restore-timeout)
 * [Update a cache](./tips-and-workarounds.md#update-a-cache)
@@ -308,11 +308,11 @@ Following are some of the known practices/workarounds which community has used t
 
 ### Windows environment variables
 
-Please note that Windows environment variables (like `%LocalAppData%`) will NOT be expanded by this action. Instead, prefer using `~` in your paths which will expand to HOME directory. For example, instead of `%LocalAppData%`, use `~\AppData\Local`. For a list of supported default environment variables, see [this](https://docs.github.com/en/actions/learn-github-actions/environment-variables) page.
+Please note that Windows environment variables (like `%LocalAppData%`) will NOT be expanded by this action. Instead, prefer using `~` in your paths which will expand to the HOME directory. For example, instead of `%LocalAppData%`, use `~\AppData\Local`. For a list of supported default environment variables, see the [Learn GitHub Actions: Variables](https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables) page.
 
 ## Contributing
 
-We would love for you to contribute to `actions/cache`, pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
+We would love for you to contribute to `actions/cache`. Pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
 ## License
 
