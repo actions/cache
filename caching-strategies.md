@@ -1,10 +1,10 @@
 # Caching Strategies
 
-This document lists some of the strategies (and example workflows if possible) which can be used
+This document lists some of the strategies (and example workflows if possible) which can be used to ...
 
-- to use an effective cache key and/or path
-- to solve some common use cases around saving and restoring caches
-- to leverage the step inputs and outputs more effectively
+- use an effective cache key and/or path
+- solve some common use cases around saving and restoring caches
+- leverage the step inputs and outputs more effectively
 
 ## Choosing the right key
 
@@ -107,22 +107,31 @@ Below are GiHub hosted runner specific paths one should take care of when writin
 #### Ubuntu Paths
 
 Home directory (`~/`) = `/home/runner`
+
 `${{ github.workspace }}` = `/home/runner/work/repo/repo`
+
 `process.env['RUNNER_TEMP']`=`/home/runner/work/_temp`
+
 `process.cwd()` = `/home/runner/work/repo/repo`
 
 #### Windows Paths
 
 Home directory (`~/`) = `C:\Users\runneradmin`
+
 `${{ github.workspace }}` = `D:\a\repo\repo`
+
 `process.env['RUNNER_TEMP']` = `D:\a\_temp`
+
 `process.cwd()` = `D:\a\repo\repo`
 
-#### MacOS Paths
+#### macOS Paths
 
 Home directory (`~/`) = `/Users/runner`
+
 `${{ github.workspace }}` = `/Users/runner/work/repo/repo`
+
 `process.env['RUNNER_TEMP']` = `/Users/runner/work/_temp`
+
 `process.cwd()` = `/Users/runner/work/repo/repo`
 
 Where:
@@ -200,7 +209,7 @@ If you want to avoid re-computing the cache key again in `save` action, the outp
       path: |
         path/to/dependencies
         some/other/dependencies
-      key: ${{ steps.restore-cache.outputs.key }}
+      key: ${{ steps.restore-cache.outputs.cache-primary-key }}
 ```
 
 ### Re-evaluate cache key while saving cache
@@ -221,7 +230,7 @@ Case 1: Where an user would want to reuse the key as it is
 ```yaml
 uses: actions/cache/save@v3
 with:
-    key: ${{ steps.restore-cache.outputs.key }}
+    key: ${{ steps.restore-cache.outputs.cache-primary-key }}
 ```
 
 Case 2: Where the user would want to re-evaluate the key
