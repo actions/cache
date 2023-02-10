@@ -71,5 +71,8 @@
 ### 3.2.4
 - Added option to fail job on cache miss.
 
+### 3.2.5
+- Added fix to prevent from setting MYSYS environment variable globally.
+
 ### 3.3.0
 - Added option to lookup cache without downloading it.
