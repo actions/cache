@@ -168,6 +168,7 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 * [PHP - Composer](./examples.md#php---composer)
 * [Python - pip](./examples.md#python---pip)
 * [Python - pipenv](./examples.md#python---pipenv)
+* [Python - poetry](./examples.md#python---poetry)
 * [R - renv](./examples.md#r---renv)
 * [Ruby - Bundler](./examples.md#ruby---bundler)
 * [Rust - Cargo](./examples.md#rust---cargo)
