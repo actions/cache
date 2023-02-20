@@ -73,3 +73,6 @@
 
 ### 3.2.5
 - Added fix to prevent from setting MYSYS environment variable globally.
+
+### 3.2.6
+- Fix zstd not being used after zstd version upgrade to 1.5.4 on hosted runners.
