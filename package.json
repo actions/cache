@@ -23,7 +23,7 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
-    "@actions/cache": "https://github.com/cdce8p/toolkit/raw/cache-dry-run-release/packages/cache/actions-cache-3.1.4.tgz",
+    "@actions/cache": "https://github.com/cdce8p/toolkit/raw/cache-dry-run-release/packages/cache/actions-cache-3.1.5.tgz",
     "@actions/core": "^1.10.0",
     "@actions/exec": "^1.1.1",
     "@actions/io": "^1.1.2"
