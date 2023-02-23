@@ -21,10 +21,10 @@ Reusing cache across feature branches is not allowed today to provide cache [iso
 
 ## Cross OS cache
 From `v3.2.3` cache is cross-os compatible when `enableCrossOsArchive` input is passed as true. This means that a cache created on `ubuntu-latest` or `mac-latest` can be used by `windows-latest` and vice versa, provided the workflow which runs on `windows-latest` have input `enableCrossOsArchive` as true. This is useful to cache dependencies which are independent of the runner platform. This will help reduce the consumption of the cache quota and help build for multiple platforms from the same cache. Things to keep in mind while using this feature:
-- Only cache those files which are compatible across OSs.
-- Caching symlinks might cause issues while restoration as they work differently on different OSs.
-- Only cache files from within your github workspace directory. 
-- Avoid using directory pointers such as `${{ github.workspace }}` or `~` (home) which eventually evaluate to an absolute path and will not match across OSs.
+- Only cache files that are compatible across OSs.
+- Caching symlinks might cause issues while restoring them as they behave differently on different OSs.
+- Be mindful when caching files from outside your github workspace directory as the directory is located at different places across OS.
+- Avoid using directory pointers such as `${{ github.workspace }}` or `~` (home) which eventually evaluate to an absolute path that does not match across OSs.
 
 ## Force deletion of caches overriding default cache eviction policy
 Caches have [branch scope restriction](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#restrictions-for-accessing-a-cache) in place. This means that if caches for a specific branch are using a lot of storage quota, it may result into more frequently used caches from `default` branch getting thrashed. For example, if there are many pull requests happening on a repo and are creating caches, these cannot be used in default branch scope but will still occupy a lot of space till they get cleaned up by [eviction policy](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#usage-limits-and-eviction-policy). But sometime we want to clean them up on a faster cadence so as to ensure default branch is not thrashing. In order to achieve this, [gh-actions-cache cli](https://github.com/actions/gh-actions-cache/) can be used to delete caches for specific branches.
