@@ -44,6 +44,11 @@ on:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+    permissions:
+      # `actions:write` permission is required to delete caches
+      #   See also: https://docs.github.com/en/rest/actions/cache?apiVersion=2022-11-28#delete-a-github-actions-cache-for-a-repository-using-a-cache-id
+      actions: write
+      contents: read
     steps:
       - name: Check out code
         uses: actions/checkout@v3
