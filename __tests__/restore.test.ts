@@ -74,7 +74,15 @@ test("restore with no cache found", async () => {
     await run();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, [], {}, false);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        [path],
+        key,
+        [],
+        {
+            lookupOnly: false
+        },
+        false
+    );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
     expect(stateMock).toHaveBeenCalledTimes(1);
@@ -113,7 +121,9 @@ test("restore with restore keys and no cache found", async () => {
         [path],
         key,
         [restoreKey],
-        {},
+        {
+            lookupOnly: false
+        },
         false
     );
 
@@ -149,7 +159,15 @@ test("restore with cache found for key", async () => {
     await run();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, [], {}, false);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        [path],
+        key,
+        [],
+        {
+            lookupOnly: false
+        },
+        false
+    );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
     expect(stateMock).toHaveBeenCalledWith("CACHE_RESULT", key);
@@ -190,7 +208,9 @@ test("restore with cache found for restore key", async () => {
         [path],
         key,
         [restoreKey],
-        {},
+        {
+            lookupOnly: false
+        },
         false
     );
 
@@ -233,7 +253,9 @@ test("Fail restore when fail on cache miss is enabled and primary + restore keys
         [path],
         key,
         [restoreKey],
-        {},
+        {
+            lookupOnly: false
+        },
         false
     );
 
@@ -274,7 +296,9 @@ test("restore when fail on cache miss is enabled and primary key doesn't match r
         [path],
         key,
         [restoreKey],
-        {},
+        {
+            lookupOnly: false
+        },
         false
     );
 
@@ -318,7 +342,9 @@ test("restore with fail on cache miss disabled and no cache found", async () => 
         [path],
         key,
         [restoreKey],
-        {},
+        {
+            lookupOnly: false
+        },
         false
     );
 

@@ -9,7 +9,8 @@ The restore action restores a cache. It works similarly to the `cache` action ex
 * `key` - An explicit key for a cache entry. See [creating a cache key](../README.md#creating-a-cache-key).
 * `path` - A list of files, directories, and wildcard patterns to restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
-* `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: false
+* `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: `false`
+* `lookup-only` - Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache. Default: `false`
 
 ### Outputs
 

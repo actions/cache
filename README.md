@@ -32,6 +32,7 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 * Support cross-os caching as an opt-in feature. See [Cross OS caching](./tips-and-workarounds.md#cross-os-cache) for more info.
 * Added option to fail job on cache miss. See [Exit workflow on cache miss](./restore/README.md#exit-workflow-on-cache-miss) for more info.
 * Fix zstd not being used after zstd version upgrade to 1.5.4 on hosted runners
+* Added option to lookup cache without downloading it.
 
 See the [v2 README.md](https://github.com/actions/cache/blob/v2/README.md) for older updates.
 
@@ -52,6 +53,7 @@ If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are requir
 * `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
 * `enableCrossOsArchive` - An optional boolean when enabled, allows Windows runners to save or restore caches that can be restored or saved respectively on other platforms. Default: `false`
 * `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: `false`
+* `lookup-only` - Skip downloading cache. Only check if cache entry exists. Default: `false`
 
 #### Environment Variables
 

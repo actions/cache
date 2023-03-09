@@ -76,3 +76,6 @@
 
 ### 3.2.6
 - Fix zstd not being used after zstd version upgrade to 1.5.4 on hosted runners.
+
+### 3.3.0
+- Added option to lookup cache without downloading it.

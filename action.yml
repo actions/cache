@@ -22,6 +22,10 @@ inputs:
     description: 'Fail the workflow if cache entry is not found'
     default: 'false'
     required: false
+  lookup-only:
+    description: 'Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache'
+    default: 'false'
+    required: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'

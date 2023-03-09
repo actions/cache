@@ -4975,7 +4975,8 @@ var Inputs;
     Inputs["RestoreKeys"] = "restore-keys";
     Inputs["UploadChunkSize"] = "upload-chunk-size";
     Inputs["EnableCrossOsArchive"] = "enableCrossOsArchive";
-    Inputs["FailOnCacheMiss"] = "fail-on-cache-miss"; // Input for cache, restore action
+    Inputs["FailOnCacheMiss"] = "fail-on-cache-miss";
+    Inputs["LookupOnly"] = "lookup-only"; // Input for cache, restore action
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -41777,7 +41778,8 @@ function getDownloadOptions(copy) {
         useAzureSdk: true,
         downloadConcurrency: 8,
         timeoutInMs: 30000,
-        segmentTimeoutInMs: 3600000
+        segmentTimeoutInMs: 3600000,
+        lookupOnly: false
     };
     if (copy) {
         if (typeof copy.useAzureSdk === 'boolean') {
@@ -41792,6 +41794,9 @@ function getDownloadOptions(copy) {
         if (typeof copy.segmentTimeoutInMs === 'number') {
             result.segmentTimeoutInMs = copy.segmentTimeoutInMs;
         }
+        if (typeof copy.lookupOnly === 'boolean') {
+            result.lookupOnly = copy.lookupOnly;
+        }
     }
     const segmentDownloadTimeoutMins = process.env['SEGMENT_DOWNLOAD_TIMEOUT_MINS'];
     if (segmentDownloadTimeoutMins &&
@@ -41804,6 +41809,7 @@ function getDownloadOptions(copy) {
     core.debug(`Request timeout (ms): ${result.timeoutInMs}`);
     core.debug(`Cache segment download timeout mins env var: ${process.env['SEGMENT_DOWNLOAD_TIMEOUT_MINS']}`);
     core.debug(`Segment download timeout (ms): ${result.segmentTimeoutInMs}`);
+    core.debug(`Lookup only: ${result.lookupOnly}`);
     return result;
 }
 exports.getDownloadOptions = getDownloadOptions;
@@ -47252,6 +47258,10 @@ function restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArch
                 // Cache not found
                 return undefined;
             }
+            if (options === null || options === void 0 ? void 0 : options.lookupOnly) {
+                core.info('Lookup only - skipping download');
+                return cacheEntry.cacheKey;
+            }
             archivePath = path.join(yield utils.createTempDirectory(), utils.getCacheFileName(compressionMethod));
             core.debug(`Archive Path: ${archivePath}`);
             // Download the cache from the cache entry
@@ -50494,7 +50504,8 @@ function restoreImpl(stateProvider) {
             });
             const enableCrossOsArchive = utils.getInputAsBool(constants_1.Inputs.EnableCrossOsArchive);
             const failOnCacheMiss = utils.getInputAsBool(constants_1.Inputs.FailOnCacheMiss);
-            const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys, {}, enableCrossOsArchive);
+            const lookupOnly = utils.getInputAsBool(constants_1.Inputs.LookupOnly);
+            const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys, { lookupOnly: lookupOnly }, enableCrossOsArchive);
             if (!cacheKey) {
                 if (failOnCacheMiss) {
                     throw new Error(`Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`);
@@ -50509,7 +50520,12 @@ function restoreImpl(stateProvider) {
             stateProvider.setState(constants_1.State.CacheMatchedKey, cacheKey);
             const isExactKeyMatch = utils.isExactKeyMatch(core.getInput(constants_1.Inputs.Key, { required: true }), cacheKey);
             core.setOutput(constants_1.Outputs.CacheHit, isExactKeyMatch.toString());
-            core.info(`Cache restored from key: ${cacheKey}`);
+            if (lookupOnly) {
+                core.info(`Cache found and can be restored from key: ${cacheKey}`);
+            }
+            else {
+                core.info(`Cache restored from key: ${cacheKey}`);
+            }
             return cacheKey;
         }
         catch (error) {
