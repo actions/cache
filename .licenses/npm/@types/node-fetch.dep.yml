@@ -1,9 +1,9 @@
 ---
 name: "@types/node-fetch"
-version: 2.6.1
+version: 2.6.2
 type: npm
-summary: 
-homepage: 
+summary: TypeScript definitions for node-fetch
+homepage: https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node-fetch
 license: mit
 licenses:
 - sources: LICENSE
