@@ -71,7 +71,7 @@ async function restoreImpl(
 
         core.setOutput(Outputs.CacheHit, isExactKeyMatch.toString());
         if (lookupOnly) {
-            core.info(`Cache would have been restored from key: ${cacheKey}`);
+            core.info(`Cache found and can be restored from key: ${cacheKey}`);
         } else {
             core.info(`Cache restored from key: ${cacheKey}`);
         }
