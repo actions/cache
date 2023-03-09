@@ -396,6 +396,8 @@ test("restore with lookup-only set", async () => {
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "true");
 
-    expect(infoMock).toHaveBeenCalledWith(`Cache restored from key: ${key}`);
+    expect(infoMock).toHaveBeenCalledWith(
+        `Cache would have been restored from key: ${key}`
+    );
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
