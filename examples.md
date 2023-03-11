@@ -661,14 +661,18 @@ steps:
 
 ## * - Bazel
 
-Bazel cache has a good handle to check if cached content should be rebuild or not based on its inputs like a hash(command + files). So using the latest cache of the branch is enough, no need to suffix with `hashFiles('**/...')`.
-
 ```yaml
 - name: Cache Bazel
-  uses: actions/cache@v2
+  uses: actions/cache@v3
   with:
     path: |
-      ~/.cache/bazelisk
-      ~/.cache/bazel
-    key: ${{ runner.os }}-bazel
+      ~/.cache/bazel # Linux
+      /private/var/tmp/_bazel_runner/ # macOS
+      # TODO Add Windows if you know where it is, based on https://bazel.build/remote/output-directories
+    key: ${{ runner.os }}-bazel-${{ hashFiles('.bazelversion', '.bazelrc', 'WORKSPACE', 'WORKSPACE.bazel', 'MODULE.bazel') }}
+    restore-keys: |
+      ${{ runner.os }}-bazel-
+- run: bazelisk test //...
 ```
+
+[`bazelisk`](https://github.com/bazelbuild/bazelisk) does not have be to separately downloaded and installed because it's already included in GitHub's `ubuntu-latest` base image.
