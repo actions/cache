@@ -31,6 +31,7 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 * Added option to fail job on cache miss. See [Exit workflow on cache miss](./restore/README.md#exit-workflow-on-cache-miss) for more info.
 * Fix zstd not being used after zstd version upgrade to 1.5.4 on hosted runners
 * Added option to lookup cache without downloading it.
+* Reduced segment size to 128MB and segment timeout to 10 minutes to fail fast in case the cache download is stuck.
 
 See the [v2 README.md](https://github.com/actions/cache/blob/v2/README.md) for older updates.
 
