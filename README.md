@@ -54,7 +54,7 @@ If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are requir
 * `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
 * `enableCrossOsArchive` - An optional boolean when enabled, allows Windows runners to save or restore caches that can be restored or saved respectively on other platforms. Default: `false`
 * `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: `false`
-* `lookup-only` - Skip downloading cache. Only check if cache entry exists. Default: `false`
+* `lookup-only` - If true, only checks if cache entry exists and skips download. Does not change save cache behavior. Default: `false`
 
 #### Environment Variables
 
