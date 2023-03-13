@@ -1,9 +1,10 @@
 ---
 name: "@azure/core-lro"
-version: 2.2.4
+version: 2.5.1
 type: npm
-summary: 
-homepage: 
+summary: Isomorphic client library for supporting long-running operations in node.js
+  and browser.
+homepage: https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/core/core-lro/README.md
 license: mit
 licenses:
 - sources: LICENSE
