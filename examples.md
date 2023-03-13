@@ -661,18 +661,32 @@ steps:
 
 ## * - Bazel
 
+[`bazelisk`](https://github.com/bazelbuild/bazelisk) does not have be to separately downloaded and installed because it's already included in GitHub's `ubuntu-latest` base image.
+
+### Linux
+
 ```yaml
 - name: Cache Bazel
   uses: actions/cache@v3
   with:
     path: |
-      ~/.cache/bazel # Linux
-      /private/var/tmp/_bazel_runner/ # macOS
-      # TODO Add Windows if you know where it is, based on https://bazel.build/remote/output-directories
+      ~/.cache/bazel
     key: ${{ runner.os }}-bazel-${{ hashFiles('.bazelversion', '.bazelrc', 'WORKSPACE', 'WORKSPACE.bazel', 'MODULE.bazel') }}
     restore-keys: |
       ${{ runner.os }}-bazel-
 - run: bazelisk test //...
 ```
 
-[`bazelisk`](https://github.com/bazelbuild/bazelisk) does not have be to separately downloaded and installed because it's already included in GitHub's `ubuntu-latest` base image.
+### macOS
+
+```yaml
+- name: Cache Bazel
+  uses: actions/cache@v3
+  with:
+    path: |
+      /private/var/tmp/_bazel_runner/
+    key: ${{ runner.os }}-bazel-${{ hashFiles('.bazelversion', '.bazelrc', 'WORKSPACE', 'WORKSPACE.bazel', 'MODULE.bazel') }}
+    restore-keys: |
+      ${{ runner.os }}-bazel-
+- run: bazelisk test //...
+```
