@@ -27,7 +27,7 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 * Fixed cache not working with github workspace directory or current directory.
 * Fixed the download stuck problem by introducing a timeout of 1 hour for cache downloads.
 * Fix zstd not working for windows on gnu tar in issues.
-* Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MINS`. Default is 60 minutes.
+* Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MINS`. Default is 10 minutes.
 * New actions are available for granular control over caches - [restore](restore/action.yml) and [save](save/action.yml).
 * Support cross-os caching as an opt-in feature. See [Cross OS caching](./tips-and-workarounds.md#cross-os-cache) for more info.
 * Added option to fail job on cache miss. See [Exit workflow on cache miss](./restore/README.md#exit-workflow-on-cache-miss) for more info.
