@@ -75,7 +75,15 @@ test("restore with no cache found", async () => {
     await run();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, [], {}, false);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        [path],
+        key,
+        [],
+        {
+            lookupOnly: false
+        },
+        false
+    );
 
     expect(outputMock).toHaveBeenCalledWith("cache-primary-key", key);
     expect(outputMock).toHaveBeenCalledTimes(1);
@@ -113,7 +121,9 @@ test("restore with restore keys and no cache found", async () => {
         [path],
         key,
         [restoreKey],
-        {},
+        {
+            lookupOnly: false
+        },
         false
     );
 
@@ -146,7 +156,15 @@ test("restore with cache found for key", async () => {
     await run();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith([path], key, [], {}, false);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        [path],
+        key,
+        [],
+        {
+            lookupOnly: false
+        },
+        false
+    );
 
     expect(outputMock).toHaveBeenCalledWith("cache-primary-key", key);
     expect(outputMock).toHaveBeenCalledWith("cache-hit", "true");
@@ -185,7 +203,9 @@ test("restore with cache found for restore key", async () => {
         [path],
         key,
         [restoreKey],
-        {},
+        {
+            lookupOnly: false
+        },
         false
     );
 

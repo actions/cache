@@ -35,12 +35,13 @@ async function restoreImpl(
             Inputs.EnableCrossOsArchive
         );
         const failOnCacheMiss = utils.getInputAsBool(Inputs.FailOnCacheMiss);
+        const lookupOnly = utils.getInputAsBool(Inputs.LookupOnly);
 
         const cacheKey = await cache.restoreCache(
             cachePaths,
             primaryKey,
             restoreKeys,
-            {},
+            { lookupOnly: lookupOnly },
             enableCrossOsArchive
         );
 
@@ -69,7 +70,11 @@ async function restoreImpl(
         );
 
         core.setOutput(Outputs.CacheHit, isExactKeyMatch.toString());
-        core.info(`Cache restored from key: ${cacheKey}`);
+        if (lookupOnly) {
+            core.info(`Cache found and can be restored from key: ${cacheKey}`);
+        } else {
+            core.info(`Cache restored from key: ${cacheKey}`);
+        }
 
         return cacheKey;
     } catch (error: unknown) {

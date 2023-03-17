@@ -9,7 +9,8 @@ The restore action restores a cache. It works similarly to the `cache` action ex
 * `key` - An explicit key for a cache entry. See [creating a cache key](../README.md#creating-a-cache-key).
 * `path` - A list of files, directories, and wildcard patterns to restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
-* `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: false
+* `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: `false`
+* `lookup-only` - If true, only checks if cache entry exists and skips download. Default: `false`
 
 ### Outputs
 
@@ -22,7 +23,7 @@ The restore action restores a cache. It works similarly to the `cache` action ex
 
 ### Environment Variables
 
-* `SEGMENT_DOWNLOAD_TIMEOUT_MINS` - Segment download timeout (in minutes, default `60`) to abort download of the segment if not completed in the defined number of minutes. [Read more](https://github.com/actions/cache/blob/main/tips-and-workarounds.md#cache-segment-restore-timeout)
+* `SEGMENT_DOWNLOAD_TIMEOUT_MINS` - Segment download timeout (in minutes, default `10`) to abort download of the segment if not completed in the defined number of minutes. [Read more](https://github.com/actions/cache/blob/main/tips-and-workarounds.md#cache-segment-restore-timeout)
 
 ## Use cases
 
