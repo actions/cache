@@ -1,44 +1,51 @@
 # Examples
 
-- [C# - NuGet](#c---nuget)
-- [Clojure - Lein Deps](#clojure---lein-deps)
-- [D - DUB](#d---dub)
-  - [POSIX](#posix)
-  - [Windows](#windows)
-- [Deno](#deno)
-  - [Linux](#linux)
-  - [macOS](#macos)
-  - [Windows](#windows-1)
-- [Elixir - Mix](#elixir---mix)
-- [Erlang - Rebar3](#erlang--rebar3)
-- [Go - Modules](#go---modules)
-  - [Linux](#linux-1)
-  - [macOS](#macos-1)
-  - [Windows](#windows-2)
-- [Haskell - Cabal](#haskell---cabal)
-- [Haskell - Stack](#haskell---stack)
-- [Java - Gradle](#java---gradle)
-- [Java - Maven](#java---maven)
-- [Node - npm](#node---npm)
-- [Node - Lerna](#node---lerna)
-- [Node - Yarn](#node---yarn)
-- [Node - Yarn 2](#node---yarn-2)
-- [OCaml/Reason - esy](#ocamlreason---esy)
-- [PHP - Composer](#php---composer)
-- [Python - pip](#python---pip)
-  - [Simple example](#simple-example)
-  - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow)
-  - [Multiple OS's in a workflow with a matrix](#multiple-oss-in-a-workflow-with-a-matrix)
-  - [Using pip to get cache location](#using-pip-to-get-cache-location)
-- [Python - pipenv](#python---pipenv)
-- [R - renv](#r---renv)
-- [Ruby - Bundler](#ruby---bundler)
-- [Rust - Cargo](#rust---cargo)
-- [Scala - SBT](#scala---sbt)
-- [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
-- [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
-- [Swift - Swift Package Manager](#swift---swift-package-manager)
-- [Swift - Mint](#swift---mint)
+- [Examples](#examples)
+  - [C# - NuGet](#c---nuget)
+  - [Clojure - Lein Deps](#clojure---lein-deps)
+  - [D - DUB](#d---dub)
+    - [POSIX](#posix)
+    - [Windows](#windows)
+  - [Deno](#deno)
+    - [Linux](#linux)
+    - [macOS](#macos)
+    - [Windows](#windows-1)
+  - [Elixir - Mix](#elixir---mix)
+  - [Erlang - Rebar3](#erlang---rebar3)
+  - [Go - Modules](#go---modules)
+    - [Linux](#linux-1)
+    - [macOS](#macos-1)
+    - [Windows](#windows-2)
+  - [Haskell - Cabal](#haskell---cabal)
+  - [Haskell - Stack](#haskell---stack)
+    - [Linux or macOS](#linux-or-macos)
+    - [Windows](#windows-3)
+  - [Java - Gradle](#java---gradle)
+  - [Java - Maven](#java---maven)
+  - [Node - npm](#node---npm)
+    - [**Get npm cache directory using same shell**](#get-npm-cache-directory-using-same-shell)
+    - [Bash shell](#bash-shell)
+    - [PWSH shell](#pwsh-shell)
+  - [Node - Lerna](#node---lerna)
+  - [Node - Yarn](#node---yarn)
+  - [Node - Yarn 2](#node---yarn-2)
+  - [OCaml/Reason - esy](#ocamlreason---esy)
+  - [PHP - Composer](#php---composer)
+  - [Python - pip](#python---pip)
+    - [Simple example](#simple-example)
+    - [Multiple OS's in a workflow](#multiple-oss-in-a-workflow)
+    - [Multiple OS's in a workflow with a matrix](#multiple-oss-in-a-workflow-with-a-matrix)
+    - [Using pip to get cache location](#using-pip-to-get-cache-location)
+  - [Python - pipenv](#python---pipenv)
+  - [Python - poetry](#python---poetry)
+  - [R - renv](#r---renv)
+  - [Ruby - Bundler](#ruby---bundler)
+  - [Rust - Cargo](#rust---cargo)
+  - [Scala - SBT](#scala---sbt)
+  - [Swift, Objective-C - Carthage](#swift-objective-c---carthage)
+  - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
+  - [Swift - Swift Package Manager](#swift---swift-package-manager)
+  - [Swift - Mint](#swift---mint)
 
 ## C# - NuGet
 
@@ -538,6 +545,17 @@ jobs:
   with:
     path: ~/.local/share/virtualenvs
     key: ${{ runner.os }}-python-${{ steps.setup-python.outputs.python-version }}-pipenv-${{ hashFiles('Pipfile.lock') }}
+```
+
+## Python - poetry
+
+```yaml
+- uses: actions/cache@v3
+  with:
+    path: ~/.cache/pypoetry
+    key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-poetry-
 ```
 
 ## R - renv
