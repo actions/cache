@@ -39,6 +39,7 @@
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 - [Swift - Swift Package Manager](#swift---swift-package-manager)
 - [Swift - Mint](#swift---mint)
+- [* - Bazel](#---bazel)
 
 ## C# - NuGet
 
@@ -656,4 +657,36 @@ steps:
       key: ${{ runner.os }}-mint-${{ hashFiles('**/Mintfile') }}
       restore-keys: |
         ${{ runner.os }}-mint-
+```
+
+## * - Bazel
+
+[`bazelisk`](https://github.com/bazelbuild/bazelisk) does not have be to separately downloaded and installed because it's already included in GitHub's `ubuntu-latest` and `macos-latest` base images.
+
+### Linux
+
+```yaml
+- name: Cache Bazel
+  uses: actions/cache@v3
+  with:
+    path: |
+      ~/.cache/bazel
+    key: ${{ runner.os }}-bazel-${{ hashFiles('.bazelversion', '.bazelrc', 'WORKSPACE', 'WORKSPACE.bazel', 'MODULE.bazel') }}
+    restore-keys: |
+      ${{ runner.os }}-bazel-
+- run: bazelisk test //...
+```
+
+### macOS
+
+```yaml
+- name: Cache Bazel
+  uses: actions/cache@v3
+  with:
+    path: |
+      /private/var/tmp/_bazel_runner/
+    key: ${{ runner.os }}-bazel-${{ hashFiles('.bazelversion', '.bazelrc', 'WORKSPACE', 'WORKSPACE.bazel', 'MODULE.bazel') }}
+    restore-keys: |
+      ${{ runner.os }}-bazel-
+- run: bazelisk test //...
 ```
