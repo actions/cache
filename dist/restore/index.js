@@ -28387,6 +28387,7 @@ class Batch {
      */
     parallelExecute() {
         const local_index = this.index++;
+        console.log(`parallelExecute ${local_index} Active count: ${this.actives} Completed count: ${this.completed} total: ${this.operations.length}`);
         if (this.state === BatchStates.Error) {
             return;
         }
@@ -28397,9 +28398,8 @@ class Batch {
         while (this.actives < this.concurrency) {
             const operation = this.nextOperation();
             if (operation) {
-                console.log(`parallelExecute ${local_index} starting execution of operation ${this.operation}. Active count: ${this.actives}`);
+                console.log(`parallelExecute ${local_index} starting execution of operation ${this.offset}. Active count: ${this.actives}`);
                 operation();
-                console.log(`parallelExecute ${local_index} finished execution of operation ${this.operation}. Active count: ${this.actives}`);
             }
             else {
                 return;
