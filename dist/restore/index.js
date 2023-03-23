@@ -28837,15 +28837,21 @@ async function streamToBuffer(stream, buffer, offset, end, encoding) {
     let pos = 0; // Position in stream
     const count = end - offset; // Total amount of data needed in stream
     return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error(`The operation cannot be completed in timeout.`)), REQUEST_TIMEOUT);
+        const timeout = setTimeout(() => { 
+          console.log("Timeout triggered.");
+          return reject(new Error(`The operation cannot be completed in timeout.`));
+        }, REQUEST_TIMEOUT);
         stream.on("readable", () => {
+            console.log("Entering readable");
             if (pos >= count) {
                 clearTimeout(timeout);
+                console.log("Leaving readable");
                 resolve();
                 return;
             }
             let chunk = stream.read();
             if (!chunk) {
+                console.log("Leaving readable");
                 return;
             }
             if (typeof chunk === "string") {
@@ -28855,6 +28861,7 @@ async function streamToBuffer(stream, buffer, offset, end, encoding) {
             const chunkLength = pos + chunk.length > count ? count - pos : chunk.length;
             buffer.fill(chunk.slice(0, chunkLength), offset + pos, offset + pos + chunkLength);
             pos += chunkLength;
+            console.log("Leaving readable");
         });
         stream.on("end", () => {
             clearTimeout(timeout);
