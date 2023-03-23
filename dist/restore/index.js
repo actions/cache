@@ -28332,6 +28332,7 @@ class Batch {
         }
         this.concurrency = concurrency;
         this.emitter = new events.EventEmitter();
+        this.index = 0;
     }
     /**
      * Add a operation into queue.
@@ -28385,6 +28386,7 @@ class Batch {
      *
      */
     parallelExecute() {
+        const local_index = this.index++;
         if (this.state === BatchStates.Error) {
             return;
         }
@@ -28395,7 +28397,9 @@ class Batch {
         while (this.actives < this.concurrency) {
             const operation = this.nextOperation();
             if (operation) {
+                console.log(`parallelExecute ${local_index} starting execution of operation ${this.operation}. Active count: ${this.actives}`);
                 operation();
+                console.log(`parallelExecute ${local_index} finished execution of operation ${this.operation}. Active count: ${this.actives}`);
             }
             else {
                 return;
