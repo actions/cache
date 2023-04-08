@@ -34,6 +34,10 @@ inputs:
       save-always does not work as intended and will be removed in a future release.
       A separate `actions/cache/restore` step should be used instead.
       See https://github.com/actions/cache/tree/main/save#always-save-cache for more details.
+  refresh-cache:
+    description: 'Whether to try and refresh existing caches (requires GITHUB_TOKEN to be present in env)'
+    required: false
+    default: 'false'
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
