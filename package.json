@@ -26,7 +26,8 @@
     "@actions/cache": "^5.0.5",
     "@actions/core": "^2.0.3",
     "@actions/exec": "^2.0.0",
-    "@actions/io": "^2.0.0"
+    "@actions/io": "^2.0.0",
+    "@octokit/action": "^4.0.10"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
