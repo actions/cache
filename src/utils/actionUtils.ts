@@ -1,7 +1,10 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
+import { RequestError } from "@octokit/request-error"
+import { OctokitResponse } from "@octokit/types"
 
 import { RefKey } from "../constants";
+const { Octokit } = require("@octokit/action");
 
 export function isGhes(): boolean {
     const ghUrl = new URL(
@@ -23,6 +26,29 @@ export function isExactKeyMatch(key: string, cacheKey?: string): boolean {
             sensitivity: "accent"
         }) === 0
     );
+}
+
+export async function deleteCacheByKey(key: string, owner: string, repo: string) {
+    const octokit = new Octokit();
+    let response;
+    try {
+        response = await octokit.rest.actions.deleteActionsCacheByKey({
+            owner: owner,
+            repo: repo,
+            key: key
+            });
+        if (response.status === 200) {
+            core.info(`Succesfully deleted cache with key: ${response.data.actions_caches[0].key}`);
+        }
+    } catch (e) {
+        if (e instanceof RequestError) {
+            let err = e as RequestError;
+            let errData = err.response?.data as any | undefined;
+            exports.logWarning(`${err.name} '${err.status}: ${errData?.message}' trying to delete cache with key: ${key}`);
+        }
+        response = e;
+    }
+    return response;
 }
 
 export function logWarning(message: string): void {

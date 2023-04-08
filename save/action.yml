@@ -15,6 +15,10 @@ inputs:
     description: 'An optional boolean when enabled, allows windows runners to save caches that can be restored on other platforms'
     default: 'false'
     required: false
+  refresh-cache:
+    description: 'An optional boolean, when enabled it will result in a matched key being deleted after being restored, allowing it to be reused with refreshed/updated content. Default: false'
+    required: false
+    default: 'false'
 runs:
   using: 'node24'
   main: '../dist/save-only/index.js'
