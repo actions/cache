@@ -1,5 +1,6 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
+import nock from "nock";
 
 import { Events, Inputs, RefKey } from "../src/constants";
 import { restoreImpl } from "../src/restoreImpl";
@@ -10,6 +11,7 @@ import * as testUtils from "../src/utils/testUtils";
 jest.mock("../src/utils/actionUtils");
 
 beforeAll(() => {
+    nock.disableNetConnect();
     jest.spyOn(actionUtils, "isExactKeyMatch").mockImplementation(
         (key, cacheResult) => {
             const actualUtils = jest.requireActual("../src/utils/actionUtils");
@@ -52,6 +54,10 @@ afterEach(() => {
     testUtils.clearInputs();
     delete process.env[Events.Key];
     delete process.env[RefKey];
+});
+
+afterAll(() => {
+    nock.enableNetConnect();
 });
 
 test("restore with invalid event outputs warning", async () => {

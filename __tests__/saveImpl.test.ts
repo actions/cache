@@ -1,5 +1,6 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
+import nock from "nock";
 
 import { Events, Inputs, RefKey } from "../src/constants";
 import { saveImpl } from "../src/saveImpl";
@@ -12,6 +13,19 @@ jest.mock("@actions/cache");
 jest.mock("../src/utils/actionUtils");
 
 beforeAll(() => {
+    nock.disableNetConnect();
+    testUtils.mockServer.listen({
+        onUnhandledRequest: "warn"
+    });
+
+    jest.spyOn(actionUtils, "deleteCacheByKey").mockImplementation(
+        (key: string, owner: string, repo: string) => {
+            return jest
+                .requireActual("../src/utils/actionUtils")
+                .deleteCacheByKey(key, owner, repo);
+        }
+    );
+
     jest.spyOn(core, "getInput").mockImplementation((name, options) => {
         return jest.requireActual("@actions/core").getInput(name, options);
     });
@@ -52,6 +66,14 @@ beforeAll(() => {
         const actualUtils = jest.requireActual("../src/utils/actionUtils");
         return actualUtils.isValidEvent();
     });
+
+    jest.spyOn(actionUtils, "logWarning").mockImplementation(
+        (message: string) => {
+            return jest
+                .requireActual("../src/utils/actionUtils")
+                .logWarning(message);
+        }
+    );
 });
 
 beforeEach(() => {
@@ -69,6 +91,13 @@ afterEach(() => {
     testUtils.clearInputs();
     delete process.env[Events.Key];
     delete process.env[RefKey];
+    delete process.env["GITHUB_TOKEN"];
+    delete process.env["GITHUB_REPOSITORY"];
+});
+
+afterAll(() => {
+    testUtils.mockServer.close();
+    nock.enableNetConnect();
 });
 
 test("save with invalid event outputs warning", async () => {
@@ -88,7 +117,7 @@ test("save with no primary key in state outputs warning", async () => {
     const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const failedMock = jest.spyOn(core, "setFailed");
 
-    const savedCacheKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const savedCacheKey = testUtils.successCacheKey;
     jest.spyOn(core, "getState")
         // Cache Entry State
         .mockImplementationOnce(() => {
@@ -137,7 +166,7 @@ test("save on GHES with AC available", async () => {
     jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
     const failedMock = jest.spyOn(core, "setFailed");
 
-    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const primaryKey = testUtils.successCacheKey;
     const savedCacheKey = "Linux-node-";
 
     jest.spyOn(core, "getState")
@@ -179,8 +208,10 @@ test("save on GHES with AC available", async () => {
 test("save with exact match returns early", async () => {
     const infoMock = jest.spyOn(core, "info");
     const failedMock = jest.spyOn(core, "setFailed");
+    testUtils.setInput(Inputs.RefreshCache, "false");
 
-    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const primaryKey = testUtils.successCacheKey;
+
     const savedCacheKey = primaryKey;
 
     jest.spyOn(core, "getState")
@@ -207,7 +238,7 @@ test("save with missing input outputs warning", async () => {
     const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const failedMock = jest.spyOn(core, "setFailed");
 
-    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const primaryKey = testUtils.successCacheKey;
     const savedCacheKey = "Linux-node-";
 
     jest.spyOn(core, "getState")
@@ -235,7 +266,7 @@ test("save with large cache outputs warning", async () => {
     const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const failedMock = jest.spyOn(core, "setFailed");
 
-    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const primaryKey = testUtils.successCacheKey;
     const savedCacheKey = "Linux-node-";
 
     jest.spyOn(core, "getState")
@@ -280,7 +311,7 @@ test("save with reserve cache failure outputs warning", async () => {
     const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const failedMock = jest.spyOn(core, "setFailed");
 
-    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const primaryKey = testUtils.successCacheKey;
     const savedCacheKey = "Linux-node-";
 
     jest.spyOn(core, "getState")
@@ -327,7 +358,7 @@ test("save with server error outputs warning", async () => {
     const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const failedMock = jest.spyOn(core, "setFailed");
 
-    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const primaryKey = testUtils.successCacheKey;
     const savedCacheKey = "Linux-node-";
 
     jest.spyOn(core, "getState")
@@ -368,7 +399,7 @@ test("save with server error outputs warning", async () => {
 test("save with valid inputs uploads a cache", async () => {
     const failedMock = jest.spyOn(core, "setFailed");
 
-    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const primaryKey = testUtils.successCacheKey;
     const savedCacheKey = "Linux-node-";
 
     jest.spyOn(core, "getState")
@@ -404,5 +435,100 @@ test("save with valid inputs uploads a cache", async () => {
         false
     );
 
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
+test("save with cache hit and refresh-cache will try to delete and re-create entry", async () => {
+    process.env["GITHUB_REPOSITORY"] = "owner/repo";
+    process.env["GITHUB_TOKEN"] =
+        "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";
+    process.env["GITHUB_ACTION"] = "__owner___run-repo";
+
+    const infoMock = jest.spyOn(core, "info");
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = testUtils.successCacheKey;
+    const savedCacheKey = primaryKey;
+
+    jest.spyOn(core, "getState")
+        // Cache Entry State
+        .mockImplementationOnce(() => {
+            return savedCacheKey;
+        })
+        .mockImplementationOnce(() => {
+            return primaryKey;
+        });
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.RefreshCache, "true");
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.UploadChunkSize, "4000000");
+
+    const cacheId = 4;
+    const saveCacheMock = jest
+        .spyOn(cache, "saveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(cacheId);
+        });
+    await run(new StateProvider());
+
+    expect(saveCacheMock).toHaveBeenCalledTimes(1);
+    expect(saveCacheMock).toHaveBeenCalledWith(
+        [inputPath],
+        primaryKey,
+        {
+            uploadChunkSize: 4000000
+        },
+        false
+    );
+
+    expect(logWarningMock).toHaveBeenCalledTimes(0);
+    expect(infoMock).toHaveBeenCalledTimes(3);
+
+    expect(infoMock).toHaveBeenNthCalledWith(
+        1,
+        `Cache hit occurred on the primary key ${primaryKey}, attempting to refresh the contents of the cache.`
+    );
+    expect(infoMock).toHaveBeenNthCalledWith(
+        2,
+        `Succesfully deleted cache with key: ${primaryKey}`
+    );
+    expect(infoMock).toHaveBeenNthCalledWith(
+        3,
+        `Cache saved with key: ${primaryKey}`
+    );
+
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
+test("save with cache hit and refresh-cache will throw a warning if there's no GITHUB_TOKEN", async () => {
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = testUtils.successCacheKey;
+    const savedCacheKey = primaryKey;
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.RefreshCache, "true");
+
+    jest.spyOn(core, "getState")
+        // Cache Entry State
+        .mockImplementationOnce(() => {
+            return savedCacheKey;
+        })
+        // Cache Key State
+        .mockImplementationOnce(() => {
+            return primaryKey;
+        });
+
+    const saveCacheMock = jest.spyOn(cache, "saveCache");
+    await run(new StateProvider());
+
+    expect(saveCacheMock).toHaveBeenCalledTimes(0);
+    expect(logWarningMock).toHaveBeenCalledWith(
+        `Can't refresh cache, either the repository info or a valid token are missing.`
+    );
     expect(failedMock).toHaveBeenCalledTimes(0);
 });

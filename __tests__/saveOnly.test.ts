@@ -1,5 +1,6 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
+import nock from "nock";
 
 import { Events, Inputs, RefKey } from "../src/constants";
 import { saveOnlyRun } from "../src/saveImpl";
@@ -11,6 +12,7 @@ jest.mock("@actions/cache");
 jest.mock("../src/utils/actionUtils");
 
 beforeAll(() => {
+    nock.disableNetConnect();
     jest.spyOn(core, "getInput").mockImplementation((name, options) => {
         return jest.requireActual("@actions/core").getInput(name, options);
     });
@@ -71,6 +73,10 @@ afterEach(() => {
     testUtils.clearInputs();
     delete process.env[Events.Key];
     delete process.env[RefKey];
+});
+
+afterAll(() => {
+    nock.enableNetConnect();
 });
 
 test("save with valid inputs uploads a cache", async () => {
