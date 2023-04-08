@@ -43,15 +43,38 @@ export async function saveImpl(
             return;
         }
 
-        // If matched restore key is same as primary key, then do not save cache
-        // NO-OP in case of SaveOnly action
+        const refreshCache: boolean = utils.getInputAsBool(
+            Inputs.RefreshCache,
+            { required: false }
+        );
+
+        // If matched restore key is same as primary key, either try to refresh the cache, or just notify and do not save (NO-OP in case of SaveOnly action)
+
         const restoredKey = stateProvider.getCacheState();
 
         if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
-            core.info(
-                `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
-            );
-            return;
+            const { GITHUB_TOKEN, GITHUB_REPOSITORY } = process.env || null;
+            if (GITHUB_TOKEN && GITHUB_REPOSITORY && refreshCache === true) {
+                core.info(
+                    `Cache hit occurred on the primary key ${primaryKey}, attempting to refresh the contents of the cache.`
+                );
+                const [_owner, _repo] = GITHUB_REPOSITORY.split(`/`);
+                if (_owner && _repo) {
+                    await utils.deleteCacheByKey(primaryKey, _owner, _repo);
+                }
+            } else {
+                if (refreshCache === true) {
+                    utils.logWarning(
+                        `Can't refresh cache, either the repository info or a valid token are missing.`
+                    );
+                    return;
+                } else {
+                    core.info(
+                        `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
+                    );
+                    return;
+                }
+            }
         }
 
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
