@@ -111,6 +111,45 @@ test("save with valid inputs uploads a cache", async () => {
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
+test("Granular save with refreshCache is able to save cache", async () => {
+    process.env["GITHUB_REPOSITORY"] = "owner/repo";
+    process.env["GITHUB_TOKEN"] =
+        "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";
+    process.env["GITHUB_ACTION"] = "__owner___run-repo";
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+
+    const inputPath = "node_modules";
+    process.env.CACHE_RESTORE_ONLY_MATCHED_KEY = primaryKey;
+    testUtils.setInput(Inputs.Key, primaryKey);
+    testUtils.setInput(Inputs.RefreshCache, "true");
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.UploadChunkSize, "4000000");
+
+    const cacheId = 4;
+
+    const saveCacheMock = jest
+        .spyOn(cache, "saveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(cacheId);
+        });
+
+    await saveOnlyRun();
+
+    expect(saveCacheMock).toHaveBeenCalledTimes(1);
+    expect(saveCacheMock).toHaveBeenCalledWith(
+        [inputPath],
+        primaryKey,
+        {
+            uploadChunkSize: 4000000
+        },
+        false
+    );
+
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
 test("save failing logs the warning message", async () => {
     const warningMock = jest.spyOn(core, "warning");
 

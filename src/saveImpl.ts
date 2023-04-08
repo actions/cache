@@ -48,10 +48,26 @@ export async function saveImpl(
             { required: false }
         );
 
-        // If matched restore key is same as primary key, either try to refresh the cache, or just notify and do not save (NO-OP in case of SaveOnly action)
+        // If matched restore key is same as primary key, either try to refresh the cache, or just notify and do not save.
 
-        const restoredKey = stateProvider.getCacheState();
+        let restoredKey = stateProvider.getCacheState();
 
+        if (refreshCache && !restoredKey) {
+            // If getCacheState didn't give us a key, we're likely using granular actions. Do a lookup to see if we need to refresh or just do a regular save.
+            const cachePaths = utils.getInputAsArray(Inputs.Path, {
+                required: true
+            });
+            const enableCrossOsArchive = utils.getInputAsBool(
+                Inputs.EnableCrossOsArchive
+            );
+            restoredKey = await cache.restoreCache(
+                cachePaths,
+                primaryKey,
+                [],
+                { lookupOnly: true },
+                enableCrossOsArchive
+            );
+        }
         if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
             const { GITHUB_TOKEN, GITHUB_REPOSITORY } = process.env || null;
             if (GITHUB_TOKEN && GITHUB_REPOSITORY && refreshCache === true) {
