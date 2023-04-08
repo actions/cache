@@ -26,6 +26,10 @@ inputs:
     description: 'Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache'
     default: 'false'
     required: false
+  refresh-cache:
+    description: 'Whether to try and refresh existing caches (requires GITHUB_TOKEN to be present in env)'
+    required: false
+    default: 'false'
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
