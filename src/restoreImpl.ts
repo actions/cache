@@ -75,7 +75,6 @@ async function restoreImpl(
         } else {
             core.info(`Cache restored from key: ${cacheKey}`);
         }
-
         return cacheKey;
     } catch (error: unknown) {
         core.setFailed((error as Error).message);
