@@ -1,5 +1,7 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
+import { RequestError } from "@octokit/request-error";
+import nock from "nock";
 
 import { Events, RefKey } from "../src/constants";
 import * as actionUtils from "../src/utils/actionUtils";
@@ -9,14 +11,26 @@ jest.mock("@actions/core");
 jest.mock("@actions/cache");
 
 beforeAll(() => {
+    nock.disableNetConnect();
     jest.spyOn(core, "getInput").mockImplementation((name, options) => {
         return jest.requireActual("@actions/core").getInput(name, options);
+    });
+    testUtils.mockServer.listen({
+        onUnhandledRequest: "warn"
     });
 });
 
 afterEach(() => {
     delete process.env[Events.Key];
     delete process.env[RefKey];
+    delete process.env["GITHUB_REPOSITORY"];
+    delete process.env["GITHUB_TOKEN"];
+    delete process.env["GITHUB_ACTION"];
+});
+
+afterAll(() => {
+    testUtils.mockServer.close();
+    nock.enableNetConnect();
 });
 
 test("isGhes returns true if server url is not github.com", () => {
@@ -192,6 +206,94 @@ test("getInputAsBool throws if required and value missing", () => {
     expect(() =>
         actionUtils.getInputAsBool("undefined2", { required: true })
     ).toThrowError();
+});
+
+test("deleteCacheByKey returns 'HttpError: 404' when cache is not found.", async () => {
+    const event = Events.Push;
+
+    process.env["GITHUB_REPOSITORY"] = "owner/repo";
+    process.env["GITHUB_TOKEN"] =
+        "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";
+    process.env["GITHUB_ACTION"] = "__owner___run-repo";
+    process.env[Events.Key] = event;
+    process.env[RefKey] = "ref/heads/feature";
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const response = await actionUtils.deleteCacheByKey(
+        testUtils.failureCacheKey,
+        "owner",
+        "repo"
+    );
+    expect(logWarningMock).toHaveBeenCalledWith(
+        expect.stringMatching(/404: Not Found/i)
+    );
+    expect(response).toBeInstanceOf(RequestError);
+    expect(response).toMatchObject({
+        name: "HttpError",
+        status: 404
+    });
+});
+
+test("deleteCacheByKey returns 'HttpError: 401' on an invalid non-mocked request.", async () => {
+    const event = Events.Push;
+
+    process.env["GITHUB_REPOSITORY"] = "owner/repo";
+    process.env["GITHUB_TOKEN"] =
+        "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";
+    process.env["GITHUB_ACTION"] = "__owner___run-repo";
+    process.env[Events.Key] = event;
+    process.env[RefKey] = "ref/heads/feature";
+    await nock.enableNetConnect();
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const response = await actionUtils.deleteCacheByKey(
+        testUtils.passThroughCacheKey,
+        "owner",
+        "repo"
+    );
+    expect(logWarningMock).toHaveBeenCalledWith(
+        expect.stringMatching(/401: Bad Credentials/i)
+    );
+    expect(response).toBeInstanceOf(RequestError);
+    expect(response).toMatchObject({
+        name: "HttpError",
+        status: 401
+    });
+    nock.disableNetConnect();
+});
+
+test("deleteCacheByKey returns matched cache data when successful.", async () => {
+    const event = Events.Push;
+
+    process.env["GITHUB_REPOSITORY"] = "owner/repo";
+    process.env["GITHUB_TOKEN"] =
+        "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";
+    process.env["GITHUB_ACTION"] = "__owner___run-repo";
+    process.env[Events.Key] = event;
+    process.env[RefKey] = "ref/heads/feature";
+
+    const expectedResponse = {
+        id: expect.any(Number),
+        ref: expect.any(String),
+        key: expect.any(String),
+        version: expect.any(String),
+        last_accessed_at: expect.any(String),
+        created_at: expect.any(String),
+        size_in_bytes: expect.any(Number)
+    };
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const response = await actionUtils.deleteCacheByKey(
+        testUtils.successCacheKey,
+        "owner",
+        "repo"
+    );
+    expect(response).toMatchObject({
+        data: expect.objectContaining({
+            total_count: expect.any(Number),
+            actions_caches: expect.arrayContaining([
+                expect.objectContaining(expectedResponse)
+            ])
+        })
+    });
+    expect(logWarningMock).toHaveBeenCalledTimes(0);
 });
 
 test("isCacheFeatureAvailable for ac enabled", () => {
