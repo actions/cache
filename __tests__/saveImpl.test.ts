@@ -4,7 +4,7 @@ import nock from "nock";
 
 import { Events, Inputs, RefKey } from "../src/constants";
 import { saveImpl } from "../src/saveImpl";
-import { StateProvider } from "../src/stateProvider";
+import { NullStateProvider, StateProvider } from "../src/stateProvider";
 import * as actionUtils from "../src/utils/actionUtils";
 import * as testUtils from "../src/utils/testUtils";
 
@@ -471,7 +471,80 @@ test("save with cache hit and refresh-cache will try to delete and re-create ent
         .mockImplementationOnce(() => {
             return Promise.resolve(cacheId);
         });
-    await run(new StateProvider());
+    await saveImpl(new StateProvider());
+
+    expect(saveCacheMock).toHaveBeenCalledTimes(1);
+    expect(saveCacheMock).toHaveBeenCalledWith(
+        [inputPath],
+        primaryKey,
+        {
+            uploadChunkSize: 4000000
+        },
+        false
+    );
+
+    expect(logWarningMock).toHaveBeenCalledTimes(0);
+    expect(infoMock).toHaveBeenCalledTimes(3);
+
+    expect(infoMock).toHaveBeenNthCalledWith(
+        1,
+        `Cache hit occurred on the primary key ${primaryKey}, attempting to refresh the contents of the cache.`
+    );
+    expect(infoMock).toHaveBeenNthCalledWith(
+        2,
+        `Succesfully deleted cache with key: ${primaryKey}`
+    );
+    expect(infoMock).toHaveBeenNthCalledWith(
+        3,
+        `Cache saved with key: ${primaryKey}`
+    );
+
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
+test("Granular save will use lookup to determine if cache needs to be updated or (not) saved.", async () => {
+    process.env["GITHUB_REPOSITORY"] = "owner/repo";
+    process.env["GITHUB_TOKEN"] =
+        "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";
+    process.env["GITHUB_ACTION"] = "__owner___run-repo";
+
+    const infoMock = jest.spyOn(core, "info");
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = testUtils.successCacheKey;
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Key, primaryKey);
+    testUtils.setInput(Inputs.RefreshCache, "true");
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.UploadChunkSize, "4000000");
+
+    const restoreCacheMock = jest
+        .spyOn(cache, "restoreCache")
+        .mockImplementation(() => {
+            return Promise.resolve(primaryKey);
+        });
+
+    const cacheId = 4;
+    const saveCacheMock = jest
+        .spyOn(cache, "saveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(cacheId);
+        });
+
+    await saveImpl(new NullStateProvider());
+
+    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        [inputPath],
+        primaryKey,
+        [],
+        {
+            lookupOnly: true
+        },
+        false
+    );
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
     expect(saveCacheMock).toHaveBeenCalledWith(
@@ -524,7 +597,7 @@ test("save with cache hit and refresh-cache will throw a warning if there's no G
         });
 
     const saveCacheMock = jest.spyOn(cache, "saveCache");
-    await run(new StateProvider());
+    await saveImpl(new StateProvider());
 
     expect(saveCacheMock).toHaveBeenCalledTimes(0);
     expect(logWarningMock).toHaveBeenCalledWith(
