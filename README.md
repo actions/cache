@@ -60,7 +60,7 @@ If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are requir
 
 ### Outputs
 
-* `cache-hit` - A boolean value to indicate an exact match was found for the key.
+* `cache-hit` - A boolean value to indicate an exact match was found for the key, or empty (not set) if no cache was restored.
 
     > **Note** `cache-hit` will only be set to `true` when a cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.
 
