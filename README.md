@@ -174,7 +174,9 @@ See [Using contexts to create cache keys](https://help.github.com/en/actions/con
 
 ## Cache Limits
 
-A repository can have up to 10GB of caches. Once the 10GB limit is reached, older caches will be evicted based on when the cache was last accessed.  Caches that are not accessed within the last week will also be evicted.
+Actions-cache-s3 don't have any limits in terms of size or age of the cache.
+
+Eviction may be handled separately, for example using [S3 Lifecycle](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html).
 
 ## Skipping steps based on cache-hit
 
