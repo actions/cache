@@ -223,15 +223,15 @@ steps:
 
 ## Haskell - Cabal
 
-We cache the elements of the Cabal store separately, as the entirety of `~/.cabal` can grow very large for projects with many dependencies.
+We cache the elements of the Cabal store.
 
 ```yaml
 - name: Cache ~/.cabal/packages, ~/.cabal/store and dist-newstyle
   uses: actions/cache@v3
   with:
     path: |
-      ~/.cabal/packages
-      ~/.cabal/store
+      ~/.cache/cabal/packages
+      ~/.local/state/cabal
       dist-newstyle
     key: ${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal.project.freeze') }}
     restore-keys: ${{ runner.os }}-${{ matrix.ghc }}-
