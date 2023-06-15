@@ -5,6 +5,7 @@
 - [D - DUB](#d---dub)
   - [POSIX](#posix)
   - [Windows](#windows)
+- [Dart](#dart)
 - [Deno](#deno)
   - [Linux](#linux)
   - [macOS](#macos)
@@ -118,6 +119,26 @@ steps:
     key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.selections.json') }}
     restore-keys: |
       ${{ runner.os }}-dub-
+```
+## Dart
+
+### Linux / Macos
+```yaml
+- uses: actions/cache@v3
+  with:
+    path: |
+      ~/.pub-cache/
+    key: ${{ runner.os }}-dart-${{ hashFiles('**/pubspec.lock') }}
+```
+
+### Windows
+On windows the global package cache is located at `%LOCALAPPDATA%\Pub\Cache` but may vary due to different windows version. Refer to the [docs](https://dart.dev/tools/pub/cmd/pub-get#the-system-package-cache)
+```yaml
+- uses: actions/cache@v3
+  with:
+    path: |
+      ~/AppData/Local/Pub/Cache/
+    key: ${{ runner.os }}-dart-${{ hashFiles('**/pubspec.lock') }}
 ```
 
 ## Deno
