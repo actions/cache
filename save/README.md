@@ -9,6 +9,11 @@ The save action saves a cache. It works similarly to the `cache` action except t
 * `key` - An explicit key for a cache entry. See [creating a cache key](../README.md#creating-a-cache-key).
 * `path` - A list of files, directories, and wildcard patterns to cache. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `upload-chunk-size` - The chunk size used to split up large files during upload, in bytes
+* `refresh-cache` -  An optional boolean, when enabled it will result in a matched key being deleted after being restored, allowing it to be reused with refreshed/updated content. Default: false
+
+#### Environment Variables
+
+* `GITHUB_TOKEN` - A Github API token, required for authenticating to the API when the `refresh-cache` option is enabled.
 
 ### Outputs
 
