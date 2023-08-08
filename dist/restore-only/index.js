@@ -37054,44 +37054,9 @@ exports.default = {
 
 "use strict";
 
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const restoreImpl_1 = __importDefault(__webpack_require__(835));
-const stateProvider_1 = __webpack_require__(309);
-function run(earlyExit) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            yield (0, restoreImpl_1.default)(new stateProvider_1.NullStateProvider());
-        }
-        catch (err) {
-            console.error(err);
-            if (earlyExit) {
-                process.exit(1);
-            }
-        }
-        // node will stay alive if any promises are not resolved,
-        // which is a possibility if HTTP requests are dangling
-        // due to retries or timeouts. We know that if we got here
-        // that all promises that we care about have successfully
-        // resolved, so simply exit with success.
-        if (earlyExit) {
-            process.exit(0);
-        }
-    });
-}
-run(true);
-exports.default = run;
+const restoreImpl_1 = __webpack_require__(835);
+(0, restoreImpl_1.restoreOnlyRun)(true);
 
 
 /***/ }),
@@ -49269,9 +49234,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.restoreRun = exports.restoreOnlyRun = exports.restoreImpl = void 0;
 const cache = __importStar(__webpack_require__(692));
 const core = __importStar(__webpack_require__(470));
 const constants_1 = __webpack_require__(694);
+const stateProvider_1 = __webpack_require__(309);
 const utils = __importStar(__webpack_require__(360));
 function restoreImpl(stateProvider) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -49322,7 +49289,40 @@ function restoreImpl(stateProvider) {
         }
     });
 }
-exports.default = restoreImpl;
+exports.restoreImpl = restoreImpl;
+function run(stateProvider, earlyExit) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            yield restoreImpl(stateProvider);
+        }
+        catch (err) {
+            console.error(err);
+            if (earlyExit) {
+                process.exit(1);
+            }
+        }
+        // node will stay alive if any promises are not resolved,
+        // which is a possibility if HTTP requests are dangling
+        // due to retries or timeouts. We know that if we got here
+        // that all promises that we care about have successfully
+        // resolved, so simply exit with success.
+        if (earlyExit) {
+            process.exit(0);
+        }
+    });
+}
+function restoreOnlyRun(earlyExit) {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield run(new stateProvider_1.NullStateProvider(), earlyExit);
+    });
+}
+exports.restoreOnlyRun = restoreOnlyRun;
+function restoreRun(earlyExit) {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield run(new stateProvider_1.StateProvider(), earlyExit);
+    });
+}
+exports.restoreRun = restoreRun;
 
 
 /***/ }),

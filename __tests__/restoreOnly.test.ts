@@ -2,7 +2,7 @@ import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
 import { Events, RefKey } from "../src/constants";
-import run from "../src/restoreOnly";
+import { restoreOnlyRun } from "../src/restoreImpl";
 import * as actionUtils from "../src/utils/actionUtils";
 import * as testUtils from "../src/utils/testUtils";
 
@@ -72,7 +72,7 @@ test("restore with no cache found", async () => {
             return Promise.resolve(undefined);
         });
 
-    await run();
+    await restoreOnlyRun();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
     expect(restoreCacheMock).toHaveBeenCalledWith(
@@ -114,7 +114,7 @@ test("restore with restore keys and no cache found", async () => {
             return Promise.resolve(undefined);
         });
 
-    await run();
+    await restoreOnlyRun();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
     expect(restoreCacheMock).toHaveBeenCalledWith(
@@ -153,7 +153,7 @@ test("restore with cache found for key", async () => {
             return Promise.resolve(key);
         });
 
-    await run();
+    await restoreOnlyRun();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
     expect(restoreCacheMock).toHaveBeenCalledWith(
@@ -196,7 +196,7 @@ test("restore with cache found for restore key", async () => {
             return Promise.resolve(restoreKey);
         });
 
-    await run();
+    await restoreOnlyRun();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
     expect(restoreCacheMock).toHaveBeenCalledWith(

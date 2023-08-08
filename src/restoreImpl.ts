@@ -2,10 +2,10 @@ import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
 import { Events, Inputs, Outputs, State } from "./constants";
-import { IStateProvider } from "./stateProvider";
+import { IStateProvider, NullStateProvider, StateProvider } from "./stateProvider";
 import * as utils from "./utils/actionUtils";
 
-async function restoreImpl(
+export async function restoreImpl(
     stateProvider: IStateProvider
 ): Promise<string | undefined> {
     try {
@@ -82,4 +82,30 @@ async function restoreImpl(
     }
 }
 
-export default restoreImpl;
+async function run(stateProvider: IStateProvider, earlyExit: boolean | undefined): Promise<void> {
+    try {
+        await restoreImpl(stateProvider);
+    } catch (err) {
+        console.error(err);
+        if (earlyExit) {
+            process.exit(1);
+        }
+    }
+
+    // node will stay alive if any promises are not resolved,
+    // which is a possibility if HTTP requests are dangling
+    // due to retries or timeouts. We know that if we got here
+    // that all promises that we care about have successfully
+    // resolved, so simply exit with success.
+    if (earlyExit) {
+        process.exit(0);
+    }
+}
+
+export async function restoreOnlyRun(earlyExit?: boolean | undefined): Promise<void> {
+    await run(new NullStateProvider(), earlyExit);
+}
+
+export async function restoreRun(earlyExit?: boolean | undefined): Promise<void> {
+    await run(new StateProvider(), earlyExit);
+}
