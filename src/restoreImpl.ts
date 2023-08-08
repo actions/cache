@@ -2,7 +2,11 @@ import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
 import { Events, Inputs, Outputs, State } from "./constants";
-import { IStateProvider, NullStateProvider, StateProvider } from "./stateProvider";
+import {
+    IStateProvider,
+    NullStateProvider,
+    StateProvider
+} from "./stateProvider";
 import * as utils from "./utils/actionUtils";
 
 export async function restoreImpl(
@@ -82,7 +86,10 @@ export async function restoreImpl(
     }
 }
 
-async function run(stateProvider: IStateProvider, earlyExit: boolean | undefined): Promise<void> {
+async function run(
+    stateProvider: IStateProvider,
+    earlyExit: boolean | undefined
+): Promise<void> {
     try {
         await restoreImpl(stateProvider);
     } catch (err) {
@@ -102,10 +109,14 @@ async function run(stateProvider: IStateProvider, earlyExit: boolean | undefined
     }
 }
 
-export async function restoreOnlyRun(earlyExit?: boolean | undefined): Promise<void> {
+export async function restoreOnlyRun(
+    earlyExit?: boolean | undefined
+): Promise<void> {
     await run(new NullStateProvider(), earlyExit);
 }
 
-export async function restoreRun(earlyExit?: boolean | undefined): Promise<void> {
+export async function restoreRun(
+    earlyExit?: boolean | undefined
+): Promise<void> {
     await run(new StateProvider(), earlyExit);
 }
