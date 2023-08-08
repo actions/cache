@@ -1,12 +1,14 @@
 import restoreImpl from "./restoreImpl";
 import { StateProvider } from "./stateProvider";
 
-async function run(): Promise<void> {
+async function run(earlyExit?: boolean | undefined): Promise<void> {
     try {
         await restoreImpl(new StateProvider());
     } catch (err) {
         console.error(err);
-        process.exit(1);
+        if (earlyExit) {
+            process.exit(1);
+        }
     }
 
     // node will stay alive if any promises are not resolved,
@@ -14,9 +16,11 @@ async function run(): Promise<void> {
     // due to retries or timeouts. We know that if we got here
     // that all promises that we care about have successfully
     // resolved, so simply exit with success.
-    process.exit(0);
+    if (earlyExit) {
+        process.exit(0);
+    }
 }
 
-run();
+run(true);
 
 export default run;
