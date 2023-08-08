@@ -47625,24 +47625,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const restoreImpl_1 = __importDefault(__webpack_require__(835));
 const stateProvider_1 = __webpack_require__(309);
-function run() {
+function run(earlyExit) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             yield (0, restoreImpl_1.default)(new stateProvider_1.StateProvider());
         }
         catch (err) {
             console.error(err);
-            process.exit(1);
+            if (earlyExit) {
+                process.exit(1);
+            }
         }
         // node will stay alive if any promises are not resolved,
         // which is a possibility if HTTP requests are dangling
         // due to retries or timeouts. We know that if we got here
         // that all promises that we care about have successfully
         // resolved, so simply exit with success.
-        process.exit(0);
+        if (earlyExit) {
+            process.exit(0);
+        }
     });
 }
-run();
+run(true);
 exports.default = run;
 
 
