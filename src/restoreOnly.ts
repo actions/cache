@@ -1,10 +1,3 @@
-import restoreImpl from "./restoreImpl";
-import { NullStateProvider } from "./stateProvider";
+import { restoreOnlyRun } from "./restoreImpl";
 
-async function run(): Promise<void> {
-    await restoreImpl(new NullStateProvider());
-}
-
-run();
-
-export default run;
+restoreOnlyRun(true);
