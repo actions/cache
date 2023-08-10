@@ -39,6 +39,7 @@
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 - [Swift - Swift Package Manager](#swift---swift-package-manager)
 - [Swift - Mint](#swift---mint)
+- [* - Bazel](#---bazel)
 
 ## C# - NuGet
 
@@ -68,7 +69,7 @@ With `actions/cache@v3` you can now exclude unwanted packages with [exclude patt
 ```
 
 Or you could move the cache folder like below.
->Note: This workflow does not work for projects that require files to be placed in user profile package folder
+> **Note** This workflow does not work for projects that require files to be placed in user profile package folder
 
 ```yaml
 env:
@@ -280,7 +281,7 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 
 ## Java - Gradle
 
->Note: Ensure no Gradle daemons are running anymore when your workflow completes. Creating the cache package might fail due to locks being held by Gradle. Refer to the [Gradle Daemon documentation](https://docs.gradle.org/current/userguide/gradle_daemon.html) on how to disable or stop the Gradle Daemons.
+> **Note** Ensure no Gradle daemons are running anymore when your workflow completes. Creating the cache package might fail due to locks being held by Gradle. Refer to the [Gradle Daemon documentation](https://docs.gradle.org/current/userguide/gradle_daemon.html) on how to disable or stop the Gradle Daemons.
 
 ```yaml
 - uses: actions/cache@v3
@@ -312,7 +313,7 @@ For npm, cache files are stored in `~/.npm` on Posix, or `~\AppData\npm-cache` o
 If using `npm config` to retrieve the cache directory, ensure you run [actions/setup-node](https://github.com/actions/setup-node) first to ensure your `npm` version is correct.
 After [deprecation](https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/) of save-state and set-output commands, the correct way to set output is using `${GITHUB_OUTPUT}`. For linux, we can use `${GITHUB_OUTPUT}` whereas for windows we need to use `${env:GITHUB_OUTPUT}` due to two different default shells in these two different OS ie `bash` and `pwsh` respectively.
 
->Note: It is not recommended to cache `node_modules`, as it can break across Node versions and won't work with `npm ci`
+> **Note** It is not recommended to cache `node_modules`, as it can break across Node versions and won't work with `npm ci`
 
 ### **Get npm cache directory using same shell**
 ### Bash shell
@@ -508,7 +509,7 @@ jobs:
 
 ### Using pip to get cache location
 
-> Note: This requires pip 20.1+
+> **Note** This requires pip 20.1+
 ```yaml
 - name: Get pip cache dir
   id: pip-cache
@@ -656,4 +657,36 @@ steps:
       key: ${{ runner.os }}-mint-${{ hashFiles('**/Mintfile') }}
       restore-keys: |
         ${{ runner.os }}-mint-
+```
+
+## * - Bazel
+
+[`bazelisk`](https://github.com/bazelbuild/bazelisk) does not have be to separately downloaded and installed because it's already included in GitHub's `ubuntu-latest` and `macos-latest` base images.
+
+### Linux
+
+```yaml
+- name: Cache Bazel
+  uses: actions/cache@v3
+  with:
+    path: |
+      ~/.cache/bazel
+    key: ${{ runner.os }}-bazel-${{ hashFiles('.bazelversion', '.bazelrc', 'WORKSPACE', 'WORKSPACE.bazel', 'MODULE.bazel') }}
+    restore-keys: |
+      ${{ runner.os }}-bazel-
+- run: bazelisk test //...
+```
+
+### macOS
+
+```yaml
+- name: Cache Bazel
+  uses: actions/cache@v3
+  with:
+    path: |
+      /private/var/tmp/_bazel_runner/
+    key: ${{ runner.os }}-bazel-${{ hashFiles('.bazelversion', '.bazelrc', 'WORKSPACE', 'WORKSPACE.bazel', 'MODULE.bazel') }}
+    restore-keys: |
+      ${{ runner.os }}-bazel-
+- run: bazelisk test //...
 ```
