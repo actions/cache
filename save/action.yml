@@ -19,5 +19,6 @@ runs:
   using: 'node16'
   main: '../dist/save-only/index.js'
 branding:
-  icon: 'archive'
+  icon
+  : 'archive'
   color: 'gray-dark'
