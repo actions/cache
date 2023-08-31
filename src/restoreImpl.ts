@@ -50,8 +50,8 @@ export async function restoreImpl(
             restoreKeys,
             { lookupOnly: lookupOnly },
             enableCrossOsArchive,
-            s3BucketName,
-            s3config
+            s3config,
+            s3BucketName
         );
 
         if (!cacheKey) {
