@@ -12,10 +12,10 @@ jobs:
     steps:
       - uses: actions/stale@v3
         with:
-          days-before-issue-stale: 365
+          days-before-issue-stale: 200
           days-before-issue-close: 5
           stale-issue-label: "stale"
-          stale-issue-message: "This issue is stale because it has been open for 365 days with no activity. Leave a comment to avoid closing this issue in 5 days."
+          stale-issue-message: "This issue is stale because it has been open for 200 days with no activity. Leave a comment to avoid closing this issue in 5 days."
           close-issue-message: "This issue was closed because it has been inactive for 5 days since being marked as stale."
           days-before-pr-stale: -1
           days-before-pr-close: -1
