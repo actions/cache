@@ -589,14 +589,20 @@ whenever possible:
 
 ```yaml
 - uses: actions/cache@v3
+  env: 
+    BUILD_TYPE: debug # adjust when using `--release` or custom targets
   with:
     path: |
+      ~/.cargo/.crates.toml
+      ~/.cargo/.crates2.json
       ~/.cargo/bin/
       ~/.cargo/registry/index/
       ~/.cargo/registry/cache/
       ~/.cargo/git/db/
       target/
-    key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    key: ${{ runner.os }}-cargo-${{ env.BUILD_TYPE }}-${{ hashFiles('**/Cargo.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-cargo-${{ env.BUILD_TYPE }}-
 ```
 
 ## Scala - SBT
