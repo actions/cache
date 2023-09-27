@@ -23,7 +23,7 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
-    "@actions/cache": "https://gitpkg.now.sh/dan-blanchard/actions-toolkit-s3/packages/cache?e16f854",
+    "@actions/cache": "https://gitpkg.now.sh/whywaita/actions-toolkit-s3/packages/cache?main",
     "@actions/core": "^1.10.0",
     "@actions/exec": "^1.1.1",
     "@actions/io": "^1.1.2",
