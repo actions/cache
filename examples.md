@@ -433,7 +433,7 @@ Esy allows you to export built dependencies and import pre-built dependencies.
 
 ## Python - pip
 
-For pip, the cache directory will vary by OS. See https://pip.pypa.io/en/stable/reference/pip_install/#caching
+For pip, the cache directory will vary by OS. See https://pip.pypa.io/en/stable/topics/caching/
 
 Locations:
 
