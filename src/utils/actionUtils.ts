@@ -2,7 +2,7 @@ import * as core from "@actions/core";
 
 import { Inputs, Outputs, RefKey, State } from "../constants";
 
-import {CommonPrefix, InputSerialization, S3ClientConfig} from "@aws-sdk/client-s3";
+import {S3ClientConfig} from "@aws-sdk/client-s3";
 
 export function isGhes(): boolean {
     const ghUrl = new URL(
@@ -85,10 +85,10 @@ export function getInputS3ClientConfig(): S3ClientConfig | undefined {
 
     const s3config = {
         credentials: {
-          accessKeyId: core.getInput(Inputs.AWSAccessKeyId),
-          secretAccessKey: core.getInput(Inputs.AWSSecretAccessKey)
+          accessKeyId: core.getInput(Inputs.AWSAccessKeyId) || process.env['AWS_ACCESS_KEY_ID'],
+          secretAccessKey: core.getInput(Inputs.AWSSecretAccessKey)|| process.env['AWS_SECRET_ACCESS_KEY']
         },
-        region: core.getInput(Inputs.AWSRegion),
+        region: core.getInput(Inputs.AWSRegion) || process.env['AWS_REGION'],
         endpoint: core.getInput(Inputs.AWSEndpoint),
         bucketEndpoint: core.getBooleanInput(Inputs.AWSS3BucketEndpoint),
         forcePathStyle: core.getBooleanInput(Inputs.AWSS3ForcePathStyle),
