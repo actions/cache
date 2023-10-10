@@ -1,8 +1,8 @@
+import * as cache from "@actions/cache";
 import * as core from "@actions/core";
+import { S3ClientConfig } from "@aws-sdk/client-s3";
 
-import { Inputs, Outputs, RefKey, State } from "../constants";
-
-import {CommonPrefix, InputSerialization, S3ClientConfig} from "@aws-sdk/client-s3";
+import { Inputs, RefKey } from "../constants";
 
 export function isGhes(): boolean {
     const ghUrl = new URL(
@@ -18,30 +18,6 @@ export function isExactKeyMatch(key: string, cacheKey?: string): boolean {
             sensitivity: "accent"
         }) === 0
     );
-}
-
-export function setCacheState(state: string): void {
-    core.saveState(State.CacheMatchedKey, state);
-}
-
-export function setCacheHitOutput(isCacheHit: boolean): void {
-    core.setOutput(Outputs.CacheHit, isCacheHit.toString());
-}
-
-export function setOutputAndState(key: string, cacheKey?: string): void {
-    setCacheHitOutput(isExactKeyMatch(key, cacheKey));
-    // Store the matched cache key if it exists
-    cacheKey && setCacheState(cacheKey);
-}
-
-export function getCacheState(): string | undefined {
-    const cacheKey = core.getState(State.CacheMatchedKey);
-    if (cacheKey) {
-        core.debug(`Cache state/key: ${cacheKey}`);
-        return cacheKey;
-    }
-
-    return undefined;
 }
 
 export function logWarning(message: string): void {
@@ -62,7 +38,7 @@ export function getInputAsArray(
     return core
         .getInput(name, options)
         .split("\n")
-        .map(s => s.trim())
+        .map(s => s.replace(/^!\s+/, "!").trim())
         .filter(x => x !== "");
 }
 
@@ -77,24 +53,51 @@ export function getInputAsInt(
     return value;
 }
 
+export function getInputAsBool(
+    name: string,
+    options?: core.InputOptions
+): boolean {
+    const result = core.getInput(name, options);
+    return result.toLowerCase() === "true";
+}
+
+export function isCacheFeatureAvailable(): boolean {
+    if (cache.isFeatureAvailable()) {
+        return true;
+    }
+
+    if (isGhes()) {
+        logWarning(
+            `Cache action is only supported on GHES version >= 3.5. If you are on version >=3.5 Please check with GHES admin if Actions cache service is enabled or not.
+Otherwise please upgrade to GHES version >= 3.5 and If you are also using Github Connect, please unretire the actions/cache namespace before upgrade (see https://docs.github.com/en/enterprise-server@3.5/admin/github-actions/managing-access-to-actions-from-githubcom/enabling-automatic-access-to-githubcom-actions-using-github-connect#automatic-retirement-of-namespaces-for-actions-accessed-on-githubcom)`
+        );
+        return false;
+    }
+
+    logWarning(
+        "An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions."
+    );
+    return false;
+}
+
 export function getInputS3ClientConfig(): S3ClientConfig | undefined {
-    const s3BucketName = core.getInput(Inputs.AWSS3Bucket)
+    const s3BucketName = core.getInput(Inputs.AWSS3Bucket);
     if (!s3BucketName) {
-        return undefined
+        return undefined;
     }
 
     const s3config = {
         credentials: {
-          accessKeyId: core.getInput(Inputs.AWSAccessKeyId),
-          secretAccessKey: core.getInput(Inputs.AWSSecretAccessKey)
+            accessKeyId: core.getInput(Inputs.AWSAccessKeyId),
+            secretAccessKey: core.getInput(Inputs.AWSSecretAccessKey)
         },
         region: core.getInput(Inputs.AWSRegion),
         endpoint: core.getInput(Inputs.AWSEndpoint),
         bucketEndpoint: core.getBooleanInput(Inputs.AWSS3BucketEndpoint),
-        forcePathStyle: core.getBooleanInput(Inputs.AWSS3ForcePathStyle),
-    } as S3ClientConfig
+        forcePathStyle: core.getBooleanInput(Inputs.AWSS3ForcePathStyle)
+    } as S3ClientConfig;
 
-    core.debug('Enable S3 backend mode.')
+    core.debug("Enable S3 backend mode.");
 
-    return s3config
+    return s3config;
 }
