@@ -3,8 +3,8 @@
 This action allows caching dependencies and build outputs to improve workflow execution time.
 
 >Two other actions are available in addition to the primary `cache` action:
->* [Restore action](restore/README.md)
->* [Save action](save/README.md)
+>* [Restore action](https://github.com/actions/cache/blob/main/restore/README.md)
+>* [Save action](https://github.com/actions/cache/blob/main/save/README.md)
 
 [![Tests](https://github.com/actions/cache/actions/workflows/workflow.yml/badge.svg)](https://github.com/actions/cache/actions/workflows/workflow.yml)
 
