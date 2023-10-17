@@ -1,6 +1,6 @@
 ---
 name: "@opentelemetry/api"
-version: 1.4.0
+version: 1.6.0
 type: npm
 summary: Public API for OpenTelemetry
 homepage: https://github.com/open-telemetry/opentelemetry-js/tree/main/api

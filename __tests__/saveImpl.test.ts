@@ -170,7 +170,9 @@ test("save on GHES with AC available", async () => {
         {
             uploadChunkSize: 4000000
         },
-        false
+        false,
+        undefined,
+        ""
     );
 
     expect(failedMock).toHaveBeenCalledTimes(0);
@@ -266,7 +268,9 @@ test("save with large cache outputs warning", async () => {
         [inputPath],
         primaryKey,
         expect.anything(),
-        false
+        false,
+        undefined,
+        ""
     );
 
     expect(logWarningMock).toHaveBeenCalledTimes(1);
@@ -313,7 +317,9 @@ test("save with reserve cache failure outputs warning", async () => {
         [inputPath],
         primaryKey,
         expect.anything(),
-        false
+        false,
+        undefined,
+        ""
     );
 
     expect(logWarningMock).toHaveBeenCalledWith(
@@ -356,7 +362,9 @@ test("save with server error outputs warning", async () => {
         [inputPath],
         primaryKey,
         expect.anything(),
-        false
+        false,
+        undefined,
+        ""
     );
 
     expect(logWarningMock).toHaveBeenCalledTimes(1);
@@ -401,7 +409,9 @@ test("save with valid inputs uploads a cache", async () => {
         {
             uploadChunkSize: 4000000
         },
-        false
+        false,
+        undefined,
+        ""
     );
 
     expect(failedMock).toHaveBeenCalledTimes(0);

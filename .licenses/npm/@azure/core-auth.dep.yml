@@ -1,6 +1,6 @@
 ---
 name: "@azure/core-auth"
-version: 1.3.2
+version: 1.5.0
 type: npm
 summary: Provides low-level interfaces and helper methods for authentication in Azure
   SDK
