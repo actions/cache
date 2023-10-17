@@ -81,7 +81,9 @@ test("restore with no cache found", async () => {
         {
             lookupOnly: false
         },
-        false
+        false,
+        undefined,
+        ""
     );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
@@ -124,7 +126,9 @@ test("restore with restore keys and no cache found", async () => {
         {
             lookupOnly: false
         },
-        false
+        false,
+        undefined,
+        ""
     );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
@@ -166,7 +170,9 @@ test("restore with cache found for key", async () => {
         {
             lookupOnly: false
         },
-        false
+        false,
+        undefined,
+        ""
     );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
@@ -211,7 +217,9 @@ test("restore with cache found for restore key", async () => {
         {
             lookupOnly: false
         },
-        false
+        false,
+        undefined,
+        ""
     );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
@@ -256,7 +264,9 @@ test("Fail restore when fail on cache miss is enabled and primary + restore keys
         {
             lookupOnly: false
         },
-        false
+        false,
+        undefined,
+        ""
     );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
@@ -299,7 +309,9 @@ test("restore when fail on cache miss is enabled and primary key doesn't match r
         {
             lookupOnly: false
         },
-        false
+        false,
+        undefined,
+        ""
     );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
@@ -345,7 +357,9 @@ test("restore with fail on cache miss disabled and no cache found", async () => 
         {
             lookupOnly: false
         },
-        false
+        false,
+        undefined,
+        ""
     );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);

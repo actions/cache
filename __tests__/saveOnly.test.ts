@@ -99,7 +99,9 @@ test("save with valid inputs uploads a cache", async () => {
         {
             uploadChunkSize: 4000000
         },
-        false
+        false,
+        undefined,
+        ""
     );
 
     expect(failedMock).toHaveBeenCalledTimes(0);
@@ -131,7 +133,9 @@ test("save failing logs the warning message", async () => {
         {
             uploadChunkSize: 4000000
         },
-        false
+        false,
+        undefined,
+        ""
     );
 
     expect(warningMock).toHaveBeenCalledTimes(1);
