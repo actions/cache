@@ -1,6 +1,6 @@
 ---
 name: "@azure/core-util"
-version: 1.2.0
+version: 1.5.0
 type: npm
 summary: Core library for shared utility methods
 homepage: https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/core/core-util/
