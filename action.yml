@@ -31,10 +31,10 @@ inputs:
     required: true
   aws-access-key-id:
     description: 'An AWS access key id to access the bucket'
-    required: true
+    required: false
   aws-secret-access-key:
     description: 'An AWS secret access key to access the bucket'
-    required: true
+    required: false
   aws-region:
     description: 'An AWS region where the bucket is located'
     required: false
