@@ -37,7 +37,7 @@ runs:
   using: 'node16'
   main: 'dist/restore/index.js'
   post: 'dist/save/index.js'
-  post-if: "github.event.inputs.save-always"
+  post-if: "success() || github.event.inputs.save-always"
 branding:
   icon: 'archive'
   color: 'gray-dark'
