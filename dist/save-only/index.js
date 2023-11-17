@@ -36635,7 +36635,7 @@ function getTarArgs(tarPath, compressionMethod, type, archivePath = '') {
         // Method specific args
         switch (type) {
             case 'create':
-                args.push('--posix', '-cf', BSD_TAR_ZSTD
+                args.push('--posix', '--remove-files', '-cf', BSD_TAR_ZSTD
                     ? tarFile
                     : cacheFileName.replace(new RegExp(`\\${path.sep}`, 'g'), '/'), '--exclude', BSD_TAR_ZSTD
                     ? tarFile
