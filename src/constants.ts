@@ -1,4 +1,5 @@
 export enum Inputs {
+    Bucket = "bucket", // Input for cache action.
     Key = "key", // Input for cache, restore, save action
     Path = "path", // Input for cache, restore, save action
     RestoreKeys = "restore-keys", // Input for cache, restore action

@@ -2,6 +2,10 @@ name: 'Cache'
 description: 'Cache artifacts like dependencies and build outputs to improve workflow execution time'
 author: 'GitHub'
 inputs:
+  bucket:
+    description: 'The GCS bucket holding cache.'
+    default: 'ingestion-engine-dev-scratch-artifacts'
+    required: false
   path:
     description: 'A list of files, directories, and wildcard patterns to cache and restore'
     required: true
@@ -9,21 +13,21 @@ inputs:
     description: 'An explicit key for restoring and saving the cache'
     required: true
   restore-keys:
-    description: 'An ordered list of keys to use for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
+    description: 'UNIMPLEMENTED: An ordered list of keys to use for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
     required: false
   upload-chunk-size:
-    description: 'The chunk size used to split up large files during upload, in bytes'
+    description: 'UNIMPLEMENTED: The chunk size used to split up large files during upload, in bytes'
     required: false
   enableCrossOsArchive:
-    description: 'An optional boolean when enabled, allows windows runners to save or restore caches that can be restored or saved respectively on other platforms'
+    description: 'UNIMPLEMENTED: An optional boolean when enabled, allows windows runners to save or restore caches that can be restored or saved respectively on other platforms'
     default: 'false'
     required: false
   fail-on-cache-miss:
-    description: 'Fail the workflow if cache entry is not found'
+    description: 'UNIMPLEMENTED: Fail the workflow if cache entry is not found'
     default: 'false'
     required: false
   lookup-only:
-    description: 'Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache'
+    description: 'UNIMPLEMENTED: Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache'
     default: 'false'
     required: false
 outputs:

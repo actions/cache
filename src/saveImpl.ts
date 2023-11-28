@@ -1,8 +1,10 @@
-import * as cache from "@actions/cache";
+import * as cacheUtils from "@actions/cache/lib/internal/cacheUtils";
 import * as core from "@actions/core";
+import { exec } from "@actions/exec";
+import { writeFileSync } from "fs";
+import * as path from "path";
 
-import { Events, Inputs, State } from "./constants";
-import { IStateProvider } from "./stateProvider";
+import { Events, Inputs } from "./constants";
 import * as utils from "./utils/actionUtils";
 
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
@@ -10,8 +12,7 @@ import * as utils from "./utils/actionUtils";
 // throw an uncaught exception.  Instead of failing this action, just warn.
 process.on("uncaughtException", e => utils.logWarning(e.message));
 
-async function saveImpl(stateProvider: IStateProvider): Promise<number | void> {
-    let cacheId = -1;
+async function saveImpl(): Promise<number | void> {
     try {
         if (!utils.isCacheFeatureAvailable()) {
             return;
@@ -26,50 +27,32 @@ async function saveImpl(stateProvider: IStateProvider): Promise<number | void> {
             return;
         }
 
-        // If restore has stored a primary key in state, reuse that
-        // Else re-evaluate from inputs
-        const primaryKey =
-            stateProvider.getState(State.CachePrimaryKey) ||
-            core.getInput(Inputs.Key);
-
-        if (!primaryKey) {
-            utils.logWarning(`Key is not specified.`);
-            return;
-        }
-
-        // If matched restore key is same as primary key, then do not save cache
-        // NO-OP in case of SaveOnly action
-        const restoredKey = stateProvider.getCacheState();
-
-        if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
-            core.info(
-                `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
-            );
-            return;
-        }
-
-        const cachePaths = utils.getInputAsArray(Inputs.Path, {
+        const key = core.getInput(Inputs.Key);
+        const bucket = core.getInput(Inputs.Bucket);
+        const paths = utils.getInputAsArray(Inputs.Path, {
             required: true
         });
 
-        const enableCrossOsArchive = utils.getInputAsBool(
-            Inputs.EnableCrossOsArchive
-        );
+        // https://github.com/actions/toolkit/blob/c861dd8859fe5294289fcada363ce9bc71e9d260/packages/cache/src/internal/tar.ts#L75
+        const cachePaths = await cacheUtils.resolvePaths(paths);
+        const tmpFolder = await cacheUtils.createTempDirectory();
+        // Write source directories to manifest.txt to avoid command length limits
+        const manifestPath = path.join(tmpFolder, "manifest.txt");
+        writeFileSync(manifestPath, cachePaths.join("\n"));
 
-        cacheId = await cache.saveCache(
-            cachePaths,
-            primaryKey,
-            { uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize) },
-            enableCrossOsArchive
-        );
-
-        if (cacheId != -1) {
-            core.info(`Cache saved with key: ${primaryKey}`);
+        const workspace = process.env["GITHUB_WORKSPACE"] ?? process.cwd();
+        const exitCode = await exec("/bin/bash", [
+            "-c",
+            `tar -cf - -P -C ${workspace} --files-from ${manifestPath} | gsutil -o 'GSUtil:parallel_composite_upload_threshold=250M' cp - "gs://${bucket}/${key}"`
+        ]);
+        if (exitCode !== 0) {
+            utils.logWarning("Failed to upload cache...");
         }
     } catch (error: unknown) {
         utils.logWarning((error as Error).message);
     }
-    return cacheId;
+    // cache-id return set to 1
+    return 1;
 }
 
 export default saveImpl;

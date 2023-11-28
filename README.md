@@ -1,3 +1,5 @@
+# **Disclaimer**: Modified to use GCS bucket as backing. Only supports default cache action and assumes gsutil is configured as well as gcloud auth.
+
 # Cache action
 
 This action allows caching dependencies and build outputs to improve workflow execution time.
