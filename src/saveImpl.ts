@@ -59,7 +59,7 @@ async function saveImpl(stateProvider: IStateProvider): Promise<number | void> {
         );
 
         cacheId = await cache.saveCache(
-            cachePaths,
+            cachePaths.slice(),
             primaryKey,
             { uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize) },
             enableCrossOsArchive,

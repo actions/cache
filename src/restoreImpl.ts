@@ -45,7 +45,7 @@ export async function restoreImpl(
         const lookupOnly = utils.getInputAsBool(Inputs.LookupOnly);
 
         const cacheKey = await cache.restoreCache(
-            cachePaths,
+            cachePaths.slice(),
             primaryKey,
             restoreKeys,
             { lookupOnly: lookupOnly },
