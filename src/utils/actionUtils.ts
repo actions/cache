@@ -93,7 +93,10 @@ export function getInputS3ClientConfig(): S3ClientConfig | undefined {
                 process.env["AWS_ACCESS_KEY_ID"],
             secretAccessKey:
                 core.getInput(Inputs.AWSSecretAccessKey) ||
-                process.env["AWS_SECRET_ACCESS_KEY"]
+                process.env["AWS_SECRET_ACCESS_KEY"],
+            sessionToken:
+                core.getInput(Inputs.AWSSessionToken) ||
+                process.env["AWS_SESSION_TOKEN"]
         },
         region: core.getInput(Inputs.AWSRegion) || process.env["AWS_REGION"],
         endpoint: core.getInput(Inputs.AWSEndpoint),

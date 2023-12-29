@@ -35,6 +35,9 @@ inputs:
   aws-secret-access-key:
     description: 'An AWS secret access key to access the bucket'
     required: false
+  aws-session-token:
+    description: 'An AWS session token to access the bucket'
+    required: false
   aws-region:
     description: 'An AWS region where the bucket is located'
     required: false

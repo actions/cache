@@ -4,6 +4,8 @@
 
 This Action provides Amazon Web Services S3 backend (and compatible software) for @actions/cache.
 
+It supports assuming credentials from `aws-actions/configure-aws-credentials` directly from `env`, or you can supply them through inputs.
+
 ## Usage
 
 ```yaml
@@ -19,10 +21,11 @@ This Action provides Amazon Web Services S3 backend (and compatible software) fo
     aws-s3-bucket: ${{ secrets.AWS_S3_BUCKET_NAME }}
     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-    aws-region: us-east-1                      # Optional
-    aws-endpoint: https://example.com          # Optional
-    aws-s3-bucket-endpoint: false              # Optional
-    aws-s3-force-path-style: true              # Optional
+    aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }} # Optionally supply session token from aws-actions/configure-aws-credentials
+    aws-region: us-east-1                               # Optional
+    aws-endpoint: https://example.com                   # Optional
+    aws-s3-bucket-endpoint: false                       # Optional
+    aws-s3-force-path-style: true                       # Optional
 ```
 
 Please see [actions.yml](https://github.com/whywaita/actions-cache-s3/blob/main/action.yml) about input parameters.
