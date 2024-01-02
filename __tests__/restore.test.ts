@@ -2,7 +2,7 @@ import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
 import { Events, RefKey } from "../src/constants";
-import run from "../src/restore";
+import { restoreRun } from "../src/restoreImpl";
 import * as actionUtils from "../src/utils/actionUtils";
 import * as testUtils from "../src/utils/testUtils";
 
@@ -71,7 +71,7 @@ test("restore with no cache found", async () => {
             return Promise.resolve(undefined);
         });
 
-    await run();
+    await restoreRun();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
     expect(restoreCacheMock).toHaveBeenCalledWith(
@@ -114,7 +114,7 @@ test("restore with restore keys and no cache found", async () => {
             return Promise.resolve(undefined);
         });
 
-    await run();
+    await restoreRun();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
     expect(restoreCacheMock).toHaveBeenCalledWith(
@@ -156,7 +156,7 @@ test("restore with cache found for key", async () => {
             return Promise.resolve(key);
         });
 
-    await run();
+    await restoreRun();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
     expect(restoreCacheMock).toHaveBeenCalledWith(
@@ -201,7 +201,7 @@ test("restore with cache found for restore key", async () => {
             return Promise.resolve(restoreKey);
         });
 
-    await run();
+    await restoreRun();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
     expect(restoreCacheMock).toHaveBeenCalledWith(
@@ -246,7 +246,7 @@ test("Fail restore when fail on cache miss is enabled and primary + restore keys
             return Promise.resolve(undefined);
         });
 
-    await run();
+    await restoreRun();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
     expect(restoreCacheMock).toHaveBeenCalledWith(
@@ -289,7 +289,7 @@ test("restore when fail on cache miss is enabled and primary key doesn't match r
             return Promise.resolve(restoreKey);
         });
 
-    await run();
+    await restoreRun();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
     expect(restoreCacheMock).toHaveBeenCalledWith(
@@ -335,7 +335,7 @@ test("restore with fail on cache miss disabled and no cache found", async () => 
             return Promise.resolve(undefined);
         });
 
-    await run();
+    await restoreRun();
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(1);
     expect(restoreCacheMock).toHaveBeenCalledWith(
