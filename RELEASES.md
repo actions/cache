@@ -111,3 +111,7 @@
 ### 3.3.2
 
 - Fixes bug with Azure SDK causing blob downloads to get stuck.
+
+### 4.0.0
+
+- Updated minimum runner version support from node 12 -> node 20
