@@ -111,3 +111,8 @@
 ### 3.3.2
 
 - Fixes bug with Azure SDK causing blob downloads to get stuck.
+
+### 3.3.3
+
+- Updates @actions/cache to v3.2.3 to fix accidental mutated path arguments to `getCacheVersion` [actions/toolkit#1378](https://github.com/actions/toolkit/pull/1378)
+- Additional audit fixes of npm package(s)
