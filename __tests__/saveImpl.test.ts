@@ -2,7 +2,7 @@ import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
 import { Events, Inputs, RefKey } from "../src/constants";
-import run from "../src/saveImpl";
+import { saveImpl } from "../src/saveImpl";
 import { StateProvider } from "../src/stateProvider";
 import * as actionUtils from "../src/utils/actionUtils";
 import * as testUtils from "../src/utils/testUtils";
@@ -77,7 +77,7 @@ test("save with invalid event outputs warning", async () => {
     const invalidEvent = "commit_comment";
     process.env[Events.Key] = invalidEvent;
     delete process.env[RefKey];
-    await run(new StateProvider());
+    await saveImpl(new StateProvider());
     expect(logWarningMock).toHaveBeenCalledWith(
         `Event Validation Error: The event type ${invalidEvent} is not supported because it's not tied to a branch or tag ref.`
     );
@@ -100,7 +100,7 @@ test("save with no primary key in state outputs warning", async () => {
         });
     const saveCacheMock = jest.spyOn(cache, "saveCache");
 
-    await run(new StateProvider());
+    await saveImpl(new StateProvider());
 
     expect(saveCacheMock).toHaveBeenCalledTimes(0);
     expect(logWarningMock).toHaveBeenCalledWith(`Key is not specified.`);
@@ -115,7 +115,7 @@ test("save without AC available should no-op", async () => {
 
     const saveCacheMock = jest.spyOn(cache, "saveCache");
 
-    await run(new StateProvider());
+    await saveImpl(new StateProvider());
 
     expect(saveCacheMock).toHaveBeenCalledTimes(0);
 });
@@ -128,7 +128,7 @@ test("save on ghes without AC available should no-op", async () => {
 
     const saveCacheMock = jest.spyOn(cache, "saveCache");
 
-    await run(new StateProvider());
+    await saveImpl(new StateProvider());
 
     expect(saveCacheMock).toHaveBeenCalledTimes(0);
 });
@@ -161,7 +161,7 @@ test("save on GHES with AC available", async () => {
             return Promise.resolve(cacheId);
         });
 
-    await run(new StateProvider());
+    await saveImpl(new StateProvider());
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
     expect(saveCacheMock).toHaveBeenCalledWith(
@@ -194,7 +194,7 @@ test("save with exact match returns early", async () => {
         });
     const saveCacheMock = jest.spyOn(cache, "saveCache");
 
-    await run(new StateProvider());
+    await saveImpl(new StateProvider());
 
     expect(saveCacheMock).toHaveBeenCalledTimes(0);
     expect(infoMock).toHaveBeenCalledWith(
@@ -221,7 +221,7 @@ test("save with missing input outputs warning", async () => {
         });
     const saveCacheMock = jest.spyOn(cache, "saveCache");
 
-    await run(new StateProvider());
+    await saveImpl(new StateProvider());
 
     expect(saveCacheMock).toHaveBeenCalledTimes(0);
     expect(logWarningMock).toHaveBeenCalledWith(
@@ -259,7 +259,7 @@ test("save with large cache outputs warning", async () => {
             );
         });
 
-    await run(new StateProvider());
+    await saveImpl(new StateProvider());
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
     expect(saveCacheMock).toHaveBeenCalledWith(
@@ -306,7 +306,7 @@ test("save with reserve cache failure outputs warning", async () => {
             throw error;
         });
 
-    await run(new StateProvider());
+    await saveImpl(new StateProvider());
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
     expect(saveCacheMock).toHaveBeenCalledWith(
@@ -349,7 +349,7 @@ test("save with server error outputs warning", async () => {
             throw new Error("HTTP Error Occurred");
         });
 
-    await run(new StateProvider());
+    await saveImpl(new StateProvider());
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
     expect(saveCacheMock).toHaveBeenCalledWith(
@@ -392,7 +392,7 @@ test("save with valid inputs uploads a cache", async () => {
             return Promise.resolve(cacheId);
         });
 
-    await run(new StateProvider());
+    await saveImpl(new StateProvider());
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
     expect(saveCacheMock).toHaveBeenCalledWith(
