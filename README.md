@@ -95,7 +95,7 @@ jobs:
 
     - name: Cache Primes
       id: cache-primes
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: prime-numbers
         key: ${{ runner.os }}-primes
@@ -126,7 +126,7 @@ jobs:
 
     - name: Restore cached Primes
       id: cache-primes-restore
-      uses: actions/cache/restore@v3
+      uses: actions/cache/restore@v4
       with:
         path: |
           path/to/dependencies
@@ -137,7 +137,7 @@ jobs:
     .
     - name: Save Primes
       id: cache-primes-save
-      uses: actions/cache/save@v3
+      uses: actions/cache/save@v4
       with:
         path: |
           path/to/dependencies
@@ -191,7 +191,7 @@ A cache key can include any of the contexts, functions, literals, and operators 
 For example, using the [`hashFiles`](https://docs.github.com/en/actions/learn-github-actions/expressions#hashfiles) function allows you to create a new cache when dependencies change.
 
 ```yaml
-  - uses: actions/cache@v3
+  - uses: actions/cache@v4
     with:
       path: |
         path/to/dependencies
@@ -209,7 +209,7 @@ Additionally, you can use arbitrary command output in a cache key, such as a dat
       echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
     shell: bash
 
-  - uses: actions/cache@v3
+  - uses: actions/cache@v4
     with:
       path: path/to/dependencies
       key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('**/lockfiles') }}
@@ -231,7 +231,7 @@ Example:
 steps:
   - uses: actions/checkout@v3
 
-  - uses: actions/cache@v3
+  - uses: actions/cache@v4
     id: cache
     with:
       path: path/to/dependencies
@@ -263,7 +263,7 @@ jobs:
 
       - name: Cache Primes
         id: cache-primes
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: prime-numbers
           key: primes
@@ -274,7 +274,7 @@ jobs:
 
       - name: Cache Numbers
         id: cache-numbers
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: numbers
           key: primes
@@ -290,7 +290,7 @@ jobs:
 
       - name: Cache Primes
         id: cache-primes
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: prime-numbers
           key: primes
