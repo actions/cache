@@ -14,6 +14,10 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 
 ## What's New
 
+### Unreleased
+
+* Added the `force-overwrite` flag to force overwrite any existing cache for incremental caching
+
 ### v4
 
 * Updated to node 20

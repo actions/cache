@@ -8,6 +8,7 @@ import {
     StateProvider
 } from "./stateProvider";
 import * as utils from "./utils/actionUtils";
+import { issueCommand } from "@actions/core/lib/command";
 
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
 // @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
@@ -47,11 +48,16 @@ export async function saveImpl(
         // NO-OP in case of SaveOnly action
         const restoredKey = stateProvider.getCacheState();
 
-        if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
+        const forceOverwrite = utils.getInputAsBool(Inputs.ForceOverwrite);
+        if (utils.isExactKeyMatch(primaryKey, restoredKey) && !forceOverwrite) {
             core.info(
-                `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
+                `Cache hit occurred on the primary key ${primaryKey} and force-overwrite is disabled, not saving cache.`
             );
             return;
+        }
+
+        if (utils.isExactKeyMatch(primaryKey, restoredKey) && forceOverwrite) {
+            await issueCommand('actions-cache delete', {}, primaryKey);
         }
 
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
