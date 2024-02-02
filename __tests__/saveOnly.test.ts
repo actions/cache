@@ -2,7 +2,7 @@ import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
 import { Events, Inputs, RefKey } from "../src/constants";
-import run from "../src/saveOnly";
+import { saveOnlyRun } from "../src/saveImpl";
 import * as actionUtils from "../src/utils/actionUtils";
 import * as testUtils from "../src/utils/testUtils";
 
@@ -90,7 +90,7 @@ test("save with valid inputs uploads a cache", async () => {
             return Promise.resolve(cacheId);
         });
 
-    await run();
+    await saveOnlyRun();
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
     expect(saveCacheMock).toHaveBeenCalledWith(
@@ -122,7 +122,7 @@ test("save failing logs the warning message", async () => {
             return Promise.resolve(cacheId);
         });
 
-    await run();
+    await saveOnlyRun();
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
     expect(saveCacheMock).toHaveBeenCalledWith(
