@@ -500,7 +500,7 @@ test("restore with save-always set", async () => {
         saveAlways: true
     });
 
-    const setCacheHitOutputMock = jest.spyOn(core, "setOutput");
+    const setSaveAlwaysOutputMock = jest.spyOn(core, "setOutput");
     const restoreCacheMock = jest
         .spyOn(cache, "restoreCache")
         .mockImplementationOnce(() => {
@@ -520,8 +520,8 @@ test("restore with save-always set", async () => {
         false
     );
 
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
-    expect(setCacheHitOutputMock).toHaveBeenCalledWith(
+    expect(setSaveAlwaysOutputMock).toHaveBeenCalledTimes(1);
+    expect(setSaveAlwaysOutputMock).toHaveBeenCalledWith(
         "save-always-d18d746b9",
         "true"
     );
