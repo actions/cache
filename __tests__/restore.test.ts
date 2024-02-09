@@ -173,8 +173,12 @@ test("restore with cache found for key", async () => {
     expect(stateMock).toHaveBeenCalledWith("CACHE_RESULT", key);
     expect(stateMock).toHaveBeenCalledTimes(2);
 
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(2);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "true");
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith(
+        "save-always-d18d746b9",
+        ""
+    );
 
     expect(infoMock).toHaveBeenCalledWith(`Cache restored from key: ${key}`);
     expect(failedMock).toHaveBeenCalledTimes(0);
@@ -218,8 +222,12 @@ test("restore with cache found for restore key", async () => {
     expect(stateMock).toHaveBeenCalledWith("CACHE_RESULT", restoreKey);
     expect(stateMock).toHaveBeenCalledTimes(2);
 
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(2);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "false");
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith(
+        "save-always-d18d746b9",
+        ""
+    );
     expect(infoMock).toHaveBeenCalledWith(
         `Cache restored from key: ${restoreKey}`
     );
@@ -260,7 +268,11 @@ test("Fail restore when fail on cache miss is enabled and primary + restore keys
     );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(0);
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith(
+        "save-always-d18d746b9",
+        ""
+    );
 
     expect(failedMock).toHaveBeenCalledWith(
         `Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input key: ${key}`
@@ -306,8 +318,12 @@ test("restore when fail on cache miss is enabled and primary key doesn't match r
     expect(stateMock).toHaveBeenCalledWith("CACHE_RESULT", restoreKey);
     expect(stateMock).toHaveBeenCalledTimes(2);
 
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(2);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "false");
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith(
+        "save-always-d18d746b9",
+        ""
+    );
 
     expect(infoMock).toHaveBeenCalledWith(
         `Cache restored from key: ${restoreKey}`

@@ -13,6 +13,8 @@ export async function restoreImpl(
     stateProvider: IStateProvider,
     earlyExit?: boolean | undefined
 ): Promise<string | undefined> {
+    core.setOutput(Outputs.SaveAlways, core.getInput(Inputs.SaveAlways));
+
     try {
         if (!utils.isCacheFeatureAvailable()) {
             core.setOutput(Outputs.CacheHit, "false");
