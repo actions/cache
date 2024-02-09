@@ -489,3 +489,40 @@ test("restore failure with earlyExit should call process exit", async () => {
     );
     expect(processExitMock).toHaveBeenCalledWith(1);
 });
+
+test("restore with save-always set", async () => {
+    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
+    const path = "node_modules";
+    const key = "node-test";
+    testUtils.setInputs({
+        path: path,
+        key,
+        saveAlways: true
+    });
+
+    const setCacheHitOutputMock = jest.spyOn(core, "setOutput");
+    const restoreCacheMock = jest
+        .spyOn(cache, "restoreCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(undefined);
+        });
+
+    await restoreImpl(new StateProvider());
+
+    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        [path],
+        key,
+        [],
+        {
+            lookupOnly: false
+        },
+        false
+    );
+
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith(
+        "save-always-d18d746b9",
+        "true"
+    );
+});
