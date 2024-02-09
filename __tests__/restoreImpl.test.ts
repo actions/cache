@@ -83,7 +83,7 @@ test("restore without AC available should no-op", async () => {
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "false");
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(
         "save-always-d18d746b9",
-        ""
+        "false"
     );
 });
 
@@ -103,7 +103,7 @@ test("restore on GHES without AC available should no-op", async () => {
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "false");
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(
         "save-always-d18d746b9",
-        ""
+        "false"
     );
 });
 
@@ -145,7 +145,7 @@ test("restore on GHES with AC available ", async () => {
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "true");
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(
         "save-always-d18d746b9",
-        ""
+        "false"
     );
 
     expect(infoMock).toHaveBeenCalledWith(`Cache restored from key: ${key}`);
@@ -371,7 +371,7 @@ test("restore with cache found for key", async () => {
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "true");
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(
         "save-always-d18d746b9",
-        ""
+        "false"
     );
 
     expect(infoMock).toHaveBeenCalledWith(`Cache restored from key: ${key}`);
@@ -417,7 +417,7 @@ test("restore with cache found for restore key", async () => {
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "false");
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(
         "save-always-d18d746b9",
-        ""
+        "false"
     );
     expect(infoMock).toHaveBeenCalledWith(
         `Cache restored from key: ${restoreKey}`
@@ -465,7 +465,7 @@ test("restore with lookup-only set", async () => {
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "true");
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(
         "save-always-d18d746b9",
-        ""
+        "false"
     );
 
     expect(infoMock).toHaveBeenCalledWith(

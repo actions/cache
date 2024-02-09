@@ -177,7 +177,7 @@ test("restore with cache found for key", async () => {
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "true");
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(
         "save-always-d18d746b9",
-        ""
+        "false"
     );
 
     expect(infoMock).toHaveBeenCalledWith(`Cache restored from key: ${key}`);
@@ -226,7 +226,7 @@ test("restore with cache found for restore key", async () => {
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "false");
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(
         "save-always-d18d746b9",
-        ""
+        "false"
     );
     expect(infoMock).toHaveBeenCalledWith(
         `Cache restored from key: ${restoreKey}`
@@ -271,7 +271,7 @@ test("Fail restore when fail on cache miss is enabled and primary + restore keys
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(
         "save-always-d18d746b9",
-        ""
+        "false"
     );
 
     expect(failedMock).toHaveBeenCalledWith(
@@ -322,7 +322,7 @@ test("restore when fail on cache miss is enabled and primary key doesn't match r
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "false");
     expect(setCacheHitOutputMock).toHaveBeenCalledWith(
         "save-always-d18d746b9",
-        ""
+        "false"
     );
 
     expect(infoMock).toHaveBeenCalledWith(
