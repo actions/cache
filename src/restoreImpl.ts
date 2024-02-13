@@ -9,6 +9,9 @@ import {
 } from "./stateProvider";
 import * as utils from "./utils/actionUtils";
 
+import * as custom from "./custom/cache";
+const canSaveToS3 = process.env["RUNS_ON_S3_BUCKET_CACHE"] !== undefined;
+
 export async function restoreImpl(
     stateProvider: IStateProvider
 ): Promise<string | undefined> {
@@ -41,13 +44,27 @@ export async function restoreImpl(
         const failOnCacheMiss = utils.getInputAsBool(Inputs.FailOnCacheMiss);
         const lookupOnly = utils.getInputAsBool(Inputs.LookupOnly);
 
-        const cacheKey = await cache.restoreCache(
-            cachePaths,
-            primaryKey,
-            restoreKeys,
-            { lookupOnly: lookupOnly },
-            enableCrossOsArchive
-        );
+        let cacheKey: string | undefined;
+
+        if (canSaveToS3) {
+            core.info(
+                "The cache action detected a local S3 bucket cache. Using it."
+            );
+            cacheKey = await custom.restoreCache(
+                cachePaths,
+                primaryKey,
+                restoreKeys,
+                { lookupOnly: lookupOnly }
+            );
+        } else {
+            cacheKey = await cache.restoreCache(
+                cachePaths,
+                primaryKey,
+                restoreKeys,
+                { lookupOnly: lookupOnly },
+                enableCrossOsArchive
+            );
+        }
 
         if (!cacheKey) {
             if (failOnCacheMiss) {

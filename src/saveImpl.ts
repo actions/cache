@@ -9,6 +9,9 @@ import {
 } from "./stateProvider";
 import * as utils from "./utils/actionUtils";
 
+import * as custom from "./custom/cache";
+const canSaveToS3 = process.env["RUNS_ON_S3_BUCKET_CACHE"] !== undefined;
+
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
 // @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
 // throw an uncaught exception.  Instead of failing this action, just warn.
@@ -62,12 +65,29 @@ export async function saveImpl(
             Inputs.EnableCrossOsArchive
         );
 
-        cacheId = await cache.saveCache(
-            cachePaths,
-            primaryKey,
-            { uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize) },
-            enableCrossOsArchive
-        );
+        if (canSaveToS3) {
+            core.info(
+                "The cache action detected a local S3 bucket cache. Using it."
+            );
+
+            cacheId = await custom.saveCache(
+                cachePaths,
+                primaryKey,
+                {
+                    uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
+                },
+                enableCrossOsArchive
+            );
+        } else {
+            cacheId = await cache.saveCache(
+                cachePaths,
+                primaryKey,
+                {
+                    uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize)
+                },
+                enableCrossOsArchive
+            );
+        }
 
         if (cacheId != -1) {
             core.info(`Cache saved with key: ${primaryKey}`);
