@@ -25011,6 +25011,481 @@ Object.defineProperty(exports, "getDefaultRoleAssumerWithWebIdentity", ({ enumer
 
 /***/ }),
 
+/***/ 3087:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// src/index.ts
+var src_exports = {};
+__export(src_exports, {
+  Upload: () => Upload
+});
+module.exports = __toCommonJS(src_exports);
+
+// src/Upload.ts
+var import_client_s3 = __nccwpck_require__(9250);
+var import_abort_controller = __nccwpck_require__(7020);
+var import_middleware_endpoint = __nccwpck_require__(2918);
+var import_smithy_client = __nccwpck_require__(3570);
+var import_events = __nccwpck_require__(2361);
+
+// src/bytelength.ts
+var import_runtimeConfig = __nccwpck_require__(3407);
+var byteLength = /* @__PURE__ */ __name((input) => {
+  if (input === null || input === void 0)
+    return 0;
+  if (typeof input === "string")
+    input = Buffer.from(input);
+  if (typeof input.byteLength === "number") {
+    return input.byteLength;
+  } else if (typeof input.length === "number") {
+    return input.length;
+  } else if (typeof input.size === "number") {
+    return input.size;
+  } else if (typeof input.path === "string") {
+    try {
+      return import_runtimeConfig.ClientDefaultValues.lstatSync(input.path).size;
+    } catch (error) {
+      return void 0;
+    }
+  }
+  return void 0;
+}, "byteLength");
+
+// src/chunker.ts
+
+var import_stream = __nccwpck_require__(2781);
+
+// src/chunks/getChunkBuffer.ts
+async function* getChunkBuffer(data, partSize) {
+  let partNumber = 1;
+  let startByte = 0;
+  let endByte = partSize;
+  while (endByte < data.byteLength) {
+    yield {
+      partNumber,
+      data: data.slice(startByte, endByte)
+    };
+    partNumber += 1;
+    startByte = endByte;
+    endByte = startByte + partSize;
+  }
+  yield {
+    partNumber,
+    data: data.slice(startByte),
+    lastPart: true
+  };
+}
+__name(getChunkBuffer, "getChunkBuffer");
+
+// src/chunks/getChunkStream.ts
+var import_buffer = __nccwpck_require__(4300);
+async function* getChunkStream(data, partSize, getNextData) {
+  let partNumber = 1;
+  const currentBuffer = { chunks: [], length: 0 };
+  for await (const datum of getNextData(data)) {
+    currentBuffer.chunks.push(datum);
+    currentBuffer.length += datum.length;
+    while (currentBuffer.length >= partSize) {
+      const dataChunk = currentBuffer.chunks.length > 1 ? import_buffer.Buffer.concat(currentBuffer.chunks) : currentBuffer.chunks[0];
+      yield {
+        partNumber,
+        data: dataChunk.slice(0, partSize)
+      };
+      currentBuffer.chunks = [dataChunk.slice(partSize)];
+      currentBuffer.length = currentBuffer.chunks[0].length;
+      partNumber += 1;
+    }
+  }
+  yield {
+    partNumber,
+    data: import_buffer.Buffer.concat(currentBuffer.chunks),
+    lastPart: true
+  };
+}
+__name(getChunkStream, "getChunkStream");
+
+// src/chunks/getDataReadable.ts
+
+async function* getDataReadable(data) {
+  for await (const chunk of data) {
+    yield import_buffer.Buffer.from(chunk);
+  }
+}
+__name(getDataReadable, "getDataReadable");
+
+// src/chunks/getDataReadableStream.ts
+
+async function* getDataReadableStream(data) {
+  const reader = data.getReader();
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done)
+        return;
+      yield import_buffer.Buffer.from(value);
+    }
+  } catch (e) {
+    throw e;
+  } finally {
+    reader.releaseLock();
+  }
+}
+__name(getDataReadableStream, "getDataReadableStream");
+
+// src/chunker.ts
+var getChunk = /* @__PURE__ */ __name((data, partSize) => {
+  if (data instanceof import_buffer.Buffer) {
+    return getChunkBuffer(data, partSize);
+  } else if (data instanceof import_stream.Readable) {
+    return getChunkStream(data, partSize, getDataReadable);
+  } else if (data instanceof String || typeof data === "string" || data instanceof Uint8Array) {
+    return getChunkBuffer(import_buffer.Buffer.from(data), partSize);
+  }
+  if (typeof data.stream === "function") {
+    return getChunkStream(data.stream(), partSize, getDataReadableStream);
+  } else if (data instanceof ReadableStream) {
+    return getChunkStream(data, partSize, getDataReadableStream);
+  } else {
+    throw new Error(
+      "Body Data is unsupported format, expected data to be one of: string | Uint8Array | Buffer | Readable | ReadableStream | Blob;."
+    );
+  }
+}, "getChunk");
+
+// src/Upload.ts
+var MIN_PART_SIZE = 1024 * 1024 * 5;
+var _Upload = class _Upload extends import_events.EventEmitter {
+  constructor(options) {
+    super();
+    /**
+     * S3 multipart upload does not allow more than 10000 parts.
+     */
+    this.MAX_PARTS = 1e4;
+    // Defaults.
+    this.queueSize = 4;
+    this.partSize = MIN_PART_SIZE;
+    this.leavePartsOnError = false;
+    this.tags = [];
+    this.concurrentUploaders = [];
+    this.uploadedParts = [];
+    this.isMultiPart = true;
+    this.queueSize = options.queueSize || this.queueSize;
+    this.partSize = options.partSize || this.partSize;
+    this.leavePartsOnError = options.leavePartsOnError || this.leavePartsOnError;
+    this.tags = options.tags || this.tags;
+    this.client = options.client;
+    this.params = options.params;
+    this.__validateInput();
+    this.totalBytes = byteLength(this.params.Body);
+    this.bytesUploadedSoFar = 0;
+    this.abortController = options.abortController ?? new import_abort_controller.AbortController();
+  }
+  async abort() {
+    this.abortController.abort();
+  }
+  async done() {
+    return await Promise.race([this.__doMultipartUpload(), this.__abortTimeout(this.abortController.signal)]);
+  }
+  on(event, listener) {
+    this.uploadEvent = event;
+    return super.on(event, listener);
+  }
+  async __uploadUsingPut(dataPart) {
+    var _a;
+    this.isMultiPart = false;
+    const params = { ...this.params, Body: dataPart.data };
+    const clientConfig = this.client.config;
+    const requestHandler = clientConfig.requestHandler;
+    const eventEmitter = requestHandler instanceof import_events.EventEmitter ? requestHandler : null;
+    const uploadEventListener = /* @__PURE__ */ __name((event) => {
+      this.bytesUploadedSoFar = event.loaded;
+      this.totalBytes = event.total;
+      this.__notifyProgress({
+        loaded: this.bytesUploadedSoFar,
+        total: this.totalBytes,
+        part: dataPart.partNumber,
+        Key: this.params.Key,
+        Bucket: this.params.Bucket
+      });
+    }, "uploadEventListener");
+    if (eventEmitter !== null) {
+      eventEmitter.on("xhr.upload.progress", uploadEventListener);
+    }
+    const resolved = await Promise.all([this.client.send(new import_client_s3.PutObjectCommand(params)), (_a = clientConfig == null ? void 0 : clientConfig.endpoint) == null ? void 0 : _a.call(clientConfig)]);
+    const putResult = resolved[0];
+    let endpoint = resolved[1];
+    if (!endpoint) {
+      endpoint = (0, import_middleware_endpoint.toEndpointV1)(
+        await (0, import_middleware_endpoint.getEndpointFromInstructions)(params, import_client_s3.PutObjectCommand, {
+          ...clientConfig
+        })
+      );
+    }
+    if (!endpoint) {
+      throw new Error('Could not resolve endpoint from S3 "client.config.endpoint()" nor EndpointsV2.');
+    }
+    if (eventEmitter !== null) {
+      eventEmitter.off("xhr.upload.progress", uploadEventListener);
+    }
+    const locationKey = this.params.Key.split("/").map((segment) => (0, import_smithy_client.extendedEncodeURIComponent)(segment)).join("/");
+    const locationBucket = (0, import_smithy_client.extendedEncodeURIComponent)(this.params.Bucket);
+    const Location = (() => {
+      const endpointHostnameIncludesBucket = endpoint.hostname.startsWith(`${locationBucket}.`);
+      const forcePathStyle = this.client.config.forcePathStyle;
+      if (forcePathStyle) {
+        return `${endpoint.protocol}//${endpoint.hostname}/${locationBucket}/${locationKey}`;
+      }
+      if (endpointHostnameIncludesBucket) {
+        return `${endpoint.protocol}//${endpoint.hostname}/${locationKey}`;
+      }
+      return `${endpoint.protocol}//${locationBucket}.${endpoint.hostname}/${locationKey}`;
+    })();
+    this.singleUploadResult = {
+      ...putResult,
+      Bucket: this.params.Bucket,
+      Key: this.params.Key,
+      Location
+    };
+    const totalSize = byteLength(dataPart.data);
+    this.__notifyProgress({
+      loaded: totalSize,
+      total: totalSize,
+      part: 1,
+      Key: this.params.Key,
+      Bucket: this.params.Bucket
+    });
+  }
+  async __createMultipartUpload() {
+    if (!this.createMultiPartPromise) {
+      const createCommandParams = { ...this.params, Body: void 0 };
+      this.createMultiPartPromise = this.client.send(new import_client_s3.CreateMultipartUploadCommand(createCommandParams));
+    }
+    return this.createMultiPartPromise;
+  }
+  async __doConcurrentUpload(dataFeeder) {
+    for await (const dataPart of dataFeeder) {
+      if (this.uploadedParts.length > this.MAX_PARTS) {
+        throw new Error(
+          `Exceeded ${this.MAX_PARTS} as part of the upload to ${this.params.Key} and ${this.params.Bucket}.`
+        );
+      }
+      try {
+        if (this.abortController.signal.aborted) {
+          return;
+        }
+        if (dataPart.partNumber === 1 && dataPart.lastPart) {
+          return await this.__uploadUsingPut(dataPart);
+        }
+        if (!this.uploadId) {
+          const { UploadId } = await this.__createMultipartUpload();
+          this.uploadId = UploadId;
+          if (this.abortController.signal.aborted) {
+            return;
+          }
+        }
+        const partSize = byteLength(dataPart.data) || 0;
+        const requestHandler = this.client.config.requestHandler;
+        const eventEmitter = requestHandler instanceof import_events.EventEmitter ? requestHandler : null;
+        let lastSeenBytes = 0;
+        const uploadEventListener = /* @__PURE__ */ __name((event, request) => {
+          const requestPartSize = Number(request.query["partNumber"]) || -1;
+          if (requestPartSize !== dataPart.partNumber) {
+            return;
+          }
+          if (event.total && partSize) {
+            this.bytesUploadedSoFar += event.loaded - lastSeenBytes;
+            lastSeenBytes = event.loaded;
+          }
+          this.__notifyProgress({
+            loaded: this.bytesUploadedSoFar,
+            total: this.totalBytes,
+            part: dataPart.partNumber,
+            Key: this.params.Key,
+            Bucket: this.params.Bucket
+          });
+        }, "uploadEventListener");
+        if (eventEmitter !== null) {
+          eventEmitter.on("xhr.upload.progress", uploadEventListener);
+        }
+        const partResult = await this.client.send(
+          new import_client_s3.UploadPartCommand({
+            ...this.params,
+            UploadId: this.uploadId,
+            Body: dataPart.data,
+            PartNumber: dataPart.partNumber
+          })
+        );
+        if (eventEmitter !== null) {
+          eventEmitter.off("xhr.upload.progress", uploadEventListener);
+        }
+        if (this.abortController.signal.aborted) {
+          return;
+        }
+        if (!partResult.ETag) {
+          throw new Error(
+            `Part ${dataPart.partNumber} is missing ETag in UploadPart response. Missing Bucket CORS configuration for ETag header?`
+          );
+        }
+        this.uploadedParts.push({
+          PartNumber: dataPart.partNumber,
+          ETag: partResult.ETag,
+          ...partResult.ChecksumCRC32 && { ChecksumCRC32: partResult.ChecksumCRC32 },
+          ...partResult.ChecksumCRC32C && { ChecksumCRC32C: partResult.ChecksumCRC32C },
+          ...partResult.ChecksumSHA1 && { ChecksumSHA1: partResult.ChecksumSHA1 },
+          ...partResult.ChecksumSHA256 && { ChecksumSHA256: partResult.ChecksumSHA256 }
+        });
+        if (eventEmitter === null) {
+          this.bytesUploadedSoFar += partSize;
+        }
+        this.__notifyProgress({
+          loaded: this.bytesUploadedSoFar,
+          total: this.totalBytes,
+          part: dataPart.partNumber,
+          Key: this.params.Key,
+          Bucket: this.params.Bucket
+        });
+      } catch (e) {
+        if (!this.uploadId) {
+          throw e;
+        }
+        if (this.leavePartsOnError) {
+          throw e;
+        }
+      }
+    }
+  }
+  async __doMultipartUpload() {
+    const dataFeeder = getChunk(this.params.Body, this.partSize);
+    for (let index = 0; index < this.queueSize; index++) {
+      const currentUpload = this.__doConcurrentUpload(dataFeeder);
+      this.concurrentUploaders.push(currentUpload);
+    }
+    await Promise.all(this.concurrentUploaders);
+    if (this.abortController.signal.aborted) {
+      throw Object.assign(new Error("Upload aborted."), { name: "AbortError" });
+    }
+    let result;
+    if (this.isMultiPart) {
+      this.uploadedParts.sort((a, b) => a.PartNumber - b.PartNumber);
+      const uploadCompleteParams = {
+        ...this.params,
+        Body: void 0,
+        UploadId: this.uploadId,
+        MultipartUpload: {
+          Parts: this.uploadedParts
+        }
+      };
+      result = await this.client.send(new import_client_s3.CompleteMultipartUploadCommand(uploadCompleteParams));
+      if (typeof (result == null ? void 0 : result.Location) === "string" && result.Location.includes("%2F")) {
+        result.Location = result.Location.replace(/%2F/g, "/");
+      }
+    } else {
+      result = this.singleUploadResult;
+    }
+    if (this.tags.length) {
+      await this.client.send(
+        new import_client_s3.PutObjectTaggingCommand({
+          ...this.params,
+          Tagging: {
+            TagSet: this.tags
+          }
+        })
+      );
+    }
+    return result;
+  }
+  __notifyProgress(progress) {
+    if (this.uploadEvent) {
+      this.emit(this.uploadEvent, progress);
+    }
+  }
+  async __abortTimeout(abortSignal) {
+    return new Promise((resolve, reject) => {
+      abortSignal.onabort = () => {
+        const abortError = new Error("Upload aborted.");
+        abortError.name = "AbortError";
+        reject(abortError);
+      };
+    });
+  }
+  __validateInput() {
+    if (!this.params) {
+      throw new Error(`InputError: Upload requires params to be passed to upload.`);
+    }
+    if (!this.client) {
+      throw new Error(`InputError: Upload requires a AWS client to do uploads with.`);
+    }
+    if (this.partSize < MIN_PART_SIZE) {
+      throw new Error(
+        `EntityTooSmall: Your proposed upload partsize [${this.partSize}] is smaller than the minimum allowed size [${MIN_PART_SIZE}] (5MB)`
+      );
+    }
+    if (this.queueSize < 1) {
+      throw new Error(`Queue size: Must have at least one uploading queue.`);
+    }
+  }
+};
+__name(_Upload, "Upload");
+var Upload = _Upload;
+// Annotate the CommonJS export names for ESM import in node:
+
+0 && (0);
+
+
+
+/***/ }),
+
+/***/ 3407:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ClientDefaultValues = void 0;
+const fs_1 = __nccwpck_require__(7147);
+const runtimeConfig_shared_1 = __nccwpck_require__(9583);
+exports.ClientDefaultValues = {
+    ...runtimeConfig_shared_1.ClientSharedValues,
+    runtime: "node",
+    lstatSync: fs_1.lstatSync,
+};
+
+
+/***/ }),
+
+/***/ 9583:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ClientSharedValues = void 0;
+exports.ClientSharedValues = {
+    lstatSync: () => { },
+};
+
+
+/***/ }),
+
 /***/ 6689:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -27262,6 +27737,176 @@ var resolveRegionConfig = /* @__PURE__ */ __name((input) => {
 
 /***/ }),
 
+/***/ 5052:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// src/index.ts
+var src_exports = {};
+__export(src_exports, {
+  S3RequestPresigner: () => S3RequestPresigner,
+  getSignedUrl: () => getSignedUrl
+});
+module.exports = __toCommonJS(src_exports);
+
+// src/getSignedUrl.ts
+var import_util_format_url = __nccwpck_require__(7053);
+var import_middleware_endpoint = __nccwpck_require__(2918);
+var import_protocol_http = __nccwpck_require__(9556);
+
+// src/presigner.ts
+var import_signature_v4_multi_region = __nccwpck_require__(1856);
+
+// src/constants.ts
+var UNSIGNED_PAYLOAD = "UNSIGNED-PAYLOAD";
+var SHA256_HEADER = "X-Amz-Content-Sha256";
+
+// src/presigner.ts
+var _S3RequestPresigner = class _S3RequestPresigner {
+  constructor(options) {
+    const resolvedOptions = {
+      // Allow `signingName` because we want to support usecase of supply client's resolved config
+      // directly. Where service equals signingName.
+      service: options.signingName || options.service || "s3",
+      uriEscapePath: options.uriEscapePath || false,
+      applyChecksum: options.applyChecksum || false,
+      ...options
+    };
+    this.signer = new import_signature_v4_multi_region.SignatureV4MultiRegion(resolvedOptions);
+  }
+  presign(requestToSign, { unsignableHeaders = /* @__PURE__ */ new Set(), unhoistableHeaders = /* @__PURE__ */ new Set(), ...options } = {}) {
+    this.prepareRequest(requestToSign, {
+      unsignableHeaders,
+      unhoistableHeaders
+    });
+    return this.signer.presign(requestToSign, {
+      expiresIn: 900,
+      unsignableHeaders,
+      unhoistableHeaders,
+      ...options
+    });
+  }
+  presignWithCredentials(requestToSign, credentials, { unsignableHeaders = /* @__PURE__ */ new Set(), unhoistableHeaders = /* @__PURE__ */ new Set(), ...options } = {}) {
+    this.prepareRequest(requestToSign, {
+      unsignableHeaders,
+      unhoistableHeaders
+    });
+    return this.signer.presignWithCredentials(requestToSign, credentials, {
+      expiresIn: 900,
+      unsignableHeaders,
+      unhoistableHeaders,
+      ...options
+    });
+  }
+  prepareRequest(requestToSign, { unsignableHeaders = /* @__PURE__ */ new Set(), unhoistableHeaders = /* @__PURE__ */ new Set() } = {}) {
+    unsignableHeaders.add("content-type");
+    Object.keys(requestToSign.headers).map((header) => header.toLowerCase()).filter((header) => header.startsWith("x-amz-server-side-encryption")).forEach((header) => {
+      unhoistableHeaders.add(header);
+    });
+    requestToSign.headers[SHA256_HEADER] = UNSIGNED_PAYLOAD;
+    const currentHostHeader = requestToSign.headers.host;
+    const port = requestToSign.port;
+    const expectedHostHeader = `${requestToSign.hostname}${requestToSign.port != null ? ":" + port : ""}`;
+    if (!currentHostHeader || currentHostHeader === requestToSign.hostname && requestToSign.port != null) {
+      requestToSign.headers.host = expectedHostHeader;
+    }
+  }
+};
+__name(_S3RequestPresigner, "S3RequestPresigner");
+var S3RequestPresigner = _S3RequestPresigner;
+
+// src/getSignedUrl.ts
+var getSignedUrl = /* @__PURE__ */ __name(async (client, command, options = {}) => {
+  var _a, _b, _c;
+  let s3Presigner;
+  let region;
+  if (typeof client.config.endpointProvider === "function") {
+    const endpointV2 = await (0, import_middleware_endpoint.getEndpointFromInstructions)(
+      command.input,
+      command.constructor,
+      client.config
+    );
+    const authScheme = (_b = (_a = endpointV2.properties) == null ? void 0 : _a.authSchemes) == null ? void 0 : _b[0];
+    if ((authScheme == null ? void 0 : authScheme.name) === "sigv4a") {
+      region = (_c = authScheme == null ? void 0 : authScheme.signingRegionSet) == null ? void 0 : _c.join(",");
+    } else {
+      region = authScheme == null ? void 0 : authScheme.signingRegion;
+    }
+    s3Presigner = new S3RequestPresigner({
+      ...client.config,
+      signingName: authScheme == null ? void 0 : authScheme.signingName,
+      region: async () => region
+    });
+  } else {
+    s3Presigner = new S3RequestPresigner(client.config);
+  }
+  const presignInterceptMiddleware = /* @__PURE__ */ __name((next, context) => async (args) => {
+    const { request } = args;
+    if (!import_protocol_http.HttpRequest.isInstance(request)) {
+      throw new Error("Request to be presigned is not an valid HTTP request.");
+    }
+    delete request.headers["amz-sdk-invocation-id"];
+    delete request.headers["amz-sdk-request"];
+    delete request.headers["x-amz-user-agent"];
+    let presigned2;
+    const presignerOptions = {
+      ...options,
+      signingRegion: options.signingRegion ?? context["signing_region"] ?? region,
+      signingService: options.signingService ?? context["signing_service"]
+    };
+    if (context.s3ExpressIdentity) {
+      presigned2 = await s3Presigner.presignWithCredentials(request, context.s3ExpressIdentity, presignerOptions);
+    } else {
+      presigned2 = await s3Presigner.presign(request, presignerOptions);
+    }
+    return {
+      // Intercept the middleware stack by returning fake response
+      response: {},
+      output: {
+        $metadata: { httpStatusCode: 200 },
+        presigned: presigned2
+      }
+    };
+  }, "presignInterceptMiddleware");
+  const middlewareName = "presignInterceptMiddleware";
+  const clientStack = client.middlewareStack.clone();
+  clientStack.addRelativeTo(presignInterceptMiddleware, {
+    name: middlewareName,
+    relation: "before",
+    toMiddleware: "awsAuthMiddleware",
+    override: true
+  });
+  const handler = command.resolveMiddleware(clientStack, client.config, {});
+  const { output } = await handler({ input: command.input });
+  const { presigned } = output;
+  return (0, import_util_format_url.formatUrl)(presigned);
+}, "getSignedUrl");
+// Annotate the CommonJS export names for ESM import in node:
+
+0 && (0);
+
+
+
+/***/ }),
+
 /***/ 1856:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -28048,6 +28693,72 @@ import_util_endpoints.customEndpointFunctions.aws = awsEndpointFunctions;
 
 // src/types/shared.ts
 
+// Annotate the CommonJS export names for ESM import in node:
+
+0 && (0);
+
+
+
+/***/ }),
+
+/***/ 7053:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// src/index.ts
+var src_exports = {};
+__export(src_exports, {
+  formatUrl: () => formatUrl
+});
+module.exports = __toCommonJS(src_exports);
+var import_querystring_builder = __nccwpck_require__(8031);
+function formatUrl(request) {
+  const { port, query } = request;
+  let { protocol, path, hostname } = request;
+  if (protocol && protocol.slice(-1) !== ":") {
+    protocol += ":";
+  }
+  if (port) {
+    hostname += `:${port}`;
+  }
+  if (path && path.charAt(0) !== "/") {
+    path = `/${path}`;
+  }
+  let queryString = query ? (0, import_querystring_builder.buildQueryString)(query) : "";
+  if (queryString && queryString[0] !== "?") {
+    queryString = `?${queryString}`;
+  }
+  let auth = "";
+  if (request.username != null || request.password != null) {
+    const username = request.username ?? "";
+    const password = request.password ?? "";
+    auth = `${username}:${password}@`;
+  }
+  let fragment = "";
+  if (request.fragment) {
+    fragment = `#${request.fragment}`;
+  }
+  return `${protocol}//${auth}${hostname}${path}${queryString}${fragment}`;
+}
+__name(formatUrl, "formatUrl");
 // Annotate the CommonJS export names for ESM import in node:
 
 0 && (0);
@@ -66453,6 +67164,92 @@ exports.VERSION = '1.4.0';
 
 /***/ }),
 
+/***/ 7020:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// src/index.ts
+var src_exports = {};
+__export(src_exports, {
+  AbortController: () => AbortController,
+  AbortHandler: () => import_types.AbortHandler,
+  AbortSignal: () => AbortSignal,
+  IAbortController: () => import_types.AbortController,
+  IAbortSignal: () => import_types.AbortSignal
+});
+module.exports = __toCommonJS(src_exports);
+
+// src/AbortController.ts
+
+
+// src/AbortSignal.ts
+var import_types = __nccwpck_require__(5756);
+var _AbortSignal = class _AbortSignal {
+  constructor() {
+    this.onabort = null;
+    this._aborted = false;
+    Object.defineProperty(this, "_aborted", {
+      value: false,
+      writable: true
+    });
+  }
+  /**
+   * Whether the associated operation has already been cancelled.
+   */
+  get aborted() {
+    return this._aborted;
+  }
+  /**
+   * @internal
+   */
+  abort() {
+    this._aborted = true;
+    if (this.onabort) {
+      this.onabort(this);
+      this.onabort = null;
+    }
+  }
+};
+__name(_AbortSignal, "AbortSignal");
+var AbortSignal = _AbortSignal;
+
+// src/AbortController.ts
+var _AbortController = class _AbortController {
+  constructor() {
+    this.signal = new AbortSignal();
+  }
+  abort() {
+    this.signal.abort();
+  }
+};
+__name(_AbortController, "AbortController");
+var AbortController = _AbortController;
+// Annotate the CommonJS export names for ESM import in node:
+
+0 && (0);
+
+
+
+/***/ }),
+
 /***/ 3098:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -92969,12 +93766,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.saveCache = exports.downloadCache = exports.getCacheEntry = exports.getCacheVersion = void 0;
 const client_s3_1 = __nccwpck_require__(9250);
-const child_process_1 = __nccwpck_require__(2081);
+const { getSignedUrl } = __nccwpck_require__(5052);
+const fs_1 = __nccwpck_require__(7147);
 const crypto = __importStar(__nccwpck_require__(6113));
+const options_1 = __nccwpck_require__(6215);
 const core = __importStar(__nccwpck_require__(2186));
 const utils = __importStar(__nccwpck_require__(1518));
+const lib_storage_1 = __nccwpck_require__(3087);
+const downloadUtils_1 = __nccwpck_require__(6968);
 const versionSalt = "1.0";
 const bucketName = process.env.RUNS_ON_S3_BUCKET_CACHE;
+const region = process.env.RUNS_ON_AWS_REGION ||
+    process.env.AWS_REGION ||
+    process.env.AWS_DEFAULT_REGION;
 function getCacheVersion(paths, compressionMethod, enableCrossOsArchive = false) {
     // don't pass changes upstream
     const components = paths.slice();
@@ -92995,31 +93799,33 @@ function getCacheVersion(paths, compressionMethod, enableCrossOsArchive = false)
         .digest("hex");
 }
 exports.getCacheVersion = getCacheVersion;
-function getCacheEntryS3Key(restoreKey, paths, { compressionMethod, enableCrossOsArchive }) {
+function getS3Prefix(paths, { compressionMethod, enableCrossOsArchive }) {
     const repository = process.env.GITHUB_REPOSITORY;
     const version = getCacheVersion(paths, compressionMethod, enableCrossOsArchive);
-    return ["cache", repository, version, restoreKey].join("/");
+    return ["cache", repository, version].join("/");
 }
 function getCacheEntry(keys, paths, { compressionMethod, enableCrossOsArchive }) {
     return __awaiter(this, void 0, void 0, function* () {
         const cacheEntry = {};
-        const s3Client = new client_s3_1.S3Client();
+        const s3Client = new client_s3_1.S3Client({ region });
         // Find the most recent key matching one of the restoreKeys prefixes
         for (const restoreKey of keys) {
+            const s3Prefix = getS3Prefix(paths, {
+                compressionMethod,
+                enableCrossOsArchive
+            });
             const listObjectsParams = {
                 Bucket: bucketName,
-                Prefix: getCacheEntryS3Key(restoreKey, paths, {
-                    compressionMethod,
-                    enableCrossOsArchive
-                })
+                Prefix: [s3Prefix, restoreKey].join("/")
             };
             try {
                 const { Contents = [] } = yield s3Client.send(new client_s3_1.ListObjectsV2Command(listObjectsParams));
                 if (Contents.length > 0) {
                     // Sort keys by LastModified time in descending order
                     const sortedKeys = Contents.sort((a, b) => Number(b.LastModified) - Number(a.LastModified));
-                    cacheEntry.cacheKey = sortedKeys[0].Key; // Return the most recent key
-                    cacheEntry.archiveLocation = `s3://${bucketName}/${cacheEntry.cacheKey}`;
+                    const s3Path = sortedKeys[0].Key; // Return the most recent key
+                    cacheEntry.cacheKey = s3Path === null || s3Path === void 0 ? void 0 : s3Path.replace(`${s3Prefix}/`, "");
+                    cacheEntry.archiveLocation = `s3://${bucketName}/${s3Path}`;
                     return cacheEntry;
                 }
             }
@@ -93027,7 +93833,6 @@ function getCacheEntry(keys, paths, { compressionMethod, enableCrossOsArchive })
                 console.error(`Error listing objects with prefix ${restoreKey} in bucket ${bucketName}:`, error);
             }
         }
-        console.log(`No matching keys found in bucket ${bucketName}`);
         return cacheEntry; // No keys found
     });
 }
@@ -93037,26 +93842,21 @@ function downloadCache(archiveLocation, archivePath, options) {
         if (!bucketName) {
             throw new Error("Environment variable RUNS_ON_S3_BUCKET_CACHE not set");
         }
-        const downloadProcess = (0, child_process_1.spawn)("aws", [
-            "s3",
-            "cp",
-            archiveLocation,
-            archivePath
-        ]);
-        return new Promise((resolve, reject) => {
-            downloadProcess.stdout.on("data", data => console.log(`stdout: ${data}`));
-            downloadProcess.stderr.on("data", data => console.error(`stderr: ${data}`));
-            downloadProcess.on("close", code => {
-                if (code === 0) {
-                    console.log(`File downloaded successfully from ${archiveLocation} to ${archivePath}`);
-                    resolve();
-                }
-                else {
-                    console.error(`File download failed with code ${code}`);
-                    reject();
-                }
-            });
+        if (!region) {
+            throw new Error("Environment variable RUNS_ON_AWS_REGION not set");
+        }
+        const s3Client = new client_s3_1.S3Client({ region });
+        const archiveUrl = new URL(archiveLocation);
+        const objectKey = archiveUrl.pathname.slice(1);
+        const command = new client_s3_1.GetObjectCommand({
+            Bucket: bucketName,
+            Key: objectKey
         });
+        const url = yield getSignedUrl(s3Client, command, {
+            expiresIn: 3600
+        });
+        const downloadOptions = (0, options_1.getDownloadOptions)(Object.assign(Object.assign({}, options), { downloadConcurrency: 14, concurrentBlobDownloads: true }));
+        yield (0, downloadUtils_1.downloadCacheHttpClientConcurrent)(url, archivePath, downloadOptions);
     });
 }
 exports.downloadCache = downloadCache;
@@ -93065,33 +93865,36 @@ function saveCache(key, paths, archivePath, { compressionMethod, enableCrossOsAr
         if (!bucketName) {
             throw new Error("Environment variable RUNS_ON_S3_BUCKET_CACHE not set");
         }
-        const s3Key = getCacheEntryS3Key(key, paths, {
+        if (!region) {
+            throw new Error("Environment variable RUNS_ON_AWS_REGION not set");
+        }
+        const s3Client = new client_s3_1.S3Client({ region });
+        const s3Prefix = getS3Prefix(paths, {
             compressionMethod,
             enableCrossOsArchive
         });
-        const archiveLocation = `s3://${bucketName}/${s3Key}`;
-        const uploadProcess = (0, child_process_1.spawn)("aws", [
-            "s3",
-            "cp",
-            archivePath,
-            archiveLocation
-        ]);
+        const s3Key = `${s3Prefix}/${key}`;
+        const multipartUpload = new lib_storage_1.Upload({
+            client: s3Client,
+            params: {
+                Bucket: bucketName,
+                Key: s3Key,
+                Body: (0, fs_1.createReadStream)(archivePath)
+            },
+            // Part size in bytes
+            partSize: 32 * 1024 * 1024,
+            // Max concurrency
+            queueSize: 14
+        });
         // Commit Cache
         const cacheSize = utils.getArchiveFileSizeInBytes(archivePath);
         core.info(`Cache Size: ~${Math.round(cacheSize / (1024 * 1024))} MB (${cacheSize} B)`);
-        const code = yield new Promise((resolve, reject) => {
-            uploadProcess.stdout.on("data", data => console.log(`stdout: ${data}`));
-            uploadProcess.stderr.on("data", data => console.error(`stderr: ${data}`));
-            uploadProcess.on("close", code => {
-                resolve(code);
-            });
+        core.info(`Uploading cache from ${archivePath} to ${bucketName}/${s3Key}`);
+        multipartUpload.on("httpUploadProgress", progress => {
+            core.info(`Uploaded ${progress.part}/${progress.total}.`);
         });
-        if (code === 0) {
-            core.info(`Cache saved successfully.`);
-        }
-        else {
-            throw new Error(`File upload failed with code ${code}.`);
-        }
+        yield multipartUpload.done();
+        core.info(`Cache saved successfully.`);
     });
 }
 exports.saveCache = saveCache;
@@ -93322,6 +94125,283 @@ function saveCache(paths, key, options, enableCrossOsArchive = false) {
     });
 }
 exports.saveCache = saveCache;
+
+
+/***/ }),
+
+/***/ 6968:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.downloadCacheHttpClientConcurrent = exports.DownloadProgress = void 0;
+// Just a copy of the original file from the toolkit/actions/cache repository, with a change for byte range used in the downloadCacheHttpClientConcurrent function.
+const core = __importStar(__nccwpck_require__(2186));
+const http_client_1 = __nccwpck_require__(6255);
+const fs = __importStar(__nccwpck_require__(7147));
+const requestUtils_1 = __nccwpck_require__(3981);
+/**
+ * Class for tracking the download state and displaying stats.
+ */
+class DownloadProgress {
+    constructor(contentLength) {
+        this.contentLength = contentLength;
+        this.segmentIndex = 0;
+        this.segmentSize = 0;
+        this.segmentOffset = 0;
+        this.receivedBytes = 0;
+        this.displayedComplete = false;
+        this.startTime = Date.now();
+    }
+    /**
+     * Progress to the next segment. Only call this method when the previous segment
+     * is complete.
+     *
+     * @param segmentSize the length of the next segment
+     */
+    nextSegment(segmentSize) {
+        this.segmentOffset = this.segmentOffset + this.segmentSize;
+        this.segmentIndex = this.segmentIndex + 1;
+        this.segmentSize = segmentSize;
+        this.receivedBytes = 0;
+        core.debug(`Downloading segment at offset ${this.segmentOffset} with length ${this.segmentSize}...`);
+    }
+    /**
+     * Sets the number of bytes received for the current segment.
+     *
+     * @param receivedBytes the number of bytes received
+     */
+    setReceivedBytes(receivedBytes) {
+        this.receivedBytes = receivedBytes;
+    }
+    /**
+     * Returns the total number of bytes transferred.
+     */
+    getTransferredBytes() {
+        return this.segmentOffset + this.receivedBytes;
+    }
+    /**
+     * Returns true if the download is complete.
+     */
+    isDone() {
+        return this.getTransferredBytes() === this.contentLength;
+    }
+    /**
+     * Prints the current download stats. Once the download completes, this will print one
+     * last line and then stop.
+     */
+    display() {
+        if (this.displayedComplete) {
+            return;
+        }
+        const transferredBytes = this.segmentOffset + this.receivedBytes;
+        const percentage = (100 *
+            (transferredBytes / this.contentLength)).toFixed(1);
+        const elapsedTime = Date.now() - this.startTime;
+        const downloadSpeed = (transferredBytes /
+            (1024 * 1024) /
+            (elapsedTime / 1000)).toFixed(1);
+        core.info(`Received ${transferredBytes} of ${this.contentLength} (${percentage}%), ${downloadSpeed} MBs/sec`);
+        if (this.isDone()) {
+            this.displayedComplete = true;
+        }
+    }
+    /**
+     * Returns a function used to handle TransferProgressEvents.
+     */
+    onProgress() {
+        return (progress) => {
+            this.setReceivedBytes(progress.loadedBytes);
+        };
+    }
+    /**
+     * Starts the timer that displays the stats.
+     *
+     * @param delayInMs the delay between each write
+     */
+    startDisplayTimer(delayInMs = 1000) {
+        const displayCallback = () => {
+            this.display();
+            if (!this.isDone()) {
+                this.timeoutHandle = setTimeout(displayCallback, delayInMs);
+            }
+        };
+        this.timeoutHandle = setTimeout(displayCallback, delayInMs);
+    }
+    /**
+     * Stops the timer that displays the stats. As this typically indicates the download
+     * is complete, this will display one last line, unless the last line has already
+     * been written.
+     */
+    stopDisplayTimer() {
+        if (this.timeoutHandle) {
+            clearTimeout(this.timeoutHandle);
+            this.timeoutHandle = undefined;
+        }
+        this.display();
+    }
+}
+exports.DownloadProgress = DownloadProgress;
+/**
+ * Download the cache using the Actions toolkit http-client concurrently
+ *
+ * @param archiveLocation the URL for the cache
+ * @param archivePath the local path where the cache is saved
+ */
+function downloadCacheHttpClientConcurrent(archiveLocation, archivePath, options) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function* () {
+        const archiveDescriptor = yield fs.promises.open(archivePath, "w");
+        const httpClient = new http_client_1.HttpClient("actions/cache", undefined, {
+            socketTimeout: options.timeoutInMs,
+            keepAlive: true
+        });
+        try {
+            const res = yield (0, requestUtils_1.retryHttpClientResponse)("downloadCacheMetadata", () => __awaiter(this, void 0, void 0, function* () {
+                return yield httpClient.request("GET", archiveLocation, null, {
+                    Range: "bytes=0-1"
+                });
+            }));
+            const contentRange = res.message.headers["content-range"];
+            if (!contentRange) {
+                throw new Error("Range request not supported by server");
+            }
+            const match = contentRange === null || contentRange === void 0 ? void 0 : contentRange.match(/bytes \d+-\d+\/(\d+)/);
+            if (!match) {
+                throw new Error("Content-Range header in server response not in correct format");
+            }
+            const length = parseInt(match[1]);
+            if (Number.isNaN(length)) {
+                throw new Error(`Could not interpret Content-Length: ${length}`);
+            }
+            const downloads = [];
+            const blockSize = 32 * 1024 * 1024;
+            for (let offset = 0; offset < length; offset += blockSize) {
+                const count = Math.min(blockSize, length - offset);
+                downloads.push({
+                    offset,
+                    promiseGetter: () => __awaiter(this, void 0, void 0, function* () {
+                        return yield downloadSegmentRetry(httpClient, archiveLocation, offset, count);
+                    })
+                });
+            }
+            // reverse to use .pop instead of .shift
+            downloads.reverse();
+            let actives = 0;
+            let bytesDownloaded = 0;
+            const progress = new DownloadProgress(length);
+            progress.startDisplayTimer();
+            const progressFn = progress.onProgress();
+            const activeDownloads = [];
+            let nextDownload;
+            const waitAndWrite = () => __awaiter(this, void 0, void 0, function* () {
+                const segment = yield Promise.race(Object.values(activeDownloads));
+                yield archiveDescriptor.write(segment.buffer, 0, segment.count, segment.offset);
+                actives--;
+                delete activeDownloads[segment.offset];
+                bytesDownloaded += segment.count;
+                progressFn({ loadedBytes: bytesDownloaded });
+            });
+            while ((nextDownload = downloads.pop())) {
+                activeDownloads[nextDownload.offset] = nextDownload.promiseGetter();
+                actives++;
+                if (actives >= ((_a = options.downloadConcurrency) !== null && _a !== void 0 ? _a : 10)) {
+                    yield waitAndWrite();
+                }
+            }
+            while (actives > 0) {
+                yield waitAndWrite();
+            }
+        }
+        finally {
+            httpClient.dispose();
+            yield archiveDescriptor.close();
+        }
+    });
+}
+exports.downloadCacheHttpClientConcurrent = downloadCacheHttpClientConcurrent;
+function downloadSegmentRetry(httpClient, archiveLocation, offset, count) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const retries = 5;
+        let failures = 0;
+        while (true) {
+            try {
+                const timeout = 30000;
+                const result = yield promiseWithTimeout(timeout, downloadSegment(httpClient, archiveLocation, offset, count));
+                if (typeof result === "string") {
+                    throw new Error("downloadSegmentRetry failed due to timeout");
+                }
+                return result;
+            }
+            catch (err) {
+                if (failures >= retries) {
+                    throw err;
+                }
+                failures++;
+            }
+        }
+    });
+}
+function downloadSegment(httpClient, archiveLocation, offset, count) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const partRes = yield (0, requestUtils_1.retryHttpClientResponse)("downloadCachePart", () => __awaiter(this, void 0, void 0, function* () {
+            return yield httpClient.get(archiveLocation, {
+                Range: `bytes=${offset}-${offset + count - 1}`
+            });
+        }));
+        if (!partRes.readBodyBuffer) {
+            throw new Error("Expected HttpClientResponse to implement readBodyBuffer");
+        }
+        return {
+            offset,
+            count,
+            buffer: yield partRes.readBodyBuffer()
+        };
+    });
+}
+const promiseWithTimeout = (timeoutMs, promise) => __awaiter(void 0, void 0, void 0, function* () {
+    let timeoutHandle;
+    const timeoutPromise = new Promise(resolve => {
+        timeoutHandle = setTimeout(() => resolve("timeout"), timeoutMs);
+    });
+    return Promise.race([promise, timeoutPromise]).then(result => {
+        clearTimeout(timeoutHandle);
+        return result;
+    });
+});
 
 
 /***/ }),
