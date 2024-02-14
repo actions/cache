@@ -1,6 +1,6 @@
 # RunsOn cache action
 
-This action is a drop-in replacement for the official `actions/cache@v4` action.
+This action is a drop-in replacement for the official `actions/cache@v4` action, for use with the [RunsOn](https://runs-on.com) self-hosted GitHub Action runner provider.
 
 ![image](https://github.com/runs-on/cache/assets/6114/e61c5b6f-aa86-48be-9e1b-baac6dce9b84)
 
