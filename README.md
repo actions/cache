@@ -10,9 +10,31 @@ Also note that you no longer have any limit on the size of the cache. The bucket
 
 If no S3 bucket is provided, it will also transparently switch to the default behaviour. This means you can use this action and switch between RunsOn runners and official GitHub runners with no change.
 
+## Usage with RunsOn
 
-## Usage
+If using [RunsOn](https://runs-on.com), simply replace `actions/cache@v4` with `runs-on/cache@v4`. All the official options are supported.
 
-Simply replace `actions/cache@v4` with `runs-on/cache@v4`. All the official options are supported. 
+```diff
+- - uses: actions/cache@v4
++ - uses: runs-on/cache@v4
+    with:
+      ...
+```
 
 Please refer to [actions/cache](https://github.com/actions/cache) for usage.
+
+## Usage outside RunsOn
+
+If you want to use this in your own infrastructure, setup your AWS credentials with [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials), then:
+
+```yaml
+  - uses: aws-actions/configure-aws-credentials@v4
+    ...
+  - uses: runs-on/cache@v4
+    with:
+      ...
+    env:
+      RUNS_ON_S3_BUCKET_CACHE: name-of-your-bucket
+```
+
+Be aware of S3 transfer costs if your runners are not in the same AWS region as your bucket.
