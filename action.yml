@@ -1,6 +1,6 @@
-name: 'Cache'
-description: 'Cache artifacts like dependencies and build outputs to improve workflow execution time'
-author: 'GitHub'
+name: 'Fast actions/cache for S3'
+description: 'Drop-in GitHub actions/cache replacement with S3 backend'
+author: 'RunsOn'
 inputs:
   path:
     description: 'A list of files, directories, and wildcard patterns to cache and restore'
