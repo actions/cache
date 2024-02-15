@@ -1,4 +1,4 @@
-name: 'S3 Cache for GitHub Actions'
+name: 'Fast actions/cache for S3, fast'
 description: 'Drop-in GitHub actions/cache replacement with S3 backend'
 author: 'RunsOn'
 inputs:
