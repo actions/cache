@@ -59392,7 +59392,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const constants_1 = __nccwpck_require__(9042);
 const stateProvider_1 = __nccwpck_require__(1527);
 const utils = __importStar(__nccwpck_require__(6850));
-function restoreImpl(stateProvider) {
+function restoreImpl(stateProvider, earlyExit) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             if (!utils.isCacheFeatureAvailable()) {
@@ -59438,21 +59438,16 @@ function restoreImpl(stateProvider) {
         }
         catch (error) {
             core.setFailed(error.message);
+            if (earlyExit) {
+                process.exit(1);
+            }
         }
     });
 }
 exports.restoreImpl = restoreImpl;
 function run(stateProvider, earlyExit) {
     return __awaiter(this, void 0, void 0, function* () {
-        try {
-            yield restoreImpl(stateProvider);
-        }
-        catch (err) {
-            console.error(err);
-            if (earlyExit) {
-                process.exit(1);
-            }
-        }
+        yield restoreImpl(stateProvider, earlyExit);
         // node will stay alive if any promises are not resolved,
         // which is a possibility if HTTP requests are dangling
         // due to retries or timeouts. We know that if we got here
