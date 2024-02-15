@@ -6,6 +6,10 @@ import * as fs from "fs";
 import { DownloadOptions } from "@actions/cache/lib/options";
 import { retryHttpClientResponse } from "@actions/cache/lib/internal/requestUtils";
 
+export interface RunsOnDownloadOptions extends DownloadOptions {
+    partSize: number;
+}
+
 /**
  * Class for tracking the download state and displaying stats.
  */
@@ -149,7 +153,7 @@ export class DownloadProgress {
 export async function downloadCacheHttpClientConcurrent(
     archiveLocation: string,
     archivePath: fs.PathLike,
-    options: DownloadOptions
+    options: RunsOnDownloadOptions
 ): Promise<void> {
     const archiveDescriptor = await fs.promises.open(archivePath, "w");
     const httpClient = new HttpClient("actions/cache", undefined, {
@@ -185,7 +189,7 @@ export async function downloadCacheHttpClientConcurrent(
             promiseGetter: () => Promise<DownloadSegment>;
         }[] = [];
 
-        const blockSize = 32 * 1024 * 1024;
+        const blockSize = options.partSize;
 
         for (let offset = 0; offset < length; offset += blockSize) {
             const count = Math.min(blockSize, length - offset);

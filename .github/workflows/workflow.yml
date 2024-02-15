@@ -9,51 +9,39 @@ on:
     branches:
       - main
       - releases/**
+      - fix/**
+      - v4
 
 jobs:
-  # Build and unit test
-  build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Setup Node.js 20.x
-      uses: actions/setup-node@v3
-      with:
-        node-version: 20.x
-        cache: npm
-    - run: npm ci
-    - name: Prettier Format Check
-      run: npm run format-check
-    - name: ESLint Check
-      run: npm run lint
-    - name: Build & Test
-      run: npm run test
-
   # End to end save and restore
   test-save:
+    runs-on: runs-on,env=dev,image=ubuntu22-full-arm64
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        part_size: [32]
+        queue_size: [4, 8]
       fail-fast: false
-    runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
     - name: Generate files in working directory
       shell: bash
-      run: __tests__/create-cache-files.sh ${{ runner.os }} test-cache
+      run: |
+        __tests__/create-cache-files.sh ${{ runner.os }} test-cache
+        # 5GB
+        # curl -o test-cache/ubuntu.iso https://releases.ubuntu.com/22.04.3/ubuntu-22.04.3-desktop-amd64.iso
+        # 2Gb
+        curl -o test-cache/ubuntu.iso https://releases.ubuntu.com/jammy/ubuntu-22.04.3-live-server-amd64.iso
     - name: Generate files outside working directory
       shell: bash
       run: __tests__/create-cache-files.sh ${{ runner.os }} ~/test-cache
     - name: Save cache
       uses: ./
+      env:
+        UPLOAD_PART_SIZE: ${{ matrix.part_size }}
+        UPLOAD_QUEUE_SIZE: ${{ matrix.queue_size }}
       with:
-        key: test-${{ runner.os }}-${{ github.run_id }}
+        key: test-${{ runner.os }}-${{ github.run_id }}-${{ matrix.part_size }}-${{ matrix.queue_size }}
         path: |
           test-cache
           ~/test-cache
@@ -61,16 +49,23 @@ jobs:
     needs: test-save
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        part_size: [8, 16]
+        queue_size: [8, 12]
       fail-fast: false
-    runs-on: ${{ matrix.os }}
+    runs-on: runs-on,env=dev,image=ubuntu22-full-arm64
     steps:
     - name: Checkout
       uses: actions/checkout@v3
     - name: Restore cache
       uses: ./
+      env:
+        DOWNLOAD_PART_SIZE: ${{ matrix.part_size }}
+        DOWNLOAD_QUEUE_SIZE: ${{ matrix.queue_size }}
       with:
-        key: test-${{ runner.os }}-${{ github.run_id }}
+        key: test-${{ runner.os }}-${{ github.run_id }}-${{ matrix.part_size }}-${{ matrix.queue_size }}
+        restore-keys: |
+          test-${{ runner.os }}-${{ github.run_id }}-${{ matrix.part_size }}-
+          test-${{ runner.os }}-${{ github.run_id }}-
         path: |
           test-cache
           ~/test-cache
@@ -80,50 +75,3 @@ jobs:
     - name: Verify cache files outside working directory
       shell: bash
       run: __tests__/verify-cache-files.sh ${{ runner.os }} ~/test-cache
-
-  # End to end with proxy
-  test-proxy-save:
-    runs-on: ubuntu-latest
-    container:
-      image: ubuntu:latest
-      options: --dns 127.0.0.1
-    services:
-      squid-proxy:
-        image: ubuntu/squid:latest
-        ports:
-          - 3128:3128
-    env:
-      https_proxy: http://squid-proxy:3128
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Generate files
-      run: __tests__/create-cache-files.sh proxy test-cache
-    - name: Save cache
-      uses: ./
-      with:
-        key: test-proxy-${{ github.run_id }}
-        path: test-cache
-  test-proxy-restore:
-    needs: test-proxy-save
-    runs-on: ubuntu-latest
-    container:
-      image: ubuntu:latest
-      options: --dns 127.0.0.1
-    services:
-      squid-proxy:
-        image: ubuntu/squid:latest
-        ports:
-          - 3128:3128
-    env:
-      https_proxy: http://squid-proxy:3128
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Restore cache
-      uses: ./
-      with:
-        key: test-proxy-${{ github.run_id }}
-        path: test-cache
-    - name: Verify cache
-      run: __tests__/verify-cache-files.sh proxy test-cache

@@ -93769,7 +93769,6 @@ const client_s3_1 = __nccwpck_require__(9250);
 const { getSignedUrl } = __nccwpck_require__(5052);
 const fs_1 = __nccwpck_require__(7147);
 const crypto = __importStar(__nccwpck_require__(6113));
-const options_1 = __nccwpck_require__(6215);
 const core = __importStar(__nccwpck_require__(2186));
 const utils = __importStar(__nccwpck_require__(1518));
 const lib_storage_1 = __nccwpck_require__(3087);
@@ -93779,6 +93778,10 @@ const bucketName = process.env.RUNS_ON_S3_BUCKET_CACHE;
 const region = process.env.RUNS_ON_AWS_REGION ||
     process.env.AWS_REGION ||
     process.env.AWS_DEFAULT_REGION;
+const uploadQueueSize = Number(process.env.UPLOAD_QUEUE_SIZE || "4");
+const uploadPartSize = Number(process.env.UPLOAD_PART_SIZE || "32") * 1024 * 1024;
+const downloadQueueSize = Number(process.env.DOWNLOAD_QUEUE_SIZE || "8");
+const downloadPartSize = Number(process.env.DOWNLOAD_PART_SIZE || "16") * 1024 * 1024;
 function getCacheVersion(paths, compressionMethod, enableCrossOsArchive = false) {
     // don't pass changes upstream
     const components = paths.slice();
@@ -93855,8 +93858,7 @@ function downloadCache(archiveLocation, archivePath, options) {
         const url = yield getSignedUrl(s3Client, command, {
             expiresIn: 3600
         });
-        const downloadOptions = (0, options_1.getDownloadOptions)(Object.assign(Object.assign({}, options), { downloadConcurrency: 14, concurrentBlobDownloads: true }));
-        yield (0, downloadUtils_1.downloadCacheHttpClientConcurrent)(url, archivePath, downloadOptions);
+        yield (0, downloadUtils_1.downloadCacheHttpClientConcurrent)(url, archivePath, Object.assign(Object.assign({}, options), { downloadConcurrency: downloadQueueSize, concurrentBlobDownloads: true, partSize: downloadPartSize }));
     });
 }
 exports.downloadCache = downloadCache;
@@ -93882,16 +93884,17 @@ function saveCache(key, paths, archivePath, { compressionMethod, enableCrossOsAr
                 Body: (0, fs_1.createReadStream)(archivePath)
             },
             // Part size in bytes
-            partSize: 32 * 1024 * 1024,
+            partSize: uploadPartSize,
             // Max concurrency
-            queueSize: 14
+            queueSize: uploadQueueSize
         });
         // Commit Cache
         const cacheSize = utils.getArchiveFileSizeInBytes(archivePath);
         core.info(`Cache Size: ~${Math.round(cacheSize / (1024 * 1024))} MB (${cacheSize} B)`);
+        const totalParts = Math.ceil(cacheSize / uploadPartSize);
         core.info(`Uploading cache from ${archivePath} to ${bucketName}/${s3Key}`);
         multipartUpload.on("httpUploadProgress", progress => {
-            core.info(`Uploaded ${progress.part}/${progress.total}.`);
+            core.info(`Uploaded part ${progress.part}/${totalParts}.`);
         });
         yield multipartUpload.done();
         core.info(`Cache saved successfully.`);
@@ -94308,7 +94311,7 @@ function downloadCacheHttpClientConcurrent(archiveLocation, archivePath, options
                 throw new Error(`Could not interpret Content-Length: ${length}`);
             }
             const downloads = [];
-            const blockSize = 32 * 1024 * 1024;
+            const blockSize = options.partSize;
             for (let offset = 0; offset < length; offset += blockSize) {
                 const count = Math.min(blockSize, length - offset);
                 downloads.push({

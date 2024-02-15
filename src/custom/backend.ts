@@ -31,6 +31,13 @@ const region =
     process.env.AWS_REGION ||
     process.env.AWS_DEFAULT_REGION;
 
+const uploadQueueSize = Number(process.env.UPLOAD_QUEUE_SIZE || "4");
+const uploadPartSize =
+    Number(process.env.UPLOAD_PART_SIZE || "32") * 1024 * 1024;
+const downloadQueueSize = Number(process.env.DOWNLOAD_QUEUE_SIZE || "8");
+const downloadPartSize =
+    Number(process.env.DOWNLOAD_PART_SIZE || "16") * 1024 * 1024;
+
 export function getCacheVersion(
     paths: string[],
     compressionMethod?: CompressionMethod,
@@ -140,12 +147,12 @@ export async function downloadCache(
     const url = await getSignedUrl(s3Client, command, {
         expiresIn: 3600
     });
-    const downloadOptions = getDownloadOptions({
+    await downloadCacheHttpClientConcurrent(url, archivePath, {
         ...options,
-        downloadConcurrency: 14,
-        concurrentBlobDownloads: true
+        downloadConcurrency: downloadQueueSize,
+        concurrentBlobDownloads: true,
+        partSize: downloadPartSize
     });
-    await downloadCacheHttpClientConcurrent(url, archivePath, downloadOptions);
 }
 
 export async function saveCache(
@@ -176,12 +183,10 @@ export async function saveCache(
             Key: s3Key,
             Body: createReadStream(archivePath)
         },
-
         // Part size in bytes
-        partSize: 32 * 1024 * 1024,
-
+        partSize: uploadPartSize,
         // Max concurrency
-        queueSize: 14
+        queueSize: uploadQueueSize
     });
 
     // Commit Cache
@@ -192,9 +197,10 @@ export async function saveCache(
         )} MB (${cacheSize} B)`
     );
 
+    const totalParts = Math.ceil(cacheSize / uploadPartSize);
     core.info(`Uploading cache from ${archivePath} to ${bucketName}/${s3Key}`);
     multipartUpload.on("httpUploadProgress", progress => {
-        core.info(`Uploaded ${progress.part}/${progress.total}.`);
+        core.info(`Uploaded part ${progress.part}/${totalParts}.`);
     });
 
     await multipartUpload.done();
