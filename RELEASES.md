@@ -116,3 +116,7 @@
 
 - Updates @actions/cache to v3.2.3 to fix accidental mutated path arguments to `getCacheVersion` [actions/toolkit#1378](https://github.com/actions/toolkit/pull/1378)
 - Additional audit fixes of npm package(s)
+
+### 4.0.0
+
+- Updated minimum runner version support from node 12 -> node 20
