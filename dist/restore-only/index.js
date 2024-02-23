@@ -189,12 +189,13 @@ function saveCache(paths, key, options, enableCrossOsArchive = false) {
             if (core.isDebug()) {
                 yield (0, tar_1.listTar)(archivePath, compressionMethod);
             }
-            const fileSizeLimit = 10 * 1024 * 1024 * 1024; // 10GB per repo limit
+            const fileSizeMultiplierGb = 10 // 10GB per repo limit
+            const fileSizeLimit = fileSizeMultiplierGb * 1024 * 1024 * 1024;
             const archiveFileSize = utils.getArchiveFileSizeInBytes(archivePath);
             core.debug(`File Size: ${archiveFileSize}`);
             // For GHES, this check will take place in ReserveCache API with enterprise file size limit
             if (archiveFileSize > fileSizeLimit && !utils.isGhes()) {
-                throw new Error(`Cache size of ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B) is over the 10GB limit, not saving cache.`);
+                throw new Error(`Cache size of ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B) is over the ${fileSizeMultiplierGb}GB limit, not saving cache.`);
             }
             core.debug('Reserving Cache');
             const reserveCacheResponse = yield cacheHttpClient.reserveCache(key, paths, {
