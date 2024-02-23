@@ -1,7 +1,7 @@
-name: Assign issue
+name: Who is Assign issue that blocked and delete all content all other user
 on:
   issues:
-    types: [opened]
+    types: [any]
 jobs:
   run-action:
     runs-on: ubuntu-latest
