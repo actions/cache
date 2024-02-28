@@ -48,6 +48,8 @@ const downloadQueueSize = Number(process.env.DOWNLOAD_QUEUE_SIZE || "8");
 const downloadPartSize =
     Number(process.env.DOWNLOAD_PART_SIZE || "16") * 1024 * 1024;
 
+const s3Client = new S3Client({ region });
+
 export function getCacheVersion(
     paths: string[],
     compressionMethod?: CompressionMethod,
@@ -96,7 +98,6 @@ export async function getCacheEntry(
     { compressionMethod, enableCrossOsArchive }
 ) {
     const cacheEntry: ArtifactCacheEntry = {};
-    const s3Client = new S3Client({ region });
 
     // Find the most recent key matching one of the restoreKeys prefixes
     for (const restoreKey of keys) {
@@ -147,7 +148,6 @@ export async function downloadCache(
         throw new Error("Environment variable RUNS_ON_AWS_REGION not set");
     }
 
-    const s3Client = new S3Client({ region });
     const archiveUrl = new URL(archiveLocation);
     const objectKey = archiveUrl.pathname.slice(1);
     const command = new GetObjectCommand({
@@ -179,7 +179,6 @@ export async function saveCache(
         throw new Error("Environment variable RUNS_ON_AWS_REGION not set");
     }
 
-    const s3Client = new S3Client({ region });
     const s3Prefix = getS3Prefix(paths, {
         compressionMethod,
         enableCrossOsArchive
