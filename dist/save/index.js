@@ -93773,6 +93773,15 @@ const core = __importStar(__nccwpck_require__(2186));
 const utils = __importStar(__nccwpck_require__(1518));
 const lib_storage_1 = __nccwpck_require__(3087);
 const downloadUtils_1 = __nccwpck_require__(6968);
+// if executing from RunsOn, unset any existing AWS env variables so that we can use the IAM instance profile for credentials
+// see unsetCredentials() in https://github.com/aws-actions/configure-aws-credentials/blob/v4.0.2/src/helpers.ts#L44
+if (process.env.RUNS_ON_RUNNER_NAME) {
+    delete process.env.AWS_ACCESS_KEY_ID;
+    delete process.env.AWS_SECRET_ACCESS_KEY;
+    delete process.env.AWS_SESSION_TOKEN;
+    delete process.env.AWS_REGION;
+    delete process.env.AWS_DEFAULT_REGION;
+}
 const versionSalt = "1.0";
 const bucketName = process.env.RUNS_ON_S3_BUCKET_CACHE;
 const region = process.env.RUNS_ON_AWS_REGION ||
