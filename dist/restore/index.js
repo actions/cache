@@ -93773,6 +93773,15 @@ const core = __importStar(__nccwpck_require__(2186));
 const utils = __importStar(__nccwpck_require__(1518));
 const lib_storage_1 = __nccwpck_require__(3087);
 const downloadUtils_1 = __nccwpck_require__(6968);
+// if executing from RunsOn, unset any existing AWS env variables so that we can use the IAM instance profile for credentials
+// see unsetCredentials() in https://github.com/aws-actions/configure-aws-credentials/blob/v4.0.2/src/helpers.ts#L44
+if (process.env.RUNS_ON_RUNNER_NAME) {
+    delete process.env.AWS_ACCESS_KEY_ID;
+    delete process.env.AWS_SECRET_ACCESS_KEY;
+    delete process.env.AWS_SESSION_TOKEN;
+    delete process.env.AWS_REGION;
+    delete process.env.AWS_DEFAULT_REGION;
+}
 const versionSalt = "1.0";
 const bucketName = process.env.RUNS_ON_S3_BUCKET_CACHE;
 const region = process.env.RUNS_ON_AWS_REGION ||
@@ -93782,6 +93791,7 @@ const uploadQueueSize = Number(process.env.UPLOAD_QUEUE_SIZE || "4");
 const uploadPartSize = Number(process.env.UPLOAD_PART_SIZE || "32") * 1024 * 1024;
 const downloadQueueSize = Number(process.env.DOWNLOAD_QUEUE_SIZE || "8");
 const downloadPartSize = Number(process.env.DOWNLOAD_PART_SIZE || "16") * 1024 * 1024;
+const s3Client = new client_s3_1.S3Client({ region });
 function getCacheVersion(paths, compressionMethod, enableCrossOsArchive = false) {
     // don't pass changes upstream
     const components = paths.slice();
@@ -93810,7 +93820,6 @@ function getS3Prefix(paths, { compressionMethod, enableCrossOsArchive }) {
 function getCacheEntry(keys, paths, { compressionMethod, enableCrossOsArchive }) {
     return __awaiter(this, void 0, void 0, function* () {
         const cacheEntry = {};
-        const s3Client = new client_s3_1.S3Client({ region });
         // Find the most recent key matching one of the restoreKeys prefixes
         for (const restoreKey of keys) {
             const s3Prefix = getS3Prefix(paths, {
@@ -93848,7 +93857,6 @@ function downloadCache(archiveLocation, archivePath, options) {
         if (!region) {
             throw new Error("Environment variable RUNS_ON_AWS_REGION not set");
         }
-        const s3Client = new client_s3_1.S3Client({ region });
         const archiveUrl = new URL(archiveLocation);
         const objectKey = archiveUrl.pathname.slice(1);
         const command = new client_s3_1.GetObjectCommand({
@@ -93870,7 +93878,6 @@ function saveCache(key, paths, archivePath, { compressionMethod, enableCrossOsAr
         if (!region) {
             throw new Error("Environment variable RUNS_ON_AWS_REGION not set");
         }
-        const s3Client = new client_s3_1.S3Client({ region });
         const s3Prefix = getS3Prefix(paths, {
             compressionMethod,
             enableCrossOsArchive

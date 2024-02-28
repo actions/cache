@@ -24,6 +24,16 @@ export interface ArtifactCacheEntry {
     archiveLocation?: string;
 }
 
+// if executing from RunsOn, unset any existing AWS env variables so that we can use the IAM instance profile for credentials
+// see unsetCredentials() in https://github.com/aws-actions/configure-aws-credentials/blob/v4.0.2/src/helpers.ts#L44
+if (process.env.RUNS_ON_RUNNER_NAME) {
+    delete process.env.AWS_ACCESS_KEY_ID;
+    delete process.env.AWS_SECRET_ACCESS_KEY;
+    delete process.env.AWS_SESSION_TOKEN;
+    delete process.env.AWS_REGION;
+    delete process.env.AWS_DEFAULT_REGION;
+}
+
 const versionSalt = "1.0";
 const bucketName = process.env.RUNS_ON_S3_BUCKET_CACHE;
 const region =
@@ -37,6 +47,8 @@ const uploadPartSize =
 const downloadQueueSize = Number(process.env.DOWNLOAD_QUEUE_SIZE || "8");
 const downloadPartSize =
     Number(process.env.DOWNLOAD_PART_SIZE || "16") * 1024 * 1024;
+
+const s3Client = new S3Client({ region });
 
 export function getCacheVersion(
     paths: string[],
@@ -86,7 +98,6 @@ export async function getCacheEntry(
     { compressionMethod, enableCrossOsArchive }
 ) {
     const cacheEntry: ArtifactCacheEntry = {};
-    const s3Client = new S3Client({ region });
 
     // Find the most recent key matching one of the restoreKeys prefixes
     for (const restoreKey of keys) {
@@ -137,7 +148,6 @@ export async function downloadCache(
         throw new Error("Environment variable RUNS_ON_AWS_REGION not set");
     }
 
-    const s3Client = new S3Client({ region });
     const archiveUrl = new URL(archiveLocation);
     const objectKey = archiveUrl.pathname.slice(1);
     const command = new GetObjectCommand({
@@ -169,7 +179,6 @@ export async function saveCache(
         throw new Error("Environment variable RUNS_ON_AWS_REGION not set");
     }
 
-    const s3Client = new S3Client({ region });
     const s3Prefix = getS3Prefix(paths, {
         compressionMethod,
         enableCrossOsArchive
