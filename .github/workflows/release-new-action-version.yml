@@ -16,8 +16,6 @@ permissions:
 jobs:
   update_tag:
     name: Update the major tag to include the ${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }} changes
-    environment:
-      name: releaseNewActionVersion
     runs-on: ubuntu-latest
     steps:
     - name: Update the ${{ env.TAG_NAME }} tag
