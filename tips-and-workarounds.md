@@ -12,7 +12,7 @@ A cache today is immutable and cannot be updated. But some use cases require the
 
   ```yaml
       - name: update cache on every commit
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: prime-numbers
           key: primes-${{ runner.os }}-${{ github.run_id }} # Can use time based key as well
@@ -61,7 +61,7 @@ jobs:
       contents: read
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Cleanup
         run: |
