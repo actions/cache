@@ -29,7 +29,11 @@ inputs:
   save-always:
     description: 'Run the post step to save the cache even if another step before fails'
     default: 'false'
-    required: false    
+    required: false
+  force-overwrite:
+    description: 'Delete any previous (incremental) cache before pushing a new cache even if a cache for the primary cache key exists'
+    default: 'false'
+    required: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
