@@ -17,6 +17,7 @@
   - [Windows](#windows-2)
 - [Haskell - Cabal](#haskell---cabal)
 - [Haskell - Stack](#haskell---stack)
+- [Hugo - Resources](#hugo---resources)
 - [Java - Gradle](#java---gradle)
 - [Java - Maven](#java---maven)
 - [Node - npm](#node---npm)
@@ -277,6 +278,15 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
     key: ${{ runner.os }}-stack-work-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('**/*.hs') }}
     restore-keys: |
       ${{ runner.os }}-stack-work-
+```
+
+## Hugo - Resources
+
+```yaml
+- uses: actions/cache@v3
+  with:
+    path: resources
+    key: ${{ runner.os }}-hugo-resources
 ```
 
 ## Java - Gradle
