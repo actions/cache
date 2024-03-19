@@ -23,7 +23,7 @@ If you are using separate jobs for generating common artifacts and sharing them 
 
 ```yaml
 steps:
-  - uses: actions/checkout@v3
+  - uses: actions/checkout@v4
 
   - name: Install Dependencies
     run: /install.sh
@@ -74,7 +74,7 @@ There are instances where some flaky test cases would fail the entire workflow a
 
 ```yaml
 steps:
-  - uses: actions/checkout@v3
+  - uses: actions/checkout@v4
   .
   . // restore if need be
   .

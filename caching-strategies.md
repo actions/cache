@@ -146,7 +146,7 @@ In case you are using a centralized job to create and save your cache that can b
 
 ```yaml
 steps:
-  - uses: actions/checkout@v3
+  - uses: actions/checkout@v4
 
   - uses: actions/cache/restore@v3
     id: cache
@@ -171,7 +171,7 @@ You can use the output of this action to exit the workflow on cache miss. This w
 
 ```yaml
 steps:
-  - uses: actions/checkout@v3
+  - uses: actions/checkout@v4
 
   - uses: actions/cache/restore@v3
     id: cache
@@ -249,7 +249,7 @@ Similarly, `actions/cache/save` action can be conditionally used based on the ou
 
 ```yaml
 steps:
-  - uses: actions/checkout@v3
+  - uses: actions/checkout@v4
   .
   . // restore if need be
   .
@@ -270,7 +270,7 @@ In case of multi-module projects, where the built artifact of one project needs 
 
 ```yaml
 steps:
-  - uses: actions/checkout@v3
+  - uses: actions/checkout@v4
 
   - name: Build
     run: ./build-parent-module.sh
@@ -286,7 +286,7 @@ steps:
 
 ```yaml
 steps:
-  - uses: actions/checkout@v3
+  - uses: actions/checkout@v4
 
   - uses: actions/cache/restore@v3
     id: cache
