@@ -1,4 +1,4 @@
-name: 'Cache'
+name: 'Cache to S3'
 description: 'Cache artifacts like dependencies and build outputs to improve workflow execution time'
 author: 'GitHub'
 inputs:
