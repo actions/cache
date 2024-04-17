@@ -1,4 +1,4 @@
-import * as cache from "@actions/cache";
+import * as cache from "@ambi-robotics/cache";
 import * as core from "@actions/core";
 
 import { Events, Inputs, Outputs, State } from "./constants";
