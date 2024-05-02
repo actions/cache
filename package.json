@@ -23,7 +23,7 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
-    "@ambi-robotics/cache": "^1.3.0",
+    "@ambi-robotics/cache": "^1.3.2",
     "@actions/core": "^1.10.0",
     "@actions/exec": "^1.1.1",
     "@actions/io": "^1.1.2"
