@@ -40,6 +40,9 @@ const region =
     process.env.RUNS_ON_AWS_REGION ||
     process.env.AWS_REGION ||
     process.env.AWS_DEFAULT_REGION;
+const forcePathStyle =
+    process.env.RUNS_ON_S3_FORCE_PATH_STYLE === "true" ||
+    process.env.AWS_S3_FORCE_PATH_STYLE === "true";
 
 const uploadQueueSize = Number(process.env.UPLOAD_QUEUE_SIZE || "4");
 const uploadPartSize =
@@ -48,7 +51,7 @@ const downloadQueueSize = Number(process.env.DOWNLOAD_QUEUE_SIZE || "8");
 const downloadPartSize =
     Number(process.env.DOWNLOAD_PART_SIZE || "16") * 1024 * 1024;
 
-const s3Client = new S3Client({ region });
+const s3Client = new S3Client({ region, forcePathStyle });
 
 export function getCacheVersion(
     paths: string[],
