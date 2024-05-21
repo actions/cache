@@ -93775,7 +93775,7 @@ const lib_storage_1 = __nccwpck_require__(3087);
 const downloadUtils_1 = __nccwpck_require__(6968);
 // if executing from RunsOn, unset any existing AWS env variables so that we can use the IAM instance profile for credentials
 // see unsetCredentials() in https://github.com/aws-actions/configure-aws-credentials/blob/v4.0.2/src/helpers.ts#L44
-if (process.env.RUNS_ON_RUNNER_NAME) {
+if (process.env.RUNS_ON_RUNNER_NAME && process.env.RUNS_ON_RUNNER_NAME !== "") {
     delete process.env.AWS_ACCESS_KEY_ID;
     delete process.env.AWS_SECRET_ACCESS_KEY;
     delete process.env.AWS_SESSION_TOKEN;
@@ -94464,7 +94464,7 @@ const stateProvider_1 = __nccwpck_require__(1527);
 const utils = __importStar(__nccwpck_require__(6850));
 const custom = __importStar(__nccwpck_require__(1082));
 const canSaveToS3 = process.env["RUNS_ON_S3_BUCKET_CACHE"] !== undefined;
-function restoreImpl(stateProvider) {
+function restoreImpl(stateProvider, earlyExit) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             if (!utils.isCacheFeatureAvailable()) {
@@ -94517,21 +94517,16 @@ function restoreImpl(stateProvider) {
         }
         catch (error) {
             core.setFailed(error.message);
+            if (earlyExit) {
+                process.exit(1);
+            }
         }
     });
 }
 exports.restoreImpl = restoreImpl;
 function run(stateProvider, earlyExit) {
     return __awaiter(this, void 0, void 0, function* () {
-        try {
-            yield restoreImpl(stateProvider);
-        }
-        catch (err) {
-            console.error(err);
-            if (earlyExit) {
-                process.exit(1);
-            }
-        }
+        yield restoreImpl(stateProvider, earlyExit);
         // node will stay alive if any promises are not resolved,
         // which is a possibility if HTTP requests are dangling
         // due to retries or timeouts. We know that if we got here

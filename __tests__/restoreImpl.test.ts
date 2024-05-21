@@ -449,3 +449,19 @@ test("restore with lookup-only set", async () => {
     );
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
+
+test("restore failure with earlyExit should call process exit", async () => {
+    testUtils.setInput(Inputs.Path, "node_modules");
+    const failedMock = jest.spyOn(core, "setFailed");
+    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
+    const processExitMock = jest.spyOn(process, "exit").mockImplementation();
+
+    // call restoreImpl with `earlyExit` set to true
+    await restoreImpl(new StateProvider(), true);
+
+    expect(restoreCacheMock).toHaveBeenCalledTimes(0);
+    expect(failedMock).toHaveBeenCalledWith(
+        "Input required and not supplied: key"
+    );
+    expect(processExitMock).toHaveBeenCalledWith(1);
+});
