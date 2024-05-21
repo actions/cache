@@ -42,5 +42,6 @@ Be aware of S3 transfer costs if your runners are not in the same AWS region as 
 ## Special environment variables
 
 * `RUNS_ON_S3_BUCKET_CACHE`: if set, the action will use this bucket to store the cache.
+* `RUNS_ON_RUNNER_NAME`: if set to `""` and running from RunsOn, the action will not ignore AWS credentials from the environment, if any.
 * `RUNS_ON_S3_FORCE_PATH_STYLE` or `AWS_S3_FORCE_PATH_STYLE`: if one of those environment variables equals the string `"true"`, then the S3 client will be configured to force the path style.
 
