@@ -15,7 +15,7 @@ on:
 jobs:
   # End to end save and restore
   test-save:
-    runs-on: runs-on,runner=2cpu-ubuntu22-arm64
+    runs-on: runs-on,runner=2cpu-linux-arm64
     strategy:
       matrix:
         part_size: [32]
@@ -52,7 +52,7 @@ jobs:
         part_size: [8, 16]
         queue_size: [8, 12]
       fail-fast: false
-    runs-on: runs-on,runner=2cpu-ubuntu22-arm64
+    runs-on: runs-on,runner=2cpu-linux-arm64
     steps:
     - name: Checkout
       uses: actions/checkout@v3
