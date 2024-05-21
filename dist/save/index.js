@@ -93775,7 +93775,7 @@ const lib_storage_1 = __nccwpck_require__(3087);
 const downloadUtils_1 = __nccwpck_require__(6968);
 // if executing from RunsOn, unset any existing AWS env variables so that we can use the IAM instance profile for credentials
 // see unsetCredentials() in https://github.com/aws-actions/configure-aws-credentials/blob/v4.0.2/src/helpers.ts#L44
-if (process.env.RUNS_ON_RUNNER_NAME) {
+if (process.env.RUNS_ON_RUNNER_NAME && process.env.RUNS_ON_RUNNER_NAME !== "") {
     delete process.env.AWS_ACCESS_KEY_ID;
     delete process.env.AWS_SECRET_ACCESS_KEY;
     delete process.env.AWS_SESSION_TOKEN;
