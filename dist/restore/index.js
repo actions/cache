@@ -59422,6 +59422,7 @@ function restoreImpl(stateProvider, earlyExit) {
                     primaryKey,
                     ...restoreKeys
                 ].join(", ")}`);
+                core.setOutput(constants_1.Outputs.CacheHit, false.toString());
                 return;
             }
             // Store the matched cache key in states

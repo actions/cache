@@ -62,7 +62,7 @@ export async function restoreImpl(
                     ...restoreKeys
                 ].join(", ")}`
             );
-
+            core.setOutput(Outputs.CacheHit, false.toString());
             return;
         }
 
