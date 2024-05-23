@@ -23,10 +23,10 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
-    "@actions/cache": "^3.2.3",
-    "@actions/core": "^1.10.0",
-    "@actions/exec": "^1.1.1",
-    "@actions/io": "^1.1.2"
+    "@actions/cache": "file:/workspaces/toolkit/packages/cache",
+    "@actions/core": "file:/workspaces/toolkit/packages/core",
+    "@actions/exec": "file:/workspaces/toolkit/packages/exec",
+    "@actions/io": "file:/workspaces/toolkit/packages/io"
   },
   "devDependencies": {
     "@types/jest": "^27.5.2",
