@@ -32,6 +32,8 @@ export async function saveImpl(
             return;
         }
 
+        core.info(`We're running from the awesome codebase!!!`)
+
         // If restore has stored a primary key in state, reuse that
         // Else re-evaluate from inputs
         const primaryKey =
