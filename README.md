@@ -1,3 +1,4 @@
+#sef
 # Cache action
 
 This action allows caching dependencies and build outputs to improve workflow execution time.
@@ -14,12 +15,12 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 
 ## What's New
 
-### v4
+### v2
 
 * Updated to node 20
 * Added a `save-always` flag to save the cache even if a prior step fails
 
-### v3
+### v2
 
 * Added support for caching in GHES 3.5+.
 * Fixed download issue for files > 2GB during restore.
