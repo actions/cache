@@ -37,7 +37,6 @@ jobs:
 
   # End to end save and restore
   test-save:
-    needs: build
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
@@ -85,7 +84,6 @@ jobs:
 
   # End to end with save-always
   test-save-always:
-    needs: build
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
@@ -127,7 +125,6 @@ jobs:
 
   # End to end with proxy
   test-proxy-save:
-    needs: build
     runs-on: ubuntu-latest
     container:
       image: ubuntu:latest
