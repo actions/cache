@@ -9,6 +9,7 @@ on:
     branches:
       - main
       - releases/**
+      - save-always-output
 
 jobs:
   # Build and unit test
@@ -46,10 +47,10 @@ jobs:
       uses: actions/checkout@v3
     - name: Generate files in working directory
       shell: bash
-      run: __tests__/create-cache-files.sh ${{ runner.os }} test-cache
+      run: __tests__/create-cache-files.sh ${{ runner.os }}-save test-cache
     - name: Generate files outside working directory
       shell: bash
-      run: __tests__/create-cache-files.sh ${{ runner.os }} ~/test-cache
+      run: __tests__/create-cache-files.sh ${{ runner.os }}-save ~/test-cache
     - name: Save cache
       uses: ./
       with:
@@ -76,10 +77,51 @@ jobs:
           ~/test-cache
     - name: Verify cache files in working directory
       shell: bash
-      run: __tests__/verify-cache-files.sh ${{ runner.os }} test-cache
+      run: __tests__/verify-cache-files.sh ${{ runner.os }}-save test-cache
     - name: Verify cache files outside working directory
       shell: bash
-      run: __tests__/verify-cache-files.sh ${{ runner.os }} ~/test-cache
+      run: __tests__/verify-cache-files.sh ${{ runner.os }}-save ~/test-cache
+
+  # End to end with save-always
+  test-save-always:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Save cache
+        id: save-always
+        uses: ./
+        with:
+          key: test-${{ runner.os }}-${{ github.run_id }}.${{ github.run_attempt }}
+          path: test-cache
+          save-always: true
+      - name: Generate files
+        shell: bash
+        run: |
+          __tests__/create-cache-files.sh ${{ runner.os }}-save-always test-cache
+          exit 1
+  test-save-always-restore:
+    needs: test-save-always
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Restore cache
+        uses: ./
+        with:
+          key: test-${{ runner.os }}-${{ github.run_id }}.${{ github.run_attempt }}
+          path: test-cache
+      - name: Verify cache
+        run: __tests__/verify-cache-files.sh ${{ runner.os }}-save-always test-cache
 
   # End to end with proxy
   test-proxy-save:
