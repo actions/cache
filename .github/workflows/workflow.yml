@@ -120,6 +120,7 @@ jobs:
           key: test-${{ runner.os }}-${{ github.run_id }}.${{ github.run_attempt }}
           path: test-cache
       - name: Verify cache
+        shell: bash
         run: __tests__/verify-cache-files.sh ${{ runner.os }}-save-always test-cache
 
   # End to end with proxy
