@@ -10013,6 +10013,12 @@ function saveCache(paths, key, options, enableCrossOsArchive = false) {
             if (archiveFileSize > fileSizeLimit && !utils.isGhes()) {
                 throw new Error(`Cache size of ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B) is over the 10GB limit, not saving cache.`);
             }
+            // Cache v2 upload
+            // inputs:
+            // - getSignedUploadURL
+            // - archivePath
+            core.debug(`Saving Cache v2: ${archivePath}`);
+            yield (0, upload_cache_1.UploadCache)(signedUploadURL, archivePath);
             core.debug('Reserving Cache');
             const reserveCacheResponse = yield cacheHttpClient.reserveCache(key, paths, {
                 compressionMethod,
@@ -10030,12 +10036,6 @@ function saveCache(paths, key, options, enableCrossOsArchive = false) {
             }
             core.debug(`Saving Cache (ID: ${cacheId})`);
             yield cacheHttpClient.saveCache(cacheId, archivePath, options);
-            // Cache v2 upload
-            // inputs:
-            // - getSignedUploadURL
-            // - archivePath
-            core.debug(`Saving Cache v2: ${archivePath}`);
-            yield (0, upload_cache_1.UploadCache)(signedUploadURL, archivePath);
         }
         catch (error) {
             const typedError = error;
