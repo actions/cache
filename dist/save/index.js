@@ -10017,7 +10017,7 @@ function saveCache(paths, key, options, enableCrossOsArchive = false) {
             // inputs:
             // - getSignedUploadURL
             // - archivePath
-            core.debug(`Saving Cache v2: ${archivePath}`);
+            core.info(`Saving Cache v2: ${archivePath}`);
             yield (0, upload_cache_1.UploadCache)(signedUploadURL, archivePath);
             core.debug('Reserving Cache');
             const reserveCacheResponse = yield cacheHttpClient.reserveCache(key, paths, {
@@ -12362,7 +12362,7 @@ const core = __importStar(__nccwpck_require__(4850));
 const storage_blob_1 = __nccwpck_require__(3864);
 function UploadCache(uploadURL, archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
-        core.info(`Uploading ${archivePath} to: ${uploadURL}`);
+        core.info(`Uploading ${archivePath} to: ${JSON.stringify(uploadURL)}`);
         // Specify data transfer options
         const uploadOptions = {
             blockSize: 4 * 1024 * 1024,
@@ -12372,8 +12372,8 @@ function UploadCache(uploadURL, archivePath) {
         // const blobClient: BlobClient = new BlobClient(uploadURL.urls[0])
         const blobClient = new storage_blob_1.BlobClient(uploadURL.urls[0].url);
         const blockBlobClient = blobClient.getBlockBlobClient();
-        core.info(`BlobClient: ${blobClient}`);
-        core.info(`BlobClient: ${blockBlobClient}`);
+        core.info(`BlobClient: ${JSON.stringify(blobClient)}`);
+        core.info(`blockBlobClient: ${JSON.stringify(blockBlobClient)}`);
         return blockBlobClient.uploadFile(archivePath, uploadOptions);
     });
 }
