@@ -82,7 +82,7 @@ jobs:
       run: __tests__/verify-cache-files.sh ${{ runner.os }}-save ~/test-cache
 
   # End to end with save-always
-  test-save-always:
+  test-save-always-with-failure:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
@@ -105,7 +105,7 @@ jobs:
           __tests__/create-cache-files.sh ${{ runner.os }}-save-always test-cache
           exit 1
   test-save-always-restore:
-    needs: test-save-always
+    needs: test-save-always-with-failure
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
