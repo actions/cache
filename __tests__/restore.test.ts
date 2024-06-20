@@ -260,7 +260,7 @@ test("Fail restore when fail on cache miss is enabled and primary + restore keys
     );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(0);
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
 
     expect(failedMock).toHaveBeenCalledWith(
         `Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input key: ${key}`
