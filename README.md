@@ -101,7 +101,7 @@ jobs:
         key: ${{ runner.os }}-primes
 
     - name: Generate Prime Numbers
-      if: steps.cache-primes.outputs.cache-hit != 'true'
+      if: ${{ steps.cache-primes.outputs.cache-hit != 'true' }}
       run: /generate-primes.sh -d prime-numbers
 
     - name: Use Prime Numbers
