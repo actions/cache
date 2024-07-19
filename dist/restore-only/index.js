@@ -174,7 +174,7 @@ function saveCache(paths, key, options, enableCrossOsArchive = false) {
         checkPaths(paths);
         checkKey(key);
         const compressionMethod = yield utils.getCompressionMethod();
-        let cacheId = -1; 
+        let cacheId = -1;
         const cachePaths = yield utils.resolvePaths(paths);
         core.debug('Cache Paths:');
         core.debug(`${JSON.stringify(cachePaths)}`);
@@ -59337,7 +59337,6 @@ var State;
 (function (State) {
     State["CachePrimaryKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_RESULT";
-    State["CachePath"] = "CACHE_PATH";
 })(State = exports.State || (exports.State = {}));
 var Events;
 (function (Events) {
@@ -59411,7 +59410,7 @@ function restoreImpl(stateProvider, earlyExit) {
             const restoreKeys = utils.getInputAsArray(constants_1.Inputs.RestoreKeys);
 
             // Output the inputted path unchanged
-            stateProvider.setState(constants_1.State.CachePath, getInput(constants_1.Inputs.Path));
+            core.setOutput(constants_1.Outputs.CachePath, core.getInput(constants_1.Inputs.Path));
 
             const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
                 required: true
@@ -59541,8 +59540,7 @@ class NullStateProvider extends StateProviderBase {
         super(...arguments);
         this.stateToOutputMap = new Map([
             [constants_1.State.CacheMatchedKey, constants_1.Outputs.CacheMatchedKey],
-            [constants_1.State.CachePrimaryKey, constants_1.Outputs.CachePrimaryKey],
-            [constants_1.State.CachePath, constants_1.Outputs.CachePath]
+            [constants_1.State.CachePrimaryKey, constants_1.Outputs.CachePrimaryKey]
         ]);
         this.setState = (key, value) => {
             core.setOutput(this.stateToOutputMap.get(key), value);
