@@ -85,7 +85,8 @@ test("restore with no cache found", async () => {
     );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(stateMock).toHaveBeenCalledTimes(1);
+    expect(stateMock).toHaveBeenCalledWith("CACHE_PATH", path);
+    expect(stateMock).toHaveBeenCalledTimes(2);
 
     expect(failedMock).toHaveBeenCalledTimes(0);
 
@@ -128,7 +129,8 @@ test("restore with restore keys and no cache found", async () => {
     );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(stateMock).toHaveBeenCalledTimes(1);
+    expect(stateMock).toHaveBeenCalledWith("CACHE_PATH", path);
+    expect(stateMock).toHaveBeenCalledTimes(2);
 
     expect(failedMock).toHaveBeenCalledTimes(0);
 
@@ -171,7 +173,8 @@ test("restore with cache found for key", async () => {
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
     expect(stateMock).toHaveBeenCalledWith("CACHE_RESULT", key);
-    expect(stateMock).toHaveBeenCalledTimes(2);
+    expect(stateMock).toHaveBeenCalledWith("CACHE_PATH", path);
+    expect(stateMock).toHaveBeenCalledTimes(3);
 
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "true");
@@ -216,7 +219,8 @@ test("restore with cache found for restore key", async () => {
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
     expect(stateMock).toHaveBeenCalledWith("CACHE_RESULT", restoreKey);
-    expect(stateMock).toHaveBeenCalledTimes(2);
+    expect(stateMock).toHaveBeenCalledWith("CACHE_PATH", path);
+    expect(stateMock).toHaveBeenCalledTimes(3);
 
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "false");
@@ -304,7 +308,8 @@ test("restore when fail on cache miss is enabled and primary key doesn't match r
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
     expect(stateMock).toHaveBeenCalledWith("CACHE_RESULT", restoreKey);
-    expect(stateMock).toHaveBeenCalledTimes(2);
+    expect(stateMock).toHaveBeenCalledWith("CACHE_PATH", path);
+    expect(stateMock).toHaveBeenCalledTimes(3);
 
     expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "false");
@@ -349,7 +354,8 @@ test("restore with fail on cache miss disabled and no cache found", async () => 
     );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(stateMock).toHaveBeenCalledTimes(1);
+    expect(stateMock).toHaveBeenCalledWith("CACHE_PATH", path);
+    expect(stateMock).toHaveBeenCalledTimes(2);
 
     expect(infoMock).toHaveBeenCalledWith(
         `Cache not found for input keys: ${key}, ${restoreKey}`
