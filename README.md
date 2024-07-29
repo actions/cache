@@ -58,6 +58,7 @@ If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are requir
 * `enableCrossOsArchive` - An optional boolean when enabled, allows Windows runners to save or restore caches that can be restored or saved respectively on other platforms. Default: `false`
 * `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: `false`
 * `lookup-only` - If true, only checks if cache entry exists and skips download. Does not change save cache behavior. Default: `false`
+* `save-always` - If true, always saves the cache, even if the job fails. Requires a [step `id`](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsid). Default: `false`
 
 #### Environment Variables
 

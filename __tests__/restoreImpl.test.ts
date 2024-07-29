@@ -79,8 +79,12 @@ test("restore without AC available should no-op", async () => {
     await restoreImpl(new StateProvider());
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(0);
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(2);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "false");
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith(
+        "save-always-d18d746b9",
+        "false"
+    );
 });
 
 test("restore on GHES without AC available should no-op", async () => {
@@ -95,8 +99,12 @@ test("restore on GHES without AC available should no-op", async () => {
     await restoreImpl(new StateProvider());
 
     expect(restoreCacheMock).toHaveBeenCalledTimes(0);
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(2);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "false");
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith(
+        "save-always-d18d746b9",
+        "false"
+    );
 });
 
 test("restore on GHES with AC available ", async () => {
@@ -133,8 +141,12 @@ test("restore on GHES with AC available ", async () => {
     );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(2);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "true");
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith(
+        "save-always-d18d746b9",
+        "false"
+    );
 
     expect(infoMock).toHaveBeenCalledWith(`Cache restored from key: ${key}`);
     expect(failedMock).toHaveBeenCalledTimes(0);
@@ -355,8 +367,12 @@ test("restore with cache found for key", async () => {
     );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(2);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "true");
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith(
+        "save-always-d18d746b9",
+        "false"
+    );
 
     expect(infoMock).toHaveBeenCalledWith(`Cache restored from key: ${key}`);
     expect(failedMock).toHaveBeenCalledTimes(0);
@@ -397,8 +413,12 @@ test("restore with cache found for restore key", async () => {
     );
 
     expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(2);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "false");
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith(
+        "save-always-d18d746b9",
+        "false"
+    );
     expect(infoMock).toHaveBeenCalledWith(
         `Cache restored from key: ${restoreKey}`
     );
@@ -441,8 +461,12 @@ test("restore with lookup-only set", async () => {
     expect(stateMock).toHaveBeenCalledWith("CACHE_RESULT", key);
     expect(stateMock).toHaveBeenCalledTimes(2);
 
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
+    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(2);
     expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "true");
+    expect(setCacheHitOutputMock).toHaveBeenCalledWith(
+        "save-always-d18d746b9",
+        "false"
+    );
 
     expect(infoMock).toHaveBeenCalledWith(
         `Cache found and can be restored from key: ${key}`
@@ -464,4 +488,41 @@ test("restore failure with earlyExit should call process exit", async () => {
         "Input required and not supplied: key"
     );
     expect(processExitMock).toHaveBeenCalledWith(1);
+});
+
+test("restore with save-always set", async () => {
+    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
+    const path = "node_modules";
+    const key = "node-test";
+    testUtils.setInputs({
+        path: path,
+        key,
+        saveAlways: true
+    });
+
+    const setSaveAlwaysOutputMock = jest.spyOn(core, "setOutput");
+    const restoreCacheMock = jest
+        .spyOn(cache, "restoreCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(undefined);
+        });
+
+    await restoreImpl(new StateProvider());
+
+    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        [path],
+        key,
+        [],
+        {
+            lookupOnly: false
+        },
+        false
+    );
+
+    expect(setSaveAlwaysOutputMock).toHaveBeenCalledTimes(1);
+    expect(setSaveAlwaysOutputMock).toHaveBeenCalledWith(
+        "save-always-d18d746b9",
+        "true"
+    );
 });
