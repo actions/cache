@@ -51,6 +51,7 @@ export async function restoreImpl(
         );
 
         if (!cacheKey) {
+            core.setOutput(Outputs.CacheHit, false.toString());
             if (failOnCacheMiss) {
                 throw new Error(
                     `Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`
@@ -62,7 +63,6 @@ export async function restoreImpl(
                     ...restoreKeys
                 ].join(", ")}`
             );
-
             return;
         }
 
