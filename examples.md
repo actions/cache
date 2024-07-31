@@ -190,7 +190,7 @@ steps:
     path: |
       ~/.cache/go-build
       ~/go/pkg/mod
-    key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+    key: ${{ runner.os }}-go-${{ hashFiles('**/go.mod') }}
     restore-keys: |
       ${{ runner.os }}-go-
 ```
@@ -203,7 +203,7 @@ steps:
     path: |
       ~/Library/Caches/go-build
       ~/go/pkg/mod
-    key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+    key: ${{ runner.os }}-go-${{ hashFiles('**/go.mod') }}
     restore-keys: |
       ${{ runner.os }}-go-
 ```
@@ -216,7 +216,7 @@ steps:
     path: |
       ~\AppData\Local\go-build
       ~\go\pkg\mod
-    key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+    key: ${{ runner.os }}-go-${{ hashFiles('**/go.mod') }}
     restore-keys: |
       ${{ runner.os }}-go-
 ```
