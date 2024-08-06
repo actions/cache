@@ -47,11 +47,19 @@ export async function saveImpl(
         // NO-OP in case of SaveOnly action
         const restoredKey = stateProvider.getCacheState();
 
-        if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
+        const forceOverwrite = utils.getInputAsBool(Inputs.ForceOverwrite);
+        if (utils.isExactKeyMatch(primaryKey, restoredKey) && !forceOverwrite) {
             core.info(
-                `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
+                `Cache hit occurred on the primary key "${primaryKey}" and force-overwrite is disabled, not saving cache.`
             );
             return;
+        }
+
+        if ((restoredKey == undefined || utils.isExactKeyMatch(primaryKey, restoredKey)) && forceOverwrite) {
+            core.info(
+                `Cache hit occurred on the primary key "${primaryKey}" or running as save-only and force-overwrite is enabled, deleting cache.`
+            );
+            await cache.deleteCache(primaryKey)
         }
 
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
