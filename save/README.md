@@ -23,7 +23,7 @@ If you are using separate jobs for generating common artifacts and sharing them 
 
 ```yaml
 steps:
-  - uses: actions/checkout@v3
+  - uses: actions/checkout@v4
 
   - name: Install Dependencies
     run: /install.sh
@@ -47,7 +47,7 @@ Let's say we have a restore step that computes a key at runtime.
 #### Restore a cache
 
 ```yaml
-uses: actions/cache/restore@v3
+uses: actions/cache/restore@v4
 id: restore-cache
 with:
     key: cache-${{ hashFiles('**/lockfiles') }}
@@ -74,7 +74,7 @@ There are instances where some flaky test cases would fail the entire workflow a
 
 ```yaml
 steps:
-  - uses: actions/checkout@v3
+  - uses: actions/checkout@v4
   .
   . // restore if need be
   .
