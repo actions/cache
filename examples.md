@@ -513,6 +513,7 @@ jobs:
 ```yaml
 - name: Get pip cache dir
   id: pip-cache
+  shell: bash
   run: |
     echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
 
