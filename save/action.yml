@@ -15,6 +15,10 @@ inputs:
     description: 'An optional boolean when enabled, allows windows runners to save caches that can be restored on other platforms'
     default: 'false'
     required: false
+  force-overwrite:
+    description: 'Delete any previous (incremental) cache before pushing a new cache even if a cache for the primary cache key exists'
+    default: 'false'
+    required: false
 runs:
   using: 'node20'
   main: '../dist/save-only/index.js'
