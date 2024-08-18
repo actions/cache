@@ -9,7 +9,7 @@ inputs:
     description: 'An explicit key for restoring and saving the cache'
     required: true
   restore-keys:
-    description: 'An ordered list of keys to use for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
+    description: 'An ordered multiline string listing the prefix-matched keys, that are used for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
     required: false
   upload-chunk-size:
     description: 'The chunk size used to split up large files during upload, in bytes'
