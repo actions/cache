@@ -1,5 +1,6 @@
 # Examples
 
+- [Bun](#bun)
 - [C# - NuGet](#c---nuget)
 - [Clojure - Lein Deps](#clojure---lein-deps)
 - [D - DUB](#d---dub)
@@ -40,6 +41,27 @@
 - [Swift - Swift Package Manager](#swift---swift-package-manager)
 - [Swift - Mint](#swift---mint)
 - [* - Bazel](#---bazel)
+
+## Bun
+
+```yaml
+- uses: actions/cache@v4
+  with:
+    path: |
+      ~/.bun/install/cache
+    key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+```
+
+### Windows
+
+```yaml
+- uses: actions/cache@v4
+  with:
+    path: |
+      ~\.deno
+      ~\AppData\Local\deno
+    key: ${{ runner.os }}-deno-${{ hashFiles('**/deps.ts') }}
+```
 
 ## C# - NuGet
 
