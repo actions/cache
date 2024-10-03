@@ -17,7 +17,6 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 ### v4
 
 * Updated to node 20
-* Added a `save-always` flag to save the cache even if a prior step fails
 
 ### v3
 
