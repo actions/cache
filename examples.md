@@ -58,9 +58,8 @@
 - uses: actions/cache@v4
   with:
     path: |
-      ~\.deno
-      ~\AppData\Local\deno
-    key: ${{ runner.os }}-deno-${{ hashFiles('**/deps.ts') }}
+      ~\.bun
+    key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
 ```
 
 ## C# - NuGet
