@@ -9,7 +9,7 @@ inputs:
     description: 'An explicit key for restoring and saving the cache'
     required: true
   restore-keys:
-    description: 'An ordered list of keys to use for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
+    description: 'An ordered multiline string listing the prefix-matched keys, that are used for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
     required: false
   upload-chunk-size:
     description: 'The chunk size used to split up large files during upload, in bytes'
@@ -29,7 +29,11 @@ inputs:
   save-always:
     description: 'Run the post step to save the cache even if another step before fails'
     default: 'false'
-    required: false    
+    required: false
+    deprecationMessage: |
+      save-always does not work as intended and will be removed in a future release.
+      A separate `actions/cache/restore` step should be used instead.
+      See https://github.com/actions/cache/tree/main/save#always-save-cache for more details.
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
@@ -37,7 +41,7 @@ runs:
   using: 'node20'
   main: 'dist/restore/index.js'
   post: 'dist/save/index.js'
-  post-if: "success() || github.event.inputs.save-always"
+  post-if: "success()"
 branding:
   icon: 'archive'
   color: 'gray-dark'
