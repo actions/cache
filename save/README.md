@@ -70,19 +70,45 @@ with:
 
 ### Always save cache
 
-There are instances where some flaky test cases would fail the entire workflow and users would get frustrated because the builds would run for hours and the cache couldn't be saved as the workflow failed in between. For such use-cases, users now have the ability to use the `actions/cache/save` action to save the cache by using an `if: always()` condition. This way the cache will always be saved if generated, or a warning will be generated that nothing is found on the cache path. Users can also use the `if` condition to only execute the `actions/cache/save` action depending on the output of previous steps. This way they get more control of when to save the cache.
+There are instances where some flaky test cases would fail the entire workflow and users would get frustrated because the builds would run for hours and the cache couldn't be saved as the workflow failed in between.
+For such use-cases, users now have the ability to use the `actions/cache/save` action to save the cache by using an [`always()`](https://docs.github.com/actions/writing-workflows/choosing-what-your-workflow-does/expressions#always) condition.
+This way the cache will always be saved if generated, or a warning will be generated that nothing is found on the cache path. Users can also use the `if` condition to only execute the `actions/cache/save` action depending on the output of previous steps. This way they get more control of when to save the cache.
+
+To avoid saving a cache that already exists, the `cache-hit` output from a restore step should be checked.
+
+The `cache-primary-key` output from the restore step should also be used to ensure
+the cache key does not change during the build if it's calculated based on file contents.
 
 ```yaml
-steps:
-  - uses: actions/checkout@v4
-  .
-  . // restore if need be
-  .
-  - name: Build
-    run: /build.sh
-  - uses: actions/cache/save@v4
-    if: always() // or any other condition to invoke the save action
-    with:
-      path: path/to/dependencies
-      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+name: Always Caching Primes
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Restore cached Primes
+      id: cache-primes-restore
+      uses: actions/cache/restore@v4
+      with:
+        key: ${{ runner.os }}-primes
+        path: |
+          path/to/dependencies
+          some/other/dependencies
+
+    # Intermediate workflow steps
+
+    - name: Always Save Primes
+      id: cache-primes-save
+      if: always() && steps.cache-primes-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ steps.cache-primes-restore.outputs.cache-primary-key }}
+        path: |
+          path/to/dependencies
+          some/other/dependencies
 ```
