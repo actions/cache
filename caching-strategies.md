@@ -81,7 +81,7 @@ On similar lines, commit sha can be used to create a very specialized and short 
       key: cache-${{ github.sha }}
 ```
 
-### Using multiple factors while forming a key depening on the need
+### Using multiple factors while forming a key depending on the need
 
 Cache key can be formed by combination of more than one metadata, evaluated info.
 
