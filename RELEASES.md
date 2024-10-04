@@ -1,5 +1,9 @@
 # Releases
 
+### 4.1.0
+- Ensure `cache-hit` output is set when a cache is missed - [#1404](https://github.com/actions/cache/pull/1404)
+- Deprecate `save-always` input - [#1452](https://github.com/actions/cache/pull/1452)
+
 ### 4.0.2
 
 - Fixed restore `fail-on-cache-miss` not working.
