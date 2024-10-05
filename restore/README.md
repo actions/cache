@@ -14,7 +14,7 @@ The restore action restores a cache. It works similarly to the `cache` action ex
 
 ### Outputs
 
-* `cache-hit` - A boolean value to indicate an exact match was found for the key.
+* `cache-hit` - A boolean value to indicate an exact match was found for the key, or empty (not set) if no cache was restored.
 * `cache-primary-key` - Cache primary key passed in the input to use in subsequent steps of the workflow.
 * `cache-matched-key` - Key of the cache that was restored, it could either be the primary key on cache-hit or a partial/complete match of one of the restore keys.
 
