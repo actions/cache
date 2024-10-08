@@ -1,5 +1,8 @@
 # Releases
 
+### 4.1.1
+- Restore original behavior of `cache-hit` output - [#1467](https://github.com/actions/cache/pull/1467)
+
 ### 4.1.0
 - Ensure `cache-hit` output is set when a cache is missed - [#1404](https://github.com/actions/cache/pull/1404)
 - Deprecate `save-always` input - [#1452](https://github.com/actions/cache/pull/1452)
