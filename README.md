@@ -17,7 +17,6 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 ### v4
 
 * Updated to node 20
-* Added a `save-always` flag to save the cache even if a prior step fails
 
 ### v3
 
@@ -65,9 +64,9 @@ If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are requir
 
 ### Outputs
 
-* `cache-hit` - A boolean value to indicate an exact match was found for the key.
-
-    > **Note** `cache-hit` will only be set to `true` when a cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.
+* `cache-hit` - A string value to indicate an exact match was found for the key.
+  * If there's a cache hit, this will be 'true' or 'false' to indicate if there's an exact match for `key`.
+  * If there's a cache miss, this will be an empty string.
 
 See [Skipping steps based on cache-hit](#skipping-steps-based-on-cache-hit) for info on using this output
 

@@ -81,7 +81,7 @@ On similar lines, commit sha can be used to create a very specialized and short 
       key: cache-${{ github.sha }}
 ```
 
-### Using multiple factors while forming a key depening on the need
+### Using multiple factors while forming a key depending on the need
 
 Cache key can be formed by combination of more than one metadata, evaluated info.
 
@@ -243,24 +243,7 @@ with:
 
 ### Saving cache even if the build fails
 
-There can be cases where a cache should be saved even if the build job fails. For example, a job can fail due to flaky tests but the caches can still be re-used. You can use `actions/cache/save` action to save the cache by using `if: always()` condition.
-
-Similarly, `actions/cache/save` action can be conditionally used based on the output of the previous steps. This way you get more control on when to save the cache.
-
-```yaml
-steps:
-  - uses: actions/checkout@v4
-  .
-  . // restore if need be
-  .
-  - name: Build
-    run: /build.sh
-  - uses: actions/cache/save@v4
-    if: always() // or any other condition to invoke the save action
-    with:
-      path: path/to/dependencies
-      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
-```
+See [Always save cache](./save/README.md#always-save-cache).
 
 ### Saving cache once and reusing in multiple workflows
 

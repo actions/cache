@@ -59415,7 +59415,8 @@ function restoreImpl(stateProvider, earlyExit) {
             const lookupOnly = utils.getInputAsBool(constants_1.Inputs.LookupOnly);
             const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys, { lookupOnly: lookupOnly }, enableCrossOsArchive);
             if (!cacheKey) {
-                core.setOutput(constants_1.Outputs.CacheHit, false.toString());
+                // `cache-hit` is intentionally not set to `false` here to preserve existing behavior
+                // See https://github.com/actions/cache/issues/1466
                 if (failOnCacheMiss) {
                     throw new Error(`Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`);
                 }

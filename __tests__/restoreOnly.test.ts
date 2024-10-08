@@ -86,8 +86,7 @@ test("restore with no cache found", async () => {
     );
 
     expect(outputMock).toHaveBeenCalledWith("cache-primary-key", key);
-    expect(outputMock).toHaveBeenCalledWith("cache-hit", "false");
-    expect(outputMock).toHaveBeenCalledTimes(2);
+    expect(outputMock).toHaveBeenCalledTimes(1);
     expect(failedMock).toHaveBeenCalledTimes(0);
 
     expect(infoMock).toHaveBeenCalledWith(
