@@ -1,6 +1,6 @@
-name: 'Cache'
-description: 'Cache artifacts like dependencies and build outputs to improve workflow execution time'
-author: 'GitHub'
+name: 'Cache S3'
+description: 'actions/cache@v2 for AWS S3 and compatible software (forked Actions)'
+author: 'whywaita'
 inputs:
   path:
     description: 'A list of files, directories, and wildcard patterns to cache and restore'
@@ -14,6 +14,44 @@ inputs:
   upload-chunk-size:
     description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
+  enableCrossOsArchive:
+    description: 'An optional boolean when enabled, allows windows runners to save or restore caches that can be restored or saved respectively on other platforms'
+    default: 'false'
+    required: false
+  fail-on-cache-miss:
+    description: 'Fail the workflow if cache entry is not found'
+    default: 'false'
+    required: false
+  lookup-only:
+    description: 'Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache'
+    default: 'false'
+    required: false
+  aws-s3-bucket:
+    description: 'An AWS S3 bucket to save cache'
+    required: true
+  aws-access-key-id:
+    description: 'An AWS access key id to access the bucket'
+    required: false
+  aws-secret-access-key:
+    description: 'An AWS secret access key to access the bucket'
+    required: false
+  aws-session-token:
+    description: 'An AWS session token to access the bucket'
+    required: false
+  aws-region:
+    description: 'An AWS region where the bucket is located'
+    required: false
+  aws-endpoint:
+    description: 'An endpoint of AWS S3 (for compatible software)'
+    required: false
+  aws-s3-bucket-endpoint:
+    description: 'Whether to use the bucket name as the endpoint for this request.'
+    required: false
+    default: 'true'
+  aws-s3-force-path-style:
+    description: 'Whether to force path style URLs for S3 objects.'
+    required: false
+    default: 'false'
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
@@ -21,7 +59,7 @@ runs:
   using: 'node16'
   main: 'dist/restore/index.js'
   post: 'dist/save/index.js'
-  post-if: 'success()'
+  post-if: success()
 branding:
   icon: 'archive'
   color: 'gray-dark'

@@ -1,6 +1,6 @@
 ---
 name: "@azure/logger"
-version: 1.0.3
+version: 1.0.4
 type: npm
 summary: Microsoft Azure SDK for JavaScript - Logger
 homepage: https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/core/logger/README.md
