@@ -311,6 +311,17 @@ There are a number of community practices/workarounds to fulfill specific requir
 
 Please note that Windows environment variables (like `%LocalAppData%`) will NOT be expanded by this action. Instead, prefer using `~` in your paths which will expand to the HOME directory. For example, instead of `%LocalAppData%`, use `~\AppData\Local`. For a list of supported default environment variables, see the [Learn GitHub Actions: Variables](https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables) page.
 
+## Main functionalities
+
+The `cache` action in this repository provides several main functionalities:
+
+* **Caching dependencies and build outputs**: The primary function of the `cache` action is to cache dependencies and build outputs to improve workflow execution time. This is specified in the `description` field of the `action.yml` file (`action.yml`). 🗃️
+* **Restoring cache**: The `cache` action can restore cached files, directories, and wildcard patterns specified in the `path` input. This is done using the `restoreCache` function from the `@actions/cache` package (`src/restoreImpl.ts`). 🔄
+* **Saving cache**: The `cache` action can save files, directories, and wildcard patterns specified in the `path` input to the cache. This is done using the `saveCache` function from the `@actions/cache` package (`src/saveImpl.ts`). 💾
+* **Cross-OS caching**: The `cache` action supports cross-OS caching, allowing Windows runners to save or restore caches that can be restored or saved respectively on other platforms. This is controlled by the `enableCrossOsArchive` input (`action.yml`). 🌐
+* **Failing on cache miss**: The `cache` action can be configured to fail the workflow if a cache entry is not found. This is controlled by the `fail-on-cache-miss` input (`action.yml`). ❌
+* **Lookup-only mode**: The `cache` action can check if a cache entry exists for the given inputs without downloading the cache. This is controlled by the `lookup-only` input (`action.yml`). 🔍
+
 ## Contributing
 
 We would love for you to contribute to `actions/cache`. Pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
