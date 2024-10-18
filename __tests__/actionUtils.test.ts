@@ -8,15 +8,24 @@ import * as testUtils from "../src/utils/testUtils";
 jest.mock("@actions/core");
 jest.mock("@actions/cache");
 
+let pristineEnv: NodeJS.ProcessEnv;
+
 beforeAll(() => {
+    pristineEnv = process.env;
     jest.spyOn(core, "getInput").mockImplementation((name, options) => {
         return jest.requireActual("@actions/core").getInput(name, options);
     });
 });
 
-afterEach(() => {
+beforeEach(() => {
+    jest.resetModules();
+    process.env = pristineEnv;
     delete process.env[Events.Key];
     delete process.env[RefKey];
+});
+
+afterAll(() => {
+    process.env = pristineEnv;
 });
 
 test("isGhes returns true if server url is not github.com", () => {
@@ -230,4 +239,29 @@ test("isCacheFeatureAvailable for ac disabled on dotcom", () => {
     } finally {
         delete process.env["GITHUB_SERVER_URL"];
     }
+});
+
+test("isGhes returns false when the GITHUB_SERVER_URL environment variable is not defined", async () => {
+    delete process.env["GITHUB_SERVER_URL"];
+    expect(actionUtils.isGhes()).toBeFalsy();
+});
+
+test("isGhes returns false when the GITHUB_SERVER_URL environment variable is set to github.com", async () => {
+    process.env["GITHUB_SERVER_URL"] = "https://github.com";
+    expect(actionUtils.isGhes()).toBeFalsy();
+});
+
+test("isGhes returns false when the GITHUB_SERVER_URL environment variable is set to a GitHub Enterprise Cloud-style URL", async () => {
+    process.env["GITHUB_SERVER_URL"] = "https://contoso.ghe.com";
+    expect(actionUtils.isGhes()).toBeFalsy();
+});
+
+test("isGhes returns false when the GITHUB_SERVER_URL environment variable has a .localhost suffix", async () => {
+    process.env["GITHUB_SERVER_URL"] = "https://mock-github.localhost";
+    expect(actionUtils.isGhes()).toBeFalsy();
+});
+
+test("isGhes returns true when the GITHUB_SERVER_URL environment variable is set to some other URL", async () => {
+    process.env["GITHUB_SERVER_URL"] = "https://src.onpremise.fabrikam.com";
+    expect(actionUtils.isGhes()).toBeTruthy();
 });
