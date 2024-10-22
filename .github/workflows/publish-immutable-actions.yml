@@ -6,6 +6,8 @@ on:
 
 jobs:
   publish:
+    environment:
+      name: releaseNewActionVersion
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -15,6 +17,7 @@ jobs:
     steps:
       - name: Checking out
         uses: actions/checkout@v4
+      
       - name: Publish
         id: publish
         uses: actions/publish-immutable-action@0.0.3
