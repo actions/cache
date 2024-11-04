@@ -35,6 +35,29 @@ jobs:
       run: npm run test
 
   # End to end save and restore
+  test-dont-save:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Generate files in working directory
+      shell: bash
+      run: __tests__/create-cache-files.sh ${{ runner.os }} test-cache
+    - name: Generate files outside working directory
+      shell: bash
+      run: __tests__/create-cache-files.sh ${{ runner.os }} ~/test-cache
+    - name: Save cache
+      uses: ./
+      with:
+        key: test-${{ runner.os }}-${{ github.run_id }}
+        path: |
+          test-cache
+          ~/test-cache
+        save: ${{ matrix.os == 'ubuntu-latest' }}
   test-save:
     strategy:
       matrix:

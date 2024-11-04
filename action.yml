@@ -26,6 +26,10 @@ inputs:
     description: 'Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache'
     default: 'false'
     required: false
+  save:
+    description: 'Do not run the post step to save the cache if false'
+    default: 'true'
+    required: false
   save-always:
     description: 'Run the post step to save the cache even if another step before fails'
     default: 'false'
