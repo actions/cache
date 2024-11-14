@@ -12756,9 +12756,7 @@ function restoreCachev2(paths, primaryKey, restoreKeys, options, enableCrossOsAr
                 restoreKeys,
                 version: utils.getCacheVersion(paths, compressionMethod, enableCrossOsArchive)
             };
-            core.debug(`GetCacheEntryDownloadURLRequest: ${JSON.stringify(twirpClient)}`);
             const response = yield twirpClient.GetCacheEntryDownloadURL(request);
-            core.debug(`GetCacheEntryDownloadURLResponse: ${JSON.stringify(response)}`);
             if (!response.ok) {
                 core.warning(`Cache not found for keys: ${keys.join(', ')}`);
                 return undefined;
