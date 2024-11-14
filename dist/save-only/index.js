@@ -5958,10 +5958,10 @@ function restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArch
         const cacheServiceVersion = config.getCacheServiceVersion();
         switch (cacheServiceVersion) {
             case 'v2':
-                return yield restoreCachev2(paths, primaryKey, restoreKeys, options, enableCrossOsArchive);
+                return yield restoreCacheV2(paths, primaryKey, restoreKeys, options, enableCrossOsArchive);
             case 'v1':
             default:
-                return yield restoreCachev1(paths, primaryKey, restoreKeys, options, enableCrossOsArchive);
+                return yield restoreCacheV1(paths, primaryKey, restoreKeys, options, enableCrossOsArchive);
         }
     });
 }
@@ -5976,7 +5976,7 @@ exports.restoreCache = restoreCache;
  * @param enableCrossOsArchive
  * @returns
  */
-function restoreCachev1(paths, primaryKey, restoreKeys, options, enableCrossOsArchive = false) {
+function restoreCacheV1(paths, primaryKey, restoreKeys, options, enableCrossOsArchive = false) {
     return __awaiter(this, void 0, void 0, function* () {
         restoreKeys = restoreKeys || [];
         const keys = [primaryKey, ...restoreKeys];
@@ -6049,7 +6049,7 @@ function restoreCachev1(paths, primaryKey, restoreKeys, options, enableCrossOsAr
  * @param enableCrossOsArchive an optional boolean enabled to restore on windows any cache created on any platform
  * @returns string returns the key for the cache hit, otherwise returns undefined
  */
-function restoreCachev2(paths, primaryKey, restoreKeys, options, enableCrossOsArchive = false) {
+function restoreCacheV2(paths, primaryKey, restoreKeys, options, enableCrossOsArchive = false) {
     return __awaiter(this, void 0, void 0, function* () {
         restoreKeys = restoreKeys || [];
         const keys = [primaryKey, ...restoreKeys];
@@ -6127,10 +6127,10 @@ function saveCache(paths, key, options, enableCrossOsArchive = false) {
         const cacheServiceVersion = config.getCacheServiceVersion();
         switch (cacheServiceVersion) {
             case 'v2':
-                return yield saveCachev2(paths, key, options, enableCrossOsArchive);
+                return yield saveCacheV2(paths, key, options, enableCrossOsArchive);
             case 'v1':
             default:
-                return yield saveCachev1(paths, key, options, enableCrossOsArchive);
+                return yield saveCacheV1(paths, key, options, enableCrossOsArchive);
         }
     });
 }
@@ -6144,7 +6144,7 @@ exports.saveCache = saveCache;
  * @param enableCrossOsArchive
  * @returns
  */
-function saveCachev1(paths, key, options, enableCrossOsArchive = false) {
+function saveCacheV1(paths, key, options, enableCrossOsArchive = false) {
     var _a, _b, _c, _d, _e;
     return __awaiter(this, void 0, void 0, function* () {
         const compressionMethod = yield utils.getCompressionMethod();
@@ -6221,7 +6221,7 @@ function saveCachev1(paths, key, options, enableCrossOsArchive = false) {
  * @param enableCrossOsArchive
  * @returns
  */
-function saveCachev2(paths, key, options, enableCrossOsArchive = false) {
+function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
     return __awaiter(this, void 0, void 0, function* () {
         // BackendIds are retrieved form the signed JWT
         const backendIds = utils.getBackendIdsFromToken();
