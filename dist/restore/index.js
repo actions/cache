@@ -12639,7 +12639,6 @@ function restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArch
     return __awaiter(this, void 0, void 0, function* () {
         checkPaths(paths);
         const cacheServiceVersion = config.getCacheServiceVersion();
-        console.debug(`Cache service version: ${cacheServiceVersion}`);
         switch (cacheServiceVersion) {
             case 'v2':
                 return yield restoreCachev2(paths, primaryKey, restoreKeys, options, enableCrossOsArchive);
@@ -12754,7 +12753,7 @@ function restoreCachev2(paths, primaryKey, restoreKeys, options, enableCrossOsAr
                 workflowRunBackendId: backendIds.workflowRunBackendId,
                 workflowJobRunBackendId: backendIds.workflowJobRunBackendId,
                 key: primaryKey,
-                restoreKeys: restoreKeys,
+                restoreKeys,
                 version: utils.getCacheVersion(paths, compressionMethod, enableCrossOsArchive)
             };
             core.debug(`GetCacheEntryDownloadURLRequest: ${JSON.stringify(twirpClient)}`);
@@ -12793,7 +12792,6 @@ function restoreCachev2(paths, primaryKey, restoreKeys, options, enableCrossOsAr
                 core.debug(`Failed to delete archive: ${error}`);
             }
         }
-        return undefined;
     });
 }
 /**
@@ -12810,7 +12808,6 @@ function saveCache(paths, key, options, enableCrossOsArchive = false) {
         checkPaths(paths);
         checkKey(key);
         const cacheServiceVersion = config.getCacheServiceVersion();
-        console.debug(`Cache Service Version: ${cacheServiceVersion}`);
         switch (cacheServiceVersion) {
             case 'v2':
                 return yield saveCachev2(paths, key, options, enableCrossOsArchive);
@@ -12939,8 +12936,8 @@ function saveCachev2(paths, key, options, enableCrossOsArchive = false) {
             const request = {
                 workflowRunBackendId: backendIds.workflowRunBackendId,
                 workflowJobRunBackendId: backendIds.workflowJobRunBackendId,
-                key: key,
-                version: version
+                key,
+                version
             };
             const response = yield twirpClient.CreateCacheEntry(request);
             if (!response.ok) {
@@ -12951,8 +12948,8 @@ function saveCachev2(paths, key, options, enableCrossOsArchive = false) {
             const finalizeRequest = {
                 workflowRunBackendId: backendIds.workflowRunBackendId,
                 workflowJobRunBackendId: backendIds.workflowJobRunBackendId,
-                key: key,
-                version: version,
+                key,
+                version,
                 sizeBytes: `${archiveFileSize}`
             };
             const finalizeResponse = yield twirpClient.FinalizeCacheEntryUpload(finalizeRequest);
