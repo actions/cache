@@ -12641,9 +12641,9 @@ function restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArch
         const cacheServiceVersion = config.getCacheServiceVersion();
         console.debug(`Cache service version: ${cacheServiceVersion}`);
         switch (cacheServiceVersion) {
-            case "v2":
+            case 'v2':
                 return yield restoreCachev2(paths, primaryKey, restoreKeys, options, enableCrossOsArchive);
-            case "v1":
+            case 'v1':
             default:
                 return yield restoreCachev1(paths, primaryKey, restoreKeys, options, enableCrossOsArchive);
         }
@@ -12755,7 +12755,7 @@ function restoreCachev2(paths, primaryKey, restoreKeys, options, enableCrossOsAr
                 workflowJobRunBackendId: backendIds.workflowJobRunBackendId,
                 key: primaryKey,
                 restoreKeys: restoreKeys,
-                version: utils.getCacheVersion(paths, compressionMethod, enableCrossOsArchive),
+                version: utils.getCacheVersion(paths, compressionMethod, enableCrossOsArchive)
             };
             core.debug(`GetCacheEntryDownloadURLRequest: ${JSON.stringify(twirpClient)}`);
             const response = yield twirpClient.GetCacheEntryDownloadURL(request);
@@ -12812,9 +12812,9 @@ function saveCache(paths, key, options, enableCrossOsArchive = false) {
         const cacheServiceVersion = config.getCacheServiceVersion();
         console.debug(`Cache Service Version: ${cacheServiceVersion}`);
         switch (cacheServiceVersion) {
-            case "v2":
+            case 'v2':
                 return yield saveCachev2(paths, key, options, enableCrossOsArchive);
-            case "v1":
+            case 'v1':
             default:
                 return yield saveCachev1(paths, key, options, enableCrossOsArchive);
         }
@@ -12953,7 +12953,7 @@ function saveCachev2(paths, key, options, enableCrossOsArchive = false) {
                 workflowJobRunBackendId: backendIds.workflowJobRunBackendId,
                 key: key,
                 version: version,
-                sizeBytes: `${archiveFileSize}`,
+                sizeBytes: `${archiveFileSize}`
             };
             const finalizeResponse = yield twirpClient.FinalizeCacheEntryUpload(finalizeRequest);
             core.debug(`FinalizeCacheEntryUploadResponse: ${JSON.stringify(finalizeResponse)}`);
@@ -14734,7 +14734,7 @@ const storage_blob_1 = __nccwpck_require__(3864);
 function DownloadCacheFile(signedUploadURL, archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
         const downloadOptions = {
-            maxRetryRequests: 5,
+            maxRetryRequests: 5
         };
         // TODO: tighten the configuration and pass the appropriate user-agent
         const blobClient = new storage_blob_1.BlobClient(signedUploadURL);
@@ -14797,7 +14797,7 @@ function UploadCacheFile(signedUploadURL, archivePath) {
         const uploadOptions = {
             blockSize: 4 * 1024 * 1024,
             concurrency: 4,
-            maxSingleShotSize: 8 * 1024 * 1024, // 8 MiB initial transfer size
+            maxSingleShotSize: 8 * 1024 * 1024 // 8 MiB initial transfer size
         };
         const blobClient = new storage_blob_1.BlobClient(signedUploadURL);
         const blockBlobClient = blobClient.getBlockBlobClient();
@@ -15368,9 +15368,11 @@ function getCacheServiceURL() {
     const version = getCacheServiceVersion();
     switch (version) {
         case 'v1':
-            return process.env['ACTIONS_CACHE_URL'] || process.env['ACTIONS_RESULTS_URL'] || "";
+            return (process.env['ACTIONS_CACHE_URL'] ||
+                process.env['ACTIONS_RESULTS_URL'] ||
+                '');
         case 'v2':
-            return process.env['ACTIONS_RESULTS_URL'] || "";
+            return process.env['ACTIONS_RESULTS_URL'] || '';
         default:
             throw new Error(`Unsupported cache service version: ${version}`);
     }
