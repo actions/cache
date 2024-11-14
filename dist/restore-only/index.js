@@ -12943,7 +12943,7 @@ function saveCachev2(paths, key, options, enableCrossOsArchive = false) {
             if (!response.ok) {
                 throw new ReserveCacheError(`Unable to reserve cache with key ${key}, another job may be creating this cache.`);
             }
-            core.debug(`Saving Cache to: ${core.setSecret(response.signedUploadUrl)}`);
+            core.debug(`Attempting to upload cache located at: ${archivePath}`);
             yield (0, upload_cache_1.UploadCacheFile)(response.signedUploadUrl, archivePath);
             const finalizeRequest = {
                 workflowRunBackendId: backendIds.workflowRunBackendId,
@@ -12953,7 +12953,7 @@ function saveCachev2(paths, key, options, enableCrossOsArchive = false) {
                 sizeBytes: `${archiveFileSize}`
             };
             const finalizeResponse = yield twirpClient.FinalizeCacheEntryUpload(finalizeRequest);
-            core.debug(`FinalizeCacheEntryUploadResponse: ${JSON.stringify(finalizeResponse)}`);
+            core.debug(`FinalizeCacheEntryUploadResponse: ${finalizeResponse.ok}`);
             if (!finalizeResponse.ok) {
                 throw new Error(`Unable to finalize cache with key ${key}, another job may be finalizing this cache.`);
             }
@@ -14733,11 +14733,9 @@ function DownloadCacheFile(signedUploadURL, archivePath) {
         const downloadOptions = {
             maxRetryRequests: 5
         };
-        // TODO: tighten the configuration and pass the appropriate user-agent
         const blobClient = new storage_blob_1.BlobClient(signedUploadURL);
         const blockBlobClient = blobClient.getBlockBlobClient();
-        core.debug(`BlobClient: ${JSON.stringify(blobClient)}`);
-        core.debug(`blockBlobClient: ${JSON.stringify(blockBlobClient)}`);
+        core.debug(`BlobClient: ${blobClient.name}:${blobClient.accountName}:${blobClient.containerName}`);
         return blockBlobClient.downloadToFile(archivePath, 0, undefined, downloadOptions);
     });
 }
@@ -14789,7 +14787,6 @@ const core = __importStar(__nccwpck_require__(4850));
 const storage_blob_1 = __nccwpck_require__(3864);
 function UploadCacheFile(signedUploadURL, archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
-        // TODO: tighten the configuration and pass the appropriate user-agent
         // Specify data transfer options
         const uploadOptions = {
             blockSize: 4 * 1024 * 1024,
@@ -14798,8 +14795,7 @@ function UploadCacheFile(signedUploadURL, archivePath) {
         };
         const blobClient = new storage_blob_1.BlobClient(signedUploadURL);
         const blockBlobClient = blobClient.getBlockBlobClient();
-        core.debug(`BlobClient: ${JSON.stringify(blobClient)}`);
-        core.debug(`blockBlobClient: ${JSON.stringify(blockBlobClient)}`);
+        core.debug(`BlobClient: ${blobClient.name}:${blobClient.accountName}:${blobClient.containerName}`);
         return blockBlobClient.uploadFile(archivePath, uploadOptions);
     });
 }
