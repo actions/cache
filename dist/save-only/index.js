@@ -6064,11 +6064,8 @@ function restoreCacheV2(paths, primaryKey, restoreKeys, options, enableCrossOsAr
         let archivePath = '';
         try {
             const twirpClient = cacheTwirpClient.internalCacheTwirpClient();
-            const backendIds = utils.getBackendIdsFromToken();
             const compressionMethod = yield utils.getCompressionMethod();
             const request = {
-                workflowRunBackendId: backendIds.workflowRunBackendId,
-                workflowJobRunBackendId: backendIds.workflowJobRunBackendId,
                 key: primaryKey,
                 restoreKeys,
                 version: utils.getCacheVersion(paths, compressionMethod, enableCrossOsArchive)
@@ -6223,8 +6220,6 @@ function saveCacheV1(paths, key, options, enableCrossOsArchive = false) {
  */
 function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
     return __awaiter(this, void 0, void 0, function* () {
-        // BackendIds are retrieved form the signed JWT
-        const backendIds = utils.getBackendIdsFromToken();
         const compressionMethod = yield utils.getCompressionMethod();
         const twirpClient = cacheTwirpClient.internalCacheTwirpClient();
         let cacheId = -1;
@@ -6251,8 +6246,6 @@ function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
             core.debug('Reserving Cache');
             const version = utils.getCacheVersion(paths, compressionMethod, enableCrossOsArchive);
             const request = {
-                workflowRunBackendId: backendIds.workflowRunBackendId,
-                workflowJobRunBackendId: backendIds.workflowJobRunBackendId,
                 key,
                 version
             };
@@ -6263,8 +6256,6 @@ function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
             core.debug(`Attempting to upload cache located at: ${archivePath}`);
             yield (0, upload_cache_1.UploadCacheFile)(response.signedUploadUrl, archivePath);
             const finalizeRequest = {
-                workflowRunBackendId: backendIds.workflowRunBackendId,
-                workflowJobRunBackendId: backendIds.workflowJobRunBackendId,
                 key,
                 version,
                 sizeBytes: `${archiveFileSize}`
@@ -6456,18 +6447,18 @@ const runtime_3 = __nccwpck_require__(3503);
 const runtime_4 = __nccwpck_require__(3503);
 const runtime_5 = __nccwpck_require__(3503);
 const timestamp_1 = __nccwpck_require__(8983);
+const cachemetadata_1 = __nccwpck_require__(2773);
 // @generated message type with reflection information, may provide speed optimized methods
 class CreateCacheEntryRequest$Type extends runtime_5.MessageType {
     constructor() {
         super("github.actions.results.api.v1.CreateCacheEntryRequest", [
-            { no: 1, name: "workflow_run_backend_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "workflow_job_run_backend_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 4, name: "version", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 1, name: "metadata", kind: "message", T: () => cachemetadata_1.CacheMetadata },
+            { no: 2, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "version", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value) {
-        const message = { workflowRunBackendId: "", workflowJobRunBackendId: "", key: "", version: "" };
+        const message = { key: "", version: "" };
         globalThis.Object.defineProperty(message, runtime_4.MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             (0, runtime_3.reflectionMergePartial)(this, message, value);
@@ -6478,16 +6469,13 @@ class CreateCacheEntryRequest$Type extends runtime_5.MessageType {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* string workflow_run_backend_id */ 1:
-                    message.workflowRunBackendId = reader.string();
+                case /* github.actions.results.entities.v1.CacheMetadata metadata */ 1:
+                    message.metadata = cachemetadata_1.CacheMetadata.internalBinaryRead(reader, reader.uint32(), options, message.metadata);
                     break;
-                case /* string workflow_job_run_backend_id */ 2:
-                    message.workflowJobRunBackendId = reader.string();
-                    break;
-                case /* string key */ 3:
+                case /* string key */ 2:
                     message.key = reader.string();
                     break;
-                case /* string version */ 4:
+                case /* string version */ 3:
                     message.version = reader.string();
                     break;
                 default:
@@ -6502,18 +6490,15 @@ class CreateCacheEntryRequest$Type extends runtime_5.MessageType {
         return message;
     }
     internalBinaryWrite(message, writer, options) {
-        /* string workflow_run_backend_id = 1; */
-        if (message.workflowRunBackendId !== "")
-            writer.tag(1, runtime_1.WireType.LengthDelimited).string(message.workflowRunBackendId);
-        /* string workflow_job_run_backend_id = 2; */
-        if (message.workflowJobRunBackendId !== "")
-            writer.tag(2, runtime_1.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
-        /* string key = 3; */
+        /* github.actions.results.entities.v1.CacheMetadata metadata = 1; */
+        if (message.metadata)
+            cachemetadata_1.CacheMetadata.internalBinaryWrite(message.metadata, writer.tag(1, runtime_1.WireType.LengthDelimited).fork(), options).join();
+        /* string key = 2; */
         if (message.key !== "")
-            writer.tag(3, runtime_1.WireType.LengthDelimited).string(message.key);
-        /* string version = 4; */
+            writer.tag(2, runtime_1.WireType.LengthDelimited).string(message.key);
+        /* string version = 3; */
         if (message.version !== "")
-            writer.tag(4, runtime_1.WireType.LengthDelimited).string(message.version);
+            writer.tag(3, runtime_1.WireType.LengthDelimited).string(message.version);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? runtime_2.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6582,15 +6567,14 @@ exports.CreateCacheEntryResponse = new CreateCacheEntryResponse$Type();
 class FinalizeCacheEntryUploadRequest$Type extends runtime_5.MessageType {
     constructor() {
         super("github.actions.results.api.v1.FinalizeCacheEntryUploadRequest", [
-            { no: 1, name: "workflow_run_backend_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "workflow_job_run_backend_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 4, name: "size_bytes", kind: "scalar", T: 3 /*ScalarType.INT64*/ },
-            { no: 5, name: "version", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 1, name: "metadata", kind: "message", T: () => cachemetadata_1.CacheMetadata },
+            { no: 2, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "size_bytes", kind: "scalar", T: 3 /*ScalarType.INT64*/ },
+            { no: 4, name: "version", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value) {
-        const message = { workflowRunBackendId: "", workflowJobRunBackendId: "", key: "", sizeBytes: "0", version: "" };
+        const message = { key: "", sizeBytes: "0", version: "" };
         globalThis.Object.defineProperty(message, runtime_4.MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             (0, runtime_3.reflectionMergePartial)(this, message, value);
@@ -6601,19 +6585,16 @@ class FinalizeCacheEntryUploadRequest$Type extends runtime_5.MessageType {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* string workflow_run_backend_id */ 1:
-                    message.workflowRunBackendId = reader.string();
+                case /* github.actions.results.entities.v1.CacheMetadata metadata */ 1:
+                    message.metadata = cachemetadata_1.CacheMetadata.internalBinaryRead(reader, reader.uint32(), options, message.metadata);
                     break;
-                case /* string workflow_job_run_backend_id */ 2:
-                    message.workflowJobRunBackendId = reader.string();
-                    break;
-                case /* string key */ 3:
+                case /* string key */ 2:
                     message.key = reader.string();
                     break;
-                case /* int64 size_bytes */ 4:
+                case /* int64 size_bytes */ 3:
                     message.sizeBytes = reader.int64().toString();
                     break;
-                case /* string version */ 5:
+                case /* string version */ 4:
                     message.version = reader.string();
                     break;
                 default:
@@ -6628,21 +6609,18 @@ class FinalizeCacheEntryUploadRequest$Type extends runtime_5.MessageType {
         return message;
     }
     internalBinaryWrite(message, writer, options) {
-        /* string workflow_run_backend_id = 1; */
-        if (message.workflowRunBackendId !== "")
-            writer.tag(1, runtime_1.WireType.LengthDelimited).string(message.workflowRunBackendId);
-        /* string workflow_job_run_backend_id = 2; */
-        if (message.workflowJobRunBackendId !== "")
-            writer.tag(2, runtime_1.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
-        /* string key = 3; */
+        /* github.actions.results.entities.v1.CacheMetadata metadata = 1; */
+        if (message.metadata)
+            cachemetadata_1.CacheMetadata.internalBinaryWrite(message.metadata, writer.tag(1, runtime_1.WireType.LengthDelimited).fork(), options).join();
+        /* string key = 2; */
         if (message.key !== "")
-            writer.tag(3, runtime_1.WireType.LengthDelimited).string(message.key);
-        /* int64 size_bytes = 4; */
+            writer.tag(2, runtime_1.WireType.LengthDelimited).string(message.key);
+        /* int64 size_bytes = 3; */
         if (message.sizeBytes !== "0")
-            writer.tag(4, runtime_1.WireType.Varint).int64(message.sizeBytes);
-        /* string version = 5; */
+            writer.tag(3, runtime_1.WireType.Varint).int64(message.sizeBytes);
+        /* string version = 4; */
         if (message.version !== "")
-            writer.tag(5, runtime_1.WireType.LengthDelimited).string(message.version);
+            writer.tag(4, runtime_1.WireType.LengthDelimited).string(message.version);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? runtime_2.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6711,15 +6689,14 @@ exports.FinalizeCacheEntryUploadResponse = new FinalizeCacheEntryUploadResponse$
 class GetCacheEntryDownloadURLRequest$Type extends runtime_5.MessageType {
     constructor() {
         super("github.actions.results.api.v1.GetCacheEntryDownloadURLRequest", [
-            { no: 1, name: "workflow_run_backend_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "workflow_job_run_backend_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 4, name: "restore_keys", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
-            { no: 5, name: "version", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 1, name: "metadata", kind: "message", T: () => cachemetadata_1.CacheMetadata },
+            { no: 2, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "restore_keys", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "version", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value) {
-        const message = { workflowRunBackendId: "", workflowJobRunBackendId: "", key: "", restoreKeys: [], version: "" };
+        const message = { key: "", restoreKeys: [], version: "" };
         globalThis.Object.defineProperty(message, runtime_4.MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             (0, runtime_3.reflectionMergePartial)(this, message, value);
@@ -6730,19 +6707,16 @@ class GetCacheEntryDownloadURLRequest$Type extends runtime_5.MessageType {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* string workflow_run_backend_id */ 1:
-                    message.workflowRunBackendId = reader.string();
+                case /* github.actions.results.entities.v1.CacheMetadata metadata */ 1:
+                    message.metadata = cachemetadata_1.CacheMetadata.internalBinaryRead(reader, reader.uint32(), options, message.metadata);
                     break;
-                case /* string workflow_job_run_backend_id */ 2:
-                    message.workflowJobRunBackendId = reader.string();
-                    break;
-                case /* string key */ 3:
+                case /* string key */ 2:
                     message.key = reader.string();
                     break;
-                case /* repeated string restore_keys */ 4:
+                case /* repeated string restore_keys */ 3:
                     message.restoreKeys.push(reader.string());
                     break;
-                case /* string version */ 5:
+                case /* string version */ 4:
                     message.version = reader.string();
                     break;
                 default:
@@ -6757,21 +6731,18 @@ class GetCacheEntryDownloadURLRequest$Type extends runtime_5.MessageType {
         return message;
     }
     internalBinaryWrite(message, writer, options) {
-        /* string workflow_run_backend_id = 1; */
-        if (message.workflowRunBackendId !== "")
-            writer.tag(1, runtime_1.WireType.LengthDelimited).string(message.workflowRunBackendId);
-        /* string workflow_job_run_backend_id = 2; */
-        if (message.workflowJobRunBackendId !== "")
-            writer.tag(2, runtime_1.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
-        /* string key = 3; */
+        /* github.actions.results.entities.v1.CacheMetadata metadata = 1; */
+        if (message.metadata)
+            cachemetadata_1.CacheMetadata.internalBinaryWrite(message.metadata, writer.tag(1, runtime_1.WireType.LengthDelimited).fork(), options).join();
+        /* string key = 2; */
         if (message.key !== "")
-            writer.tag(3, runtime_1.WireType.LengthDelimited).string(message.key);
-        /* repeated string restore_keys = 4; */
+            writer.tag(2, runtime_1.WireType.LengthDelimited).string(message.key);
+        /* repeated string restore_keys = 3; */
         for (let i = 0; i < message.restoreKeys.length; i++)
-            writer.tag(4, runtime_1.WireType.LengthDelimited).string(message.restoreKeys[i]);
-        /* string version = 5; */
+            writer.tag(3, runtime_1.WireType.LengthDelimited).string(message.restoreKeys[i]);
+        /* string version = 4; */
         if (message.version !== "")
-            writer.tag(5, runtime_1.WireType.LengthDelimited).string(message.version);
+            writer.tag(4, runtime_1.WireType.LengthDelimited).string(message.version);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? runtime_2.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6840,13 +6811,12 @@ exports.GetCacheEntryDownloadURLResponse = new GetCacheEntryDownloadURLResponse$
 class DeleteCacheEntryRequest$Type extends runtime_5.MessageType {
     constructor() {
         super("github.actions.results.api.v1.DeleteCacheEntryRequest", [
-            { no: 1, name: "workflow_run_backend_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "workflow_job_run_backend_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 1, name: "metadata", kind: "message", T: () => cachemetadata_1.CacheMetadata },
+            { no: 2, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value) {
-        const message = { workflowRunBackendId: "", workflowJobRunBackendId: "", key: "" };
+        const message = { key: "" };
         globalThis.Object.defineProperty(message, runtime_4.MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             (0, runtime_3.reflectionMergePartial)(this, message, value);
@@ -6857,13 +6827,10 @@ class DeleteCacheEntryRequest$Type extends runtime_5.MessageType {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* string workflow_run_backend_id */ 1:
-                    message.workflowRunBackendId = reader.string();
+                case /* github.actions.results.entities.v1.CacheMetadata metadata */ 1:
+                    message.metadata = cachemetadata_1.CacheMetadata.internalBinaryRead(reader, reader.uint32(), options, message.metadata);
                     break;
-                case /* string workflow_job_run_backend_id */ 2:
-                    message.workflowJobRunBackendId = reader.string();
-                    break;
-                case /* string key */ 3:
+                case /* string key */ 2:
                     message.key = reader.string();
                     break;
                 default:
@@ -6878,15 +6845,12 @@ class DeleteCacheEntryRequest$Type extends runtime_5.MessageType {
         return message;
     }
     internalBinaryWrite(message, writer, options) {
-        /* string workflow_run_backend_id = 1; */
-        if (message.workflowRunBackendId !== "")
-            writer.tag(1, runtime_1.WireType.LengthDelimited).string(message.workflowRunBackendId);
-        /* string workflow_job_run_backend_id = 2; */
-        if (message.workflowJobRunBackendId !== "")
-            writer.tag(2, runtime_1.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
-        /* string key = 3; */
+        /* github.actions.results.entities.v1.CacheMetadata metadata = 1; */
+        if (message.metadata)
+            cachemetadata_1.CacheMetadata.internalBinaryWrite(message.metadata, writer.tag(1, runtime_1.WireType.LengthDelimited).fork(), options).join();
+        /* string key = 2; */
         if (message.key !== "")
-            writer.tag(3, runtime_1.WireType.LengthDelimited).string(message.key);
+            writer.tag(2, runtime_1.WireType.LengthDelimited).string(message.key);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? runtime_2.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6955,14 +6919,13 @@ exports.DeleteCacheEntryResponse = new DeleteCacheEntryResponse$Type();
 class ListCacheEntriesRequest$Type extends runtime_5.MessageType {
     constructor() {
         super("github.actions.results.api.v1.ListCacheEntriesRequest", [
-            { no: 1, name: "workflow_run_backend_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "workflow_job_run_backend_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 4, name: "restore_keys", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+            { no: 1, name: "metadata", kind: "message", T: () => cachemetadata_1.CacheMetadata },
+            { no: 2, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "restore_keys", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value) {
-        const message = { workflowRunBackendId: "", workflowJobRunBackendId: "", key: "", restoreKeys: [] };
+        const message = { key: "", restoreKeys: [] };
         globalThis.Object.defineProperty(message, runtime_4.MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             (0, runtime_3.reflectionMergePartial)(this, message, value);
@@ -6973,16 +6936,13 @@ class ListCacheEntriesRequest$Type extends runtime_5.MessageType {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* string workflow_run_backend_id */ 1:
-                    message.workflowRunBackendId = reader.string();
+                case /* github.actions.results.entities.v1.CacheMetadata metadata */ 1:
+                    message.metadata = cachemetadata_1.CacheMetadata.internalBinaryRead(reader, reader.uint32(), options, message.metadata);
                     break;
-                case /* string workflow_job_run_backend_id */ 2:
-                    message.workflowJobRunBackendId = reader.string();
-                    break;
-                case /* string key */ 3:
+                case /* string key */ 2:
                     message.key = reader.string();
                     break;
-                case /* repeated string restore_keys */ 4:
+                case /* repeated string restore_keys */ 3:
                     message.restoreKeys.push(reader.string());
                     break;
                 default:
@@ -6997,18 +6957,15 @@ class ListCacheEntriesRequest$Type extends runtime_5.MessageType {
         return message;
     }
     internalBinaryWrite(message, writer, options) {
-        /* string workflow_run_backend_id = 1; */
-        if (message.workflowRunBackendId !== "")
-            writer.tag(1, runtime_1.WireType.LengthDelimited).string(message.workflowRunBackendId);
-        /* string workflow_job_run_backend_id = 2; */
-        if (message.workflowJobRunBackendId !== "")
-            writer.tag(2, runtime_1.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
-        /* string key = 3; */
+        /* github.actions.results.entities.v1.CacheMetadata metadata = 1; */
+        if (message.metadata)
+            cachemetadata_1.CacheMetadata.internalBinaryWrite(message.metadata, writer.tag(1, runtime_1.WireType.LengthDelimited).fork(), options).join();
+        /* string key = 2; */
         if (message.key !== "")
-            writer.tag(3, runtime_1.WireType.LengthDelimited).string(message.key);
-        /* repeated string restore_keys = 4; */
+            writer.tag(2, runtime_1.WireType.LengthDelimited).string(message.key);
+        /* repeated string restore_keys = 3; */
         for (let i = 0; i < message.restoreKeys.length; i++)
-            writer.tag(4, runtime_1.WireType.LengthDelimited).string(message.restoreKeys[i]);
+            writer.tag(3, runtime_1.WireType.LengthDelimited).string(message.restoreKeys[i]);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? runtime_2.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -7166,15 +7123,14 @@ exports.ListCacheEntriesResponse_CacheEntry = new ListCacheEntriesResponse_Cache
 class LookupCacheEntryRequest$Type extends runtime_5.MessageType {
     constructor() {
         super("github.actions.results.api.v1.LookupCacheEntryRequest", [
-            { no: 1, name: "workflow_run_backend_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "workflow_job_run_backend_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 4, name: "restore_keys", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
-            { no: 5, name: "version", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 1, name: "metadata", kind: "message", T: () => cachemetadata_1.CacheMetadata },
+            { no: 2, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "restore_keys", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "version", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value) {
-        const message = { workflowRunBackendId: "", workflowJobRunBackendId: "", key: "", restoreKeys: [], version: "" };
+        const message = { key: "", restoreKeys: [], version: "" };
         globalThis.Object.defineProperty(message, runtime_4.MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             (0, runtime_3.reflectionMergePartial)(this, message, value);
@@ -7185,19 +7141,16 @@ class LookupCacheEntryRequest$Type extends runtime_5.MessageType {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* string workflow_run_backend_id */ 1:
-                    message.workflowRunBackendId = reader.string();
+                case /* github.actions.results.entities.v1.CacheMetadata metadata */ 1:
+                    message.metadata = cachemetadata_1.CacheMetadata.internalBinaryRead(reader, reader.uint32(), options, message.metadata);
                     break;
-                case /* string workflow_job_run_backend_id */ 2:
-                    message.workflowJobRunBackendId = reader.string();
-                    break;
-                case /* string key */ 3:
+                case /* string key */ 2:
                     message.key = reader.string();
                     break;
-                case /* repeated string restore_keys */ 4:
+                case /* repeated string restore_keys */ 3:
                     message.restoreKeys.push(reader.string());
                     break;
-                case /* string version */ 5:
+                case /* string version */ 4:
                     message.version = reader.string();
                     break;
                 default:
@@ -7212,21 +7165,18 @@ class LookupCacheEntryRequest$Type extends runtime_5.MessageType {
         return message;
     }
     internalBinaryWrite(message, writer, options) {
-        /* string workflow_run_backend_id = 1; */
-        if (message.workflowRunBackendId !== "")
-            writer.tag(1, runtime_1.WireType.LengthDelimited).string(message.workflowRunBackendId);
-        /* string workflow_job_run_backend_id = 2; */
-        if (message.workflowJobRunBackendId !== "")
-            writer.tag(2, runtime_1.WireType.LengthDelimited).string(message.workflowJobRunBackendId);
-        /* string key = 3; */
+        /* github.actions.results.entities.v1.CacheMetadata metadata = 1; */
+        if (message.metadata)
+            cachemetadata_1.CacheMetadata.internalBinaryWrite(message.metadata, writer.tag(1, runtime_1.WireType.LengthDelimited).fork(), options).join();
+        /* string key = 2; */
         if (message.key !== "")
-            writer.tag(3, runtime_1.WireType.LengthDelimited).string(message.key);
-        /* repeated string restore_keys = 4; */
+            writer.tag(2, runtime_1.WireType.LengthDelimited).string(message.key);
+        /* repeated string restore_keys = 3; */
         for (let i = 0; i < message.restoreKeys.length; i++)
-            writer.tag(4, runtime_1.WireType.LengthDelimited).string(message.restoreKeys[i]);
-        /* string version = 5; */
+            writer.tag(3, runtime_1.WireType.LengthDelimited).string(message.restoreKeys[i]);
+        /* string version = 4; */
         if (message.version !== "")
-            writer.tag(5, runtime_1.WireType.LengthDelimited).string(message.version);
+            writer.tag(4, runtime_1.WireType.LengthDelimited).string(message.version);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? runtime_2.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -8004,6 +7954,147 @@ function handleCacheServiceLookupCacheEntryProtobuf(ctx, service, data, intercep
 
 /***/ }),
 
+/***/ 2773:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CacheMetadata = void 0;
+const runtime_1 = __nccwpck_require__(3503);
+const runtime_2 = __nccwpck_require__(3503);
+const runtime_3 = __nccwpck_require__(3503);
+const runtime_4 = __nccwpck_require__(3503);
+const runtime_5 = __nccwpck_require__(3503);
+const cachescope_1 = __nccwpck_require__(7685);
+// @generated message type with reflection information, may provide speed optimized methods
+class CacheMetadata$Type extends runtime_5.MessageType {
+    constructor() {
+        super("github.actions.results.entities.v1.CacheMetadata", [
+            { no: 1, name: "repository_id", kind: "scalar", T: 3 /*ScalarType.INT64*/ },
+            { no: 2, name: "scope", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => cachescope_1.CacheScope }
+        ]);
+    }
+    create(value) {
+        const message = { repositoryId: "0", scope: [] };
+        globalThis.Object.defineProperty(message, runtime_4.MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            (0, runtime_3.reflectionMergePartial)(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader, length, options, target) {
+        let message = target !== null && target !== void 0 ? target : this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* int64 repository_id */ 1:
+                    message.repositoryId = reader.int64().toString();
+                    break;
+                case /* repeated github.actions.results.entities.v1.CacheScope scope */ 2:
+                    message.scope.push(cachescope_1.CacheScope.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? runtime_2.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message, writer, options) {
+        /* int64 repository_id = 1; */
+        if (message.repositoryId !== "0")
+            writer.tag(1, runtime_1.WireType.Varint).int64(message.repositoryId);
+        /* repeated github.actions.results.entities.v1.CacheScope scope = 2; */
+        for (let i = 0; i < message.scope.length; i++)
+            cachescope_1.CacheScope.internalBinaryWrite(message.scope[i], writer.tag(2, runtime_1.WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? runtime_2.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message github.actions.results.entities.v1.CacheMetadata
+ */
+exports.CacheMetadata = new CacheMetadata$Type();
+//# sourceMappingURL=cachemetadata.js.map
+
+/***/ }),
+
+/***/ 7685:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CacheScope = void 0;
+const runtime_1 = __nccwpck_require__(3503);
+const runtime_2 = __nccwpck_require__(3503);
+const runtime_3 = __nccwpck_require__(3503);
+const runtime_4 = __nccwpck_require__(3503);
+const runtime_5 = __nccwpck_require__(3503);
+// @generated message type with reflection information, may provide speed optimized methods
+class CacheScope$Type extends runtime_5.MessageType {
+    constructor() {
+        super("github.actions.results.entities.v1.CacheScope", [
+            { no: 1, name: "scope", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "permission", kind: "scalar", T: 3 /*ScalarType.INT64*/ }
+        ]);
+    }
+    create(value) {
+        const message = { scope: "", permission: "0" };
+        globalThis.Object.defineProperty(message, runtime_4.MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            (0, runtime_3.reflectionMergePartial)(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader, length, options, target) {
+        let message = target !== null && target !== void 0 ? target : this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string scope */ 1:
+                    message.scope = reader.string();
+                    break;
+                case /* int64 permission */ 2:
+                    message.permission = reader.int64().toString();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? runtime_2.UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message, writer, options) {
+        /* string scope = 1; */
+        if (message.scope !== "")
+            writer.tag(1, runtime_1.WireType.LengthDelimited).string(message.scope);
+        /* int64 permission = 2; */
+        if (message.permission !== "0")
+            writer.tag(2, runtime_1.WireType.Varint).int64(message.permission);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? runtime_2.UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message github.actions.results.entities.v1.CacheScope
+ */
+exports.CacheScope = new CacheScope$Type();
+//# sourceMappingURL=cachescope.js.map
+
+/***/ }),
+
 /***/ 4076:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -8416,11 +8507,8 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
     function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
     function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getBackendIdsFromToken = exports.getRuntimeToken = exports.getCacheVersion = exports.isGhes = exports.assertDefined = exports.getGnuTarPathOnWindows = exports.getCacheFileName = exports.getCompressionMethod = exports.unlinkFile = exports.resolvePaths = exports.getArchiveFileSizeInBytes = exports.createTempDirectory = void 0;
+exports.getRuntimeToken = exports.getCacheVersion = exports.isGhes = exports.assertDefined = exports.getGnuTarPathOnWindows = exports.getCacheFileName = exports.getCompressionMethod = exports.unlinkFile = exports.resolvePaths = exports.getArchiveFileSizeInBytes = exports.createTempDirectory = void 0;
 const core = __importStar(__nccwpck_require__(4850));
 const exec = __importStar(__nccwpck_require__(309));
 const glob = __importStar(__nccwpck_require__(9590));
@@ -8430,7 +8518,6 @@ const fs = __importStar(__nccwpck_require__(7147));
 const path = __importStar(__nccwpck_require__(1017));
 const semver = __importStar(__nccwpck_require__(3910));
 const util = __importStar(__nccwpck_require__(3837));
-const jwt_decode_1 = __importDefault(__nccwpck_require__(1300));
 const constants_1 = __nccwpck_require__(4010);
 const versionSalt = '1.0';
 // From https://github.com/actions/toolkit/blob/main/packages/tool-cache/src/tool-cache.ts#L23
@@ -8603,54 +8690,6 @@ function getRuntimeToken() {
     return token;
 }
 exports.getRuntimeToken = getRuntimeToken;
-const InvalidJwtError = new Error('Failed to get backend IDs: The provided JWT token is invalid and/or missing claims');
-// uses the JWT token claims to get the
-// workflow run and workflow job run backend ids
-function getBackendIdsFromToken() {
-    const token = getRuntimeToken();
-    const decoded = (0, jwt_decode_1.default)(token);
-    if (!decoded.scp) {
-        throw InvalidJwtError;
-    }
-    /*
-     * example decoded:
-     * {
-     *   scp: "Actions.ExampleScope Actions.Results:ce7f54c7-61c7-4aae-887f-30da475f5f1a:ca395085-040a-526b-2ce8-bdc85f692774"
-     * }
-     */
-    const scpParts = decoded.scp.split(' ');
-    if (scpParts.length === 0) {
-        throw InvalidJwtError;
-    }
-    /*
-     * example scpParts:
-     * ["Actions.ExampleScope", "Actions.Results:ce7f54c7-61c7-4aae-887f-30da475f5f1a:ca395085-040a-526b-2ce8-bdc85f692774"]
-     */
-    for (const scopes of scpParts) {
-        const scopeParts = scopes.split(':');
-        if ((scopeParts === null || scopeParts === void 0 ? void 0 : scopeParts[0]) !== 'Actions.Results') {
-            // not the Actions.Results scope
-            continue;
-        }
-        /*
-         * example scopeParts:
-         * ["Actions.Results", "ce7f54c7-61c7-4aae-887f-30da475f5f1a", "ca395085-040a-526b-2ce8-bdc85f692774"]
-         */
-        if (scopeParts.length !== 3) {
-            // missing expected number of claims
-            throw InvalidJwtError;
-        }
-        const ids = {
-            workflowRunBackendId: scopeParts[1],
-            workflowJobRunBackendId: scopeParts[2]
-        };
-        core.debug(`Workflow Run Backend ID: ${ids.workflowRunBackendId}`);
-        core.debug(`Workflow Job Run Backend ID: ${ids.workflowJobRunBackendId}`);
-        return ids;
-    }
-    throw InvalidJwtError;
-}
-exports.getBackendIdsFromToken = getBackendIdsFromToken;
 //# sourceMappingURL=cacheUtils.js.map
 
 /***/ }),
@@ -8661,15 +8700,7 @@ exports.getBackendIdsFromToken = getBackendIdsFromToken;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getCacheServiceURL = exports.getCacheServiceVersion = exports.getRuntimeToken = void 0;
-function getRuntimeToken() {
-    const token = process.env['ACTIONS_RUNTIME_TOKEN'];
-    if (!token) {
-        throw new Error('Unable to get the ACTIONS_RUNTIME_TOKEN env variable');
-    }
-    return token;
-}
-exports.getRuntimeToken = getRuntimeToken;
+exports.getCacheServiceURL = exports.getCacheServiceVersion = void 0;
 function getCacheServiceVersion() {
     return process.env['ACTIONS_CACHE_SERVICE_V2'] ? 'v2' : 'v1';
 }
@@ -9285,6 +9316,7 @@ const core_1 = __nccwpck_require__(4850);
 const user_agent_1 = __nccwpck_require__(5736);
 const errors_1 = __nccwpck_require__(6333);
 const config_1 = __nccwpck_require__(6490);
+const cacheUtils_1 = __nccwpck_require__(3310);
 const auth_1 = __nccwpck_require__(7231);
 const http_client_1 = __nccwpck_require__(1283);
 const cache_twirp_1 = __nccwpck_require__(894);
@@ -9300,7 +9332,7 @@ class CacheServiceClient {
         this.maxAttempts = 5;
         this.baseRetryIntervalMilliseconds = 3000;
         this.retryMultiplier = 1.5;
-        const token = (0, config_1.getRuntimeToken)();
+        const token = (0, cacheUtils_1.getRuntimeToken)();
         this.baseUrl = (0, config_1.getCacheServiceURL)();
         if (maxAttempts) {
             this.maxAttempts = maxAttempts;
@@ -57679,16 +57711,6 @@ module.exports = DotObject
 
 /***/ }),
 
-/***/ 1300:
-/***/ ((module) => {
-
-"use strict";
-function e(e){this.message=e}e.prototype=new Error,e.prototype.name="InvalidCharacterError";var r="undefined"!=typeof window&&window.atob&&window.atob.bind(window)||function(r){var t=String(r).replace(/=+$/,"");if(t.length%4==1)throw new e("'atob' failed: The string to be decoded is not correctly encoded.");for(var n,o,a=0,i=0,c="";o=t.charAt(i++);~o&&(n=a%4?64*n+o:o,a++%4)?c+=String.fromCharCode(255&n>>(-2*a&6)):0)o="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".indexOf(o);return c};function t(e){var t=e.replace(/-/g,"+").replace(/_/g,"/");switch(t.length%4){case 0:break;case 2:t+="==";break;case 3:t+="=";break;default:throw"Illegal base64url string!"}try{return function(e){return decodeURIComponent(r(e).replace(/(.)/g,(function(e,r){var t=r.charCodeAt(0).toString(16).toUpperCase();return t.length<2&&(t="0"+t),"%"+t})))}(t)}catch(e){return r(t)}}function n(e){this.message=e}function o(e,r){if("string"!=typeof e)throw new n("Invalid token specified");var o=!0===(r=r||{}).header?0:1;try{return JSON.parse(t(e.split(".")[o]))}catch(e){throw new n("Invalid token specified: "+e.message)}}n.prototype=new Error,n.prototype.name="InvalidTokenError";const a=o;a.default=o,a.InvalidTokenError=n,module.exports=a;
-//# sourceMappingURL=jwt-decode.cjs.js.map
-
-
-/***/ }),
-
 /***/ 2020:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -73498,7 +73520,7 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"name":"@actions/cache","version":"3.3.0","preview":true,"description":"Actions cache lib","keywords":["github","actions","cache"],"homepage":"https://github.com/actions/toolkit/tree/main/packages/cache","license":"MIT","main":"lib/cache.js","types":"lib/cache.d.ts","directories":{"lib":"lib","test":"__tests__"},"files":["lib","!.DS_Store"],"publishConfig":{"access":"public"},"repository":{"type":"git","url":"git+https://github.com/actions/toolkit.git","directory":"packages/cache"},"scripts":{"audit-moderate":"npm install && npm audit --json --audit-level=moderate > audit.json","test":"echo \\"Error: run tests from root\\" && exit 1","tsc":"tsc"},"bugs":{"url":"https://github.com/actions/toolkit/issues"},"dependencies":{"@actions/core":"^1.11.1","@actions/exec":"^1.0.1","@actions/glob":"^0.1.0","@actions/http-client":"^2.1.1","@actions/io":"^1.0.1","@azure/abort-controller":"^1.1.0","@azure/ms-rest-js":"^2.6.0","@azure/storage-blob":"^12.13.0","@protobuf-ts/plugin":"^2.9.4","semver":"^6.3.1","jwt-decode":"^3.1.2","twirp-ts":"^2.5.0"},"devDependencies":{"@types/semver":"^6.0.0","typescript":"^5.2.2"}}');
+module.exports = JSON.parse('{"name":"@actions/cache","version":"3.3.0","preview":true,"description":"Actions cache lib","keywords":["github","actions","cache"],"homepage":"https://github.com/actions/toolkit/tree/main/packages/cache","license":"MIT","main":"lib/cache.js","types":"lib/cache.d.ts","directories":{"lib":"lib","test":"__tests__"},"files":["lib","!.DS_Store"],"publishConfig":{"access":"public"},"repository":{"type":"git","url":"git+https://github.com/actions/toolkit.git","directory":"packages/cache"},"scripts":{"audit-moderate":"npm install && npm audit --json --audit-level=moderate > audit.json","test":"echo \\"Error: run tests from root\\" && exit 1","tsc":"tsc"},"bugs":{"url":"https://github.com/actions/toolkit/issues"},"dependencies":{"@actions/core":"^1.11.1","@actions/exec":"^1.0.1","@actions/glob":"^0.1.0","@actions/http-client":"^2.1.1","@actions/io":"^1.0.1","@azure/abort-controller":"^1.1.0","@azure/ms-rest-js":"^2.6.0","@azure/storage-blob":"^12.13.0","@protobuf-ts/plugin":"^2.9.4","semver":"^6.3.1","twirp-ts":"^2.5.0"},"devDependencies":{"@types/semver":"^6.0.0","typescript":"^5.2.2"}}');
 
 /***/ })
 
