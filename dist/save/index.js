@@ -5895,10 +5895,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.saveCache = exports.restoreCache = exports.isFeatureAvailable = exports.ReserveCacheError = exports.ValidationError = void 0;
 const core = __importStar(__nccwpck_require__(4850));
 const path = __importStar(__nccwpck_require__(1017));
-const config = __importStar(__nccwpck_require__(6490));
 const utils = __importStar(__nccwpck_require__(3310));
 const cacheHttpClient = __importStar(__nccwpck_require__(2370));
 const cacheTwirpClient = __importStar(__nccwpck_require__(5726));
+const config_1 = __nccwpck_require__(6490);
 const tar_1 = __nccwpck_require__(9099);
 const constants_1 = __nccwpck_require__(4010);
 const upload_cache_1 = __nccwpck_require__(302);
@@ -5955,7 +5955,7 @@ exports.isFeatureAvailable = isFeatureAvailable;
 function restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArchive = false) {
     return __awaiter(this, void 0, void 0, function* () {
         checkPaths(paths);
-        const cacheServiceVersion = config.getCacheServiceVersion();
+        const cacheServiceVersion = (0, config_1.getCacheServiceVersion)();
         switch (cacheServiceVersion) {
             case 'v2':
                 return yield restoreCacheV2(paths, primaryKey, restoreKeys, options, enableCrossOsArchive);
@@ -6083,7 +6083,7 @@ function restoreCacheV2(paths, primaryKey, restoreKeys, options, enableCrossOsAr
             archivePath = path.join(yield utils.createTempDirectory(), utils.getCacheFileName(compressionMethod));
             core.debug(`Archive path: ${archivePath}`);
             core.debug(`Starting download of archive to: ${archivePath}`);
-            yield (0, download_cache_1.DownloadCacheFile)(response.signedDownloadUrl, archivePath);
+            yield (0, download_cache_1.downloadCacheFile)(response.signedDownloadUrl, archivePath);
             const archiveFileSize = utils.getArchiveFileSizeInBytes(archivePath);
             core.info(`Cache Size: ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B)`);
             if (core.isDebug()) {
@@ -6121,7 +6121,7 @@ function saveCache(paths, key, options, enableCrossOsArchive = false) {
     return __awaiter(this, void 0, void 0, function* () {
         checkPaths(paths);
         checkKey(key);
-        const cacheServiceVersion = config.getCacheServiceVersion();
+        const cacheServiceVersion = (0, config_1.getCacheServiceVersion)();
         switch (cacheServiceVersion) {
             case 'v2':
                 return yield saveCacheV2(paths, key, options, enableCrossOsArchive);
@@ -6164,7 +6164,7 @@ function saveCacheV1(paths, key, options, enableCrossOsArchive = false) {
             const archiveFileSize = utils.getArchiveFileSizeInBytes(archivePath);
             core.debug(`File Size: ${archiveFileSize}`);
             // For GHES, this check will take place in ReserveCache API with enterprise file size limit
-            if (archiveFileSize > fileSizeLimit && !utils.isGhes()) {
+            if (archiveFileSize > fileSizeLimit && !(0, config_1.isGhes)()) {
                 throw new Error(`Cache size of ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B) is over the 10GB limit, not saving cache.`);
             }
             core.debug('Reserving Cache');
@@ -6240,7 +6240,7 @@ function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
             const archiveFileSize = utils.getArchiveFileSizeInBytes(archivePath);
             core.debug(`File Size: ${archiveFileSize}`);
             // For GHES, this check will take place in ReserveCache API with enterprise file size limit
-            if (archiveFileSize > constants_1.CacheFileSizeLimit && !utils.isGhes()) {
+            if (archiveFileSize > constants_1.CacheFileSizeLimit && !(0, config_1.isGhes)()) {
                 throw new Error(`Cache size of ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B) is over the 10GB limit, not saving cache.`);
             }
             core.debug('Reserving Cache');
@@ -6254,7 +6254,7 @@ function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
                 throw new ReserveCacheError(`Unable to reserve cache with key ${key}, another job may be creating this cache.`);
             }
             core.debug(`Attempting to upload cache located at: ${archivePath}`);
-            yield (0, upload_cache_1.UploadCacheFile)(response.signedUploadUrl, archivePath);
+            yield (0, upload_cache_1.uploadCacheFile)(response.signedUploadUrl, archivePath);
             const finalizeRequest = {
                 key,
                 version,
@@ -8133,10 +8133,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DownloadCacheFile = void 0;
+exports.downloadCacheFile = void 0;
 const core = __importStar(__nccwpck_require__(4850));
 const storage_blob_1 = __nccwpck_require__(3864);
-function DownloadCacheFile(signedUploadURL, archivePath) {
+function downloadCacheFile(signedUploadURL, archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
         const downloadOptions = {
             maxRetryRequests: 5
@@ -8147,7 +8147,7 @@ function DownloadCacheFile(signedUploadURL, archivePath) {
         return blockBlobClient.downloadToFile(archivePath, 0, undefined, downloadOptions);
     });
 }
-exports.DownloadCacheFile = DownloadCacheFile;
+exports.downloadCacheFile = downloadCacheFile;
 //# sourceMappingURL=download-cache.js.map
 
 /***/ }),
@@ -8190,10 +8190,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.UploadCacheFile = void 0;
+exports.uploadCacheFile = void 0;
 const core = __importStar(__nccwpck_require__(4850));
 const storage_blob_1 = __nccwpck_require__(3864);
-function UploadCacheFile(signedUploadURL, archivePath) {
+function uploadCacheFile(signedUploadURL, archivePath) {
     return __awaiter(this, void 0, void 0, function* () {
         // Specify data transfer options
         const uploadOptions = {
@@ -8207,7 +8207,7 @@ function UploadCacheFile(signedUploadURL, archivePath) {
         return blockBlobClient.uploadFile(archivePath, uploadOptions);
     });
 }
-exports.UploadCacheFile = UploadCacheFile;
+exports.uploadCacheFile = uploadCacheFile;
 //# sourceMappingURL=upload-cache.js.map
 
 /***/ }),
@@ -8508,7 +8508,7 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
     function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getRuntimeToken = exports.getCacheVersion = exports.isGhes = exports.assertDefined = exports.getGnuTarPathOnWindows = exports.getCacheFileName = exports.getCompressionMethod = exports.unlinkFile = exports.resolvePaths = exports.getArchiveFileSizeInBytes = exports.createTempDirectory = void 0;
+exports.getRuntimeToken = exports.getCacheVersion = exports.assertDefined = exports.getGnuTarPathOnWindows = exports.getCacheFileName = exports.getCompressionMethod = exports.unlinkFile = exports.resolvePaths = exports.getArchiveFileSizeInBytes = exports.createTempDirectory = void 0;
 const core = __importStar(__nccwpck_require__(4850));
 const exec = __importStar(__nccwpck_require__(309));
 const glob = __importStar(__nccwpck_require__(9590));
@@ -8657,14 +8657,6 @@ function assertDefined(name, value) {
     return value;
 }
 exports.assertDefined = assertDefined;
-function isGhes() {
-    const ghUrl = new URL(process.env['GITHUB_SERVER_URL'] || 'https://github.com');
-    const hostname = ghUrl.hostname.trimEnd().toUpperCase();
-    const isGitHubHost = hostname === 'GITHUB.COM';
-    const isGheHost = hostname.endsWith('.GHE.COM') || hostname.endsWith('.GHE.LOCALHOST');
-    return !isGitHubHost && !isGheHost;
-}
-exports.isGhes = isGhes;
 function getCacheVersion(paths, compressionMethod, enableCrossOsArchive = false) {
     // don't pass changes upstream
     const components = paths.slice();
@@ -8700,13 +8692,28 @@ exports.getRuntimeToken = getRuntimeToken;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getCacheServiceURL = exports.getCacheServiceVersion = void 0;
+exports.getCacheServiceURL = exports.getCacheServiceVersion = exports.isGhes = void 0;
+function isGhes() {
+    const ghUrl = new URL(process.env['GITHUB_SERVER_URL'] || 'https://github.com');
+    const hostname = ghUrl.hostname.trimEnd().toUpperCase();
+    const isGitHubHost = hostname === 'GITHUB.COM';
+    const isGheHost = hostname.endsWith('.GHE.COM');
+    const isLocalHost = hostname.endsWith('.LOCALHOST');
+    return !isGitHubHost && !isGheHost && !isLocalHost;
+}
+exports.isGhes = isGhes;
 function getCacheServiceVersion() {
+    // Cache service v2 is not supported on GHES. We will default to
+    // cache service v1 even if the feature flag was enabled by user.
+    if (isGhes())
+        return 'v1';
     return process.env['ACTIONS_CACHE_SERVICE_V2'] ? 'v2' : 'v1';
 }
 exports.getCacheServiceVersion = getCacheServiceVersion;
 function getCacheServiceURL() {
     const version = getCacheServiceVersion();
+    // Based on the version of the cache service, we will determine which
+    // URL to use.
     switch (version) {
         case 'v1':
             return (process.env['ACTIONS_CACHE_URL'] ||
