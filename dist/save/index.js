@@ -6007,11 +6007,8 @@ function restoreCacheV1(paths, primaryKey, restoreKeys, options, enableCrossOsAr
             }
             archivePath = path.join(yield utils.createTempDirectory(), utils.getCacheFileName(compressionMethod));
             core.debug(`Archive Path: ${archivePath}`);
-            // Download the cache archive from from blob storage
-            yield cacheHttpClient.downloadCache(cacheEntry.archiveLocation, archivePath, options ||
-                {
-                    timeoutInMs: 30000
-                });
+            // Download the cache from the cache entry
+            yield cacheHttpClient.downloadCache(cacheEntry.archiveLocation, archivePath, options);
             if (core.isDebug()) {
                 yield (0, tar_1.listTar)(archivePath, compressionMethod);
             }
@@ -8169,6 +8166,7 @@ const downloadUtils_1 = __nccwpck_require__(318);
 const options_1 = __nccwpck_require__(7190);
 const requestUtils_1 = __nccwpck_require__(7865);
 const config_1 = __nccwpck_require__(6490);
+const user_agent_1 = __nccwpck_require__(5736);
 function getCacheApiUrl(resource) {
     const baseUrl = (0, config_1.getCacheServiceURL)();
     if (!baseUrl) {
@@ -8192,7 +8190,7 @@ function getRequestOptions() {
 function createHttpClient() {
     const token = process.env['ACTIONS_RUNTIME_TOKEN'] || '';
     const bearerCredentialHandler = new auth_1.BearerCredentialHandler(token);
-    return new http_client_1.HttpClient('actions/cache', [bearerCredentialHandler], getRequestOptions());
+    return new http_client_1.HttpClient((0, user_agent_1.getUserAgentString)(), [bearerCredentialHandler], getRequestOptions());
 }
 function getCacheEntry(keys, paths, options) {
     return __awaiter(this, void 0, void 0, function* () {
