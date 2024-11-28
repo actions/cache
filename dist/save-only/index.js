@@ -6050,6 +6050,8 @@ function restoreCacheV1(paths, primaryKey, restoreKeys, options, enableCrossOsAr
  */
 function restoreCacheV2(paths, primaryKey, restoreKeys, options, enableCrossOsArchive = false) {
     return __awaiter(this, void 0, void 0, function* () {
+        // Override UploadOptions to force the use of Azure
+        options = Object.assign(Object.assign({}, options), { useAzureSdk: true });
         restoreKeys = restoreKeys || [];
         const keys = [primaryKey, ...restoreKeys];
         core.debug('Resolved Keys:');
