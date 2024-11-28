@@ -5901,7 +5901,6 @@ const cacheTwirpClient = __importStar(__nccwpck_require__(5726));
 const config_1 = __nccwpck_require__(6490);
 const tar_1 = __nccwpck_require__(9099);
 const constants_1 = __nccwpck_require__(4010);
-const uploadUtils_1 = __nccwpck_require__(1157);
 class ValidationError extends Error {
     constructor(message) {
         super(message);
@@ -6192,7 +6191,7 @@ function saveCacheV1(paths, key, options, enableCrossOsArchive = false) {
                 throw new ReserveCacheError(`Unable to reserve cache with key ${key}, another job may be creating this cache. More details: ${(_e = reserveCacheResponse === null || reserveCacheResponse === void 0 ? void 0 : reserveCacheResponse.error) === null || _e === void 0 ? void 0 : _e.message}`);
             }
             core.debug(`Saving Cache (ID: ${cacheId})`);
-            yield cacheHttpClient.saveCache(cacheId, archivePath, options);
+            yield cacheHttpClient.saveCache(cacheId, archivePath, '', options);
         }
         catch (error) {
             const typedError = error;
@@ -6229,6 +6228,8 @@ function saveCacheV1(paths, key, options, enableCrossOsArchive = false) {
  */
 function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
     return __awaiter(this, void 0, void 0, function* () {
+        // Override UploadOptions to force the use of Azure
+        options = Object.assign(Object.assign({}, options), { useAzureSdk: true });
         const compressionMethod = yield utils.getCompressionMethod();
         const twirpClient = cacheTwirpClient.internalCacheTwirpClient();
         let cacheId = -1;
@@ -6263,8 +6264,7 @@ function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
                 throw new ReserveCacheError(`Unable to reserve cache with key ${key}, another job may be creating this cache.`);
             }
             core.debug(`Attempting to upload cache located at: ${archivePath}`);
-            const uploadResponse = yield (0, uploadUtils_1.uploadCacheArchiveSDK)(response.signedUploadUrl, archivePath);
-            core.debug(`Download response status: ${uploadResponse._response.status}`);
+            yield cacheHttpClient.saveCache(cacheId, archivePath, response.signedUploadUrl, options);
             const finalizeRequest = {
                 key,
                 version,
@@ -8093,6 +8093,7 @@ const auth_1 = __nccwpck_require__(7231);
 const fs = __importStar(__nccwpck_require__(7147));
 const url_1 = __nccwpck_require__(7310);
 const utils = __importStar(__nccwpck_require__(3310));
+const uploadUtils_1 = __nccwpck_require__(1157);
 const downloadUtils_1 = __nccwpck_require__(318);
 const options_1 = __nccwpck_require__(7190);
 const requestUtils_1 = __nccwpck_require__(7865);
@@ -8279,20 +8280,30 @@ function commitCache(httpClient, cacheId, filesize) {
         }));
     });
 }
-function saveCache(cacheId, archivePath, options) {
+function saveCache(cacheId, archivePath, signedUploadURL, options) {
     return __awaiter(this, void 0, void 0, function* () {
-        const httpClient = createHttpClient();
-        core.debug('Upload cache');
-        yield uploadFile(httpClient, cacheId, archivePath, options);
-        // Commit Cache
-        core.debug('Commiting cache');
-        const cacheSize = utils.getArchiveFileSizeInBytes(archivePath);
-        core.info(`Cache Size: ~${Math.round(cacheSize / (1024 * 1024))} MB (${cacheSize} B)`);
-        const commitCacheResponse = yield commitCache(httpClient, cacheId, cacheSize);
-        if (!(0, requestUtils_1.isSuccessStatusCode)(commitCacheResponse.statusCode)) {
-            throw new Error(`Cache service responded with ${commitCacheResponse.statusCode} during commit cache.`);
+        const uploadOptions = (0, options_1.getUploadOptions)(options);
+        if (uploadOptions.useAzureSdk) {
+            // Use Azure storage SDK to upload caches directly to Azure
+            if (!signedUploadURL) {
+                throw new Error('Azure Storage SDK can only be used when a signed URL is provided.');
+            }
+            yield (0, uploadUtils_1.uploadCacheArchiveSDK)(signedUploadURL, archivePath, options);
         }
-        core.info('Cache saved successfully');
+        else {
+            const httpClient = createHttpClient();
+            core.debug('Upload cache');
+            yield uploadFile(httpClient, cacheId, archivePath, options);
+            // Commit Cache
+            core.debug('Commiting cache');
+            const cacheSize = utils.getArchiveFileSizeInBytes(archivePath);
+            core.info(`Cache Size: ~${Math.round(cacheSize / (1024 * 1024))} MB (${cacheSize} B)`);
+            const commitCacheResponse = yield commitCache(httpClient, cacheId, cacheSize);
+            if (!(0, requestUtils_1.isSuccessStatusCode)(commitCacheResponse.statusCode)) {
+                throw new Error(`Cache service responded with ${commitCacheResponse.statusCode} during commit cache.`);
+            }
+            core.info('Cache saved successfully');
+        }
     });
 }
 exports.saveCache = saveCache;
@@ -9725,13 +9736,13 @@ exports.uploadCacheArchiveSDK = void 0;
 const core = __importStar(__nccwpck_require__(4850));
 const storage_blob_1 = __nccwpck_require__(3864);
 const errors_1 = __nccwpck_require__(6333);
-function uploadCacheArchiveSDK(signedUploadURL, archivePath) {
+function uploadCacheArchiveSDK(signedUploadURL, archivePath, options) {
     return __awaiter(this, void 0, void 0, function* () {
         // Specify data transfer options
         const uploadOptions = {
-            blockSize: 4 * 1024 * 1024,
-            concurrency: 4,
-            maxSingleShotSize: 8 * 1024 * 1024 // 8 MiB initial transfer size
+            blockSize: options === null || options === void 0 ? void 0 : options.uploadChunkSize,
+            concurrency: options === null || options === void 0 ? void 0 : options.uploadConcurrency,
+            maxSingleShotSize: 128 * 1024 * 1024 // 128 MiB initial transfer size
         };
         const blobClient = new storage_blob_1.BlobClient(signedUploadURL);
         const blockBlobClient = blobClient.getBlockBlobClient();
@@ -9786,10 +9797,14 @@ const core = __importStar(__nccwpck_require__(4850));
  */
 function getUploadOptions(copy) {
     const result = {
+        useAzureSdk: false,
         uploadConcurrency: 4,
         uploadChunkSize: 32 * 1024 * 1024
     };
     if (copy) {
+        if (typeof copy.useAzureSdk === 'boolean') {
+            result.useAzureSdk = copy.useAzureSdk;
+        }
         if (typeof copy.uploadConcurrency === 'number') {
             result.uploadConcurrency = copy.uploadConcurrency;
         }
@@ -9797,6 +9812,7 @@ function getUploadOptions(copy) {
             result.uploadChunkSize = copy.uploadChunkSize;
         }
     }
+    core.debug(`Use Azure SDK: ${result.useAzureSdk}`);
     core.debug(`Upload concurrency: ${result.uploadConcurrency}`);
     core.debug(`Upload chunk size: ${result.uploadChunkSize}`);
     return result;
