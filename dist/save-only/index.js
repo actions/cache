@@ -5898,11 +5898,10 @@ const path = __importStar(__nccwpck_require__(1017));
 const utils = __importStar(__nccwpck_require__(3310));
 const cacheHttpClient = __importStar(__nccwpck_require__(2370));
 const cacheTwirpClient = __importStar(__nccwpck_require__(5726));
-const downloadUtils_1 = __nccwpck_require__(318);
 const config_1 = __nccwpck_require__(6490);
 const tar_1 = __nccwpck_require__(9099);
 const constants_1 = __nccwpck_require__(4010);
-const upload_cache_1 = __nccwpck_require__(302);
+const uploadUtils_1 = __nccwpck_require__(1157);
 class ValidationError extends Error {
     constructor(message) {
         super(message);
@@ -6084,10 +6083,7 @@ function restoreCacheV2(paths, primaryKey, restoreKeys, options, enableCrossOsAr
             archivePath = path.join(yield utils.createTempDirectory(), utils.getCacheFileName(compressionMethod));
             core.debug(`Archive path: ${archivePath}`);
             core.debug(`Starting download of archive to: ${archivePath}`);
-            yield (0, downloadUtils_1.downloadCacheStorageSDK)(response.signedDownloadUrl, archivePath, options ||
-                {
-                    timeoutInMs: 30000
-                });
+            yield cacheHttpClient.downloadCache(response.signedDownloadUrl, archivePath, options);
             const archiveFileSize = utils.getArchiveFileSizeInBytes(archivePath);
             core.info(`Cache Size: ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B)`);
             if (core.isDebug()) {
@@ -6267,7 +6263,7 @@ function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
                 throw new ReserveCacheError(`Unable to reserve cache with key ${key}, another job may be creating this cache.`);
             }
             core.debug(`Attempting to upload cache located at: ${archivePath}`);
-            const uploadResponse = yield (0, upload_cache_1.uploadCacheFile)(response.signedUploadUrl, archivePath);
+            const uploadResponse = yield (0, uploadUtils_1.uploadCacheArchiveSDK)(response.signedUploadUrl, archivePath);
             core.debug(`Download response status: ${uploadResponse._response.status}`);
             const finalizeRequest = {
                 key,
@@ -8052,71 +8048,6 @@ exports.CacheScope = new CacheScope$Type();
 
 /***/ }),
 
-/***/ 302:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.uploadCacheFile = void 0;
-const core = __importStar(__nccwpck_require__(4850));
-const storage_blob_1 = __nccwpck_require__(3864);
-const errors_1 = __nccwpck_require__(6333);
-function uploadCacheFile(signedUploadURL, archivePath) {
-    return __awaiter(this, void 0, void 0, function* () {
-        // Specify data transfer options
-        const uploadOptions = {
-            blockSize: 4 * 1024 * 1024,
-            concurrency: 4,
-            maxSingleShotSize: 8 * 1024 * 1024 // 8 MiB initial transfer size
-        };
-        const blobClient = new storage_blob_1.BlobClient(signedUploadURL);
-        const blockBlobClient = blobClient.getBlockBlobClient();
-        core.debug(`BlobClient: ${blobClient.name}:${blobClient.accountName}:${blobClient.containerName}`);
-        const resp = yield blockBlobClient.uploadFile(archivePath, uploadOptions);
-        if (resp._response.status >= 400) {
-            throw new errors_1.InvalidResponseError(`Upload failed with status code ${resp._response.status}`);
-        }
-        return resp;
-    });
-}
-exports.uploadCacheFile = uploadCacheFile;
-//# sourceMappingURL=upload-cache.js.map
-
-/***/ }),
-
 /***/ 2370:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -9749,6 +9680,71 @@ function createTar(archiveFolder, sourceDirectories, compressionMethod) {
 }
 exports.createTar = createTar;
 //# sourceMappingURL=tar.js.map
+
+/***/ }),
+
+/***/ 1157:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.uploadCacheArchiveSDK = void 0;
+const core = __importStar(__nccwpck_require__(4850));
+const storage_blob_1 = __nccwpck_require__(3864);
+const errors_1 = __nccwpck_require__(6333);
+function uploadCacheArchiveSDK(signedUploadURL, archivePath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // Specify data transfer options
+        const uploadOptions = {
+            blockSize: 4 * 1024 * 1024,
+            concurrency: 4,
+            maxSingleShotSize: 8 * 1024 * 1024 // 8 MiB initial transfer size
+        };
+        const blobClient = new storage_blob_1.BlobClient(signedUploadURL);
+        const blockBlobClient = blobClient.getBlockBlobClient();
+        core.debug(`BlobClient: ${blobClient.name}:${blobClient.accountName}:${blobClient.containerName}`);
+        const resp = yield blockBlobClient.uploadFile(archivePath, uploadOptions);
+        if (resp._response.status >= 400) {
+            throw new errors_1.InvalidResponseError(`Upload failed with status code ${resp._response.status}`);
+        }
+        return resp;
+    });
+}
+exports.uploadCacheArchiveSDK = uploadCacheArchiveSDK;
+//# sourceMappingURL=uploadUtils.js.map
 
 /***/ }),
 
