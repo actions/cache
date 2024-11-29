@@ -6231,7 +6231,7 @@ function saveCacheV1(paths, key, options, enableCrossOsArchive = false) {
 function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
     return __awaiter(this, void 0, void 0, function* () {
         // Override UploadOptions to force the use of Azure
-        options = Object.assign(Object.assign({}, options), { useAzureSdk: true });
+        options = Object.assign(Object.assign({}, options), { uploadChunkSize: 64 * 1024 * 1024, uploadConcurrency: 8, useAzureSdk: true });
         const compressionMethod = yield utils.getCompressionMethod();
         const twirpClient = cacheTwirpClient.internalCacheTwirpClient();
         let cacheId = -1;
