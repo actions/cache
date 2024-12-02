@@ -6288,9 +6288,9 @@ function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
                 core.info(`Failed to save: ${typedError.message}`);
             }
             else {
+                core.warning(`Failed to save: ${typedError.stack}`);
                 core.warning(`Failed to save: ${typedError.message}`);
             }
-            throw error;
         }
         finally {
             // Try to delete the archive to save space
