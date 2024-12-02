@@ -6231,7 +6231,7 @@ function saveCacheV1(paths, key, options, enableCrossOsArchive = false) {
 function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
     return __awaiter(this, void 0, void 0, function* () {
         // Override UploadOptions to force the use of Azure
-        options = Object.assign(Object.assign({}, options), { uploadChunkSize: 64 * 1024 * 1024, uploadConcurrency: 8, useAzureSdk: true });
+        options = Object.assign(Object.assign({}, options), { useAzureSdk: true });
         const compressionMethod = yield utils.getCompressionMethod();
         const twirpClient = cacheTwirpClient.internalCacheTwirpClient();
         let cacheId = -1;
@@ -9909,10 +9909,11 @@ const core = __importStar(__nccwpck_require__(4850));
  * @param copy the original upload options
  */
 function getUploadOptions(copy) {
+    // Defaults if not overriden
     const result = {
         useAzureSdk: false,
         uploadConcurrency: 4,
-        uploadChunkSize: 32 * 1024 * 1024
+        uploadChunkSize: 64 * 1024 * 1024
     };
     if (copy) {
         if (typeof copy.useAzureSdk === 'boolean') {
@@ -9925,6 +9926,17 @@ function getUploadOptions(copy) {
             result.uploadChunkSize = copy.uploadChunkSize;
         }
     }
+    /**
+     * Add env var overrides
+     */
+    // Cap the uploadConcurrency at 32
+    result.uploadConcurrency = !isNaN(Number(process.env['CACHE_UPLOAD_CONCURRENCY']))
+        ? Math.min(32, Number(process.env['CACHE_UPLOAD_CONCURRENCY']))
+        : result.uploadConcurrency;
+    // Cap the uploadChunkSize at 128MiB
+    result.uploadChunkSize = !isNaN(Number(process.env['CACHE_UPLOAD_CHUNK_SIZE']))
+        ? Math.min(128 * 1024 * 1024, Number(process.env['CACHE_UPLOAD_CHUNK_SIZE']) * 1024 * 1024)
+        : result.uploadChunkSize;
     core.debug(`Use Azure SDK: ${result.useAzureSdk}`);
     core.debug(`Upload concurrency: ${result.uploadConcurrency}`);
     core.debug(`Upload chunk size: ${result.uploadChunkSize}`);
