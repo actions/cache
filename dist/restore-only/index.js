@@ -9825,19 +9825,18 @@ class UploadProgress {
 }
 exports.UploadProgress = UploadProgress;
 function uploadCacheArchiveSDK(signedUploadURL, archivePath, options) {
-    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         const blobClient = new storage_blob_1.BlobClient(signedUploadURL);
         const blockBlobClient = blobClient.getBlockBlobClient();
-        const properties = yield blobClient.getProperties();
-        const contentLength = (_a = properties.contentLength) !== null && _a !== void 0 ? _a : -1;
-        const uploadProgress = new UploadProgress(contentLength);
+        // const properties = await blobClient.getProperties()
+        // const contentLength = properties.contentLength ?? -1
+        const uploadProgress = new UploadProgress(100 * 1024 * 1024);
         // Specify data transfer options
         const uploadOptions = {
             blockSize: options === null || options === void 0 ? void 0 : options.uploadChunkSize,
             concurrency: options === null || options === void 0 ? void 0 : options.uploadConcurrency,
-            maxSingleShotSize: 128 * 1024 * 1024 // 128 MiB initial transfer size
-            // onProgress: uploadProgress.onProgress()
+            maxSingleShotSize: 128 * 1024 * 1024,
+            onProgress: uploadProgress.onProgress()
         };
         try {
             uploadProgress.startDisplayTimer();
