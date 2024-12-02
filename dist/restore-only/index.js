@@ -9836,8 +9836,8 @@ function uploadCacheArchiveSDK(signedUploadURL, archivePath, options) {
         const uploadOptions = {
             blockSize: options === null || options === void 0 ? void 0 : options.uploadChunkSize,
             concurrency: options === null || options === void 0 ? void 0 : options.uploadConcurrency,
-            maxSingleShotSize: 128 * 1024 * 1024,
-            onProgress: uploadProgress.onProgress()
+            maxSingleShotSize: 128 * 1024 * 1024 // 128 MiB initial transfer size
+            // onProgress: uploadProgress.onProgress()
         };
         try {
             uploadProgress.startDisplayTimer();
