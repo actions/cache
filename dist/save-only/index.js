@@ -5944,8 +5944,8 @@ exports.isFeatureAvailable = isFeatureAvailable;
  * Restores cache from keys
  *
  * @param paths a list of file paths to restore from the cache
- * @param primaryKey an explicit key for restoring the cache
- * @param restoreKeys an optional ordered list of keys to use for restoring the cache if no cache hit occurred for key
+ * @param primaryKey an explicit key for restoring the cache. Lookup is done with prefix matching.
+ * @param restoreKeys an optional ordered list of keys to use for restoring the cache if no cache hit occurred for primaryKey
  * @param downloadOptions cache download options
  * @param enableCrossOsArchive an optional boolean enabled to restore on windows any cache created on any platform
  * @returns string returns the key for the cache hit, otherwise returns undefined
@@ -5969,10 +5969,10 @@ exports.restoreCache = restoreCache;
  * Restores cache using the legacy Cache Service
  *
  * @param paths a list of file paths to restore from the cache
- * @param primaryKey an explicit key for restoring the cache
- * @param restoreKeys an optional ordered list of keys to use for restoring the cache if no cache hit occurred for key
+ * @param primaryKey an explicit key for restoring the cache. Lookup is done with prefix matching.
+ * @param restoreKeys an optional ordered list of keys to use for restoring the cache if no cache hit occurred for primaryKey
  * @param options cache download options
- * @param enableCrossOsArchive an optional boolean enabled to restore on windows any cache created on any platform
+ * @param enableCrossOsArchive an optional boolean enabled to restore on Windows any cache created on any platform
  * @returns string returns the key for the cache hit, otherwise returns undefined
  */
 function restoreCacheV1(paths, primaryKey, restoreKeys, options, enableCrossOsArchive = false) {
@@ -6042,8 +6042,8 @@ function restoreCacheV1(paths, primaryKey, restoreKeys, options, enableCrossOsAr
  * Restores cache using Cache Service v2
  *
  * @param paths a list of file paths to restore from the cache
- * @param primaryKey an explicit key for restoring the cache
- * @param restoreKeys an optional ordered list of keys to use for restoring the cache if no cache hit occurred for key
+ * @param primaryKey an explicit key for restoring the cache. Lookup is done with prefix matching
+ * @param restoreKeys an optional ordered list of keys to use for restoring the cache if no cache hit occurred for primaryKey
  * @param downloadOptions cache download options
  * @param enableCrossOsArchive an optional boolean enabled to restore on windows any cache created on any platform
  * @returns string returns the key for the cache hit, otherwise returns undefined
@@ -6231,6 +6231,8 @@ function saveCacheV1(paths, key, options, enableCrossOsArchive = false) {
 function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
     return __awaiter(this, void 0, void 0, function* () {
         // Override UploadOptions to force the use of Azure
+        // ...options goes first because we want to override the default values
+        // set in UploadOptions with these specific figures
         options = Object.assign(Object.assign({}, options), { uploadChunkSize: 64 * 1024 * 1024, uploadConcurrency: 8, useAzureSdk: true });
         const compressionMethod = yield utils.getCompressionMethod();
         const twirpClient = cacheTwirpClient.internalCacheTwirpClient();
