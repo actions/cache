@@ -9848,6 +9848,10 @@ function uploadCacheArchiveSDK(signedUploadURL, archivePath, options) {
             }
             return response;
         }
+        catch (error) {
+            core.debug(`Error uploading cache archive: ${error}`);
+            throw error;
+        }
         finally {
             uploadProgress.stopDisplayTimer();
         }
