@@ -6255,6 +6255,9 @@ function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
             if (archiveFileSize > constants_1.CacheFileSizeLimit && !(0, config_1.isGhes)()) {
                 throw new Error(`Cache size of ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B) is over the 10GB limit, not saving cache.`);
             }
+            // Set the archive size in the options, will be used to display the upload
+            // progress
+            options.archiveSizeBytes = archiveFileSize;
             core.debug('Reserving Cache');
             const version = utils.getCacheVersion(paths, compressionMethod, enableCrossOsArchive);
             const request = {
@@ -6288,7 +6291,6 @@ function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
                 core.info(`Failed to save: ${typedError.message}`);
             }
             else {
-                core.warning(`Failed to save: ${typedError.stack}`);
                 core.warning(`Failed to save: ${typedError.message}`);
             }
         }
@@ -9825,12 +9827,11 @@ class UploadProgress {
 }
 exports.UploadProgress = UploadProgress;
 function uploadCacheArchiveSDK(signedUploadURL, archivePath, options) {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         const blobClient = new storage_blob_1.BlobClient(signedUploadURL);
         const blockBlobClient = blobClient.getBlockBlobClient();
-        // const properties = await blobClient.getProperties()
-        // const contentLength = properties.contentLength ?? -1
-        const uploadProgress = new UploadProgress(100 * 1024 * 1024);
+        const uploadProgress = new UploadProgress((_a = options === null || options === void 0 ? void 0 : options.archiveSizeBytes) !== null && _a !== void 0 ? _a : 0);
         // Specify data transfer options
         const uploadOptions = {
             blockSize: options === null || options === void 0 ? void 0 : options.uploadChunkSize,
@@ -9849,7 +9850,7 @@ function uploadCacheArchiveSDK(signedUploadURL, archivePath, options) {
             return response;
         }
         catch (error) {
-            core.debug(`Error uploading cache archive: ${error}`);
+            core.warning(`uploadCacheArchiveSDK: internal error uploading cache archive: ${error.message}`);
             throw error;
         }
         finally {
