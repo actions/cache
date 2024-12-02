@@ -5968,12 +5968,12 @@ exports.restoreCache = restoreCache;
 /**
  * Restores cache using the legacy Cache Service
  *
- * @param paths
- * @param primaryKey
- * @param restoreKeys
- * @param options
- * @param enableCrossOsArchive
- * @returns
+ * @param paths a list of file paths to restore from the cache
+ * @param primaryKey an explicit key for restoring the cache
+ * @param restoreKeys an optional ordered list of keys to use for restoring the cache if no cache hit occurred for key
+ * @param options cache download options
+ * @param enableCrossOsArchive an optional boolean enabled to restore on windows any cache created on any platform
+ * @returns string returns the key for the cache hit, otherwise returns undefined
  */
 function restoreCacheV1(paths, primaryKey, restoreKeys, options, enableCrossOsArchive = false) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -6039,7 +6039,7 @@ function restoreCacheV1(paths, primaryKey, restoreKeys, options, enableCrossOsAr
     });
 }
 /**
- * Restores cache using the new Cache Service
+ * Restores cache using Cache Service v2
  *
  * @param paths a list of file paths to restore from the cache
  * @param primaryKey an explicit key for restoring the cache
@@ -6220,12 +6220,12 @@ function saveCacheV1(paths, key, options, enableCrossOsArchive = false) {
     });
 }
 /**
- * Save cache using the new Cache Service
+ * Save cache using Cache Service v2
  *
- * @param paths
- * @param key
- * @param options
- * @param enableCrossOsArchive
+ * @param paths a list of file paths to restore from the cache
+ * @param key an explicit key for restoring the cache
+ * @param options cache upload options
+ * @param enableCrossOsArchive an optional boolean enabled to save cache on windows which could be restored on any platform
  * @returns
  */
 function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
@@ -6255,8 +6255,7 @@ function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
             if (archiveFileSize > constants_1.CacheFileSizeLimit && !(0, config_1.isGhes)()) {
                 throw new Error(`Cache size of ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B) is over the 10GB limit, not saving cache.`);
             }
-            // Set the archive size in the options, will be used to display the upload
-            // progress
+            // Set the archive size in the options, will be used to display the upload progress
             options.archiveSizeBytes = archiveFileSize;
             core.debug('Reserving Cache');
             const version = utils.getCacheVersion(paths, compressionMethod, enableCrossOsArchive);
@@ -9826,6 +9825,16 @@ class UploadProgress {
     }
 }
 exports.UploadProgress = UploadProgress;
+/**
+ * Uploads a cache archive directly to Azure Blob Storage using the Azure SDK.
+ * This function will display progress information to the console. Concurrency of the
+ * upload is determined by the calling functions.
+ *
+ * @param signedUploadURL
+ * @param archivePath
+ * @param options
+ * @returns
+ */
 function uploadCacheArchiveSDK(signedUploadURL, archivePath, options) {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
@@ -9845,7 +9854,7 @@ function uploadCacheArchiveSDK(signedUploadURL, archivePath, options) {
             const response = yield blockBlobClient.uploadFile(archivePath, uploadOptions);
             // TODO: better management of non-retryable errors
             if (response._response.status >= 400) {
-                throw new errors_1.InvalidResponseError(`Upload failed with status code ${response._response.status}`);
+                throw new errors_1.InvalidResponseError(`uploadCacheArchiveSDK: upload failed with status code ${response._response.status}`);
             }
             return response;
         }
