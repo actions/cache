@@ -9838,23 +9838,15 @@ function uploadCacheArchiveSDK(signedUploadURL, archivePath, options) {
             maxSingleShotSize: 128 * 1024 * 1024,
             onProgress: uploadProgress.onProgress()
         };
-        try {
-            uploadProgress.startDisplayTimer();
-            core.debug(`BlobClient: ${blobClient.name}:${blobClient.accountName}:${blobClient.containerName}`);
-            const response = yield blockBlobClient.uploadFile(archivePath, uploadOptions);
-            // TODO: better management of non-retryable errors
-            if (response._response.status >= 400) {
-                throw new errors_1.InvalidResponseError(`Upload failed with status code ${response._response.status}`);
-            }
-            return response;
+        // try {
+        uploadProgress.startDisplayTimer();
+        core.debug(`BlobClient: ${blobClient.name}:${blobClient.accountName}:${blobClient.containerName}`);
+        const response = yield blockBlobClient.uploadFile(archivePath, uploadOptions);
+        // TODO: better management of non-retryable errors
+        if (response._response.status >= 400) {
+            throw new errors_1.InvalidResponseError(`Upload failed with status code ${response._response.status}`);
         }
-        catch (error) {
-            core.debug(`Error uploading cache archive: ${error}`);
-            throw error;
-        }
-        finally {
-            uploadProgress.stopDisplayTimer();
-        }
+        return response;
     });
 }
 exports.uploadCacheArchiveSDK = uploadCacheArchiveSDK;
