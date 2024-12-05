@@ -40,6 +40,10 @@ Upgrading to the recommended versions will not break your workflows.
 
 - Updated minimum runner version support from node 12 -> node 20
 
+### 3.4.0
+
+- Integrated with the new cache service (v2) APIs
+
 ### 3.3.3
 
 - Updates @actions/cache to v3.2.3 to fix accidental mutated path arguments to `getCacheVersion` [actions/toolkit#1378](https://github.com/actions/toolkit/pull/1378)

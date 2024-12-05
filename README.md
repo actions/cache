@@ -33,10 +33,12 @@ Read more about the change & access the migration guide: [reference to the annou
 
 ### v4
 
+* Integrated with the new cache service (v2) APIs.
 * Updated to node 20
 
 ### v3
 
+* Integrated with the new cache service (v2) APIs.
 * Added support for caching in GHES 3.5+.
 * Fixed download issue for files > 2GB during restore.
 * Updated the minimum runner version support from node 12 -> node 16.
