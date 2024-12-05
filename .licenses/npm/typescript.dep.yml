@@ -1,0 +1,239 @@
+---
+name: typescript
+version: 3.9.10
+type: npm
+summary: TypeScript is a language for application scale JavaScript development
+homepage: https://www.typescriptlang.org/
+license: apache-2.0
+licenses:
+- sources: LICENSE.txt
+  text: "Apache License\n\nVersion 2.0, January 2004\n\nhttp://www.apache.org/licenses/
+    \n\nTERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n1. Definitions.\n\n\"License\"
+    shall mean the terms and conditions for use, reproduction, and distribution as
+    defined by Sections 1 through 9 of this document.\n\n\"Licensor\" shall mean the
+    copyright owner or entity authorized by the copyright owner that is granting the
+    License.\n\n\"Legal Entity\" shall mean the union of the acting entity and all
+    other entities that control, are controlled by, or are under common control with
+    that entity. For the purposes of this definition, \"control\" means (i) the power,
+    direct or indirect, to cause the direction or management of such entity, whether
+    by contract or otherwise, or (ii) ownership of fifty percent (50%) or more of
+    the outstanding shares, or (iii) beneficial ownership of such entity.\n\n\"You\"
+    (or \"Your\") shall mean an individual or Legal Entity exercising permissions
+    granted by this License.\n\n\"Source\" form shall mean the preferred form for
+    making modifications, including but not limited to software source code, documentation
+    source, and configuration files.\n\n\"Object\" form shall mean any form resulting
+    from mechanical transformation or translation of a Source form, including but
+    not limited to compiled object code, generated documentation, and conversions
+    to other media types.\n\n\"Work\" shall mean the work of authorship, whether in
+    Source or Object form, made available under the License, as indicated by a copyright
+    notice that is included in or attached to the work (an example is provided in
+    the Appendix below).\n\n\"Derivative Works\" shall mean any work, whether in Source
+    or Object form, that is based on (or derived from) the Work and for which the
+    editorial revisions, annotations, elaborations, or other modifications represent,
+    as a whole, an original work of authorship. For the purposes of this License,
+    Derivative Works shall not include works that remain separable from, or merely
+    link (or bind by name) to the interfaces of, the Work and Derivative Works thereof.\n\n\"Contribution\"
+    shall mean any work of authorship, including the original version of the Work
+    and any modifications or additions to that Work or Derivative Works thereof, that
+    is intentionally submitted to Licensor for inclusion in the Work by the copyright
+    owner or by an individual or Legal Entity authorized to submit on behalf of the
+    copyright owner. For the purposes of this definition, \"submitted\" means any
+    form of electronic, verbal, or written communication sent to the Licensor or its
+    representatives, including but not limited to communication on electronic mailing
+    lists, source code control systems, and issue tracking systems that are managed
+    by, or on behalf of, the Licensor for the purpose of discussing and improving
+    the Work, but excluding communication that is conspicuously marked or otherwise
+    designated in writing by the copyright owner as \"Not a Contribution.\"\n\n\"Contributor\"
+    shall mean Licensor and any individual or Legal Entity on behalf of whom a Contribution
+    has been received by Licensor and subsequently incorporated within the Work.\n\n2.
+    Grant of Copyright License. Subject to the terms and conditions of this License,
+    each Contributor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge,
+    royalty-free, irrevocable copyright license to reproduce, prepare Derivative Works
+    of, publicly display, publicly perform, sublicense, and distribute the Work and
+    such Derivative Works in Source or Object form.\n\n3. Grant of Patent License.
+    Subject to the terms and conditions of this License, each Contributor hereby grants
+    to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+    (except as stated in this section) patent license to make, have made, use, offer
+    to sell, sell, import, and otherwise transfer the Work, where such license applies
+    only to those patent claims licensable by such Contributor that are necessarily
+    infringed by their Contribution(s) alone or by combination of their Contribution(s)
+    with the Work to which such Contribution(s) was submitted. If You institute patent
+    litigation against any entity (including a cross-claim or counterclaim in a lawsuit)
+    alleging that the Work or a Contribution incorporated within the Work constitutes
+    direct or contributory patent infringement, then any patent licenses granted to
+    You under this License for that Work shall terminate as of the date such litigation
+    is filed.\n\n4. Redistribution. You may reproduce and distribute copies of the
+    Work or Derivative Works thereof in any medium, with or without modifications,
+    and in Source or Object form, provided that You meet the following conditions:\n\nYou
+    must give any other recipients of the Work or Derivative Works a copy of this
+    License; and\n\nYou must cause any modified files to carry prominent notices stating
+    that You changed the files; and\n\nYou must retain, in the Source form of any
+    Derivative Works that You distribute, all copyright, patent, trademark, and attribution
+    notices from the Source form of the Work, excluding those notices that do not
+    pertain to any part of the Derivative Works; and\n\nIf the Work includes a \"NOTICE\"
+    text file as part of its distribution, then any Derivative Works that You distribute
+    must include a readable copy of the attribution notices contained within such
+    NOTICE file, excluding those notices that do not pertain to any part of the Derivative
+    Works, in at least one of the following places: within a NOTICE text file distributed
+    as part of the Derivative Works; within the Source form or documentation, if provided
+    along with the Derivative Works; or, within a display generated by the Derivative
+    Works, if and wherever such third-party notices normally appear. The contents
+    of the NOTICE file are for informational purposes only and do not modify the License.
+    You may add Your own attribution notices within Derivative Works that You distribute,
+    alongside or as an addendum to the NOTICE text from the Work, provided that such
+    additional attribution notices cannot be construed as modifying the License. You
+    may add Your own copyright statement to Your modifications and may provide additional
+    or different license terms and conditions for use, reproduction, or distribution
+    of Your modifications, or for any such Derivative Works as a whole, provided Your
+    use, reproduction, and distribution of the Work otherwise complies with the conditions
+    stated in this License.\n\n5. Submission of Contributions. Unless You explicitly
+    state otherwise, any Contribution intentionally submitted for inclusion in the
+    Work by You to the Licensor shall be under the terms and conditions of this License,
+    without any additional terms or conditions. Notwithstanding the above, nothing
+    herein shall supersede or modify the terms of any separate license agreement you
+    may have executed with Licensor regarding such Contributions.\n\n6. Trademarks.
+    This License does not grant permission to use the trade names, trademarks, service
+    marks, or product names of the Licensor, except as required for reasonable and
+    customary use in describing the origin of the Work and reproducing the content
+    of the NOTICE file.\n\n7. Disclaimer of Warranty. Unless required by applicable
+    law or agreed to in writing, Licensor provides the Work (and each Contributor
+    provides its Contributions) on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+    OF ANY KIND, either express or implied, including, without limitation, any warranties
+    or conditions of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A PARTICULAR
+    PURPOSE. You are solely responsible for determining the appropriateness of using
+    or redistributing the Work and assume any risks associated with Your exercise
+    of permissions under this License.\n\n8. Limitation of Liability. In no event
+    and under no legal theory, whether in tort (including negligence), contract, or
+    otherwise, unless required by applicable law (such as deliberate and grossly negligent
+    acts) or agreed to in writing, shall any Contributor be liable to You for damages,
+    including any direct, indirect, special, incidental, or consequential damages
+    of any character arising as a result of this License or out of the use or inability
+    to use the Work (including but not limited to damages for loss of goodwill, work
+    stoppage, computer failure or malfunction, or any and all other commercial damages
+    or losses), even if such Contributor has been advised of the possibility of such
+    damages.\n\n9. Accepting Warranty or Additional Liability. While redistributing
+    the Work or Derivative Works thereof, You may choose to offer, and charge a fee
+    for, acceptance of support, warranty, indemnity, or other liability obligations
+    and/or rights consistent with this License. However, in accepting such obligations,
+    You may act only on Your own behalf and on Your sole responsibility, not on behalf
+    of any other Contributor, and only if You agree to indemnify, defend, and hold
+    each Contributor harmless for any liability incurred by, or claims asserted against,
+    such Contributor by reason of your accepting any such warranty or additional liability.\n\nEND
+    OF TERMS AND CONDITIONS\n"
+notices:
+- sources: AUTHORS.md
+  text: "TypeScript is authored by:\r\n\r\n - 0verk1ll\r\n - Abubaker Bashir\r\n -
+    Adam Freidin\r\n - Adam Postma\r\n - Adi Dahiya\r\n - Aditya Daflapurkar\r\n -
+    Adnan Chowdhury\r\n - Adrian Leonhard\r\n - Adrien Gibrat\r\n - Ahmad Farid\r\n
+    - Ajay Poshak\r\n - Alan Agius\r\n - Alan Pierce\r\n - Alessandro Vergani\r\n
+    - Alex Chugaev\r\n - Alex Eagle\r\n - Alex Khomchenko\r\n - Alex Ryan\r\n - Alexander\r\n
+    - Alexander Kuvaev\r\n - Alexander Rusakov\r\n - Alexander Tarasyuk\r\n - Ali
+    Sabzevari\r\n - Aluan Haddad\r\n - amaksimovich2\r\n - Anatoly Ressin\r\n - Anders
+    Hejlsberg\r\n - Anders Kaseorg\r\n - Andre Sutherland\r\n - Andreas Martin\r\n
+    - Andrej Baran\r\n - Andrew\r\n - Andrew Branch\r\n - Andrew Casey\r\n - Andrew
+    Faulkner\r\n - Andrew Ochsner\r\n - Andrew Stegmaier\r\n - Andrew Z Allen\r\n
+    - Andrey Roenko\r\n - Andrii Dieiev\r\n - András Parditka\r\n - Andy Hanson\r\n
+    - Anil Anar\r\n - Anix\r\n - Anton Khlynovskiy\r\n - Anton Tolmachev\r\n - Anubha
+    Mathur\r\n - AnyhowStep\r\n - Armando Aguirre\r\n - Arnaud Tournier\r\n - Arnav
+    Singh\r\n - Arpad Borsos\r\n - Artem Tyurin\r\n - Arthur Ozga\r\n - Asad Saeeduddin\r\n
+    - Austin Cummings\r\n - Avery Morin\r\n - Aziz Khambati\r\n - Basarat Ali Syed\r\n
+    - @begincalendar\r\n - Ben Duffield\r\n - Ben Lichtman\r\n - Ben Mosher\r\n -
+    Benedikt Meurer\r\n - Benjamin Bock\r\n - Benjamin Lichtman\r\n - Benny Neugebauer\r\n
+    - BigAru\r\n - Bill Ticehurst\r\n - Blaine Bublitz\r\n - Blake Embrey\r\n - @bluelovers\r\n
+    - @bootstraponline\r\n - Bowden Kelly\r\n - Bowden Kenny\r\n - Brad Zacher\r\n
+    - Brandon Banks\r\n - Brandon Bloom\r\n - Brandon Slade\r\n - Brendan Kenny\r\n
+    - Brett Mayen\r\n - Brian Terlson\r\n - Bryan Forbes\r\n - Caitlin Potter\r\n
+    - Caleb Sander\r\n - Cameron Taggart\r\n - @cedvdb\r\n - Charles\r\n - Charles
+    Pierce\r\n - Charly POLY\r\n - Chris Bubernak\r\n - Chris Patterson\r\n - christian\r\n
+    - Christophe Vidal\r\n - Chuck Jazdzewski\r\n - Clay Miller\r\n - Colby Russell\r\n
+    - Colin Snover\r\n - Collins Abitekaniza\r\n - Connor Clark\r\n - Cotton Hou\r\n
+    - csigs\r\n - Cyrus Najmabadi\r\n - Dafrok Zhang\r\n - Dahan Gong\r\n - Daiki
+    Nishikawa\r\n - Dan Corder\r\n - Dan Freeman\r\n - Dan Quirk\r\n - Dan Rollo\r\n
+    - Daniel Gooss\r\n - Daniel Imms\r\n - Daniel Krom\r\n - Daniel Król\r\n - Daniel
+    Lehenbauer\r\n - Daniel Rosenwasser\r\n - David Li\r\n - David Sheldrick\r\n -
+    David Sherret\r\n - David Souther\r\n - David Staheli\r\n - Denis Nedelyaev\r\n
+    - Derek P Sifford\r\n - Dhruv Rajvanshi\r\n - Dick van den Brink\r\n - Diogo Franco
+    (Kovensky)\r\n - Dirk Bäumer\r\n - Dirk Holtwick\r\n - Dmitrijs Minajevs\r\n -
+    Dom Chen\r\n - Donald Pipowitch\r\n - Doug Ilijev\r\n - dreamran43@gmail.com\r\n
+    - @e-cloud\r\n - Ecole Keine\r\n - Eddie Jaoude\r\n - Edward Thomson\r\n - EECOLOR\r\n
+    - Eli Barzilay\r\n - Elizabeth Dinella\r\n - Ely Alamillo\r\n - Eric Grube\r\n
+    - Eric Tsang\r\n - Erik Edrosa\r\n - Erik McClenney\r\n - Esakki Raj\r\n - Ethan
+    Resnick\r\n - Ethan Rubio\r\n - Eugene Timokhov\r\n - Evan Cahill\r\n - Evan Martin\r\n
+    - Evan Sebastian\r\n - ExE Boss\r\n - Eyas Sharaiha\r\n - Fabian Cook\r\n - @falsandtru\r\n
+    - Filipe Silva\r\n - @flowmemo\r\n - Forbes Lindesay\r\n - Francois Hendriks\r\n
+    - Francois Wouts\r\n - Frank Wallis\r\n - František Žiacik\r\n - Frederico Bittencourt\r\n
+    - fullheightcoding\r\n - Gabe Moothart\r\n - Gabriel Isenberg\r\n - Gabriela Araujo
+    Britto\r\n - Gabriela Britto\r\n - gb714us\r\n - Gilad Peleg\r\n - Godfrey Chan\r\n
+    - Gorka Hernández Estomba\r\n - Graeme Wicksted\r\n - Guillaume Salles\r\n - Guy
+    Bedford\r\n - hafiz\r\n - Halasi Tamás\r\n - Hendrik Liebau\r\n - Henry Mercer\r\n
+    - Herrington Darkholme\r\n - Hoang Pham\r\n - Holger Jeromin\r\n - Homa Wong\r\n
+    - Hye Sung Jung\r\n - Iain Monro\r\n - @IdeaHunter\r\n - Igor Novozhilov\r\n -
+    Igor Oleinikov\r\n - Ika\r\n - iliashkolyar\r\n - IllusionMH\r\n - Ingvar Stepanyan\r\n
+    - Ingvar Stepanyan\r\n - Isiah Meadows\r\n - ispedals\r\n - Ivan Enderlin\r\n
+    - Ivo Gabe de Wolff\r\n - Iwata Hidetaka\r\n - Jack Bates\r\n - Jack Williams\r\n
+    - Jake Boone\r\n - Jakub Korzeniowski\r\n - Jakub Młokosiewicz\r\n - James Henry\r\n
+    - James Keane\r\n - James Whitney\r\n - Jan Melcher\r\n - Jason Freeman\r\n -
+    Jason Jarrett\r\n - Jason Killian\r\n - Jason Ramsay\r\n - JBerger\r\n - Jean
+    Pierre\r\n - Jed Mao\r\n - Jeff Wilcox\r\n - Jeffrey Morlan\r\n - Jesse Schalken\r\n
+    - Jesse Trinity\r\n - Jing Ma\r\n - Jiri Tobisek\r\n - Joe Calzaretta\r\n - Joe
+    Chung\r\n - Joel Day\r\n - Joey Watts\r\n - Johannes Rieken\r\n - John Doe\r\n
+    - John Vilk\r\n - Jonathan Bond-Caron\r\n - Jonathan Park\r\n - Jonathan Toland\r\n
+    - Jordan Harband\r\n - Jordi Oliveras Rovira\r\n - Joscha Feth\r\n - Joseph Wunderlich\r\n
+    - Josh Abernathy\r\n - Josh Goldberg\r\n - Josh Kalderimis\r\n - Josh Soref\r\n
+    - Juan Luis Boya García\r\n - Julian Williams\r\n - Justin Bay\r\n - Justin Johansson\r\n
+    - jwbay\r\n - K. Preißer\r\n - Kagami Sascha Rosylight\r\n - Kanchalai Tanglertsampan\r\n
+    - karthikkp\r\n - Kate Miháliková\r\n - Keen Yee Liau\r\n - Keith Mashinter\r\n
+    - Ken Howard\r\n - Kenji Imamula\r\n - Kerem Kat\r\n - Kevin Donnelly\r\n - Kevin
+    Gibbons\r\n - Kevin Lang\r\n - Khải\r\n - Kitson Kelly\r\n - Klaus Meinhardt\r\n
+    - Kris Zyp\r\n - Kyle Kelley\r\n - Kārlis Gaņģis\r\n - laoxiong\r\n - Leon Aves\r\n
+    - Limon Monte\r\n - Lorant Pinter\r\n - Lucien Greathouse\r\n - Luka Hartwig\r\n
+    - Lukas Elmer\r\n - M.Yoshimura\r\n - Maarten Sijm\r\n - Magnus Hiie\r\n - Magnus
+    Kulke\r\n - Manish Bansal\r\n - Manish Giri\r\n - Marcus Noble\r\n - Marin Marinov\r\n
+    - Marius Schulz\r\n - Markus Johnsson\r\n - Markus Wolf\r\n - Martin\r\n - Martin
+    Hiller\r\n - Martin Johns\r\n - Martin Probst\r\n - Martin Vseticka\r\n - Martyn
+    Janes\r\n - Masahiro Wakame\r\n - Mateusz Burzyński\r\n - Matt Bierner\r\n - Matt
+    McCutchen\r\n - Matt Mitchell\r\n - Matthew Aynalem\r\n - Matthew Miller\r\n -
+    Mattias Buelens\r\n - Max Heiber\r\n - Maxwell Paul Brickner\r\n - @meyer\r\n
+    - Micah Zoltu\r\n - @micbou\r\n - Michael\r\n - Michael Crane\r\n - Michael Henderson\r\n
+    - Michael Tamm\r\n - Michael Tang\r\n - Michal Przybys\r\n - Mike Busyrev\r\n
+    - Mike Morearty\r\n - Milosz Piechocki\r\n - Mine Starks\r\n - Minh Nguyen\r\n
+    - Mohamed Hegazy\r\n - Mohsen Azimi\r\n - Mukesh Prasad\r\n - Myles Megyesi\r\n
+    - Nathan Day\r\n - Nathan Fenner\r\n - Nathan Shively-Sanders\r\n - Nathan Yee\r\n
+    - ncoley\r\n - Nicholas Yang\r\n - Nicu Micleușanu\r\n - @nieltg\r\n - Nima Zahedi\r\n
+    - Noah Chen\r\n - Noel Varanda\r\n - Noel Yoo\r\n - Noj Vek\r\n - nrcoley\r\n
+    - Nuno Arruda\r\n - Oleg Mihailik\r\n - Oleksandr Chekhovskyi\r\n - Omer Sheikh\r\n
+    - Orta Therox\r\n - Orta Therox\r\n - Oskar Grunning\r\n - Oskar Segersva¨rd\r\n
+    - Oussama Ben Brahim\r\n - Ozair Patel\r\n - Patrick McCartney\r\n - Patrick Zhong\r\n
+    - Paul Koerbitz\r\n - Paul van Brenk\r\n - @pcbro\r\n - Pedro Maltez\r\n - Pete
+    Bacon Darwin\r\n - Peter Burns\r\n - Peter Šándor\r\n - Philip Pesca\r\n - Philippe
+    Voinov\r\n - Pi Lanningham\r\n - Piero Cangianiello\r\n - Pierre-Antoine Mills\r\n
+    - @piloopin\r\n - Pranav Senthilnathan\r\n - Prateek Goel\r\n - Prateek Nayak\r\n
+    - Prayag Verma\r\n - Priyantha Lankapura\r\n - @progre\r\n - Punya Biswal\r\n
+    - r7kamura\r\n - Rado Kirov\r\n - Raj Dosanjh\r\n - rChaser53\r\n - Reiner Dolp\r\n
+    - Remo H. Jansen\r\n - @rflorian\r\n - Rhys van der Waerden\r\n - @rhysd\r\n -
+    Ricardo N Feliciano\r\n - Richard Karmazín\r\n - Richard Knoll\r\n - Roger Spratley\r\n
+    - Ron Buckton\r\n - Rostislav Galimsky\r\n - Rowan Wyborn\r\n - rpgeeganage\r\n
+    - Ruwan Pradeep Geeganage\r\n - Ryan Cavanaugh\r\n - Ryan Clarke\r\n - Ryohei
+    Ikegami\r\n - Salisbury, Tom\r\n - Sam Bostock\r\n - Sam Drugan\r\n - Sam El-Husseini\r\n
+    - Sam Lanning\r\n - Sangmin Lee\r\n - Sanket Mishra\r\n - Sarangan Rajamanickam\r\n
+    - Sasha Joseph\r\n - Sean Barag\r\n - Sergey Rubanov\r\n - Sergey Shandar\r\n
+    - Sergey Tychinin\r\n - Sergii Bezliudnyi\r\n - Sergio Baidon\r\n - Sharon Rolel\r\n
+    - Sheetal Nandi\r\n - Shengping Zhong\r\n - Sheon Han\r\n - Shyyko Serhiy\r\n
+    - Siddharth Singh\r\n - sisisin\r\n - Slawomir Sadziak\r\n - Solal Pirelli\r\n
+    - Soo Jae Hwang\r\n - Stan Thomas\r\n - Stanislav Iliev\r\n - Stanislav Sysoev\r\n
+    - Stas Vilchik\r\n - Stephan Ginthör\r\n - Steve Lucco\r\n - @styfle\r\n - Sudheesh
+    Singanamalla\r\n - Suhas\r\n - Suhas Deshpande\r\n - superkd37\r\n - Sébastien
+    Arod\r\n - @T18970237136\r\n - @t_\r\n - Tan Li Hau\r\n - Tapan Prakash\r\n -
+    Taras Mankovski\r\n - Tarik Ozket\r\n - Tetsuharu Ohzeki\r\n - The Gitter Badger\r\n
+    - Thomas den Hollander\r\n - Thorsten Ball\r\n - Tien Hoanhtien\r\n - Tim Lancina\r\n
+    - Tim Perry\r\n - Tim Schaub\r\n - Tim Suchanek\r\n - Tim Viiding-Spader\r\n -
+    Tingan Ho\r\n - Titian Cernicova-Dragomir\r\n - tkondo\r\n - Todd Thomson\r\n
+    - togru\r\n - Tom J\r\n - Torben Fitschen\r\n - Toxyxer\r\n - @TravCav\r\n - Troy
+    Tae\r\n - TruongSinh Tran-Nguyen\r\n - Tycho Grouwstra\r\n - uhyo\r\n - Vadi Taslim\r\n
+    - Vakhurin Sergey\r\n - Valera Rozuvan\r\n - Vilic Vane\r\n - Vimal Raghubir\r\n
+    - Vladimir Kurchatkin\r\n - Vladimir Matveev\r\n - Vyacheslav Pukhanov\r\n - Wenlu
+    Wang\r\n - Wes Souza\r\n - Wesley Wigham\r\n - William Orr\r\n - Wilson Hobbs\r\n
+    - xiaofa\r\n - xl1\r\n - Yacine Hmito\r\n - Yang Cao\r\n - York Yao\r\n - @yortus\r\n
+    - Yoshiki Shibukawa\r\n - Yuichi Nukiyama\r\n - Yuval Greenfield\r\n - Yuya Tanaka\r\n
+    - Z\r\n - Zeeshan Ahmed\r\n - Zev Spitz\r\n - Zhengbo Li\r\n - Zixiang Li\r\n
+    - @Zzzen\r\n - 阿卡琳"
