@@ -116,3 +116,7 @@
 
 - Updates @actions/cache to v3.2.3 to fix accidental mutated path arguments to `getCacheVersion` [actions/toolkit#1378](https://github.com/actions/toolkit/pull/1378)
 - Additional audit fixes of npm package(s)
+
+### 3.4.0
+
+- Integrated with the new cache service (v2) APIs
