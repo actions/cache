@@ -1,0 +1,61 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+# This workflow will install Deno then run `deno lint` and `deno test`.
+# For more information see: https://github.com/denoland/setup-deno
+
+name: Deno
+            - nazwa: Cache
+  używa: actions/cache@v4.2.0
+  z:
+    # Lista plików, katalogów i wzorców symboli wieloznacznych do buforowania i przywracania
+    ścieżka:
+    # Jawny klucz do przywracania i zapisywania pamięci podręcznej
+    klawisz:
+    # Uporządkowany wielowierszowy ciąg zawierający klucze dopasowane do prefiksu, które są używane do przywracania nieaktualnej pamięci podręcznej, jeśli nie wystąpiło trafienie pamięci podręcznej dla klucza. Uwaga: `cache-hit` zwraca w tym przypadku false.
+    przywróć-klucze: # opcjonalnie
+    # Rozmiar fragmentu używany do dzielenia dużych plików podczas przesyłania, w bajtach
+    upload-chunk-size: # opcjonalny
+    # Opcjonalna wartość logiczna, gdy jest włączona, umożliwia programom uruchamiającym system Windows zapisywanie lub przywracanie pamięci podręcznej, która może być odpowiednio przywracana lub zapisywana na innych platformach
+    enableCrossOsArchive: # opcjonalne, domyślnie false
+    # Niepowodzenie przepływu pracy, jeśli nie znaleziono wpisu w pamięci podręcznej
+    fail-on-cache-miss: # opcjonalnie, domyślnie false
+    # Sprawdź, czy dla podanych danych wejściowych (klucz, przywracanie kluczy) istnieje wpis pamięci podręcznej bez pobierania pamięci podręcznej
+    tylko-wyszukiwanie: #opcjonalne, domyślnie false
+    # Uruchom krok post, aby zapisać pamięć podręczną, nawet jeśli poprzedni krok się nie powiedzie
+    save-always: # opcjonalnie, domyślnie false
+          
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup repo
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        # uses: denoland/setup-deno@v1
+        uses: denoland/setup-deno@61fe2df320078202e33d7d5ad347e7dcfa0e8f31  # v1.1.2
+        with:
+          deno-version: v1.x
+
+      # Uncomment this step to verify the use of 'deno fmt' on each commit.
+      # - name: Verify formatting
+      #   run: deno fmt --check
+
+      - name: Run linter
+        run: deno lint
+
+      - name: Run tests
+        run: deno test -A
