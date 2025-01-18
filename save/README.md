@@ -79,8 +79,10 @@ To avoid saving a cache that already exists, the `cache-hit` output from a resto
 The `cache-primary-key` output from the restore step should also be used to ensure
 the cache key does not change during the build if it's calculated based on file contents.
 
+Here's an example where we imagine we're calculating a lot of prime numbers and want to cache them:
+
 ```yaml
-name: Always Caching Primes
+name: Always Caching Prime Numbers
 
 on: push
 
@@ -91,23 +93,23 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Restore cached Primes
-      id: cache-primes-restore
+    - name: Restore cached Prime Numbers
+      id: cache-prime-numbers-restore
       uses: actions/cache/restore@v4
       with:
-        key: ${{ runner.os }}-primes
+        key: ${{ runner.os }}-prime-numbers
         path: |
           path/to/dependencies
           some/other/dependencies
 
     # Intermediate workflow steps
 
-    - name: Always Save Primes
-      id: cache-primes-save
-      if: always() && steps.cache-primes-restore.outputs.cache-hit != 'true'
+    - name: Always Save Prime Numbers
+      id: cache-prime-numbers-save
+      if: always() && steps.cache-prime-numbers-restore.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
       with:
-        key: ${{ steps.cache-primes-restore.outputs.cache-primary-key }}
+        key: ${{ steps.cache-prime-numbers-restore.outputs.cache-primary-key }}
         path: |
           path/to/dependencies
           some/other/dependencies
