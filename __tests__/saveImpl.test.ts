@@ -492,7 +492,11 @@ test("save with cache hit and refresh-cache will try to delete and re-create ent
     );
     expect(infoMock).toHaveBeenNthCalledWith(
         2,
-        `Succesfully deleted cache with key: ${primaryKey}`
+        expect.stringMatching(
+            new RegExp(
+                `Succesfully deleted cache with key: ${primaryKey}, id: \\d+`
+            )
+        )
     );
     expect(infoMock).toHaveBeenNthCalledWith(
         3,
@@ -565,7 +569,11 @@ test("Granular save will use lookup to determine if cache needs to be updated or
     );
     expect(infoMock).toHaveBeenNthCalledWith(
         2,
-        `Succesfully deleted cache with key: ${primaryKey}`
+        expect.stringMatching(
+            new RegExp(
+                `Succesfully deleted cache with key: ${primaryKey}, id: \\d+`
+            )
+        )
     );
     expect(infoMock).toHaveBeenNthCalledWith(
         3,

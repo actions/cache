@@ -1,6 +1,5 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
-import { RequestError } from "@octokit/request-error";
 import nock from "nock";
 
 import { Events, RefKey } from "../src/constants";
@@ -214,7 +213,7 @@ test("getInputAsBool throws if required and value missing", () => {
     ).toThrowError();
 });
 
-test("deleteCacheByKey returns 'HttpError: 404' when cache is not found.", async () => {
+test("deleteCacheByKey produces 'HttpError: 404' when cache is not found.", async () => {
     const event = Events.Push;
 
     process.env["GITHUB_REPOSITORY"] = "owner/repo";
@@ -232,14 +231,73 @@ test("deleteCacheByKey returns 'HttpError: 404' when cache is not found.", async
     expect(logWarningMock).toHaveBeenCalledWith(
         expect.stringMatching(/404: Not Found/i)
     );
-    expect(response).toBeInstanceOf(RequestError);
-    expect(response).toMatchObject({
-        name: "HttpError",
-        status: 404
-    });
+    expect(response).toBe(undefined);
 });
 
-test("deleteCacheByKey returns 'HttpError: 401' on an invalid non-mocked request.", async () => {
+test("deleteCacheByKey does not delete anything if it finds more than one entry for the given key.", async () => {
+    const event = Events.Push;
+
+    process.env["GITHUB_REPOSITORY"] = "owner/repo";
+    process.env["GITHUB_TOKEN"] =
+        "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";
+    process.env["GITHUB_ACTION"] = "__owner___run-repo";
+    process.env[Events.Key] = event;
+    process.env[RefKey] = "";
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const response = await actionUtils.deleteCacheByKey(
+        testUtils.failureCacheKey,
+        "owner",
+        "repo"
+    );
+    expect(logWarningMock).toHaveBeenCalledWith(
+        `More than one cache entry found for key ${testUtils.failureCacheKey}`
+    );
+    expect(response).toBe(undefined);
+});
+
+test("deleteCacheByKey does not delete anything if the key matches a cache belonging to another ref.", async () => {
+    const event = Events.Push;
+
+    process.env["GITHUB_REPOSITORY"] = "owner/repo";
+    process.env["GITHUB_TOKEN"] =
+        "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";
+    process.env["GITHUB_ACTION"] = "__owner___run-repo";
+    process.env[Events.Key] = event;
+    process.env[RefKey] = "ref/heads/feature";
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const response = await actionUtils.deleteCacheByKey(
+        testUtils.wrongRefCacheKey,
+        "owner",
+        "repo"
+    );
+    expect(logWarningMock).toHaveBeenCalledWith(
+        `No cache entries for key ${testUtils.wrongRefCacheKey} belong to gitref ${process.env[RefKey]}.`
+    );
+    expect(response).toBe(undefined);
+});
+
+test("deleteCacheByKey produces 'HttpError: 404' when cache is not found.", async () => {
+    const event = Events.Push;
+
+    process.env["GITHUB_REPOSITORY"] = "owner/repo";
+    process.env["GITHUB_TOKEN"] =
+        "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";
+    process.env["GITHUB_ACTION"] = "__owner___run-repo";
+    process.env[Events.Key] = event;
+    process.env[RefKey] = "ref/heads/feature";
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const response = await actionUtils.deleteCacheByKey(
+        testUtils.failureCacheKey,
+        "owner",
+        "repo"
+    );
+    expect(logWarningMock).toHaveBeenCalledWith(
+        expect.stringMatching(/404: Not Found/i)
+    );
+    expect(response).toBe(undefined);
+});
+
+test("deleteCacheByKey produces 'HttpError: 401' on an invalid non-mocked request.", async () => {
     const event = Events.Push;
 
     process.env["GITHUB_REPOSITORY"] = "owner/repo";
@@ -258,15 +316,11 @@ test("deleteCacheByKey returns 'HttpError: 401' on an invalid non-mocked request
     expect(logWarningMock).toHaveBeenCalledWith(
         expect.stringMatching(/401: Bad Credentials/i)
     );
-    expect(response).toBeInstanceOf(RequestError);
-    expect(response).toMatchObject({
-        name: "HttpError",
-        status: 401
-    });
+    expect(response).toBe(undefined);
     nock.disableNetConnect();
 });
 
-test("deleteCacheByKey returns matched cache data when successful.", async () => {
+test("deleteCacheByKey returns 204 / No Content when successful.", async () => {
     const event = Events.Push;
 
     process.env["GITHUB_REPOSITORY"] = "owner/repo";
@@ -276,29 +330,13 @@ test("deleteCacheByKey returns matched cache data when successful.", async () =>
     process.env[Events.Key] = event;
     process.env[RefKey] = "ref/heads/feature";
 
-    const expectedResponse = {
-        id: expect.any(Number),
-        ref: expect.any(String),
-        key: expect.any(String),
-        version: expect.any(String),
-        last_accessed_at: expect.any(String),
-        created_at: expect.any(String),
-        size_in_bytes: expect.any(Number)
-    };
     const logWarningMock = jest.spyOn(actionUtils, "logWarning");
     const response = await actionUtils.deleteCacheByKey(
         testUtils.successCacheKey,
         "owner",
         "repo"
     );
-    expect(response).toMatchObject({
-        data: expect.objectContaining({
-            total_count: expect.any(Number),
-            actions_caches: expect.arrayContaining([
-                expect.objectContaining(expectedResponse)
-            ])
-        })
-    });
+    expect(response).toBe(204);
     expect(logWarningMock).toHaveBeenCalledTimes(0);
 });
 
