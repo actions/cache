@@ -1,6 +1,6 @@
 ---
 name: "@azure/core-tracing"
-version: 1.0.0-preview.13
+version: 1.2.0
 type: npm
 summary: Provides low-level interfaces and helper methods for tracing in Azure SDK
 homepage: https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/core/core-tracing/README.md

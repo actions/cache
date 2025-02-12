@@ -43,15 +43,55 @@ export async function saveImpl(
             return;
         }
 
-        // If matched restore key is same as primary key, then do not save cache
-        // NO-OP in case of SaveOnly action
-        const restoredKey = stateProvider.getCacheState();
+        const refreshCache: boolean = utils.getInputAsBool(
+            Inputs.RefreshCache,
+            { required: false }
+        );
 
-        if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
-            core.info(
-                `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
+        // If matched restore key is same as primary key, either try to refresh the cache, or just notify and do not save.
+
+        let restoredKey = stateProvider.getCacheState();
+
+        if (refreshCache && !restoredKey) {
+            // If getCacheState didn't give us a key, we're likely using granular actions. Do a lookup to see if we need to refresh or just do a regular save.
+            const cachePaths = utils.getInputAsArray(Inputs.Path, {
+                required: true
+            });
+            const enableCrossOsArchive = utils.getInputAsBool(
+                Inputs.EnableCrossOsArchive
             );
-            return;
+            restoredKey = await cache.restoreCache(
+                cachePaths,
+                primaryKey,
+                [],
+                { lookupOnly: true },
+                enableCrossOsArchive
+            );
+        }
+        if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
+            /* istanbul ignore next */
+            const { GITHUB_TOKEN, GITHUB_REPOSITORY } = process.env || null;
+            if (GITHUB_TOKEN && GITHUB_REPOSITORY && refreshCache === true) {
+                core.info(
+                    `Cache hit occurred on the primary key ${primaryKey}, attempting to refresh the contents of the cache.`
+                );
+                const [_owner, _repo] = GITHUB_REPOSITORY.split(`/`);
+                if (_owner && _repo) {
+                    await utils.deleteCacheByKey(primaryKey, _owner, _repo);
+                }
+            } else {
+                if (refreshCache === true) {
+                    utils.logWarning(
+                        `Can't refresh cache, either the repository info or a valid token are missing.`
+                    );
+                    return;
+                } else {
+                    core.info(
+                        `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
+                    );
+                    return;
+                }
+            }
         }
 
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
