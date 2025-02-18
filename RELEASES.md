@@ -1,5 +1,9 @@
 # Releases
 
+### 4.2.1
+
+- Bump `@actions/cache` to v4.0.1
+
 ### 4.2.0
 
 TLDR; The cache backend service has been rewritten from the ground up for improved performance and reliability. [actions/cache](https://github.com/actions/cache) now integrates with the new cache service (v2) APIs.
