@@ -1,5 +1,9 @@
 # Releases
 
+### 4.2.2
+
+- Bump `@actions/cache` to v4.0.2
+
 ### 4.2.1
 
 - Bump `@actions/cache` to v4.0.1
