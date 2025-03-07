@@ -5739,17 +5739,21 @@ class CacheServiceClient {
      */
     maskSigUrl(url, urlType) {
         const sigMatch = url.match(/[?&]sig=([^&]+)/);
+        (0, core_1.debug)(`Sigmatch is ${sigMatch}`);
         if (sigMatch) {
             (0, core_1.setSecret)(sigMatch[1]);
-            (0, core_1.setSecret)(url);
             (0, core_1.debug)(`Masked ${urlType}: ${url.replace(sigMatch[1], '***')}`);
         }
     }
     maskSecretUrls(body) {
+        (0, core_1.debug)('body is passed to masksecreturls');
+        (0, core_1.debug)(`Body in mask urls: ${JSON.stringify(body, null, 2)}`);
         if ('signedUploadUrl' in body && body.signedUploadUrl) {
+            (0, core_1.debug)('entered that there is signedupload url');
             this.maskSigUrl(body.signedUploadUrl, 'signed_upload_url');
         }
         if ('signedDownloadUrl' in body && body.signedDownloadUrl) {
+            (0, core_1.debug)('entered that there is signed download url');
             this.maskSigUrl(body.signedDownloadUrl, 'signed_download_url');
         }
     }
