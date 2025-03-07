@@ -5741,6 +5741,7 @@ class CacheServiceClient {
         const sigMatch = url.match(/[?&]sig=([^&]+)/);
         if (sigMatch) {
             (0, core_1.setSecret)(sigMatch[1]);
+            (0, core_1.setSecret)(url);
             (0, core_1.debug)(`Masked ${urlType}: ${url.replace(sigMatch[1], '***')}`);
         }
     }
