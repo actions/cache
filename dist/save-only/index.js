@@ -5748,13 +5748,18 @@ class CacheServiceClient {
     maskSecretUrls(body) {
         (0, core_1.debug)('body is passed to masksecreturls');
         (0, core_1.debug)(`Body in mask urls: ${JSON.stringify(body, null, 2)}`);
-        if ('signedUploadUrl' in body && body.signedUploadUrl) {
-            (0, core_1.debug)('entered that there is signedupload url');
-            this.maskSigUrl(body.signedUploadUrl, 'signed_upload_url');
+        if (typeof body === 'object' && body !== null) {
+            if ('signed_upload_url' in body && typeof body.signed_upload_url === 'string') {
+                (0, core_1.debug)('entered that there is signed_upload_url');
+                this.maskSigUrl(body.signed_upload_url, 'signed_upload_url');
+            }
+            if ('signed_download_url' in body && typeof body.signed_download_url === 'string') {
+                (0, core_1.debug)('entered that there is signed_download_url');
+                this.maskSigUrl(body.signed_download_url, 'signed_download_url');
+            }
         }
-        if ('signedDownloadUrl' in body && body.signedDownloadUrl) {
-            (0, core_1.debug)('entered that there is signed download url');
-            this.maskSigUrl(body.signedDownloadUrl, 'signed_download_url');
+        else {
+            (0, core_1.debug)('body is not an object or is null');
         }
     }
     isSuccessStatusCode(statusCode) {
