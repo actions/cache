@@ -8866,26 +8866,27 @@ class CacheServiceClient {
     /**
      * Masks the `sig` parameter in a URL and sets it as a secret.
      * @param url The URL containing the `sig` parameter.
-     * @param urlType The type of the URL (e.g., 'signed_upload_url', 'signed_download_url').
+     * @returns A masked URL where the sig parameter value is replaced with '***' if found,
+     *          or the original URL if no sig parameter is present.
      */
-    maskSigUrl(url, urlType) {
+    maskSigUrl(url) {
         const sigIndex = url.indexOf('sig=');
         if (sigIndex !== -1) {
             const sigValue = url.substring(sigIndex + 4);
             (0, core_1.setSecret)(sigValue);
-            const maskedUrl = `${url.substring(0, sigIndex + 4)}***`;
-            (0, core_1.debug)(`Masked ${urlType}: ${maskedUrl}`);
+            return `${url.substring(0, sigIndex + 4)}***`;
         }
+        return url;
     }
     maskSecretUrls(body) {
         if (typeof body === 'object' && body !== null) {
             if ('signed_upload_url' in body &&
                 typeof body.signed_upload_url === 'string') {
-                this.maskSigUrl(body.signed_upload_url, 'signed_upload_url');
+                this.maskSigUrl(body.signed_upload_url);
             }
             if ('signed_download_url' in body &&
                 typeof body.signed_download_url === 'string') {
-                this.maskSigUrl(body.signed_download_url, 'signed_download_url');
+                this.maskSigUrl(body.signed_download_url);
             }
         }
         else {
@@ -71425,7 +71426,7 @@ module.exports = /*#__PURE__*/JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45
 /***/ ((module) => {
 
 "use strict";
-module.exports = /*#__PURE__*/JSON.parse('{"name":"@actions/cache","version":"4.0.2","preview":true,"description":"Actions cache lib","keywords":["github","actions","cache"],"homepage":"https://github.com/actions/toolkit/tree/main/packages/cache","license":"MIT","main":"lib/cache.js","types":"lib/cache.d.ts","directories":{"lib":"lib","test":"__tests__"},"files":["lib","!.DS_Store"],"publishConfig":{"access":"public"},"repository":{"type":"git","url":"git+https://github.com/actions/toolkit.git","directory":"packages/cache"},"scripts":{"audit-moderate":"npm install && npm audit --json --audit-level=moderate > audit.json","test":"echo \\"Error: run tests from root\\" && exit 1","tsc":"tsc","clean":"rm -rf node_modules lib"},"bugs":{"url":"https://github.com/actions/toolkit/issues"},"dependencies":{"@actions/core":"^1.11.1","@actions/exec":"^1.0.1","@actions/glob":"^0.1.0","@actions/http-client":"^2.1.1","@actions/io":"^1.0.1","@azure/abort-controller":"^1.1.0","@azure/ms-rest-js":"^2.6.0","@azure/storage-blob":"^12.13.0","@protobuf-ts/plugin":"^2.9.4","semver":"^6.3.1"},"devDependencies":{"@types/node":"^22.13.9","@types/semver":"^6.0.0","typescript":"^5.2.2"}}');
+module.exports = /*#__PURE__*/JSON.parse('{"name":"@actions/cache","version":"4.0.2","preview":true,"description":"Actions cache lib","keywords":["github","actions","cache"],"homepage":"https://github.com/actions/toolkit/tree/main/packages/cache","license":"MIT","main":"lib/cache.js","types":"lib/cache.d.ts","directories":{"lib":"lib","test":"__tests__"},"files":["lib","!.DS_Store"],"publishConfig":{"access":"public"},"repository":{"type":"git","url":"git+https://github.com/actions/toolkit.git","directory":"packages/cache"},"scripts":{"audit-moderate":"npm install && npm audit --json --audit-level=moderate > audit.json","test":"echo \\"Error: run tests from root\\" && exit 1","tsc":"tsc"},"bugs":{"url":"https://github.com/actions/toolkit/issues"},"dependencies":{"@actions/core":"^1.11.1","@actions/exec":"^1.0.1","@actions/glob":"^0.1.0","@actions/http-client":"^2.1.1","@actions/io":"^1.0.1","@azure/abort-controller":"^1.1.0","@azure/ms-rest-js":"^2.6.0","@azure/storage-blob":"^12.13.0","@protobuf-ts/plugin":"^2.9.4","semver":"^6.3.1"},"devDependencies":{"@types/node":"^22.13.9","@types/semver":"^6.0.0","typescript":"^5.2.2"}}');
 
 /***/ })
 
