@@ -8823,7 +8823,6 @@ class CacheServiceClient {
                     (0, core_1.debug)(`Headers: ${JSON.stringify(response.message.headers, null, 2)}`);
                     const body = JSON.parse(rawBody);
                     this.maskSecretUrls(body);
-                    (0, core_1.debug)('testing this sentence');
                     (0, core_1.debug)(`Body: ${JSON.stringify(body, null, 2)}`);
                     if (this.isSuccessStatusCode(statusCode)) {
                         return { response, body };
