@@ -8872,7 +8872,7 @@ class CacheServiceClient {
     maskSigUrl(url, urlType) {
         const sigIndex = url.indexOf('sig=');
         if (sigIndex !== -1) {
-            const sigValue = url.substring(sigIndex + 4).split('&')[0];
+            const sigValue = url.substring(sigIndex + 4);
             (0, core_1.setSecret)(sigValue);
             const maskedUrl = `${url.substring(0, sigIndex + 4)}***`;
             (0, core_1.debug)(`Masked ${urlType}: ${maskedUrl}`);
