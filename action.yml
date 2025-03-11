@@ -26,13 +26,18 @@ inputs:
     description: 'Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache'
     default: 'false'
     required: false
+  save-on-success:
+    description: 'Whether the cache is written in the post action on success or (if false) is only restored'
+    default: 'true'
+    required: false
   save-always:
     description: 'Run the post step to save the cache even if another step before fails'
     default: 'false'
     required: false
     deprecationMessage: |
       save-always does not work as intended and will be removed in a future release.
-      A separate `actions/cache/restore` step should be used instead.
+      If you only want to control whether a new cache will be written use `save-always` instead.
+      Otherwise a separate `actions/cache/restore` step should be used instead.
       See https://github.com/actions/cache/tree/main/save#always-save-cache for more details.
 outputs:
   cache-hit:
@@ -41,7 +46,7 @@ runs:
   using: 'node20'
   main: 'dist/restore/index.js'
   post: 'dist/save/index.js'
-  post-if: "success()"
+  post-if: "success() && github.event.inputs.save-on-success"
 branding:
   icon: 'archive'
   color: 'gray-dark'
