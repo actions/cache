@@ -36,6 +36,7 @@ if (process.env.RUNS_ON_RUNNER_NAME && process.env.RUNS_ON_RUNNER_NAME !== "") {
 
 const versionSalt = "1.0";
 const bucketName = process.env.RUNS_ON_S3_BUCKET_CACHE;
+const endpoint = process.env.RUNS_ON_S3_BUCKET_ENDPOINT;
 const region =
     process.env.RUNS_ON_AWS_REGION ||
     process.env.AWS_REGION ||
@@ -51,7 +52,7 @@ const downloadQueueSize = Number(process.env.DOWNLOAD_QUEUE_SIZE || "8");
 const downloadPartSize =
     Number(process.env.DOWNLOAD_PART_SIZE || "16") * 1024 * 1024;
 
-const s3Client = new S3Client({ region, forcePathStyle });
+const s3Client = new S3Client({ region, forcePathStyle, endpoint });
 
 export function getCacheVersion(
     paths: string[],
