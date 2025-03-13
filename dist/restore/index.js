@@ -8754,7 +8754,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.internalCacheTwirpClient = exports.CacheServiceClient = void 0;
+exports.internalCacheTwirpClient = void 0;
 const core_1 = __nccwpck_require__(9728);
 const user_agent_1 = __nccwpck_require__(3909);
 const errors_1 = __nccwpck_require__(1069);
@@ -8899,7 +8899,6 @@ class CacheServiceClient {
         return Math.trunc(Math.random() * (maxTime - minTime) + minTime);
     }
 }
-exports.CacheServiceClient = CacheServiceClient;
 function internalCacheTwirpClient(options) {
     const client = new CacheServiceClient((0, user_agent_1.getUserAgentString)(), options === null || options === void 0 ? void 0 : options.maxAttempts, options === null || options === void 0 ? void 0 : options.retryIntervalMs, options === null || options === void 0 ? void 0 : options.retryMultiplier);
     return new cache_twirp_client_1.CacheServiceClientJSON(client);
@@ -9024,127 +9023,37 @@ function maskSigUrl(url) {
     if (!url)
         return url;
     try {
-        const rawSigRegex = /[?&](sig)=([^&=#]+)/gi;
-        let match;
-        while ((match = rawSigRegex.exec(url)) !== null) {
-            const rawSignature = match[2];
-            if (rawSignature) {
-                (0, core_1.setSecret)(rawSignature);
-            }
-        }
-        let parsedUrl;
-        try {
-            parsedUrl = new URL(url);
-        }
-        catch (_a) {
-            try {
-                parsedUrl = new URL(url, 'https://example.com');
-            }
-            catch (error) {
-                (0, core_1.debug)(`Failed to parse URL: ${url}`);
-                return maskSigWithRegex(url);
-            }
-        }
-        let masked = false;
-        const paramNames = Array.from(parsedUrl.searchParams.keys());
-        for (const paramName of paramNames) {
-            if (paramName.toLowerCase() === 'sig') {
-                const signature = parsedUrl.searchParams.get(paramName);
-                if (signature) {
-                    (0, core_1.setSecret)(signature);
-                    (0, core_1.setSecret)(encodeURIComponent(signature));
-                    parsedUrl.searchParams.set(paramName, '***');
-                    masked = true;
-                }
-            }
-        }
-        if (masked) {
+        const parsedUrl = new URL(url);
+        const signature = parsedUrl.searchParams.get('sig');
+        if (signature) {
+            (0, core_1.setSecret)(signature);
+            (0, core_1.setSecret)(encodeURIComponent(signature));
+            parsedUrl.searchParams.set('sig', '***');
             return parsedUrl.toString();
-        }
-        if (/([:?&]|^)(sig)=([^&=#]+)/i.test(url)) {
-            return maskSigWithRegex(url);
         }
     }
     catch (error) {
-        (0, core_1.debug)(`Error masking URL: ${error instanceof Error ? error.message : String(error)}`);
-        return maskSigWithRegex(url);
+        (0, core_1.debug)(`Failed to parse URL: ${url} ${error instanceof Error ? error.message : String(error)}`);
     }
     return url;
 }
 exports.maskSigUrl = maskSigUrl;
 /**
- * Fallback method to mask signatures using regex when URL parsing fails
- */
-function maskSigWithRegex(url) {
-    try {
-        const regex = /([:?&]|^)(sig)=([^&=#]+)/gi;
-        return url.replace(regex, (fullMatch, prefix, paramName, value) => {
-            if (value) {
-                (0, core_1.setSecret)(value);
-                try {
-                    (0, core_1.setSecret)(decodeURIComponent(value));
-                }
-                catch (_a) {
-                    // Ignore decoding errors
-                }
-                return `${prefix}${paramName}=***`;
-            }
-            return fullMatch;
-        });
-    }
-    catch (error) {
-        (0, core_1.debug)(`Error in maskSigWithRegex: ${error instanceof Error ? error.message : String(error)}`);
-        return url;
-    }
-}
-/**
  * Masks any URLs containing signature parameters in the provided object
- * Recursively searches through nested objects and arrays
  */
 function maskSecretUrls(body) {
     if (typeof body !== 'object' || body === null) {
         (0, core_1.debug)('body is not an object or is null');
         return;
     }
-    const processUrl = (url) => {
-        maskSigUrl(url);
-    };
-    const processObject = (obj) => {
-        if (typeof obj !== 'object' || obj === null) {
-            return;
-        }
-        if (Array.isArray(obj)) {
-            for (const item of obj) {
-                if (typeof item === 'string') {
-                    processUrl(item);
-                }
-                else if (typeof item === 'object' && item !== null) {
-                    processObject(item);
-                }
-            }
-            return;
-        }
-        if ('signed_upload_url' in obj &&
-            typeof obj.signed_upload_url === 'string') {
-            maskSigUrl(obj.signed_upload_url);
-        }
-        if ('signed_download_url' in obj &&
-            typeof obj.signed_download_url === 'string') {
-            maskSigUrl(obj.signed_download_url);
-        }
-        for (const key in obj) {
-            const value = obj[key];
-            if (typeof value === 'string') {
-                if (/([:?&]|^)(sig)=/i.test(value)) {
-                    maskSigUrl(value);
-                }
-            }
-            else if (typeof value === 'object' && value !== null) {
-                processObject(value);
-            }
-        }
-    };
-    processObject(body);
+    if ('signed_upload_url' in body &&
+        typeof body.signed_upload_url === 'string') {
+        maskSigUrl(body.signed_upload_url);
+    }
+    if ('signed_download_url' in body &&
+        typeof body.signed_download_url === 'string') {
+        maskSigUrl(body.signed_download_url);
+    }
 }
 exports.maskSecretUrls = maskSecretUrls;
 //# sourceMappingURL=util.js.map
