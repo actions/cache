@@ -335,6 +335,14 @@ There are a number of community practices/workarounds to fulfill specific requir
 
 Please note that Windows environment variables (like `%LocalAppData%`) will NOT be expanded by this action. Instead, prefer using `~` in your paths which will expand to the HOME directory. For example, instead of `%LocalAppData%`, use `~\AppData\Local`. For a list of supported default environment variables, see the [Learn GitHub Actions: Variables](https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables) page.
 
+# Recommended Permissions
+
+The `actions/cache` workflow relies on an internal authentication pattern and does not use the GITHUB_TOKEN, to reduce risk of over-privileged token, jobs that use `actions/cache` should set permissions to none:
+
+```yaml
+permissions: {}
+```
+
 ## Contributing
 
 We would love for you to contribute to `actions/cache`. Pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
