@@ -106,7 +106,7 @@ jobs:
 
     - name: Always Save Prime Numbers
       id: cache-prime-numbers-save
-      if: always() && steps.cache-prime-numbers-restore.outputs.cache-hit != 'true'
+      if: ${{ always() && steps.cache-prime-numbers-restore.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@v4
       with:
         key: ${{ steps.cache-prime-numbers-restore.outputs.cache-primary-key }}
