@@ -32,6 +32,8 @@ export async function restoreImpl(
         const primaryKey = core.getInput(Inputs.Key, { required: true });
         stateProvider.setState(State.CachePrimaryKey, primaryKey);
 
+        stateProvider.setState(State.CachePath, core.getInput(Inputs.Path)); // Output path unchanged from input
+
         const restoreKeys = utils.getInputAsArray(Inputs.RestoreKeys);
         const cachePaths = utils.getInputAsArray(Inputs.Path, {
             required: true
