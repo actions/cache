@@ -1,5 +1,9 @@
 # Releases
 
+### 4.2.3
+
+- Bump `@actions/cache` to v4.0.3 (obfuscates SAS token in debug logs for cache entries)
+
 ### 4.2.2
 
 - Bump `@actions/cache` to v4.0.2
