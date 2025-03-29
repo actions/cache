@@ -1,4 +1,4 @@
-name: 'SJJOY'
+name: 's40'
 description: 'Cache artifacts like dependencies and build outputs to improve workflow execution time'
 author: 'GitHub'
 inputs:
