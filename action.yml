@@ -1,6 +1,6 @@
-name: 's40'
+name: 'air_40'
 description: 'Cache artifacts like dependencies and build outputs to improve workflow execution time'
-author: 'GitHub'
+author: 'Shannon Fletcher'
 inputs:
   path:
     description: 'A list of files, directories, and wildcard patterns to cache and restore'
