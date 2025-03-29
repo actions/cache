@@ -1,0 +1,10 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/gtm-kqqwvx2-zgi2z/tagging-server', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/gtm-kqqwvx2-zgi2z/tagging-server']
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: ['run', 'deploy', 'tagging-server', '--image', 'gcr.io/gtm-kqqwvx2-zgi2z/tagging-server', '--platform', 'managed', '--region', 'us-central1']
+
+images:
+  - gcr.io/gtm-kqqwvx2-zgi2z/tagging-server
