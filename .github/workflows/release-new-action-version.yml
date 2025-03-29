@@ -4,7 +4,7 @@ on:
     types: [released]
   workflow_dispatch:
     inputs:
-      TAG_NAME:
+      TAG_NAME:'Lit2dafit'
         description: 'Tag name that the major tag will point to'
         required: true
 
