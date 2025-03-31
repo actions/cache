@@ -1,0 +1,57 @@
+# Ignore environment variable files
+.env
+.env.*
+
+# Ignore secret configuration files
+config/secrets.yml
+config/secrets/*.yml
+
+# Ignore private keys
+*.pem
+*.key
+
+# Ignore database files
+*.sqlite3
+*.db
+
+# Ignore log files
+*.log
+
+# Ignore temporary files and folders
+tmp/
+temp/
+*.tmp
+*.swp
+
+# Ignore compiled files
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Ignore dependency directories
+node_modules/
+vendor/
+
+# Ignore build outputs
+dist/
+build/
+out/
+
+# Ignore backup files
+*.bak
+*.orig
+
+# Ignore personal IDE files
+.vscode/
+.idea/
+*.iml
+
+# Ignore coverage reports
+coverage/
+*.lcov
+
+# Ignore other sensitive files
+.DS_Store
+Thumbs.db
