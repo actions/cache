@@ -1,0 +1,13 @@
+TimeSeries ID,api/request_latencies.consumed_api.ALIGN_SUM.REDUCE_PERCENTILE_50.resource.type="consumed_api" AND metric.type="serviceruntime.googleapis.com/api/request_latencies" AND project="gtm-kqqwvx2-zgi2z" AND resource.labels.service="cloudbuild.googleapis.com".method:google.devtools.cloudbuild.v1.CloudBuild.GetDefaultServiceAccount.project_id:gtm-kqqwvx2-zgi2z,api/request_latencies.consumed_api.ALIGN_SUM.REDUCE_PERCENTILE_50.resource.type="consumed_api" AND metric.type="serviceruntime.googleapis.com/api/request_latencies" AND project="gtm-kqqwvx2-zgi2z" AND resource.labels.service="cloudbuild.googleapis.com".method:google.devtools.cloudbuild.v1.CloudBuild.ListWorkerPools.project_id:gtm-kqqwvx2-zgi2z
+project_id,gtm-kqqwvx2-zgi2z,gtm-kqqwvx2-zgi2z
+method,google.devtools.cloudbuild.v1.CloudBuild.GetDefaultServiceAccount,google.devtools.cloudbuild.v1.CloudBuild.ListWorkerPools
+Sat Mar 08 2025 17:00:00 GMT-0500 (Eastern Standard Time),0.196608,0.049152
+Sat Mar 15 2025 12:00:00 GMT-0400 (Eastern Daylight Time),0.098304,0.049152
+Wed Mar 19 2025 12:00:00 GMT-0400 (Eastern Daylight Time),0.10426181818181818,undefined
+Wed Mar 19 2025 15:00:00 GMT-0400 (Eastern Daylight Time),0.065536,undefined
+Wed Mar 19 2025 18:00:00 GMT-0400 (Eastern Daylight Time),0.098304,undefined
+Thu Mar 20 2025 09:00:00 GMT-0400 (Eastern Daylight Time),0.098304,undefined
+Sat Mar 22 2025 12:00:00 GMT-0400 (Eastern Daylight Time),0.098304,undefined
+Sun Mar 23 2025 00:00:00 GMT-0400 (Eastern Daylight Time),0.196608,undefined
+Thu Mar 27 2025 12:00:00 GMT-0400 (Eastern Daylight Time),0.098304,undefined
+Thu Mar 27 2025 15:00:00 GMT-0400 (Eastern Daylight Time),0.114688,undefined
