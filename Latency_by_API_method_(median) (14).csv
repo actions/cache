@@ -1,4 +1,3 @@
-TimeSeries ID,api/request_latencies.consumed_api.ALIGN_SUM.REDUCE_PERCENTILE_50.resource.type="consumed_api" AND metric.type="serviceruntime.googleapis.com/api/request_latencies" AND project="gtm-kqqwvx2-zgi2z" AND resource.labels.service="cloudbuild.googleapis.com".method:google.devtools.cloudbuild.v1.CloudBuild.GetDefaultServiceAccount.project_id:gtm-kqqwvx2-zgi2z,api/request_latencies.consumed_api.ALIGN_SUM.REDUCE_PERCENTILE_50.resource.type="consumed_api" AND metric.type="serviceruntime.googleapis.com/api/request_latencies" AND project="gtm-kqqwvx2-zgi2z" AND resource.labels.service="cloudbuild.googleapis.com".method:google.devtools.cloudbuild.v1.CloudBuild.ListWorkerPools.project_id:gtm-kqqwvx2-zgi2z
 project_id,gtm-kqqwvx2-zgi2z,gtm-kqqwvx2-zgi2z
 method,google.devtools.cloudbuild.v1.CloudBuild.GetDefaultServiceAccount,google.devtools.cloudbuild.v1.CloudBuild.ListWorkerPools
 Sat Mar 08 2025 17:00:00 GMT-0500 (Eastern Standard Time),0.196608,0.049152
