@@ -1,0 +1,341 @@
+starting build "38fcd5c0-407a-41d6-94ac-3a6b3d5a0693"
+
+FETCHSOURCE
+BUILD
+Starting Step #0 - "fetcher"
+Step #0 - "fetcher": Already have image (with digest): gcr.io/cloud-builders/gcs-fetcher
+Step #0 - "fetcher": WARNING: -type=Archive is deprecated; use -type=ZipArchive
+Step #0 - "fetcher": Fetching archive gs://serverside-tagging/gtm-cloud-image.zip.
+Step #0 - "fetcher": ******************************************************
+Step #0 - "fetcher": Status:                      SUCCESS
+Step #0 - "fetcher": Started:                     2021-04-20T16:16:34Z
+Step #0 - "fetcher": Completed:                   2021-04-20T16:16:34Z
+Step #0 - "fetcher": Total files:            2
+Step #0 - "fetcher": MiB downloaded:         0.00 MiB
+Step #0 - "fetcher": MiB/s throughput:       0.03 MiB/s
+Step #0 - "fetcher": Time for zipfile:       0.05 s
+Step #0 - "fetcher": Time to unzip:          0.00 s
+Step #0 - "fetcher": Total time:             0.05 s
+Step #0 - "fetcher": ******************************************************
+Finished Step #0 - "fetcher"
+Starting Step #1 - "prep"
+Step #1 - "prep": Already have image (with digest): gcr.io/cloud-builders/gcloud
+Finished Step #1 - "prep"
+Starting Step #2 - "pre-tag"
+Step #2 - "pre-tag": Pulling image: gcr.io/gae-runtimes/crane:shell
+Step #2 - "pre-tag": shell: Pulling from gae-runtimes/crane
+Step #2 - "pre-tag": 4000adbbc3eb: Pulling fs layer
+Step #2 - "pre-tag": 69e2f037cdb3: Pulling fs layer
+Step #2 - "pre-tag": e43810d8344f: Pulling fs layer
+Step #2 - "pre-tag": 72164b581b02: Pulling fs layer
+Step #2 - "pre-tag": 8250a9b721ab: Pulling fs layer
+Step #2 - "pre-tag": 72164b581b02: Waiting
+Step #2 - "pre-tag": 8250a9b721ab: Waiting
+Step #2 - "pre-tag": e43810d8344f: Verifying Checksum
+Step #2 - "pre-tag": e43810d8344f: Download complete
+Step #2 - "pre-tag": 4000adbbc3eb: Verifying Checksum
+Step #2 - "pre-tag": 4000adbbc3eb: Download complete
+Step #2 - "pre-tag": 69e2f037cdb3: Verifying Checksum
+Step #2 - "pre-tag": 69e2f037cdb3: Download complete
+Step #2 - "pre-tag": 72164b581b02: Verifying Checksum
+Step #2 - "pre-tag": 72164b581b02: Download complete
+Step #2 - "pre-tag": 8250a9b721ab: Verifying Checksum
+Step #2 - "pre-tag": 8250a9b721ab: Download complete
+Step #2 - "pre-tag": 4000adbbc3eb: Pull complete
+Step #2 - "pre-tag": 69e2f037cdb3: Pull complete
+Step #2 - "pre-tag": e43810d8344f: Pull complete
+Step #2 - "pre-tag": 72164b581b02: Pull complete
+Step #2 - "pre-tag": 8250a9b721ab: Pull complete
+Step #2 - "pre-tag": Digest: sha256:70d1c3be3db90db0bc52538557e7232bb5c4fdc16cdadf82e49739e633f6ec4e
+Step #2 - "pre-tag": Status: Downloaded newer image for gcr.io/gae-runtimes/crane:shell
+Step #2 - "pre-tag": gcr.io/gae-runtimes/crane:shell
+Step #2 - "pre-tag": 2021/04/20 16:16:39 Copying from us.gcr.io/gtm-kqqwvx2-zgi2z/app-engine-tmp/build-cache/ttl-7d/default/buildpack-cache:latest to us.gcr.io/gtm-kqqwvx2-zgi2z/app-engine-tmp/build-cache/ttl-7d/default/buildpack-cache:38fcd5c0-407a-41d6-94ac-3a6b3d5a0693
+Step #2 - "pre-tag": 2021/04/20 16:16:41 fetching "us.gcr.io/gtm-kqqwvx2-zgi2z/app-engine-tmp/build-cache/ttl-7d/default/buildpack-cache:latest": GET https://us.gcr.io/v2/gtm-kqqwvx2-zgi2z/app-engine-tmp/build-cache/ttl-7d/default/buildpack-cache/manifests/latest: MANIFEST_UNKNOWN: Failed to fetch "latest" from request "/v2/gtm-kqqwvx2-zgi2z/app-engine-tmp/build-cache/ttl-7d/default/buildpack-cache/manifests/latest".
+Step #2 - "pre-tag": Unable to tag previous cache image. This is expected for new or infrequent deployments.
+Step #2 - "pre-tag": 2021/04/20 16:16:41 Copying from us.gcr.io/gtm-kqqwvx2-zgi2z/app-engine-tmp/app/ttl-2h/default/buildpack-app:latest to us.gcr.io/gtm-kqqwvx2-zgi2z/app-engine-tmp/app/ttl-2h:e8d16cb3-7859-47a0-a9cd-371f627854d3
+Step #2 - "pre-tag": 2021/04/20 16:16:42 fetching "us.gcr.io/gtm-kqqwvx2-zgi2z/app-engine-tmp/app/ttl-2h/default/buildpack-app:latest": GET https://us.gcr.io/v2/gtm-kqqwvx2-zgi2z/app-engine-tmp/app/ttl-2h/default/buildpack-app/manifests/latest: MANIFEST_UNKNOWN: Failed to fetch "latest" from request "/v2/gtm-kqqwvx2-zgi2z/app-engine-tmp/app/ttl-2h/default/buildpack-app/manifests/latest".
+Step #2 - "pre-tag": Unable to tag previous application image. This is expected for new or infrequent deployments.
+Finished Step #2 - "pre-tag"
+Starting Step #3 - "detector"
+Step #3 - "detector": Pulling image: us.gcr.io/gae-runtimes/buildpacks/nodejs12/builder:nodejs12_20210322_12_21_0_RC00
+Step #3 - "detector": nodejs12_20210322_12_21_0_RC00: Pulling from gae-runtimes/buildpacks/nodejs12/builder
+Step #3 - "detector": 9f2825a1003a: Already exists
+Step #3 - "detector": 7e79098fe9b4: Already exists
+Step #3 - "detector": 3c2cba919283: Already exists
+Step #3 - "detector": f646d208560e: Already exists
+Step #3 - "detector": 9a41a37780ff: Already exists
+Step #3 - "detector": 62122dc2bee3: Already exists
+Step #3 - "detector": 69699a8504dd: Already exists
+Step #3 - "detector": f6605c16d1a3: Already exists
+Step #3 - "detector": b26a64ba8422: Already exists
+Step #3 - "detector": 078f23eb819a: Already exists
+Step #3 - "detector": e4470417d83d: Already exists
+Step #3 - "detector": 3ed0d0963e38: Pulling fs layer
+Step #3 - "detector": da6fb28899d9: Pulling fs layer
+Step #3 - "detector": a9e1600a0cc7: Pulling fs layer
+Step #3 - "detector": 0a43b31920e2: Pulling fs layer
+Step #3 - "detector": 6b19e8b8e8a2: Pulling fs layer
+Step #3 - "detector": 1d63dc0dc5bb: Pulling fs layer
+Step #3 - "detector": e8d195f01c99: Pulling fs layer
+Step #3 - "detector": 68f3d700f361: Pulling fs layer
+Step #3 - "detector": 0aaf2d9f2d01: Pulling fs layer
+Step #3 - "detector": 2be8fbc33275: Pulling fs layer
+Step #3 - "detector": 9c8275a048c0: Pulling fs layer
+Step #3 - "detector": 06f428a8446f: Pulling fs layer
+Step #3 - "detector": 68eda11453ef: Pulling fs layer
+Step #3 - "detector": 11efd81bbe4a: Pulling fs layer
+Step #3 - "detector": 75c834a7bd3d: Pulling fs layer
+Step #3 - "detector": aaa8d30bedc4: Pulling fs layer
+Step #3 - "detector": 47e9e73689c7: Pulling fs layer
+Step #3 - "detector": da9a267cf32b: Pulling fs layer
+Step #3 - "detector": 66e330c268aa: Pulling fs layer
+Step #3 - "detector": d716a8de5ec7: Pulling fs layer
+Step #3 - "detector": a81848cc08a6: Pulling fs layer
+Step #3 - "detector": 4f4fb700ef54: Pulling fs layer
+Step #3 - "detector": 1d63dc0dc5bb: Waiting
+Step #3 - "detector": e8d195f01c99: Waiting
+Step #3 - "detector": 68f3d700f361: Waiting
+Step #3 - "detector": 0aaf2d9f2d01: Waiting
+Step #3 - "detector": 2be8fbc33275: Waiting
+Step #3 - "detector": 9c8275a048c0: Waiting
+Step #3 - "detector": 06f428a8446f: Waiting
+Step #3 - "detector": 68eda11453ef: Waiting
+Step #3 - "detector": 11efd81bbe4a: Waiting
+Step #3 - "detector": 75c834a7bd3d: Waiting
+Step #3 - "detector": aaa8d30bedc4: Waiting
+Step #3 - "detector": 47e9e73689c7: Waiting
+Step #3 - "detector": da9a267cf32b: Waiting
+Step #3 - "detector": 66e330c268aa: Waiting
+Step #3 - "detector": d716a8de5ec7: Waiting
+Step #3 - "detector": a81848cc08a6: Waiting
+Step #3 - "detector": 4f4fb700ef54: Waiting
+Step #3 - "detector": 6b19e8b8e8a2: Waiting
+Step #3 - "detector": 0a43b31920e2: Waiting
+Step #3 - "detector": 3ed0d0963e38: Verifying Checksum
+Step #3 - "detector": 3ed0d0963e38: Download complete
+Step #3 - "detector": da6fb28899d9: Verifying Checksum
+Step #3 - "detector": da6fb28899d9: Download complete
+Step #3 - "detector": 3ed0d0963e38: Pull complete
+Step #3 - "detector": 6b19e8b8e8a2: Verifying Checksum
+Step #3 - "detector": 6b19e8b8e8a2: Download complete
+Step #3 - "detector": da6fb28899d9: Pull complete
+Step #3 - "detector": a9e1600a0cc7: Verifying Checksum
+Step #3 - "detector": a9e1600a0cc7: Download complete
+Step #3 - "detector": 0a43b31920e2: Verifying Checksum
+Step #3 - "detector": 0a43b31920e2: Download complete
+Step #3 - "detector": e8d195f01c99: Verifying Checksum
+Step #3 - "detector": e8d195f01c99: Download complete
+Step #3 - "detector": 1d63dc0dc5bb: Verifying Checksum
+Step #3 - "detector": 1d63dc0dc5bb: Download complete
+Step #3 - "detector": 0aaf2d9f2d01: Verifying Checksum
+Step #3 - "detector": 0aaf2d9f2d01: Download complete
+Step #3 - "detector": 68f3d700f361: Verifying Checksum
+Step #3 - "detector": 68f3d700f361: Download complete
+Step #3 - "detector": a9e1600a0cc7: Pull complete
+Step #3 - "detector": 2be8fbc33275: Download complete
+Step #3 - "detector": 06f428a8446f: Download complete
+Step #3 - "detector": 9c8275a048c0: Download complete
+Step #3 - "detector": 68eda11453ef: Verifying Checksum
+Step #3 - "detector": 68eda11453ef: Download complete
+Step #3 - "detector": 75c834a7bd3d: Verifying Checksum
+Step #3 - "detector": 75c834a7bd3d: Download complete
+Step #3 - "detector": 11efd81bbe4a: Verifying Checksum
+Step #3 - "detector": 11efd81bbe4a: Download complete
+Step #3 - "detector": aaa8d30bedc4: Verifying Checksum
+Step #3 - "detector": aaa8d30bedc4: Download complete
+Step #3 - "detector": 47e9e73689c7: Verifying Checksum
+Step #3 - "detector": 47e9e73689c7: Download complete
+Step #3 - "detector": da9a267cf32b: Verifying Checksum
+Step #3 - "detector": da9a267cf32b: Download complete
+Step #3 - "detector": 66e330c268aa: Verifying Checksum
+Step #3 - "detector": 66e330c268aa: Download complete
+Step #3 - "detector": 4f4fb700ef54: Verifying Checksum
+Step #3 - "detector": 4f4fb700ef54: Download complete
+Step #3 - "detector": a81848cc08a6: Verifying Checksum
+Step #3 - "detector": a81848cc08a6: Download complete
+Step #3 - "detector": d716a8de5ec7: Verifying Checksum
+Step #3 - "detector": d716a8de5ec7: Download complete
+Step #3 - "detector": 0a43b31920e2: Pull complete
+Step #3 - "detector": 6b19e8b8e8a2: Pull complete
+Step #3 - "detector": 1d63dc0dc5bb: Pull complete
+Step #3 - "detector": e8d195f01c99: Pull complete
+Step #3 - "detector": 68f3d700f361: Pull complete
+Step #3 - "detector": 0aaf2d9f2d01: Pull complete
+Step #3 - "detector": 2be8fbc33275: Pull complete
+Step #3 - "detector": 9c8275a048c0: Pull complete
+Step #3 - "detector": 06f428a8446f: Pull complete
+Step #3 - "detector": 68eda11453ef: Pull complete
+Step #3 - "detector": 11efd81bbe4a: Pull complete
+Step #3 - "detector": 75c834a7bd3d: Pull complete
+Step #3 - "detector": aaa8d30bedc4: Pull complete
+Step #3 - "detector": 47e9e73689c7: Pull complete
+Step #3 - "detector": da9a267cf32b: Pull complete
+Step #3 - "detector": 66e330c268aa: Pull complete
+Step #3 - "detector": d716a8de5ec7: Pull complete
+Step #3 - "detector": a81848cc08a6: Pull complete
+Step #3 - "detector": 4f4fb700ef54: Pull complete
+Step #3 - "detector": Digest: sha256:6d033da520b0f2631be09969c7a32409a8ce666f09ed9d5b3e13480125ef85f6
+Step #3 - "detector": Status: Downloaded newer image for us.gcr.io/gae-runtimes/buildpacks/nodejs12/builder:nodejs12_20210322_12_21_0_RC00
+Step #3 - "detector": us.gcr.io/gae-runtimes/buildpacks/nodejs12/builder:nodejs12_20210322_12_21_0_RC00
+Step #3 - "detector": ======== Output: google.nodejs.yarn-gcp-build@0.9.0 ========
+Step #3 - "detector": Opting out: yarn.lock not found
+Step #3 - "detector": ======== Output: google.nodejs.yarn@0.9.0 ========
+Step #3 - "detector": Opting out: yarn.lock not found
+Step #3 - "detector": ======== Output: google.nodejs.appengine@0.9.0 ========
+Step #3 - "detector": Opting in: always enabled
+Step #3 - "detector": ======== Output: google.utils.label@0.0.1 ========
+Step #3 - "detector": Opting in: always enabled
+Step #3 - "detector": ======== Results ========
+Step #3 - "detector": skip: google.nodejs.yarn-gcp-build@0.9.0
+Step #3 - "detector": fail: google.nodejs.yarn@0.9.0
+Step #3 - "detector": pass: google.nodejs.appengine@0.9.0
+Step #3 - "detector": pass: google.utils.label@0.0.1
+Step #3 - "detector": ======== Output: google.nodejs.npm-gcp-build@0.9.0 ========
+Step #3 - "detector": Opting out: gcp-build script not found in package.json
+Step #3 - "detector": ======== Output: google.nodejs.npm@0.9.0 ========
+Step #3 - "detector": Opting in: found package.json
+Step #3 - "detector": ======== Output: google.nodejs.appengine@0.9.0 ========
+Step #3 - "detector": Opting in: always enabled
+Step #3 - "detector": ======== Output: google.utils.label@0.0.1 ========
+Step #3 - "detector": Opting in: always enabled
+Step #3 - "detector": ======== Results ========
+Step #3 - "detector": skip: google.nodejs.npm-gcp-build@0.9.0
+Step #3 - "detector": pass: google.nodejs.npm@0.9.0
+Step #3 - "detector": pass: google.nodejs.appengine@0.9.0
+Step #3 - "detector": pass: google.utils.label@0.0.1
+Step #3 - "detector": Resolving plan... (try #1)
+Step #3 - "detector": 3 of 4 buildpacks participating
+Step #3 - "detector": google.nodejs.npm       0.9.0
+Step #3 - "detector": google.nodejs.appengine 0.9.0
+Step #3 - "detector": google.utils.label      0.0.1
+Finished Step #3 - "detector"
+Starting Step #4 - "analyzer"
+Step #4 - "analyzer": Already have image (with digest): us.gcr.io/gae-runtimes/buildpacks/nodejs12/builder:nodejs12_20210322_12_21_0_RC00
+Step #4 - "analyzer": Previous image with name "us.gcr.io/gtm-kqqwvx2-zgi2z/app-engine-tmp/app/ttl-2h:e8d16cb3-7859-47a0-a9cd-371f627854d3" not found
+Step #4 - "analyzer": Layer cache not found
+Finished Step #4 - "analyzer"
+Starting Step #5 - "restorer"
+Step #5 - "restorer": Already have image (with digest): us.gcr.io/gae-runtimes/buildpacks/nodejs12/builder:nodejs12_20210322_12_21_0_RC00
+Step #5 - "restorer": Layer cache not found
+Finished Step #5 - "restorer"
+Starting Step #6 - "builder"
+Step #6 - "builder": Already have image (with digest): us.gcr.io/gae-runtimes/buildpacks/nodejs12/builder:nodejs12_20210322_12_21_0_RC00
+Step #6 - "builder": === Node.js - NPM (google.nodejs.npm@0.9.0) ===
+Step #6 - "builder": Generating package-lock.json.
+Step #6 - "builder": WARNING: *** Improve build performance by generating and committing package-lock.json.
+Step #6 - "builder": --------------------------------------------------------------------------------
+Step #6 - "builder": Running "npm install --package-lock-only --quiet"
+Step #6 - "builder": npm WARN gtm-cloud-image@1.0.1 No description
+Step #6 - "builder": npm WARN gtm-cloud-image@1.0.1 No repository field.
+Step #6 - "builder": npm WARN gtm-cloud-image@1.0.1 No license field.
+Step #6 - "builder": 
+Step #6 - "builder": added 55 packages and audited 55 packages in 1.974s
+Step #6 - "builder": found 0 vulnerabilities
+Step #6 - "builder": 
+Step #6 - "builder": Done "npm install --package-lock-only --quiet" (2.572096581s)
+Step #6 - "builder": --------------------------------------------------------------------------------
+Step #6 - "builder": Running "node -v"
+Step #6 - "builder": v12.21.0
+Step #6 - "builder": Done "node -v" (6.166259ms)
+Step #6 - "builder": DEBUG: Current dependency hash: "3e414bb5cf9919affaa95ad1558323cda6b98067aa5cb8d8afda37a96081518d"
+Step #6 - "builder": DEBUG:   Cache dependency hash: ""
+Step #6 - "builder": DEBUG: No metadata found from a previous build, skipping cache.
+Step #6 - "builder": Installing application dependencies.
+Step #6 - "builder": DEBUG: ***** CACHE MISS: "prod dependencies"
+Step #6 - "builder": --------------------------------------------------------------------------------
+Step #6 - "builder": Running "node -v"
+Step #6 - "builder": v12.21.0
+Step #6 - "builder": Done "node -v" (5.336197ms)
+Step #6 - "builder": --------------------------------------------------------------------------------
+Step #6 - "builder": Running "npm ci --quiet (NODE_ENV=production)"
+Step #6 - "builder": added 55 packages in 0.627s
+Step #6 - "builder": Done "npm ci --quiet (NODE_ENV=production)" (1.120123648s)
+Step #6 - "builder": --------------------------------------------------------------------------------
+Step #6 - "builder": Running "cp --archive node_modules /layers/google.nodejs.npm/npm/node_modules"
+Step #6 - "builder": Done "cp --archive node_modules /layers/google.nodejs.npm/npm/node..." (52.943054ms)
+Step #6 - "builder": === Node.js - App Engine (google.nodejs.appengine@0.9.0) ===
+Step #6 - "builder": DEBUG: Using GOOGLE_RUNTIME: nodejs12
+Step #6 - "builder": DEBUG: Using config appstart.Config{Runtime:"nodejs12", Entrypoint:appstart.Entrypoint{Type:"Default", Command:"/serve", WorkDir:""}, MainExecutable:""}
+Step #6 - "builder": === Utils - Label Image (google.utils.label@0.0.1) ===
+Finished Step #6 - "builder"
+Starting Step #7 - "exporter"
+Step #7 - "exporter": Already have image (with digest): us.gcr.io/gae-runtimes/buildpacks/nodejs12/builder:nodejs12_20210322_12_21_0_RC00
+Step #7 - "exporter": no project metadata found at path 'project-metadata.toml', project metadata will not be exported
+Step #7 - "exporter": Reusing tarball for layer "google.nodejs.npm:env" with SHA: sha256:378501f12998bc53bf6ac6aa40e4b2de42ebb6ffb8bb70b310b6b548e1f1b7a7
+Step #7 - "exporter": Adding layer 'google.nodejs.npm:env'
+Step #7 - "exporter": Layer 'google.nodejs.npm:env' SHA: sha256:378501f12998bc53bf6ac6aa40e4b2de42ebb6ffb8bb70b310b6b548e1f1b7a7
+Step #7 - "exporter": Reusing tarball for layer "google.nodejs.appengine:config" with SHA: sha256:1c1283fba155448b1a2aa72ec9d7b8ff93dfc9498279abda0e1e4bd4168b3e68
+Step #7 - "exporter": Adding layer 'google.nodejs.appengine:config'
+Step #7 - "exporter": Layer 'google.nodejs.appengine:config' SHA: sha256:1c1283fba155448b1a2aa72ec9d7b8ff93dfc9498279abda0e1e4bd4168b3e68
+Step #7 - "exporter": Layer 'slice-1' SHA: sha256:5493fd1cc210604581c4880934c4907a2b17667216226d98d636b5a24176b4a1
+Step #7 - "exporter": Adding 1/1 app layer(s)
+Step #7 - "exporter": Reusing tarball for layer "launcher" with SHA: sha256:576e5f5696c6fcae9b679dca450d7ab127176f5c529bc9790b42abb9e3658cfa
+Step #7 - "exporter": Adding layer 'launcher'
+Step #7 - "exporter": Layer 'launcher' SHA: sha256:576e5f5696c6fcae9b679dca450d7ab127176f5c529bc9790b42abb9e3658cfa
+Step #7 - "exporter": Reusing tarball for layer "config" with SHA: sha256:89eee30774480a887409462a2e2de16f6d021fa8cd97270eeb3311449d4e71ca
+Step #7 - "exporter": Adding layer 'config'
+Step #7 - "exporter": Layer 'config' SHA: sha256:89eee30774480a887409462a2e2de16f6d021fa8cd97270eeb3311449d4e71ca
+Step #7 - "exporter": Adding label 'io.buildpacks.lifecycle.metadata'
+Step #7 - "exporter": Adding label 'io.buildpacks.build.metadata'
+Step #7 - "exporter": Adding label 'io.buildpacks.project.metadata'
+Step #7 - "exporter": Adding label 'google.builder-version'
+Step #7 - "exporter": Setting CNB_LAYERS_DIR=/layers
+Step #7 - "exporter": Setting CNB_APP_DIR=/workspace
+Step #7 - "exporter": Setting CNB_PLATFORM_API=0.3
+Step #7 - "exporter": Setting CNB_DEPRECATION_MODE=quiet
+Step #7 - "exporter": Setting ENTRYPOINT: '/cnb/lifecycle/launcher'
+Step #7 - "exporter": *** Images (sha256:949ecef4dc7dacbcd9e252baf64f63abbb064911a01341be4a8da53c9aeab919):
+Step #7 - "exporter":       us.gcr.io/gtm-kqqwvx2-zgi2z/app-engine-tmp/app/ttl-2h:e8d16cb3-7859-47a0-a9cd-371f627854d3
+Step #7 - "exporter": 
+Step #7 - "exporter": *** Digest: sha256:949ecef4dc7dacbcd9e252baf64f63abbb064911a01341be4a8da53c9aeab919
+Step #7 - "exporter": Layer cache not found
+Step #7 - "exporter": Adding cache layer 'google.nodejs.npm:npm'
+Step #7 - "exporter": Layer 'google.nodejs.npm:npm' SHA: sha256:2d15730e3fab61a6b76c8f1802bd178d0e6e5c1fdc2b006f119383d8b5d83f8c
+Finished Step #7 - "exporter"
+Starting Step #8 - "post-tag"
+Step #8 - "post-tag": Pulling image: gcr.io/gae-runtimes/crane:current
+Step #8 - "post-tag": current: Pulling from gae-runtimes/crane
+Step #8 - "post-tag": Digest: sha256:f03a2c63b1ea0cebcd22b14b0fb9161b5856e3055d5116e54b0bf751c62f278d
+Step #8 - "post-tag": Status: Downloaded newer image for gcr.io/gae-runtimes/crane:current
+Step #8 - "post-tag": gcr.io/gae-runtimes/crane:current
+Step #8 - "post-tag": 2021/04/20 16:17:16 Pulling us.gcr.io/gtm-kqqwvx2-zgi2z/app-engine-tmp/app/ttl-2h:e8d16cb3-7859-47a0-a9cd-371f627854d3
+Step #8 - "post-tag": 2021/04/20 16:17:16 Pushing us.gcr.io/gtm-kqqwvx2-zgi2z/app-engine-tmp/app/ttl-2h/default/buildpack-app:latest
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:5b89393b60457d7c98044822c48e7bd84d9c89c35e9a38a294ef37a04382563a
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:f12ca902989a9af80ab93eba77cb5b9cc9cdad2248fd403c17fad6f20780b6b3
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:0d9623ae2019c5ec82f46525aee58bcaec794b633532a2c3436fbbab752da671
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:ec3bc56b1a2f716645696791b218204173344b6f4170bf40ff68857fe2dfa7e0
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:1e8fba40a6793b451d3d7f933de4d4d7f81a051e657a05fed03ff8570afe3d36
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:c9c950d755c2c9c59f90490c4544d91a2ab6028af17d70413612a8d874e77494
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:35499b6cb8a6cc1af12c7f89bb3181a4a8fcf8e2dce3ae45dc960ef9ef475761
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:d6fa2741ceb247a566aaa8f394838ff424b92a42f217f510e7291dadc8e868b2
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:8ddfe3ca51b685e05d1009dfb22de11b3bf47af9bfec9557b9d317435df36193
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:bc71512691bfc6afb8eed4e89ea0438e8029978683e6aadfb7b3e00841d98bfc
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:29e536fccebc96b1cf38f27918a0fc79f5e150fcd804bcf83a6c85b1be5d5b51
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:6216d8dd4b8767e83cd270ecd734ebebc32858f13c03bb9737dec69c7e672239
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:c0a93c3c44f42b9ce55888a2cac2cfd15e27db7bb8fbc73671ca4424308071c4
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:38388c02704cb52a856a47b8c6f8a65daa67c090bd0555264d5c492802b72274
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:700015da93a828fa0affb362c6c244f1a2af6e93656aaa136c38e6643479b032
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:312fed76fab86b9419351fc54d923fea4e789558e5e2207d26b104892485ec81
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:049ccbff6a5357f7f5862515bb66a8008682c2cfa0a1df45eb322d181a180519
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:2085bee30fcfef189d413727587c6524bce3faa1b8bbf96e6fd6a520bd6f2ea0
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:977886e5d19d432f51378fef21757e499d5d1aff3a33fdd77bdeccb3feba1a05
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:e5a7d56ab97c611070445a48f2729e2460d46a97c3aae2ade70ff60cc82d60e8
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:a476ea4db8111ae2488d3dbd1b05f510e9e42e637f8e1007fb95b2cf3520a21f
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:d531490c83f5a0694ce809c0ff0628e2374ca4b8ac3e348a89b4a20ac0b68b3d
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:27db413a8ba92075e6af9eee1e9cc535f27afb2293e6dd40f59a658341d8fcc8
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:2877c4e0b5d1420b9473b14d0023e8d87107ff3f24582c799f409975a04c7429
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:5c65d0212e45b115a195673c30dca94f5a7337df5beb7cea7dcdbd6707dab089
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:2b77546a9489a653ad05a034d6c7be01e586a0be6b09a2b2385f340ebe539d08
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:b557dbd91413856ec087fa04f3dfe638df8065814a510b83916bbb3454bc04ce
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:a967fd7500d21521acb1ca34a086e884f66888ea85fc2e02eaa187277099aa29
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:d0911dfa6aecbe959a7699f54211f812e91962e71d21fd7c6afe0451736e2a7a
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:cb983dcdc03f0b98ccdb7c6d6d581fbd34c72aa55dae066d82778bd0d59bf599
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:3c2cba919283a210665e480bcbf943eaaf4ed87a83f02e81bb286b8bdead0e75
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:984c5458661774af1f695f2218ebe6a909a81ef1baefbe444e2717d6b0280f3d
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:bfd8e3c1dbf591fe937abcbe896554f19190e09cacab45f281ff4761b5313fc0
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:dac7a713bad16dc606168d7229cdf017a863edfeb5160dada164e356614ff7e7
+Step #8 - "post-tag": 2021/04/20 16:17:17 existing blob: sha256:34e4253f734351aa03d64ad011ecfe127bf4b4a3a9d0e4eae8ec09e2ae67edc0
+Step #8 - "post-tag": 2021/04/20 16:17:18 us.gcr.io/gtm-kqqwvx2-zgi2z/app-engine-tmp/app/ttl-2h/default/buildpack-app:latest: digest: sha256:949ecef4dc7dacbcd9e252baf64f63abbb064911a01341be4a8da53c9aeab919 size: 5771
+Finished Step #8 - "post-tag"
+PUSH
+DONE
