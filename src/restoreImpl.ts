@@ -1,4 +1,3 @@
-import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
 import { Events, Inputs, Outputs, State } from "./constants";
@@ -8,6 +7,7 @@ import {
     StateProvider
 } from "./stateProvider";
 import * as utils from "./utils/actionUtils";
+import * as cache from "./utils/gcsCache";
 
 export async function restoreImpl(
     stateProvider: IStateProvider,

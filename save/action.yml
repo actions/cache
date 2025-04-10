@@ -15,6 +15,13 @@ inputs:
     description: 'An optional boolean when enabled, allows windows runners to save caches that can be restored on other platforms'
     default: 'false'
     required: false
+  gcs-bucket:
+    description: 'Google Cloud Storage bucket name to use for caching. When provided, GCS will be used as the cache backend.'
+    required: false
+  gcs-path-prefix:
+    description: 'Optional prefix path within the GCS bucket for cache files'
+    default: 'github-cache'
+    required: false
 runs:
   using: 'node20'
   main: '../dist/save-only/index.js'

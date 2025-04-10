@@ -26,6 +26,13 @@ inputs:
     description: 'Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache'
     default: 'false'
     required: false
+  gcs-bucket:
+    description: 'Google Cloud Storage bucket name to use for caching. When provided, GCS will be used as the cache backend.'
+    required: false
+  gcs-path-prefix:
+    description: 'Optional prefix path within the GCS bucket for cache files'
+    required: false
+    default: 'github-cache'
   save-always:
     description: 'Run the post step to save the cache even if another step before fails'
     default: 'false'

@@ -1,7 +1,7 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
-import { RefKey } from "../constants";
+import { Inputs, RefKey } from "../constants";
 
 export function isGhes(): boolean {
     const ghUrl = new URL(
@@ -66,7 +66,29 @@ export function getInputAsBool(
     return result.toLowerCase() === "true";
 }
 
+// Check if GCS is configured and available
+export function isGCSAvailable(): boolean {
+    try {
+        const bucket = core.getInput(Inputs.GCSBucket);
+        if (!bucket) {
+            core.info("GCS bucket name not provided, falling back to GitHub cache");
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        logWarning(`Failed to check GCS availability: ${(error as Error).message}`);
+        return false;
+    }
+}
+
 export function isCacheFeatureAvailable(): boolean {
+    // Check if GCS cache is available
+    if (isGCSAvailable()) {
+        return true;
+    }
+    
+    // Otherwise, check GitHub cache
     if (cache.isFeatureAvailable()) {
         return true;
     }
