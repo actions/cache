@@ -264,21 +264,6 @@ With the introduction of the `restore` and `save` actions, a lot of caching use 
 
 See our [GCS-specific examples](examples.md#google-cloud-storage-cache) for complete workflow templates using Google Cloud Storage caching.
 
-### Language-Specific Examples
-
-Every programming language and framework has its own way of caching. See our [Examples](examples.md) for language-specific cache implementations:
-
-* [Bun](./examples.md#bun)
-* [C# - NuGet](./examples.md#c---nuget)
-* [Java - Gradle](./examples.md#java---gradle)
-* [Java - Maven](./examples.md#java---maven)
-* [Node - npm](./examples.md#node---npm)
-* [Python - pip](./examples.md#python---pip)
-* [Ruby - Bundler](./examples.md#ruby---bundler)
-* [Rust - Cargo](./examples.md#rust---cargo)
-
-And [many more languages and frameworks](examples.md)
-
 ## Creating a cache key
 
 A cache key can include any of the contexts, functions, literals, and operators supported by GitHub Actions.

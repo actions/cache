@@ -222,11 +222,3 @@ Using Workload Identity Federation provides enhanced security since:
 - Access is temporary and scoped to just the running workflow
 - All access is fully auditable in Google Cloud logs
 
-## Language-Specific Caching Examples
-
-- [Bun](#bun)
-- [C# - NuGet](#c---nuget)
-- [Clojure - Lein Deps](#clojure---lein-deps)
-- [D - DUB](#d---dub)
-  - [POSIX](#posix)
-  - [Windows](#windows)
