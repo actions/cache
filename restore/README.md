@@ -1,6 +1,6 @@
-# Restore action
+# Restore Action with Google Cloud Storage Support
 
-The restore action restores a cache. It works similarly to the `cache` action except that it doesn't have a post step to save the cache. This action provides granular ability to restore a cache without having to save it. It accepts the same set of inputs as the `cache` action.
+The restore action restores a cache from Google Cloud Storage (GCS) with fallback to GitHub's cache backend. It works similarly to the main `cache` action except that it doesn't have a post step to save the cache. This action provides granular ability to restore a cache without having to save it. It accepts the same set of inputs as the main `cache` action.
 
 ## Documentation
 
@@ -11,6 +11,30 @@ The restore action restores a cache. It works similarly to the `cache` action ex
 * `restore-keys` - An ordered list of prefix-matched keys to use for restoring stale cache if no cache hit occurred for key.
 * `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: `false`
 * `lookup-only` - If true, only checks if cache entry exists and skips download. Default: `false`
+* `gcs-bucket` - Google Cloud Storage bucket name to use for caching. When provided, GCS will be used as the cache backend.
+* `gcs-path-prefix` - Optional prefix path within the GCS bucket for cache files. Default: `github-cache`
+
+### GCS Authentication
+
+This action uses [Application Default Credentials (ADC)](https://cloud.google.com/docs/authentication/application-default-credentials) to authenticate with Google Cloud. The recommended approach is to use the official Google Cloud auth action before using this action:
+
+```yaml
+- uses: google-github-actions/auth@v2
+  with:
+    # Using Service Account Key JSON (less secure)
+    credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+    
+    # Alternatively, use Workload Identity Federation (more secure)
+    # workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+    # service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+```
+
+For Workload Identity Federation, your workflow will need these permissions:
+```yaml
+permissions:
+  contents: 'read'
+  id-token: 'write' # Required for workload identity federation
+```
 
 ### Outputs
 
@@ -37,11 +61,12 @@ If you are using separate jobs to create and save your cache(s) to be reused by 
 steps:
   - uses: actions/checkout@v4
 
-  - uses: actions/cache/restore@v4
+  - uses: danySam/gcs-cache/restore@v1
     id: cache
     with:
       path: path/to/dependencies
       key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+      gcs-bucket: my-github-cache-bucket # Optional: Use GCS for caching
 
   - name: Install Dependencies
     if: steps.cache.outputs.cache-hit != 'true'
@@ -69,11 +94,12 @@ steps:
   - name: Build
     run: /build-parent-module.sh
 
-  - uses: actions/cache/save@v4
+  - uses: danySam/gcs-cache/save@v1
     id: cache
     with:
       path: path/to/dependencies
       key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+      gcs-bucket: my-github-cache-bucket # Optional: Use GCS for caching
 ```
 
 #### Step 2 - Restore the built artifact from cache using the same key and path
@@ -82,11 +108,12 @@ steps:
 steps:
   - uses: actions/checkout@v4
 
-  - uses: actions/cache/restore@v4
+  - uses: danySam/gcs-cache/restore@v1
     id: cache
     with:
       path: path/to/dependencies
       key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+      gcs-bucket: my-github-cache-bucket # Optional: Use GCS for caching
 
   - name: Install Dependencies
     if: steps.cache.outputs.cache-hit != 'true'
@@ -109,11 +136,12 @@ To fail if there is no cache hit for the primary key, leave `restore-keys` empty
 steps:
   - uses: actions/checkout@v4
 
-  - uses: actions/cache/restore@v4
+  - uses: danySam/gcs-cache/restore@v1
     id: cache
     with:
       path: path/to/dependencies
       key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+      gcs-bucket: my-github-cache-bucket # Optional: Use GCS for caching
       fail-on-cache-miss: true
 
   - name: Build
