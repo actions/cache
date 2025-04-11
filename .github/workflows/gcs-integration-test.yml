@@ -1,0 +1,127 @@
+name: GCS Integration Tests
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+
+jobs:
+  test-gcs-basic:
+    runs-on: ubuntu-latest
+    env:
+      GCS_BUCKET: ${{ secrets.GCS_TEST_BUCKET }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Set up GCP credentials
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+        
+    - name: Generate test files
+      run: |
+        mkdir -p gcs-test-cache
+        echo "Test content $(date)" > gcs-test-cache/test1.txt
+        echo "More test content $(date)" > gcs-test-cache/test2.txt
+        
+    - name: Save cache to GCS
+      id: cache-save
+      uses: ./
+      with:
+        path: gcs-test-cache
+        key: gcs-integration-${{ github.run_id }}
+        gcs-bucket: ${{ env.GCS_BUCKET }}
+        
+    - name: Delete local cache
+      run: rm -rf gcs-test-cache
+      
+    - name: Restore cache from GCS
+      id: cache-restore
+      uses: ./
+      with:
+        path: gcs-test-cache
+        key: gcs-integration-${{ github.run_id }}
+        gcs-bucket: ${{ env.GCS_BUCKET }}
+        
+    - name: Verify cache contents
+      run: |
+        if [ ! -f "gcs-test-cache/test1.txt" ] || [ ! -f "gcs-test-cache/test2.txt" ]; then
+          echo "Cache files not restored correctly"
+          exit 1
+        fi
+        echo "Cache successfully restored from GCS"
+  
+  test-gcs-cross-runner:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    env:
+      GCS_BUCKET: ${{ secrets.GCS_TEST_BUCKET }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Set up GCP credentials
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+        
+    - name: Generate cross-platform files
+      shell: bash
+      run: |
+        mkdir -p cross-platform-cache
+        echo "Cross-platform test content ${{ runner.os }} $(date)" > cross-platform-cache/test-${{ runner.os }}.txt
+        
+    - name: Save to GCS with cross-platform key
+      uses: ./
+      with:
+        path: cross-platform-cache
+        key: cross-platform-${{ github.run_id }}
+        gcs-bucket: ${{ env.GCS_BUCKET }}
+        gcs-path-prefix: cross-platform-tests
+  
+  test-gcs-fallback:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Generate fallback test files
+      run: |
+        mkdir -p fallback-cache
+        echo "Fallback test content $(date)" > fallback-cache/fallback.txt
+        
+    - name: Test fallback to GitHub cache
+      uses: ./
+      with:
+        path: fallback-cache
+        key: fallback-test-${{ github.run_id }}
+        gcs-bucket: "this-bucket-does-not-exist-${{ github.run_id }}"
+        
+    - name: Delete local cache
+      run: rm -rf fallback-cache
+      
+    - name: Restore with fallback
+      id: restore-fallback
+      uses: ./
+      with:
+        path: fallback-cache
+        key: fallback-test-${{ github.run_id }}
+        gcs-bucket: "this-bucket-does-not-exist-${{ github.run_id }}"
+        
+    - name: Verify fallback mechanism worked
+      run: |
+        if [ ! -f "fallback-cache/fallback.txt" ]; then
+          echo "Fallback mechanism did not work correctly"
+          exit 1
+        fi
+        echo "Successfully fell back to GitHub cache"

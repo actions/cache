@@ -127,3 +127,72 @@ jobs:
         path: test-cache
     - name: Verify cache
       run: __tests__/verify-cache-files.sh proxy test-cache
+  
+  # GCS integration tests
+  test-gcs-save:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    env:
+      GCS_BUCKET: ${{ secrets.GCS_TEST_BUCKET }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Set up GCP credentials
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+    - name: Generate files
+      run: __tests__/create-cache-files.sh gcs test-gcs-cache
+    - name: Save cache to GCS
+      uses: ./
+      with:
+        key: test-gcs-${{ github.run_id }}
+        path: test-gcs-cache
+        gcs-bucket: ${{ env.GCS_BUCKET }}
+  
+  test-gcs-restore:
+    needs: test-gcs-save
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    env:
+      GCS_BUCKET: ${{ secrets.GCS_TEST_BUCKET }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Set up GCP credentials
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+    - name: Restore cache from GCS
+      uses: ./
+      with:
+        key: test-gcs-${{ github.run_id }}
+        path: test-gcs-cache
+        gcs-bucket: ${{ env.GCS_BUCKET }}
+    - name: Verify GCS cache
+      run: __tests__/verify-cache-files.sh gcs test-gcs-cache
+  
+  test-gcs-fallback:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    env:
+      GCS_BUCKET: "non-existent-bucket-for-test"
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Generate files
+      run: __tests__/create-cache-files.sh fallback test-fallback-cache
+    - name: Save with GCS fallback
+      uses: ./
+      with:
+        key: test-fallback-${{ github.run_id }}
+        path: test-fallback-cache
+        gcs-bucket: ${{ env.GCS_BUCKET }}
+    - name: Restore with GCS fallback
+      uses: ./
+      with:
+        key: test-fallback-${{ github.run_id }}
+        path: test-fallback-cache
+        gcs-bucket: ${{ env.GCS_BUCKET }}
+    - name: Verify Fallback cache
+      run: __tests__/verify-cache-files.sh fallback test-fallback-cache
