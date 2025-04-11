@@ -7,12 +7,25 @@ This fork of the GitHub Actions cache action adds Google Cloud Storage (GCS) as 
 - **Custom retention**: Control cache retention policies through GCS lifecycle management
 - **Existing infrastructure**: Leverage your existing GCS infrastructure and permissions
 
-[![Tests](https://github.com/danySam/gcs-cache/actions/workflows/workflow.yml/badge.svg)](https://github.com/danySam/gcs-cache/actions/workflows/workflow.yml)
+## Quick Setup Guide
 
->Three actions are available:
->* Primary `cache` action with automatic save/restore
->* [Restore action](./restore/README.md) for restore-only operation
->* [Save action](./save/README.md) for save-only operation
+1. **Create a GCS bucket** for your caches (if you don't already have one)
+2. **Set up authentication**:
+   ```yaml
+   - uses: google-github-actions/auth@v2
+     with:
+       credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+   ```
+3. **Add to your workflow**:
+   ```yaml
+   - uses: danySam/gcs-cache@v1
+     with:
+       path: ~/.npm
+       key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+       gcs-bucket: your-gcs-bucket-name
+   ```
+
+That's it! Your cache will now use GCS storage with automatic fallback to GitHub's cache.
 
 ## Documentation
 
