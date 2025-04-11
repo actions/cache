@@ -1,62 +1,134 @@
-# Cache action
+# GitHub Actions Cache with Google Cloud Storage Support
 
-This action allows caching dependencies and build outputs to improve workflow execution time.
+This fork of the GitHub Actions cache action adds Google Cloud Storage (GCS) as a cache backend with fallback to GitHub's built-in cache. This provides several key benefits:
 
->Two other actions are available in addition to the primary `cache` action:
->
->* [Restore action](./restore/README.md)
->* [Save action](./save/README.md)
+- **Larger caches**: Store cache files beyond GitHub's 10GB repository limit
+- **Cross-repository caching**: Access the same cache across multiple repositories
+- **Custom retention**: Control cache retention policies through GCS lifecycle management
+- **Existing infrastructure**: Leverage your existing GCS infrastructure and permissions
 
-[![Tests](https://github.com/actions/cache/actions/workflows/workflow.yml/badge.svg)](https://github.com/actions/cache/actions/workflows/workflow.yml)
+[![Tests](https://github.com/danySam/gcs-cache/actions/workflows/workflow.yml/badge.svg)](https://github.com/danySam/gcs-cache/actions/workflows/workflow.yml)
+
+>Three actions are available:
+>* Primary `cache` action with automatic save/restore
+>* [Restore action](./restore/README.md) for restore-only operation
+>* [Save action](./save/README.md) for save-only operation
 
 ## Documentation
 
-See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows).
+See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows) for GitHub's cache documentation.
+
+## Using GCS Cache
+
+```yaml
+# Quick start example
+name: Build with GCS Cache
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write' # Required for GCP workload identity federation
+    steps:
+    - uses: actions/checkout@v4
+    
+    # Authenticate with Google Cloud
+    - uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+        # Or use workload identity federation
+    
+    # Cache dependencies with GCS
+    - uses: danySam/gcs-cache@v1
+      with:
+        path: path/to/dependencies
+        key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+        gcs-bucket: your-gcs-bucket-name
+```
+
+#### Authentication with Google Cloud
+
+This action uses [Application Default Credentials (ADC)](https://cloud.google.com/docs/authentication/application-default-credentials) to authenticate with Google Cloud. The recommended approach is to use the official Google Cloud auth action:
+
+```yaml
+- uses: google-github-actions/auth@v2
+  with:
+    # Using Service Account Key JSON (less secure)
+    credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+    
+    # Alternatively, use Workload Identity Federation (more secure)
+    # workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+    # service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+```
+
+For Workload Identity Federation, your workflow will need these permissions:
+```yaml
+permissions:
+  contents: 'read'
+  id-token: 'write' # Required for workload identity federation
+```
+
+#### GCS Cache Configuration
+
+After authentication is set up, configure the action with:
+```yaml
+- uses: danySam/gcs-cache@v1
+  with:
+    path: path/to/dependencies
+    key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+    gcs-bucket: your-gcs-bucket-name
+    gcs-path-prefix: custom/prefix  # Optional, defaults to "github-cache"
+```
+
+#### Automatic Fallback to GitHub Cache
+
+This action is designed to gracefully handle scenarios where GCS isn't available:
+
+- If the GCS bucket isn't specified, it uses GitHub's cache
+- If GCS authentication fails, it falls back to GitHub's cache
+- If storing/retrieving from GCS fails, it falls back to GitHub's cache
+
+This ensures your workflows will continue to function even if there are issues with GCS access.
 
 ## What's New
 
-### ⚠️ Important changes
+### GCS Cache Integration
 
-The cache backend service has been rewritten from the ground up for improved performance and reliability. [actions/cache](https://github.com/actions/cache) now integrates with the new cache service (v2) APIs.
+This fork adds full Google Cloud Storage integration to the GitHub Actions cache:
 
-The new service will gradually roll out as of **February 1st, 2025**. The legacy service will also be sunset on the same date. Changes in these release are **fully backward compatible**.
+- **GCS Backend**: Use GCS as your primary cache backend
+- **Automatic Fallback**: Gracefully falls back to GitHub's cache if GCS is unavailable
+- **Simple Configuration**: Just add `gcs-bucket` parameter to switch to GCS storage
+- **Cross-Repository**: Share caches between different repositories using the same GCS bucket
 
-**We are deprecating some versions of this action**. We recommend upgrading to version `v4` or `v3` as soon as possible before **February 1st, 2025.** (Upgrade instructions below).
+### Migration from actions/cache
 
-If you are using pinned SHAs, please use the SHAs of versions `v4.2.0` or `v3.4.0`
+Switching from `actions/cache` to this GCS-enabled fork is straightforward:
 
-If you do not upgrade, all workflow runs using any of the deprecated [actions/cache](https://github.com/actions/cache) will fail.
+```diff
+- uses: actions/cache@v4
++ uses: danySam/gcs-cache@v1
+  with:
+    path: path/to/dependencies
+    key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
++   gcs-bucket: your-gcs-bucket-name      # Add this line to use GCS
++   gcs-path-prefix: custom/prefix        # Optional
+```
 
-Upgrading to the recommended versions will not break your workflows.
+The `v1` release of this fork is based on `actions/cache@v4` and maintains full compatibility with all existing cache functionality.
 
-Read more about the change & access the migration guide: [reference to the announcement](https://github.com/actions/cache/discussions/1510).
+### Compatibility Notes
 
-### v4
+This fork maintains complete compatibility with:
 
-* Integrated with the new cache service (v2) APIs.
-* Updated to node 20
+- The standard GitHub Actions cache API
+- The v4 cache service APIs
+- All existing cache features (cross-OS caching, lookup-only, etc.)
 
-### v3
+See the [official repo](https://github.com/actions/cache/) for more information on the base action.
 
-* Integrated with the new cache service (v2) APIs.
-* Added support for caching in GHES 3.5+.
-* Fixed download issue for files > 2GB during restore.
-* Updated the minimum runner version support from node 12 -> node 16.
-* Fixed avoiding empty cache save when no files are available for caching.
-* Fixed tar creation error while trying to create tar with path as `~/` home folder on `ubuntu-latest`.
-* Fixed zstd failing on amazon linux 2.0 runners.
-* Fixed cache not working with github workspace directory or current directory.
-* Fixed the download stuck problem by introducing a timeout of 1 hour for cache downloads.
-* Fix zstd not working for windows on gnu tar in issues.
-* Allowing users to provide a custom timeout as input for aborting download of a cache segment using an environment variable `SEGMENT_DOWNLOAD_TIMEOUT_MINS`. Default is 10 minutes.
-* New actions are available for granular control over caches - [restore](restore/action.yml) and [save](save/action.yml).
-* Support cross-os caching as an opt-in feature. See [Cross OS caching](./tips-and-workarounds.md#cross-os-cache) for more info.
-* Added option to fail job on cache miss. See [Exit workflow on cache miss](./restore/README.md#exit-workflow-on-cache-miss) for more info.
-* Fix zstd not being used after zstd version upgrade to 1.5.4 on hosted runners
-* Added option to lookup cache without downloading it.
-* Reduced segment size to 128MB and segment timeout to 10 minutes to fail fast in case the cache download is stuck.
-
-See the [v2 README.md](https://github.com/actions/cache/blob/v2/README.md) for older updates.
+> **Note:** The GitHub cache backend service is undergoing changes as of February 1st, 2025. This fork is compatible with the new v2 cache service APIs.
 
 ## Usage
 
@@ -76,6 +148,9 @@ If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are requir
 * `enableCrossOsArchive` - An optional boolean when enabled, allows Windows runners to save or restore caches that can be restored or saved respectively on other platforms. Default: `false`
 * `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: `false`
 * `lookup-only` - If true, only checks if cache entry exists and skips download. Does not change save cache behavior. Default: `false`
+* `gcs-bucket` - Google Cloud Storage bucket name to use for caching. When provided, GCS will be used as the cache backend.
+* `gcs-credentials` - Google Cloud Storage credentials JSON (service account key). If not provided, default authentication will be used.
+* `gcs-path-prefix` - Optional prefix path within the GCS bucket for cache files. Default: `github-cache`
 
 #### Environment Variables
 
@@ -113,7 +188,7 @@ jobs:
 
     - name: Cache Primes
       id: cache-primes
-      uses: actions/cache@v4
+      uses: danySam/gcs-cache@v1
       with:
         path: prime-numbers
         key: ${{ runner.os }}-primes
@@ -144,7 +219,7 @@ jobs:
 
     - name: Restore cached Primes
       id: cache-primes-restore
-      uses: actions/cache/restore@v4
+      uses: danySam/gcs-cache/restore@v1
       with:
         path: |
           path/to/dependencies
@@ -155,7 +230,7 @@ jobs:
     .
     - name: Save Primes
       id: cache-primes-save
-      uses: actions/cache/save@v4
+      uses: danySam/gcs-cache/save@v1
       with:
         path: |
           path/to/dependencies
@@ -172,36 +247,24 @@ With the introduction of the `restore` and `save` actions, a lot of caching use 
 
 ## Implementation Examples
 
-Every programming language and framework has its own way of caching.
+### GCS Caching Examples
 
-See [Examples](examples.md) for a list of `actions/cache` implementations for use with:
+See our [GCS-specific examples](examples.md#google-cloud-storage-cache) for complete workflow templates using Google Cloud Storage caching.
+
+### Language-Specific Examples
+
+Every programming language and framework has its own way of caching. See our [Examples](examples.md) for language-specific cache implementations:
 
 * [Bun](./examples.md#bun)
 * [C# - NuGet](./examples.md#c---nuget)
-* [Clojure - Lein Deps](./examples.md#clojure---lein-deps)
-* [D - DUB](./examples.md#d---dub)
-* [Deno](./examples.md#deno)
-* [Elixir - Mix](./examples.md#elixir---mix)
-* [Go - Modules](./examples.md#go---modules)
-* [Haskell - Cabal](./examples.md#haskell---cabal)
-* [Haskell - Stack](./examples.md#haskell---stack)
 * [Java - Gradle](./examples.md#java---gradle)
 * [Java - Maven](./examples.md#java---maven)
 * [Node - npm](./examples.md#node---npm)
-* [Node - Lerna](./examples.md#node---lerna)
-* [Node - Yarn](./examples.md#node---yarn)
-* [OCaml/Reason - esy](./examples.md#ocamlreason---esy)
-* [PHP - Composer](./examples.md#php---composer)
 * [Python - pip](./examples.md#python---pip)
-* [Python - pipenv](./examples.md#python---pipenv)
-* [R - renv](./examples.md#r---renv)
 * [Ruby - Bundler](./examples.md#ruby---bundler)
 * [Rust - Cargo](./examples.md#rust---cargo)
-* [Scala - SBT](./examples.md#scala---sbt)
-* [Swift, Objective-C - Carthage](./examples.md#swift-objective-c---carthage)
-* [Swift, Objective-C - CocoaPods](./examples.md#swift-objective-c---cocoapods)
-* [Swift - Swift Package Manager](./examples.md#swift---swift-package-manager)
-* [Swift - Mint](./examples.md#swift---mint)
+
+And [many more languages and frameworks](examples.md)
 
 ## Creating a cache key
 
@@ -210,7 +273,7 @@ A cache key can include any of the contexts, functions, literals, and operators 
 For example, using the [`hashFiles`](https://docs.github.com/en/actions/learn-github-actions/expressions#hashfiles) function allows you to create a new cache when dependencies change.
 
 ```yaml
-  - uses: actions/cache@v4
+  - uses: danySam/gcs-cache@v1
     with:
       path: |
         path/to/dependencies
@@ -228,7 +291,7 @@ Additionally, you can use arbitrary command output in a cache key, such as a dat
       echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
     shell: bash
 
-  - uses: actions/cache@v4
+  - uses: danySam/gcs-cache@v1
     with:
       path: path/to/dependencies
       key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('**/lockfiles') }}
@@ -250,7 +313,7 @@ Example:
 steps:
   - uses: actions/checkout@v4
 
-  - uses: actions/cache@v4
+  - uses: danySam/gcs-cache@v1
     id: cache
     with:
       path: path/to/dependencies
@@ -261,7 +324,7 @@ steps:
     run: /install.sh
 ```
 
-> **Note** The `id` defined in `actions/cache` must match the `id` in the `if` statement (i.e. `steps.[ID].outputs.cache-hit`)
+> **Note** The `id` defined in `danySam/gcs-cache` must match the `id` in the `if` statement (i.e. `steps.[ID].outputs.cache-hit`)
 
 ## Cache Version
 
@@ -282,7 +345,7 @@ jobs:
 
       - name: Cache Primes
         id: cache-primes
-        uses: actions/cache@v4
+        uses: danySam/gcs-cache@v1
         with:
           path: prime-numbers
           key: primes
@@ -293,7 +356,7 @@ jobs:
 
       - name: Cache Numbers
         id: cache-numbers
-        uses: actions/cache@v4
+        uses: danySam/gcs-cache@v1
         with:
           path: numbers
           key: primes
@@ -309,7 +372,7 @@ jobs:
 
       - name: Cache Primes
         id: cache-primes
-        uses: actions/cache@v4
+        uses: danySam/gcs-cache@v1
         with:
           path: prime-numbers
           key: primes
@@ -337,7 +400,7 @@ Please note that Windows environment variables (like `%LocalAppData%`) will NOT 
 
 ## Contributing
 
-We would love for you to contribute to `actions/cache`. Pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
+We would love for you to contribute to `danySam/gcs-cache`. Pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
 ## License
 
