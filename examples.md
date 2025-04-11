@@ -6,7 +6,6 @@
   - [Advanced GCS Cache Examples](#advanced-gcs-cache-examples)
     - [Cross-Repository Caching](#cross-repository-caching)
     - [Using Workload Identity Federation](#using-workload-identity-federation-recommended-for-production)
-- [Language-Specific Caching Examples](#language-specific-caching-examples)
 
 ## Google Cloud Storage Cache
 
