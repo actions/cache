@@ -3,7 +3,7 @@ name: deprecation
 version: 2.3.1
 type: npm
 summary: Log a deprecation message with stack
-homepage: 
+homepage:
 license: isc
 licenses:
 - sources: LICENSE
