@@ -3,7 +3,7 @@ name: concat-map
 version: 0.0.1
 type: npm
 summary: concatenative mapdashery
-homepage: https://github.com/substack/node-concat-map#readme
+homepage:
 license: other
 licenses:
 - sources: LICENSE
