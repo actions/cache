@@ -7,9 +7,9 @@
   "scripts": {
     "build": "tsc && ncc build -o dist/restore src/restore.ts && ncc build -o dist/save src/save.ts && ncc build -o dist/restore-only src/restoreOnly.ts && ncc build -o dist/save-only src/saveOnly.ts",
     "test": "tsc --noEmit && jest --coverage",
-    "lint": "eslint **/*.ts --cache",
-    "format": "prettier --write **/*.ts",
-    "format-check": "prettier --check **/*.ts"
+    "lint": "eslint src/**/*.ts --cache __tests__/*.ts --cache",
+    "format": "prettier --write **/**/*.ts",
+    "format-check": "prettier --check **/**/*.ts"
   },
   "repository": {
     "type": "git",

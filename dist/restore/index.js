@@ -54384,9 +54384,9 @@ exports.getInputAsBool = getInputAsBool;
 exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
 const cache = __importStar(__nccwpck_require__(5116));
 const core = __importStar(__nccwpck_require__(37484));
+const action_1 = __nccwpck_require__(88556);
 const request_error_1 = __nccwpck_require__(93708);
 const constants_1 = __nccwpck_require__(27242);
-const { Octokit } = __nccwpck_require__(88556);
 function isGhes() {
     const ghUrl = new URL(process.env["GITHUB_SERVER_URL"] || "https://github.com");
     const hostname = ghUrl.hostname.trimEnd().toUpperCase();
@@ -54408,18 +54408,19 @@ function logWarning(message) {
 function deleteCacheByKey(key, owner, repo) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
-        const octokit = new Octokit();
+        const octokit = new action_1.Octokit();
         let response;
         try {
             const gitRef = process.env[constants_1.RefKey];
-            let cacheEntry = yield octokit.rest.actions.getActionsCacheList({
+            const cacheEntry = yield octokit.rest.actions.getActionsCacheList({
                 owner: owner,
                 repo: repo,
                 key: key,
                 ref: gitRef
             });
             const { data: { total_count, actions_caches } } = cacheEntry;
-            if (total_count !== 1 || total_count !== actions_caches.length) { // leave all find logic to the actual cache implementation. We just want to make sure we're returned a single element so we don't accidentally delete an entry that belongs to a different gitref.
+            if (total_count !== 1 || total_count !== actions_caches.length) {
+                // leave all find logic to the actual cache implementation. We just want to make sure we're returned a single element so we don't accidentally delete an entry that belongs to a different gitref.
                 if (total_count > 1) {
                     exports.logWarning(`More than one cache entry found for key ${key}`);
                 }
@@ -54434,22 +54435,25 @@ function deleteCacheByKey(key, owner, repo) {
                 core.info(`Skip trying to delete cache entry for key ${key}.`);
                 return;
             }
-            let id = actions_caches[0].id;
-            response = yield octokit.rest.actions.deleteActionsCacheById({
-                owner: owner,
-                repo: repo,
-                cache_id: id
-            });
-            if (response.status === 204) {
-                core.info(`Succesfully deleted cache with key: ${key}, id: ${id}`);
-                return 204;
+            const id = actions_caches[0].id;
+            if (id) {
+                response = yield octokit.rest.actions.deleteActionsCacheById({
+                    owner: owner,
+                    repo: repo,
+                    cache_id: id
+                });
+                if (response.status === 204) {
+                    core.info(`Succesfully deleted cache with key: ${key}, id: ${id}`);
+                    return 204;
+                }
             }
         }
         catch (e) {
             if (e instanceof request_error_1.RequestError) {
-                let err = e;
-                let errData = (_a = err.response) === null || _a === void 0 ? void 0 : _a.data;
-                exports.logWarning(`Github API reported error: ${err.name} '${err.status}: ${errData === null || errData === void 0 ? void 0 : errData.message}'`);
+                const err = e;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const errMessage = ((_a = err.response) === null || _a === void 0 ? void 0 : _a.data).message;
+                exports.logWarning(`Github API reported error: ${err.name} '${err.status}: ${errMessage}'`);
             }
             core.info(`Couldn't delete cache entry for key ${key}.`);
             return;
