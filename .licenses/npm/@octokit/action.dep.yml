@@ -3,7 +3,7 @@ name: "@octokit/action"
 version: 4.0.10
 type: npm
 summary: GitHub API client for GitHub Actions
-homepage: 
+homepage:
 license: mit
 licenses:
 - sources: LICENSE
