@@ -21,14 +21,17 @@ class StateProviderBase implements IStateProvider {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
-    setState = (key: string, value: string) => { };
+    setState = (key: string, value: string) => {};
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getState = (key: string) => "";
 }
 
 export class StateProvider extends StateProviderBase {
-    setState = (key: string, value: string) => { core.saveState(key, value); stateToOutput(key, value); };
+    setState = (key: string, value: string) => {
+        core.saveState(key, value);
+        stateToOutput(key, value);
+    };
     getState = core.getState;
 }
 
@@ -40,9 +43,7 @@ function stateToOutput(key: string, value: string) {
     core.setOutput(stateToOutputMap.get(key) as string, value);
 }
 export class NullStateProvider extends StateProviderBase {
-
     setState = stateToOutput;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getState = (key: string) => "";
 }
-

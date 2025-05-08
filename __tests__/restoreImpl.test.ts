@@ -362,7 +362,6 @@ test("restore with cache found for key", async () => {
     expect(setOutputMock).toHaveBeenCalledWith("cache-primary-key", key);
     expect(setOutputMock).toHaveBeenCalledWith("cache-matched-key", key);
 
-
     expect(infoMock).toHaveBeenCalledWith(`Cache restored from key: ${key}`);
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
