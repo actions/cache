@@ -49,7 +49,7 @@
   with:
     path: |
       ~/.bun/install/cache
-    key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+    key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
 ```
 
 ### Windows
@@ -59,7 +59,7 @@
   with:
     path: |
       ~\.bun
-    key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+    key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
 ```
 
 ## C# - NuGet
