@@ -36,7 +36,7 @@ inputs:
     required: false
     deprecationMessage: |
       save-always does not work as intended and will be removed in a future release.
-      If you only want to control whether a new cache will be written use `save-always` instead.
+      If you only want to control whether a new cache will be written use `save-on-success` instead.
       Otherwise a separate `actions/cache/restore` step should be used instead.
       See https://github.com/actions/cache/tree/main/save#always-save-cache for more details.
 outputs:
