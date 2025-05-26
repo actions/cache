@@ -1,6 +1,6 @@
 ---
 name: mime-types
-version: 2.1.27
+version: 2.1.34
 type: npm
 summary: The ultimate javascript content-type utility.
 homepage: https://github.com/jshttp/mime-types#readme
@@ -35,6 +35,8 @@ licenses:
   text: |-
     [MIT](LICENSE)
 
+    [ci-image]: https://badgen.net/github/checks/jshttp/mime-types/master?label=ci
+    [ci-url]: https://github.com/jshttp/mime-types/actions?query=workflow%3Aci
     [coveralls-image]: https://badgen.net/coveralls/c/github/jshttp/mime-types/master
     [coveralls-url]: https://coveralls.io/r/jshttp/mime-types?branch=master
     [node-version-image]: https://badgen.net/npm/node/mime-types
@@ -42,6 +44,4 @@ licenses:
     [npm-downloads-image]: https://badgen.net/npm/dm/mime-types
     [npm-url]: https://npmjs.org/package/mime-types
     [npm-version-image]: https://badgen.net/npm/v/mime-types
-    [travis-image]: https://badgen.net/travis/jshttp/mime-types/master
-    [travis-url]: https://travis-ci.org/jshttp/mime-types
 notices: []
