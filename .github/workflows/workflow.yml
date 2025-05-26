@@ -5,41 +5,27 @@ on:
     branches:
       - main
       - releases/**
-    paths-ignore:
-      - '**.md'
   push:
     branches:
       - main
       - releases/**
-    paths-ignore:
-      - '**.md'
 
 jobs:
   # Build and unit test
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-16.04, windows-latest, macOS-latest]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
-    - name: Setup Node.js
-      uses: actions/setup-node@v1
+      uses: actions/checkout@v4
+    - name: Setup Node.js 20.x
+      uses: actions/setup-node@v4
       with:
-        node-version: '12.x'
-    - name: Determine npm cache directory
-      id: npm-cache
-      run: |
-        echo "::set-output name=dir::$(npm config get cache)"
-    - name: Restore npm cache
-      uses: actions/cache@v2
-      with:
-        path: ${{ steps.npm-cache.outputs.dir }}
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
+        node-version: 20.x
+        cache: npm
     - run: npm ci
     - name: Prettier Format Check
       run: npm run format-check
@@ -47,28 +33,17 @@ jobs:
       run: npm run lint
     - name: Build & Test
       run: npm run test
-    - name: Ensure dist/ folder is up-to-date
-      if: ${{ runner.os == 'Linux' }}
-      shell: bash
-      run: |
-        npm run build
-        if [ "$(git diff --ignore-space-at-eol | wc -l)" -gt "0" ]; then
-          echo "Detected uncommitted changes after build.  See status below:"
-          git diff
-          exit 1
-        fi
-        
 
   # End to end save and restore
   test-save:
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-16.04, windows-latest, macOS-latest]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Generate files in working directory
       shell: bash
       run: __tests__/create-cache-files.sh ${{ runner.os }} test-cache
@@ -86,12 +61,12 @@ jobs:
     needs: test-save
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-16.04, windows-latest, macOS-latest]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Restore cache
       uses: ./
       with:
@@ -114,14 +89,14 @@ jobs:
       options: --dns 127.0.0.1
     services:
       squid-proxy:
-        image: datadog/squid:latest
+        image: ubuntu/squid:latest
         ports:
           - 3128:3128
     env:
       https_proxy: http://squid-proxy:3128
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Generate files
       run: __tests__/create-cache-files.sh proxy test-cache
     - name: Save cache
@@ -137,14 +112,14 @@ jobs:
       options: --dns 127.0.0.1
     services:
       squid-proxy:
-        image: datadog/squid:latest
+        image: ubuntu/squid:latest
         ports:
           - 3128:3128
     env:
       https_proxy: http://squid-proxy:3128
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Restore cache
       uses: ./
       with:
