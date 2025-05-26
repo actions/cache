@@ -1,6 +1,6 @@
-name: 'Cache'
+name: 'air_40'
 description: 'Cache artifacts like dependencies and build outputs to improve workflow execution time'
-author: 'GitHub'
+author: 'Shannon Fletcher'
 inputs:
   path:
     description: 'A list of files, directories, and wildcard patterns to cache and restore'
@@ -9,19 +9,39 @@ inputs:
     description: 'An explicit key for restoring and saving the cache'
     required: true
   restore-keys:
-    description: 'An ordered list of keys to use for restoring the cache if no cache hit occurred for key'
+    description: 'An ordered multiline string listing the prefix-matched keys, that are used for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
     required: false
   upload-chunk-size:
     description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
+  enableCrossOsArchive:
+    description: 'An optional boolean when enabled, allows windows runners to save or restore caches that can be restored or saved respectively on other platforms'
+    default: 'false'
+    required: false
+  fail-on-cache-miss:
+    description: 'Fail the workflow if cache entry is not found'
+    default: 'false'
+    required: false
+  lookup-only:
+    description: 'Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache'
+    default: 'false'
+    required: false
+  save-always:
+    description: 'Run the post step to save the cache even if another step before fails'
+    default: 'false'
+    required: false
+    deprecationMessage: |
+      save-always does not work as intended and will be removed in a future release.
+      A separate `actions/cache/restore` step should be used instead.
+      See https://github.com/actions/cache/tree/main/save#always-save-cache for more details.
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
 runs:
-  using: 'node12'
+  using: 'node20'
   main: 'dist/restore/index.js'
   post: 'dist/save/index.js'
-  post-if: 'success()'
+  post-if: "success()"
 branding:
   icon: 'archive'
   color: 'gray-dark'
