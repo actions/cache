@@ -76,3 +76,20 @@ jobs:
     - name: Verify cache files outside working directory
       shell: bash
       run: __tests__/verify-cache-files.sh ${{ runner.os }} ~/test-cache
+
+  test-container:
+    runs-on: runs-on,runner=2cpu-linux-arm64
+    container:
+      image: ubuntu:latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Test in container
+      run: |
+        __tests__/create-cache-files.sh Linux test-cache
+        __tests__/verify-cache-files.sh Linux test-cache
+    - name: Save cache
+      uses: ./
+      with:
+        key: test-container-${{ github.run_id }}
+        path: test-cache
