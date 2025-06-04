@@ -11,7 +11,7 @@ on:
       - main
       - releases/**
       - fix/**
-      - v4
+      - v4*
 
 jobs:
   # End to end save and restore
