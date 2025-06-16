@@ -335,9 +335,23 @@ There are a number of community practices/workarounds to fulfill specific requir
 
 Please note that Windows environment variables (like `%LocalAppData%`) will NOT be expanded by this action. Instead, prefer using `~` in your paths which will expand to the HOME directory. For example, instead of `%LocalAppData%`, use `~\AppData\Local`. For a list of supported default environment variables, see the [Learn GitHub Actions: Variables](https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables) page.
 
-## Contributing
+## Note
 
-We would love for you to contribute to `actions/cache`. Pull requests are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
+Thank you for your interest in this GitHub repo, however, right now we are not taking contributions. 
+
+We continue to focus our resources on strategic areas that help our customers be successful while making developers' lives easier. While GitHub Actions remains a key part of this vision, we are allocating resources towards other areas of Actions and are not taking contributions to this repository at this time. The GitHub public roadmap is the best place to follow along for any updates on features we’re working on and what stage they’re in.
+
+We are taking the following steps to better direct requests related to GitHub Actions, including:
+
+1. We will be directing questions and support requests to our [Community Discussions area](https://github.com/orgs/community/discussions/categories/actions)
+
+2. High Priority bugs can be reported through Community Discussions or you can report these to our support team https://support.github.com/contact/bug-report.
+
+3. Security Issues should be handled as per our [security.md](SECURITY.md).
+
+We will still provide security updates for this project and fix major breaking changes during this time.
+
+You are welcome to still raise bugs in this repo.
 
 ## License
 
