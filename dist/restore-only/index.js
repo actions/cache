@@ -65114,21 +65114,22 @@ class StateProviderBase {
 class StateProvider extends StateProviderBase {
     constructor() {
         super(...arguments);
-        this.setState = core.saveState;
+        this.setState = (key, value) => { core.saveState(key, value); stateToOutput(key, value); };
         this.getState = core.getState;
     }
 }
 exports.StateProvider = StateProvider;
+const stateToOutputMap = new Map([
+    [constants_1.State.CacheMatchedKey, constants_1.Outputs.CacheMatchedKey],
+    [constants_1.State.CachePrimaryKey, constants_1.Outputs.CachePrimaryKey]
+]);
+function stateToOutput(key, value) {
+    core.setOutput(stateToOutputMap.get(key), value);
+}
 class NullStateProvider extends StateProviderBase {
     constructor() {
         super(...arguments);
-        this.stateToOutputMap = new Map([
-            [constants_1.State.CacheMatchedKey, constants_1.Outputs.CacheMatchedKey],
-            [constants_1.State.CachePrimaryKey, constants_1.Outputs.CachePrimaryKey]
-        ]);
-        this.setState = (key, value) => {
-            core.setOutput(this.stateToOutputMap.get(key), value);
-        };
+        this.setState = stateToOutput;
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         this.getState = (key) => "";
     }
