@@ -132,7 +132,7 @@ notices:
     Hejlsberg\r\n - Anders Kaseorg\r\n - Andre Sutherland\r\n - Andreas Martin\r\n
     - Andrej Baran\r\n - Andrew\r\n - Andrew Branch\r\n - Andrew Casey\r\n - Andrew
     Faulkner\r\n - Andrew Ochsner\r\n - Andrew Stegmaier\r\n - Andrew Z Allen\r\n
-    - Andrey Roenko\r\n - Andrii Dieiev\r\n - Andr??s Parditka\r\n - Andy Hanson\r\n
+    - Andrey Roenko\r\n - Andrii Dieiev\r\n - András Parditka\r\n - Andy Hanson\r\n
     - Anil Anar\r\n - Anix\r\n - Anton Khlynovskiy\r\n - Anton Tolmachev\r\n - Anubha
     Mathur\r\n - AnyhowStep\r\n - Armando Aguirre\r\n - Arnaud Tournier\r\n - Arnav
     Singh\r\n - Arpad Borsos\r\n - Artem Tyurin\r\n - Arthur Ozga\r\n - Asad Saeeduddin\r\n
@@ -149,29 +149,29 @@ notices:
     - Colin Snover\r\n - Collins Abitekaniza\r\n - Connor Clark\r\n - Cotton Hou\r\n
     - csigs\r\n - Cyrus Najmabadi\r\n - Dafrok Zhang\r\n - Dahan Gong\r\n - Daiki
     Nishikawa\r\n - Dan Corder\r\n - Dan Freeman\r\n - Dan Quirk\r\n - Dan Rollo\r\n
-    - Daniel Gooss\r\n - Daniel Imms\r\n - Daniel Krom\r\n - Daniel Kr??l\r\n - Daniel
+    - Daniel Gooss\r\n - Daniel Imms\r\n - Daniel Krom\r\n - Daniel Król\r\n - Daniel
     Lehenbauer\r\n - Daniel Rosenwasser\r\n - David Li\r\n - David Sheldrick\r\n -
     David Sherret\r\n - David Souther\r\n - David Staheli\r\n - Denis Nedelyaev\r\n
     - Derek P Sifford\r\n - Dhruv Rajvanshi\r\n - Dick van den Brink\r\n - Diogo Franco
-    (Kovensky)\r\n - Dirk B??umer\r\n - Dirk Holtwick\r\n - Dmitrijs Minajevs\r\n
-    - Dom Chen\r\n - Donald Pipowitch\r\n - Doug Ilijev\r\n - dreamran43@gmail.com\r\n
+    (Kovensky)\r\n - Dirk Bäumer\r\n - Dirk Holtwick\r\n - Dmitrijs Minajevs\r\n -
+    Dom Chen\r\n - Donald Pipowitch\r\n - Doug Ilijev\r\n - dreamran43@gmail.com\r\n
     - @e-cloud\r\n - Ecole Keine\r\n - Eddie Jaoude\r\n - Edward Thomson\r\n - EECOLOR\r\n
     - Eli Barzilay\r\n - Elizabeth Dinella\r\n - Ely Alamillo\r\n - Eric Grube\r\n
     - Eric Tsang\r\n - Erik Edrosa\r\n - Erik McClenney\r\n - Esakki Raj\r\n - Ethan
     Resnick\r\n - Ethan Rubio\r\n - Eugene Timokhov\r\n - Evan Cahill\r\n - Evan Martin\r\n
     - Evan Sebastian\r\n - ExE Boss\r\n - Eyas Sharaiha\r\n - Fabian Cook\r\n - @falsandtru\r\n
     - Filipe Silva\r\n - @flowmemo\r\n - Forbes Lindesay\r\n - Francois Hendriks\r\n
-    - Francois Wouts\r\n - Frank Wallis\r\n - Franti??ek ??iacik\r\n - Frederico Bittencourt\r\n
+    - Francois Wouts\r\n - Frank Wallis\r\n - František Žiacik\r\n - Frederico Bittencourt\r\n
     - fullheightcoding\r\n - Gabe Moothart\r\n - Gabriel Isenberg\r\n - Gabriela Araujo
     Britto\r\n - Gabriela Britto\r\n - gb714us\r\n - Gilad Peleg\r\n - Godfrey Chan\r\n
-    - Gorka Hern??ndez Estomba\r\n - Graeme Wicksted\r\n - Guillaume Salles\r\n -
-    Guy Bedford\r\n - hafiz\r\n - Halasi Tam??s\r\n - Hendrik Liebau\r\n - Henry Mercer\r\n
+    - Gorka Hernández Estomba\r\n - Graeme Wicksted\r\n - Guillaume Salles\r\n - Guy
+    Bedford\r\n - hafiz\r\n - Halasi Tamás\r\n - Hendrik Liebau\r\n - Henry Mercer\r\n
     - Herrington Darkholme\r\n - Hoang Pham\r\n - Holger Jeromin\r\n - Homa Wong\r\n
     - Hye Sung Jung\r\n - Iain Monro\r\n - @IdeaHunter\r\n - Igor Novozhilov\r\n -
     Igor Oleinikov\r\n - Ika\r\n - iliashkolyar\r\n - IllusionMH\r\n - Ingvar Stepanyan\r\n
     - Ingvar Stepanyan\r\n - Isiah Meadows\r\n - ispedals\r\n - Ivan Enderlin\r\n
     - Ivo Gabe de Wolff\r\n - Iwata Hidetaka\r\n - Jack Bates\r\n - Jack Williams\r\n
-    - Jake Boone\r\n - Jakub Korzeniowski\r\n - Jakub M??okosiewicz\r\n - James Henry\r\n
+    - Jake Boone\r\n - Jakub Korzeniowski\r\n - Jakub Młokosiewicz\r\n - James Henry\r\n
     - James Keane\r\n - James Whitney\r\n - Jan Melcher\r\n - Jason Freeman\r\n -
     Jason Jarrett\r\n - Jason Killian\r\n - Jason Ramsay\r\n - JBerger\r\n - Jean
     Pierre\r\n - Jed Mao\r\n - Jeff Wilcox\r\n - Jeffrey Morlan\r\n - Jesse Schalken\r\n
@@ -180,60 +180,60 @@ notices:
     - John Vilk\r\n - Jonathan Bond-Caron\r\n - Jonathan Park\r\n - Jonathan Toland\r\n
     - Jordan Harband\r\n - Jordi Oliveras Rovira\r\n - Joscha Feth\r\n - Joseph Wunderlich\r\n
     - Josh Abernathy\r\n - Josh Goldberg\r\n - Josh Kalderimis\r\n - Josh Soref\r\n
-    - Juan Luis Boya Garc??a\r\n - Julian Williams\r\n - Justin Bay\r\n - Justin Johansson\r\n
-    - jwbay\r\n - K. Prei??er\r\n - Kagami Sascha Rosylight\r\n - Kanchalai Tanglertsampan\r\n
-    - karthikkp\r\n - Kate Mih??likov??\r\n - Keen Yee Liau\r\n - Keith Mashinter\r\n
+    - Juan Luis Boya García\r\n - Julian Williams\r\n - Justin Bay\r\n - Justin Johansson\r\n
+    - jwbay\r\n - K. Preißer\r\n - Kagami Sascha Rosylight\r\n - Kanchalai Tanglertsampan\r\n
+    - karthikkp\r\n - Kate Miháliková\r\n - Keen Yee Liau\r\n - Keith Mashinter\r\n
     - Ken Howard\r\n - Kenji Imamula\r\n - Kerem Kat\r\n - Kevin Donnelly\r\n - Kevin
-    Gibbons\r\n - Kevin Lang\r\n - Kh???i\r\n - Kitson Kelly\r\n - Klaus Meinhardt\r\n
-    - Kris Zyp\r\n - Kyle Kelley\r\n - K??rlis Ga????is\r\n - laoxiong\r\n - Leon
-    Aves\r\n - Limon Monte\r\n - Lorant Pinter\r\n - Lucien Greathouse\r\n - Luka
-    Hartwig\r\n - Lukas Elmer\r\n - M.Yoshimura\r\n - Maarten Sijm\r\n - Magnus Hiie\r\n
-    - Magnus Kulke\r\n - Manish Bansal\r\n - Manish Giri\r\n - Marcus Noble\r\n -
-    Marin Marinov\r\n - Marius Schulz\r\n - Markus Johnsson\r\n - Markus Wolf\r\n
-    - Martin\r\n - Martin Hiller\r\n - Martin Johns\r\n - Martin Probst\r\n - Martin
-    Vseticka\r\n - Martyn Janes\r\n - Masahiro Wakame\r\n - Mateusz Burzy??ski\r\n
-    - Matt Bierner\r\n - Matt McCutchen\r\n - Matt Mitchell\r\n - Matthew Aynalem\r\n
-    - Matthew Miller\r\n - Mattias Buelens\r\n - Max Heiber\r\n - Maxwell Paul Brickner\r\n
-    - @meyer\r\n - Micah Zoltu\r\n - @micbou\r\n - Michael\r\n - Michael Crane\r\n
-    - Michael Henderson\r\n - Michael Tamm\r\n - Michael Tang\r\n - Michal Przybys\r\n
-    - Mike Busyrev\r\n - Mike Morearty\r\n - Milosz Piechocki\r\n - Mine Starks\r\n
-    - Minh Nguyen\r\n - Mohamed Hegazy\r\n - Mohsen Azimi\r\n - Mukesh Prasad\r\n
-    - Myles Megyesi\r\n - Nathan Day\r\n - Nathan Fenner\r\n - Nathan Shively-Sanders\r\n
-    - Nathan Yee\r\n - ncoley\r\n - Nicholas Yang\r\n - Nicu Micleu??anu\r\n - @nieltg\r\n
-    - Nima Zahedi\r\n - Noah Chen\r\n - Noel Varanda\r\n - Noel Yoo\r\n - Noj Vek\r\n
-    - nrcoley\r\n - Nuno Arruda\r\n - Oleg Mihailik\r\n - Oleksandr Chekhovskyi\r\n
-    - Omer Sheikh\r\n - Orta Therox\r\n - Orta Therox\r\n - Oskar Grunning\r\n - Oskar
-    Segersva??rd\r\n - Oussama Ben Brahim\r\n - Ozair Patel\r\n - Patrick McCartney\r\n
-    - Patrick Zhong\r\n - Paul Koerbitz\r\n - Paul van Brenk\r\n - @pcbro\r\n - Pedro
-    Maltez\r\n - Pete Bacon Darwin\r\n - Peter Burns\r\n - Peter ????ndor\r\n - Philip
-    Pesca\r\n - Philippe Voinov\r\n - Pi Lanningham\r\n - Piero Cangianiello\r\n -
-    Pierre-Antoine Mills\r\n - @piloopin\r\n - Pranav Senthilnathan\r\n - Prateek
-    Goel\r\n - Prateek Nayak\r\n - Prayag Verma\r\n - Priyantha Lankapura\r\n - @progre\r\n
-    - Punya Biswal\r\n - r7kamura\r\n - Rado Kirov\r\n - Raj Dosanjh\r\n - rChaser53\r\n
-    - Reiner Dolp\r\n - Remo H. Jansen\r\n - @rflorian\r\n - Rhys van der Waerden\r\n
-    - @rhysd\r\n - Ricardo N Feliciano\r\n - Richard Karmaz??n\r\n - Richard Knoll\r\n
-    - Roger Spratley\r\n - Ron Buckton\r\n - Rostislav Galimsky\r\n - Rowan Wyborn\r\n
-    - rpgeeganage\r\n - Ruwan Pradeep Geeganage\r\n - Ryan Cavanaugh\r\n - Ryan Clarke\r\n
-    - Ryohei Ikegami\r\n - Salisbury, Tom\r\n - Sam Bostock\r\n - Sam Drugan\r\n -
-    Sam El-Husseini\r\n - Sam Lanning\r\n - Sangmin Lee\r\n - Sanket Mishra\r\n -
-    Sarangan Rajamanickam\r\n - Sasha Joseph\r\n - Sean Barag\r\n - Sergey Rubanov\r\n
-    - Sergey Shandar\r\n - Sergey Tychinin\r\n - Sergii Bezliudnyi\r\n - Sergio Baidon\r\n
-    - Sharon Rolel\r\n - Sheetal Nandi\r\n - Shengping Zhong\r\n - Sheon Han\r\n -
-    Shyyko Serhiy\r\n - Siddharth Singh\r\n - sisisin\r\n - Slawomir Sadziak\r\n -
-    Solal Pirelli\r\n - Soo Jae Hwang\r\n - Stan Thomas\r\n - Stanislav Iliev\r\n
-    - Stanislav Sysoev\r\n - Stas Vilchik\r\n - Stephan Ginth??r\r\n - Steve Lucco\r\n
-    - @styfle\r\n - Sudheesh Singanamalla\r\n - Suhas\r\n - Suhas Deshpande\r\n -
-    superkd37\r\n - S??bastien Arod\r\n - @T18970237136\r\n - @t_\r\n - Tan Li Hau\r\n
-    - Tapan Prakash\r\n - Taras Mankovski\r\n - Tarik Ozket\r\n - Tetsuharu Ohzeki\r\n
-    - The Gitter Badger\r\n - Thomas den Hollander\r\n - Thorsten Ball\r\n - Tien
-    Hoanhtien\r\n - Tim Lancina\r\n - Tim Perry\r\n - Tim Schaub\r\n - Tim Suchanek\r\n
-    - Tim Viiding-Spader\r\n - Tingan Ho\r\n - Titian Cernicova-Dragomir\r\n - tkondo\r\n
-    - Todd Thomson\r\n - togru\r\n - Tom J\r\n - Torben Fitschen\r\n - Toxyxer\r\n
-    - @TravCav\r\n - Troy Tae\r\n - TruongSinh Tran-Nguyen\r\n - Tycho Grouwstra\r\n
-    - uhyo\r\n - Vadi Taslim\r\n - Vakhurin Sergey\r\n - Valera Rozuvan\r\n - Vilic
-    Vane\r\n - Vimal Raghubir\r\n - Vladimir Kurchatkin\r\n - Vladimir Matveev\r\n
-    - Vyacheslav Pukhanov\r\n - Wenlu Wang\r\n - Wes Souza\r\n - Wesley Wigham\r\n
-    - William Orr\r\n - Wilson Hobbs\r\n - xiaofa\r\n - xl1\r\n - Yacine Hmito\r\n
-    - Yang Cao\r\n - York Yao\r\n - @yortus\r\n - Yoshiki Shibukawa\r\n - Yuichi Nukiyama\r\n
-    - Yuval Greenfield\r\n - Yuya Tanaka\r\n - Z\r\n - Zeeshan Ahmed\r\n - Zev Spitz\r\n
-    - Zhengbo Li\r\n - Zixiang Li\r\n - @Zzzen\r\n - ?????????"
+    Gibbons\r\n - Kevin Lang\r\n - Khải\r\n - Kitson Kelly\r\n - Klaus Meinhardt\r\n
+    - Kris Zyp\r\n - Kyle Kelley\r\n - Kārlis Gaņģis\r\n - laoxiong\r\n - Leon Aves\r\n
+    - Limon Monte\r\n - Lorant Pinter\r\n - Lucien Greathouse\r\n - Luka Hartwig\r\n
+    - Lukas Elmer\r\n - M.Yoshimura\r\n - Maarten Sijm\r\n - Magnus Hiie\r\n - Magnus
+    Kulke\r\n - Manish Bansal\r\n - Manish Giri\r\n - Marcus Noble\r\n - Marin Marinov\r\n
+    - Marius Schulz\r\n - Markus Johnsson\r\n - Markus Wolf\r\n - Martin\r\n - Martin
+    Hiller\r\n - Martin Johns\r\n - Martin Probst\r\n - Martin Vseticka\r\n - Martyn
+    Janes\r\n - Masahiro Wakame\r\n - Mateusz Burzyński\r\n - Matt Bierner\r\n - Matt
+    McCutchen\r\n - Matt Mitchell\r\n - Matthew Aynalem\r\n - Matthew Miller\r\n -
+    Mattias Buelens\r\n - Max Heiber\r\n - Maxwell Paul Brickner\r\n - @meyer\r\n
+    - Micah Zoltu\r\n - @micbou\r\n - Michael\r\n - Michael Crane\r\n - Michael Henderson\r\n
+    - Michael Tamm\r\n - Michael Tang\r\n - Michal Przybys\r\n - Mike Busyrev\r\n
+    - Mike Morearty\r\n - Milosz Piechocki\r\n - Mine Starks\r\n - Minh Nguyen\r\n
+    - Mohamed Hegazy\r\n - Mohsen Azimi\r\n - Mukesh Prasad\r\n - Myles Megyesi\r\n
+    - Nathan Day\r\n - Nathan Fenner\r\n - Nathan Shively-Sanders\r\n - Nathan Yee\r\n
+    - ncoley\r\n - Nicholas Yang\r\n - Nicu Micleușanu\r\n - @nieltg\r\n - Nima Zahedi\r\n
+    - Noah Chen\r\n - Noel Varanda\r\n - Noel Yoo\r\n - Noj Vek\r\n - nrcoley\r\n
+    - Nuno Arruda\r\n - Oleg Mihailik\r\n - Oleksandr Chekhovskyi\r\n - Omer Sheikh\r\n
+    - Orta Therox\r\n - Orta Therox\r\n - Oskar Grunning\r\n - Oskar Segersva¨rd\r\n
+    - Oussama Ben Brahim\r\n - Ozair Patel\r\n - Patrick McCartney\r\n - Patrick Zhong\r\n
+    - Paul Koerbitz\r\n - Paul van Brenk\r\n - @pcbro\r\n - Pedro Maltez\r\n - Pete
+    Bacon Darwin\r\n - Peter Burns\r\n - Peter Šándor\r\n - Philip Pesca\r\n - Philippe
+    Voinov\r\n - Pi Lanningham\r\n - Piero Cangianiello\r\n - Pierre-Antoine Mills\r\n
+    - @piloopin\r\n - Pranav Senthilnathan\r\n - Prateek Goel\r\n - Prateek Nayak\r\n
+    - Prayag Verma\r\n - Priyantha Lankapura\r\n - @progre\r\n - Punya Biswal\r\n
+    - r7kamura\r\n - Rado Kirov\r\n - Raj Dosanjh\r\n - rChaser53\r\n - Reiner Dolp\r\n
+    - Remo H. Jansen\r\n - @rflorian\r\n - Rhys van der Waerden\r\n - @rhysd\r\n -
+    Ricardo N Feliciano\r\n - Richard Karmazín\r\n - Richard Knoll\r\n - Roger Spratley\r\n
+    - Ron Buckton\r\n - Rostislav Galimsky\r\n - Rowan Wyborn\r\n - rpgeeganage\r\n
+    - Ruwan Pradeep Geeganage\r\n - Ryan Cavanaugh\r\n - Ryan Clarke\r\n - Ryohei
+    Ikegami\r\n - Salisbury, Tom\r\n - Sam Bostock\r\n - Sam Drugan\r\n - Sam El-Husseini\r\n
+    - Sam Lanning\r\n - Sangmin Lee\r\n - Sanket Mishra\r\n - Sarangan Rajamanickam\r\n
+    - Sasha Joseph\r\n - Sean Barag\r\n - Sergey Rubanov\r\n - Sergey Shandar\r\n
+    - Sergey Tychinin\r\n - Sergii Bezliudnyi\r\n - Sergio Baidon\r\n - Sharon Rolel\r\n
+    - Sheetal Nandi\r\n - Shengping Zhong\r\n - Sheon Han\r\n - Shyyko Serhiy\r\n
+    - Siddharth Singh\r\n - sisisin\r\n - Slawomir Sadziak\r\n - Solal Pirelli\r\n
+    - Soo Jae Hwang\r\n - Stan Thomas\r\n - Stanislav Iliev\r\n - Stanislav Sysoev\r\n
+    - Stas Vilchik\r\n - Stephan Ginthör\r\n - Steve Lucco\r\n - @styfle\r\n - Sudheesh
+    Singanamalla\r\n - Suhas\r\n - Suhas Deshpande\r\n - superkd37\r\n - Sébastien
+    Arod\r\n - @T18970237136\r\n - @t_\r\n - Tan Li Hau\r\n - Tapan Prakash\r\n -
+    Taras Mankovski\r\n - Tarik Ozket\r\n - Tetsuharu Ohzeki\r\n - The Gitter Badger\r\n
+    - Thomas den Hollander\r\n - Thorsten Ball\r\n - Tien Hoanhtien\r\n - Tim Lancina\r\n
+    - Tim Perry\r\n - Tim Schaub\r\n - Tim Suchanek\r\n - Tim Viiding-Spader\r\n -
+    Tingan Ho\r\n - Titian Cernicova-Dragomir\r\n - tkondo\r\n - Todd Thomson\r\n
+    - togru\r\n - Tom J\r\n - Torben Fitschen\r\n - Toxyxer\r\n - @TravCav\r\n - Troy
+    Tae\r\n - TruongSinh Tran-Nguyen\r\n - Tycho Grouwstra\r\n - uhyo\r\n - Vadi Taslim\r\n
+    - Vakhurin Sergey\r\n - Valera Rozuvan\r\n - Vilic Vane\r\n - Vimal Raghubir\r\n
+    - Vladimir Kurchatkin\r\n - Vladimir Matveev\r\n - Vyacheslav Pukhanov\r\n - Wenlu
+    Wang\r\n - Wes Souza\r\n - Wesley Wigham\r\n - William Orr\r\n - Wilson Hobbs\r\n
+    - xiaofa\r\n - xl1\r\n - Yacine Hmito\r\n - Yang Cao\r\n - York Yao\r\n - @yortus\r\n
+    - Yoshiki Shibukawa\r\n - Yuichi Nukiyama\r\n - Yuval Greenfield\r\n - Yuya Tanaka\r\n
+    - Z\r\n - Zeeshan Ahmed\r\n - Zev Spitz\r\n - Zhengbo Li\r\n - Zixiang Li\r\n
+    - @Zzzen\r\n - 阿卡琳"

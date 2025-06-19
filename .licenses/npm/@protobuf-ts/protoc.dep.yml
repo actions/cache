@@ -1,14 +1,14 @@
 ---
 name: "@protobuf-ts/protoc"
-version: 2.9.4
+version: 2.9.6
 type: npm
 summary: Installs the protocol buffer compiler "protoc" for you.
 homepage: https://github.com/timostamm/protobuf-ts
 license: apache-2.0
 licenses:
-- sources: LICENSE
+- sources: Auto-generated Apache-2.0 license text
   text: |2
-                                    Apache License
+                                     Apache License
                                Version 2.0, January 2004
                             http://www.apache.org/licenses/
 
@@ -44,7 +44,6 @@ licenses:
 
           "Work" shall mean the work of authorship, whether in Source or
           Object form, made available under the License, as indicated by a
-          copyright notice that is included in or attached to the work
           (an example is provided in the Appendix below).
 
           "Derivative Works" shall mean any work, whether in Source or Object
@@ -76,7 +75,6 @@ licenses:
        2. Grant of Copyright License. Subject to the terms and conditions of
           this License, each Contributor hereby grants to You a perpetual,
           worldwide, non-exclusive, no-charge, royalty-free, irrevocable
-          copyright license to reproduce, prepare Derivative Works of,
           publicly display, publicly perform, sublicense, and distribute the
           Work and such Derivative Works in Source or Object form.
 
@@ -107,7 +105,6 @@ licenses:
           (b) You must cause any modified files to carry prominent notices
               stating that You changed the files; and
 
-          (c) You must retain, in the Source form of any Derivative Works
               that You distribute, all copyright, patent, trademark, and
               attribution notices from the Source form of the Work,
               excluding those notices that do not pertain to any part of
@@ -182,4 +179,29 @@ licenses:
           defend, and hold each Contributor harmless for any liability
           incurred by, or claims asserted against, such Contributor by reason
           of your accepting any such warranty or additional liability.
+
+       END OF TERMS AND CONDITIONS
+
+       APPENDIX: How to apply the Apache License to your work.
+
+          To apply the Apache License to your work, attach the following
+          boilerplate notice, with the fields enclosed by brackets "[]"
+          replaced with your own identifying information. (Don't include
+          the brackets!)  The text should be enclosed in the appropriate
+          comment syntax for the file format. We also recommend that a
+          file or class name and description of purpose be included on the
+          same "printed page" as the copyright notice for easier
+          identification within third-party archives.
+
+       Licensed under the Apache License, Version 2.0 (the "License");
+       you may not use this file except in compliance with the License.
+       You may obtain a copy of the License at
+
+           http://www.apache.org/licenses/LICENSE-2.0
+
+       Unless required by applicable law or agreed to in writing, software
+       distributed under the License is distributed on an "AS IS" BASIS,
+       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+       See the License for the specific language governing permissions and
+       limitations under the License.
 notices: []

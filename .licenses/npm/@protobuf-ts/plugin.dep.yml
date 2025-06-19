@@ -1,6 +1,6 @@
 ---
 name: "@protobuf-ts/plugin"
-version: 2.9.4
+version: 2.9.6
 type: npm
 summary: The protocol buffer compiler plugin "protobuf-ts" generates TypeScript, gRPC-web,
   Twirp, and more.

@@ -3,7 +3,7 @@ name: webidl-conversions
 version: 3.0.1
 type: npm
 summary: Implements the WebIDL algorithms for converting to and from JavaScript values
-homepage: https://github.com/jsdom/webidl-conversions#readme
+homepage:
 license: bsd-2-clause
 licenses:
 - sources: LICENSE.md

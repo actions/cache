@@ -1,6 +1,6 @@
 ---
 name: "@protobuf-ts/plugin-framework"
-version: 2.9.4
+version: 2.9.6
 type: npm
 summary: framework to create protoc plugins
 homepage: https://github.com/timostamm/protobuf-ts

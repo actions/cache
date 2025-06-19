@@ -1,5 +1,6 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
+import nock from "nock";
 
 import { Events, Inputs, RefKey } from "../src/constants";
 import { saveOnlyRun } from "../src/saveImpl";
@@ -11,6 +12,7 @@ jest.mock("@actions/cache");
 jest.mock("../src/utils/actionUtils");
 
 beforeAll(() => {
+    nock.disableNetConnect();
     jest.spyOn(core, "getInput").mockImplementation((name, options) => {
         return jest.requireActual("@actions/core").getInput(name, options);
     });
@@ -73,6 +75,10 @@ afterEach(() => {
     delete process.env[RefKey];
 });
 
+afterAll(() => {
+    nock.enableNetConnect();
+});
+
 test("save with valid inputs uploads a cache", async () => {
     const failedMock = jest.spyOn(core, "setFailed");
 
@@ -84,6 +90,45 @@ test("save with valid inputs uploads a cache", async () => {
     testUtils.setInput(Inputs.UploadChunkSize, "4000000");
 
     const cacheId = 4;
+    const saveCacheMock = jest
+        .spyOn(cache, "saveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(cacheId);
+        });
+
+    await saveOnlyRun();
+
+    expect(saveCacheMock).toHaveBeenCalledTimes(1);
+    expect(saveCacheMock).toHaveBeenCalledWith(
+        [inputPath],
+        primaryKey,
+        {
+            uploadChunkSize: 4000000
+        },
+        false
+    );
+
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
+test("Granular save with refreshCache is able to save cache", async () => {
+    process.env["GITHUB_REPOSITORY"] = "owner/repo";
+    process.env["GITHUB_TOKEN"] =
+        "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";
+    process.env["GITHUB_ACTION"] = "__owner___run-repo";
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+
+    const inputPath = "node_modules";
+    process.env.CACHE_RESTORE_ONLY_MATCHED_KEY = primaryKey;
+    testUtils.setInput(Inputs.Key, primaryKey);
+    testUtils.setInput(Inputs.RefreshCache, "true");
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.UploadChunkSize, "4000000");
+
+    const cacheId = 4;
+
     const saveCacheMock = jest
         .spyOn(cache, "saveCache")
         .mockImplementationOnce(() => {

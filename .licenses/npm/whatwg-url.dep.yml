@@ -3,7 +3,7 @@ name: whatwg-url
 version: 5.0.0
 type: npm
 summary: An implementation of the WHATWG URL Standard's URL API and parsing machinery
-homepage: https://github.com/jsdom/whatwg-url#readme
+homepage:
 license: mit
 licenses:
 - sources: LICENSE.txt
