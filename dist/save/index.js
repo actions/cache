@@ -64911,7 +64911,8 @@ var Inputs;
     Inputs["UploadChunkSize"] = "upload-chunk-size";
     Inputs["EnableCrossOsArchive"] = "enableCrossOsArchive";
     Inputs["FailOnCacheMiss"] = "fail-on-cache-miss";
-    Inputs["LookupOnly"] = "lookup-only"; // Input for cache, restore action
+    Inputs["LookupOnly"] = "lookup-only";
+    Inputs["ReEvalKey"] = "reeval-key";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -64996,8 +64997,9 @@ function saveImpl(stateProvider) {
             }
             // If restore has stored a primary key in state, reuse that
             // Else re-evaluate from inputs
-            const primaryKey = stateProvider.getState(constants_1.State.CachePrimaryKey) ||
-                core.getInput(constants_1.Inputs.Key);
+            const primaryKey = core.getBooleanInput(constants_1.Inputs.ReEvalKey)
+                ? core.getInput(constants_1.Inputs.Key)
+                : (stateProvider.getState(constants_1.State.CachePrimaryKey) || core.getInput(constants_1.Inputs.Key));
             if (!primaryKey) {
                 utils.logWarning(`Key is not specified.`);
                 return;
