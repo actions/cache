@@ -93862,14 +93862,42 @@ function downloadCache(archiveLocation, archivePath, options) {
         }
         const archiveUrl = new URL(archiveLocation);
         const objectKey = archiveUrl.pathname.slice(1);
-        const command = new client_s3_1.GetObjectCommand({
-            Bucket: bucketName,
-            Key: objectKey
-        });
-        const url = yield getSignedUrl(s3Client, command, {
-            expiresIn: 3600
-        });
-        yield (0, downloadUtils_1.downloadCacheHttpClientConcurrent)(url, archivePath, Object.assign(Object.assign({}, options), { downloadConcurrency: downloadQueueSize, concurrentBlobDownloads: true, partSize: downloadPartSize }));
+        // Retry logic for download validation failures
+        const maxRetries = 3;
+        let lastError;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const command = new client_s3_1.GetObjectCommand({
+                    Bucket: bucketName,
+                    Key: objectKey
+                });
+                const url = yield getSignedUrl(s3Client, command, {
+                    expiresIn: 3600
+                });
+                yield (0, downloadUtils_1.downloadCacheHttpClientConcurrent)(url, archivePath, Object.assign(Object.assign({}, options), { downloadConcurrency: downloadQueueSize, concurrentBlobDownloads: true, partSize: downloadPartSize }));
+                // If we get here, download succeeded
+                return;
+            }
+            catch (error) {
+                const errorMessage = error.message;
+                lastError = error;
+                // Only retry on validation failures, not on other errors
+                if (errorMessage.includes("Download validation failed") ||
+                    errorMessage.includes("Range request not supported") ||
+                    errorMessage.includes("Content-Range header")) {
+                    if (attempt < maxRetries) {
+                        const delayMs = Math.pow(2, attempt - 1) * 1000; // exponential backoff
+                        core.warning(`Download attempt ${attempt} failed: ${errorMessage}. Retrying in ${delayMs}ms...`);
+                        yield new Promise(resolve => setTimeout(resolve, delayMs));
+                        continue;
+                    }
+                }
+                // For non-retryable errors or max retries reached, throw the error
+                throw error;
+            }
+        }
+        // This should never be reached, but just in case
+        throw lastError || new Error("Download failed after all retry attempts");
     });
 }
 exports.downloadCache = downloadCache;
@@ -93954,7 +93982,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.saveCache = exports.restoreCache = exports.isFeatureAvailable = exports.ReserveCacheError = exports.ValidationError = void 0;
+exports.saveCache = exports.restoreCache = exports.isFeatureAvailable = exports.DownloadValidationError = exports.ReserveCacheError = exports.ValidationError = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const path = __importStar(__nccwpck_require__(1017));
 const utils = __importStar(__nccwpck_require__(1518));
@@ -93976,6 +94004,14 @@ class ReserveCacheError extends Error {
     }
 }
 exports.ReserveCacheError = ReserveCacheError;
+class DownloadValidationError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "DownloadValidationError";
+        Object.setPrototypeOf(this, DownloadValidationError.prototype);
+    }
+}
+exports.DownloadValidationError = DownloadValidationError;
 function checkPaths(paths) {
     if (!paths || paths.length === 0) {
         throw new ValidationError(`Path Validation Error: At least one directory or file path is required`);
@@ -94047,6 +94083,15 @@ function restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArch
             }
             const archiveFileSize = utils.getArchiveFileSizeInBytes(archivePath);
             core.info(`Cache Size: ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B)`);
+            // Validate downloaded archive
+            if (archiveFileSize === 0) {
+                throw new DownloadValidationError("Downloaded cache archive is empty (0 bytes). This may indicate a failed download or corrupted cache.");
+            }
+            // Minimum size check - a valid tar archive needs at least 512 bytes for header
+            const MIN_ARCHIVE_SIZE = 512;
+            if (archiveFileSize < MIN_ARCHIVE_SIZE) {
+                throw new DownloadValidationError(`Downloaded cache archive is too small (${archiveFileSize} bytes). Expected at least ${MIN_ARCHIVE_SIZE} bytes for a valid archive.`);
+            }
             yield (0, tar_1.extractTar)(archivePath, compressionMethod);
             core.info("Cache restored successfully");
             return cacheEntry.cacheKey;
@@ -94055,6 +94100,10 @@ function restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArch
             const typedError = error;
             if (typedError.name === ValidationError.name) {
                 throw error;
+            }
+            else if (typedError.name === DownloadValidationError.name) {
+                // Log download validation errors as warnings but don't fail the workflow
+                core.warning(`Cache download validation failed: ${typedError.message}`);
             }
             else {
                 // Supress all non-validation cache related errors because caching should be optional
@@ -94302,6 +94351,7 @@ function downloadCacheHttpClientConcurrent(archiveLocation, archivePath, options
             socketTimeout: options.timeoutInMs,
             keepAlive: true
         });
+        let progress;
         try {
             const res = yield (0, requestUtils_1.retryHttpClientResponse)("downloadCacheMetadata", () => __awaiter(this, void 0, void 0, function* () {
                 return yield httpClient.request("GET", archiveLocation, null, {
@@ -94335,7 +94385,7 @@ function downloadCacheHttpClientConcurrent(archiveLocation, archivePath, options
             downloads.reverse();
             let actives = 0;
             let bytesDownloaded = 0;
-            const progress = new DownloadProgress(length);
+            progress = new DownloadProgress(length);
             progress.startDisplayTimer();
             const progressFn = progress.onProgress();
             const activeDownloads = [];
@@ -94358,8 +94408,14 @@ function downloadCacheHttpClientConcurrent(archiveLocation, archivePath, options
             while (actives > 0) {
                 yield waitAndWrite();
             }
+            // Validate that we downloaded the expected amount of data
+            if (bytesDownloaded !== length) {
+                throw new Error(`Download validation failed: Expected ${length} bytes but downloaded ${bytesDownloaded} bytes`);
+            }
+            progress.stopDisplayTimer();
         }
         finally {
+            progress === null || progress === void 0 ? void 0 : progress.stopDisplayTimer();
             httpClient.dispose();
             yield archiveDescriptor.close();
         }
@@ -94461,9 +94517,9 @@ exports.restoreRun = exports.restoreOnlyRun = exports.restoreImpl = void 0;
 const cache = __importStar(__nccwpck_require__(7799));
 const core = __importStar(__nccwpck_require__(2186));
 const constants_1 = __nccwpck_require__(9042);
+const custom = __importStar(__nccwpck_require__(1082));
 const stateProvider_1 = __nccwpck_require__(1527);
 const utils = __importStar(__nccwpck_require__(6850));
-const custom = __importStar(__nccwpck_require__(1082));
 const canSaveToS3 = process.env["RUNS_ON_S3_BUCKET_CACHE"] !== undefined;
 function restoreImpl(stateProvider, earlyExit) {
     return __awaiter(this, void 0, void 0, function* () {

@@ -154,19 +154,57 @@ export async function downloadCache(
 
     const archiveUrl = new URL(archiveLocation);
     const objectKey = archiveUrl.pathname.slice(1);
-    const command = new GetObjectCommand({
-        Bucket: bucketName,
-        Key: objectKey
-    });
-    const url = await getSignedUrl(s3Client, command, {
-        expiresIn: 3600
-    });
-    await downloadCacheHttpClientConcurrent(url, archivePath, {
-        ...options,
-        downloadConcurrency: downloadQueueSize,
-        concurrentBlobDownloads: true,
-        partSize: downloadPartSize
-    });
+
+    // Retry logic for download validation failures
+    const maxRetries = 3;
+    let lastError: Error | undefined;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            const command = new GetObjectCommand({
+                Bucket: bucketName,
+                Key: objectKey
+            });
+            const url = await getSignedUrl(s3Client, command, {
+                expiresIn: 3600
+            });
+
+            await downloadCacheHttpClientConcurrent(url, archivePath, {
+                ...options,
+                downloadConcurrency: downloadQueueSize,
+                concurrentBlobDownloads: true,
+                partSize: downloadPartSize
+            });
+
+            // If we get here, download succeeded
+            return;
+        } catch (error) {
+            const errorMessage = (error as Error).message;
+            lastError = error as Error;
+
+            // Only retry on validation failures, not on other errors
+            if (
+                errorMessage.includes("Download validation failed") ||
+                errorMessage.includes("Range request not supported") ||
+                errorMessage.includes("Content-Range header")
+            ) {
+                if (attempt < maxRetries) {
+                    const delayMs = Math.pow(2, attempt - 1) * 1000; // exponential backoff
+                    core.warning(
+                        `Download attempt ${attempt} failed: ${errorMessage}. Retrying in ${delayMs}ms...`
+                    );
+                    await new Promise(resolve => setTimeout(resolve, delayMs));
+                    continue;
+                }
+            }
+
+            // For non-retryable errors or max retries reached, throw the error
+            throw error;
+        }
+    }
+
+    // This should never be reached, but just in case
+    throw lastError || new Error("Download failed after all retry attempts");
 }
 
 export async function saveCache(

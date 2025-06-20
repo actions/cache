@@ -2,6 +2,7 @@ import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
 import { Events, Inputs, State } from "./constants";
+import * as custom from "./custom/cache";
 import {
     IStateProvider,
     NullStateProvider,
@@ -9,7 +10,6 @@ import {
 } from "./stateProvider";
 import * as utils from "./utils/actionUtils";
 
-import * as custom from "./custom/cache";
 const canSaveToS3 = process.env["RUNS_ON_S3_BUCKET_CACHE"] !== undefined;
 
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in

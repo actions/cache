@@ -160,6 +160,7 @@ export async function downloadCacheHttpClientConcurrent(
         socketTimeout: options.timeoutInMs,
         keepAlive: true
     });
+    let progress: DownloadProgress | undefined;
     try {
         const res = await retryHttpClientResponse(
             "downloadCacheMetadata",
@@ -210,7 +211,7 @@ export async function downloadCacheHttpClientConcurrent(
         downloads.reverse();
         let actives = 0;
         let bytesDownloaded = 0;
-        const progress = new DownloadProgress(length);
+        progress = new DownloadProgress(length);
         progress.startDisplayTimer();
         const progressFn = progress.onProgress();
 
@@ -246,7 +247,17 @@ export async function downloadCacheHttpClientConcurrent(
         while (actives > 0) {
             await waitAndWrite();
         }
+
+        // Validate that we downloaded the expected amount of data
+        if (bytesDownloaded !== length) {
+            throw new Error(
+                `Download validation failed: Expected ${length} bytes but downloaded ${bytesDownloaded} bytes`
+            );
+        }
+
+        progress.stopDisplayTimer();
     } finally {
+        progress?.stopDisplayTimer();
         httpClient.dispose();
         await archiveDescriptor.close();
     }
