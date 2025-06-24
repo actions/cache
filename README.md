@@ -1,6 +1,6 @@
 # Shockingly faster cache action
 
-This action is a drop-in replacement for the official `actions/cache@v4` action, for use with the [RunsOn](https://runs-on.com) self-hosted GitHub Action runner provider, or with your own self-hosted runner solution.
+This action is a drop-in replacement for the official `actions/cache@v4` action, for use with the [RunsOn](https://runs-on.com/?ref=cache) self-hosted GitHub Action runner provider, or with your own self-hosted runner solution.
 
 ![image](https://github.com/runs-on/cache/assets/6114/e61c5b6f-aa86-48be-9e1b-baac6dce9b84)
 
@@ -38,3 +38,10 @@ If you want to use this in your own infrastructure, setup your AWS credentials w
 ```
 
 Be aware of S3 transfer costs if your runners are not in the same AWS region as your bucket.
+
+## Special environment variables
+
+* `RUNS_ON_S3_BUCKET_CACHE`: if set, the action will use this bucket to store the cache.
+* `RUNS_ON_RUNNER_NAME`: when running on RunsOn, where this environment variable is non-empty, existing AWS credentials from the environment will be discarded. If you want to preserve existing environment variables, set this to the empty string `""`.
+* `RUNS_ON_S3_FORCE_PATH_STYLE` or `AWS_S3_FORCE_PATH_STYLE`: if one of those environment variables equals the string `"true"`, then the S3 client will be configured to force the path style.
+

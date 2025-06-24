@@ -9,8 +9,12 @@ import {
 } from "./stateProvider";
 import * as utils from "./utils/actionUtils";
 
+import * as custom from "./custom/cache";
+const canSaveToS3 = process.env["RUNS_ON_S3_BUCKET_CACHE"] !== undefined;
+
 export async function restoreImpl(
-    stateProvider: IStateProvider
+    stateProvider: IStateProvider,
+    earlyExit?: boolean | undefined
 ): Promise<string | undefined> {
     try {
         if (!utils.isCacheFeatureAvailable()) {
@@ -41,15 +45,32 @@ export async function restoreImpl(
         const failOnCacheMiss = utils.getInputAsBool(Inputs.FailOnCacheMiss);
         const lookupOnly = utils.getInputAsBool(Inputs.LookupOnly);
 
-        const cacheKey = await cache.restoreCache(
-            cachePaths,
-            primaryKey,
-            restoreKeys,
-            { lookupOnly: lookupOnly },
-            enableCrossOsArchive
-        );
+        let cacheKey: string | undefined;
+
+        if (canSaveToS3) {
+            core.info(
+                "The cache action detected a local S3 bucket cache. Using it."
+            );
+            cacheKey = await custom.restoreCache(
+                cachePaths,
+                primaryKey,
+                restoreKeys,
+                { lookupOnly: lookupOnly }
+            );
+        } else {
+            cacheKey = await cache.restoreCache(
+                cachePaths,
+                primaryKey,
+                restoreKeys,
+                { lookupOnly: lookupOnly },
+                enableCrossOsArchive
+            );
+        }
 
         if (!cacheKey) {
+            // `cache-hit` is intentionally not set to `false` here to preserve existing behavior
+            // See https://github.com/actions/cache/issues/1466
+
             if (failOnCacheMiss) {
                 throw new Error(
                     `Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`
@@ -61,7 +82,6 @@ export async function restoreImpl(
                     ...restoreKeys
                 ].join(", ")}`
             );
-
             return;
         }
 
@@ -83,6 +103,9 @@ export async function restoreImpl(
         return cacheKey;
     } catch (error: unknown) {
         core.setFailed((error as Error).message);
+        if (earlyExit) {
+            process.exit(1);
+        }
     }
 }
 
@@ -90,14 +113,7 @@ async function run(
     stateProvider: IStateProvider,
     earlyExit: boolean | undefined
 ): Promise<void> {
-    try {
-        await restoreImpl(stateProvider);
-    } catch (err) {
-        console.error(err);
-        if (earlyExit) {
-            process.exit(1);
-        }
-    }
+    await restoreImpl(stateProvider, earlyExit);
 
     // node will stay alive if any promises are not resolved,
     // which is a possibility if HTTP requests are dangling

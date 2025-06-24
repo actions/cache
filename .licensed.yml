@@ -14,3 +14,9 @@ allowed:
 reviewed:
   npm:
   - sax
+  - "@protobuf-ts/plugin-framework" # Apache-2.0
+  - "@protobuf-ts/runtime" # Apache-2.0
+  - fs.realpath # ISC
+  - glob # ISC
+  - prettier # MIT
+  - lodash # MIT
