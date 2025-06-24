@@ -1,5 +1,45 @@
 # Releases
 
+### 4.2.3
+
+- Bump `@actions/cache` to v4.0.3 (obfuscates SAS token in debug logs for cache entries)
+
+### 4.2.2
+
+- Bump `@actions/cache` to v4.0.2
+
+### 4.2.1
+
+- Bump `@actions/cache` to v4.0.1
+
+### 4.2.0
+
+TLDR; The cache backend service has been rewritten from the ground up for improved performance and reliability. [actions/cache](https://github.com/actions/cache) now integrates with the new cache service (v2) APIs.
+
+The new service will gradually roll out as of **February 1st, 2025**. The legacy service will also be sunset on the same date. Changes in these release are **fully backward compatible**.
+
+**We are deprecating some versions of this action**. We recommend upgrading to version `v4` or `v3` as soon as possible before **February 1st, 2025.** (Upgrade instructions below).
+
+If you are using pinned SHAs, please use the SHAs of versions `v4.2.0` or `v3.4.0`
+
+If you do not upgrade, all workflow runs using any of the deprecated [actions/cache](https://github.com/actions/cache) will fail.
+
+Upgrading to the recommended versions will not break your workflows.
+
+### 4.1.2
+
+- Add GitHub Enterprise Cloud instances hostname filters to inform API endpoint choices - [#1474](https://github.com/actions/cache/pull/1474)
+- Security fix: Bump braces from 3.0.2 to 3.0.3 - [#1475](https://github.com/actions/cache/pull/1475)
+
+### 4.1.1
+
+- Restore original behavior of `cache-hit` output - [#1467](https://github.com/actions/cache/pull/1467)
+
+### 4.1.0
+
+- Ensure `cache-hit` output is set when a cache is missed - [#1404](https://github.com/actions/cache/pull/1404)
+- Deprecate `save-always` input - [#1452](https://github.com/actions/cache/pull/1452)
+
 ### 4.0.2
 
 - Fixed restore `fail-on-cache-miss` not working.
@@ -11,6 +51,10 @@
 ### 4.0.0
 
 - Updated minimum runner version support from node 12 -> node 20
+
+### 3.4.0
+
+- Integrated with the new cache service (v2) APIs
 
 ### 3.3.3
 
