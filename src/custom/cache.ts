@@ -27,6 +27,14 @@ export class ReserveCacheError extends Error {
     }
 }
 
+export class DownloadValidationError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "DownloadValidationError";
+        Object.setPrototypeOf(this, DownloadValidationError.prototype);
+    }
+}
+
 function checkPaths(paths: string[]): void {
     if (!paths || paths.length === 0) {
         throw new ValidationError(
@@ -135,6 +143,21 @@ export async function restoreCache(
             )} MB (${archiveFileSize} B)`
         );
 
+        // Validate downloaded archive
+        if (archiveFileSize === 0) {
+            throw new DownloadValidationError(
+                "Downloaded cache archive is empty (0 bytes). This may indicate a failed download or corrupted cache."
+            );
+        }
+
+        // Minimum size check - a valid tar archive needs at least 512 bytes for header
+        const MIN_ARCHIVE_SIZE = 512;
+        if (archiveFileSize < MIN_ARCHIVE_SIZE) {
+            throw new DownloadValidationError(
+                `Downloaded cache archive is too small (${archiveFileSize} bytes). Expected at least ${MIN_ARCHIVE_SIZE} bytes for a valid archive.`
+            );
+        }
+
         await extractTar(archivePath, compressionMethod);
         core.info("Cache restored successfully");
 
@@ -143,6 +166,11 @@ export async function restoreCache(
         const typedError = error as Error;
         if (typedError.name === ValidationError.name) {
             throw error;
+        } else if (typedError.name === DownloadValidationError.name) {
+            // Log download validation errors as warnings but don't fail the workflow
+            core.warning(
+                `Cache download validation failed: ${typedError.message}`
+            );
         } else {
             // Supress all non-validation cache related errors because caching should be optional
             core.warning(`Failed to restore: ${(error as Error).message}`);
