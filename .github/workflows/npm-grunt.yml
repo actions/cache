@@ -22,7 +22,21 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
 
+    - name: Restore node_modules cache
+      uses: actions/cache@v3
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+
     - name: Build
       run: |
         npm install
         grunt
+
+    - name: Save node_modules cache
+      uses: actions/cache@v3
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
