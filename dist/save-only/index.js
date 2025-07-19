@@ -198,7 +198,7 @@ function restoreCacheV1(paths, primaryKey, restoreKeys, options, enableCrossOsAr
 function restoreCacheV2(paths, primaryKey, restoreKeys, options, enableCrossOsArchive = false) {
     return __awaiter(this, void 0, void 0, function* () {
         // Override UploadOptions to force the use of Azure
-        options = Object.assign(Object.assign({}, options), { useAzureSdk: true });
+        options = Object.assign(Object.assign({}, options), { useAzureSdk: false });
         restoreKeys = restoreKeys || [];
         const keys = [primaryKey, ...restoreKeys];
         core.debug('Resolved Keys:');
@@ -223,7 +223,13 @@ function restoreCacheV2(paths, primaryKey, restoreKeys, options, enableCrossOsAr
                 core.debug(`Cache not found for version ${request.version} of keys: ${keys.join(', ')}`);
                 return undefined;
             }
-            core.info(`Cache hit for: ${request.key}`);
+            const isRestoreKeyMatch = request.key !== response.matchedKey;
+            if (isRestoreKeyMatch) {
+                core.info(`Cache hit for restore-key: ${response.matchedKey}`);
+            }
+            else {
+                core.info(`Cache hit for: ${response.matchedKey}`);
+            }
             if (options === null || options === void 0 ? void 0 : options.lookupOnly) {
                 core.info('Lookup only - skipping download');
                 return response.matchedKey;
@@ -380,7 +386,7 @@ function saveCacheV2(paths, key, options, enableCrossOsArchive = false) {
         // Override UploadOptions to force the use of Azure
         // ...options goes first because we want to override the default values
         // set in UploadOptions with these specific figures
-        options = Object.assign(Object.assign({}, options), { uploadChunkSize: 64 * 1024 * 1024, uploadConcurrency: 8, useAzureSdk: true });
+        options = Object.assign(Object.assign({}, options), { uploadChunkSize: 64 * 1024 * 1024, uploadConcurrency: 8, useAzureSdk: false });
         const compressionMethod = yield utils.getCompressionMethod();
         const twirpClient = cacheTwirpClient.internalCacheTwirpClient();
         let cacheId = -1;
