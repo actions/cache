@@ -10,6 +10,31 @@ on:
   workflow_dispatch:
 
 jobs:
-  call-licensed:
-    name: Licensed
-    uses: actions/reusable-workflows/.github/workflows/licensed.yml@main
+  validate-cached-dependency-records:
+    runs-on: ubuntu-latest
+    name: Check licenses
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1.7'
+
+      - name: Install licensed tool
+        run: |
+          cd "$RUNNER_TEMP"
+          curl -Lfs -o licensed.tar.gz https://github.com/licensee/licensed/archive/refs/tags/v5.0.4.tar.gz
+          tar -xzf licensed.tar.gz
+          cd licensed-5.0.4
+          bundle install
+
+      - name: Check cached dependency records
+        run: |
+          cd ${{ github.workspace }}
+          BUNDLE_GEMFILE=$RUNNER_TEMP/licensed-5.0.4/Gemfile bundle exec $RUNNER_TEMP/licensed-5.0.4/exe/licensed status
