@@ -64912,24 +64912,24 @@ var Inputs;
     Inputs["EnableCrossOsArchive"] = "enableCrossOsArchive";
     Inputs["FailOnCacheMiss"] = "fail-on-cache-miss";
     Inputs["LookupOnly"] = "lookup-only"; // Input for cache, restore action
-})(Inputs = exports.Inputs || (exports.Inputs = {}));
+})(Inputs || (exports.Inputs = Inputs = {}));
 var Outputs;
 (function (Outputs) {
     Outputs["CacheHit"] = "cache-hit";
     Outputs["CachePrimaryKey"] = "cache-primary-key";
     Outputs["CacheMatchedKey"] = "cache-matched-key"; // Output from restore action
-})(Outputs = exports.Outputs || (exports.Outputs = {}));
+})(Outputs || (exports.Outputs = Outputs = {}));
 var State;
 (function (State) {
     State["CachePrimaryKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_RESULT";
-})(State = exports.State || (exports.State = {}));
+})(State || (exports.State = State = {}));
 var Events;
 (function (Events) {
     Events["Key"] = "GITHUB_EVENT_NAME";
     Events["Push"] = "push";
     Events["PullRequest"] = "pull_request";
-})(Events = exports.Events || (exports.Events = {}));
+})(Events || (exports.Events = Events = {}));
 exports.RefKey = "GITHUB_REF";
 
 
@@ -64956,13 +64956,23 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -64973,7 +64983,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.restoreRun = exports.restoreOnlyRun = exports.restoreImpl = void 0;
+exports.restoreImpl = restoreImpl;
+exports.restoreOnlyRun = restoreOnlyRun;
+exports.restoreRun = restoreRun;
 const cache = __importStar(__nccwpck_require__(5116));
 const core = __importStar(__nccwpck_require__(7484));
 const constants_1 = __nccwpck_require__(7242);
@@ -65033,7 +65045,6 @@ function restoreImpl(stateProvider, earlyExit) {
         }
     });
 }
-exports.restoreImpl = restoreImpl;
 function run(stateProvider, earlyExit) {
     return __awaiter(this, void 0, void 0, function* () {
         yield restoreImpl(stateProvider, earlyExit);
@@ -65052,13 +65063,11 @@ function restoreOnlyRun(earlyExit) {
         yield run(new stateProvider_1.NullStateProvider(), earlyExit);
     });
 }
-exports.restoreOnlyRun = restoreOnlyRun;
 function restoreRun(earlyExit) {
     return __awaiter(this, void 0, void 0, function* () {
         yield run(new stateProvider_1.StateProvider(), earlyExit);
     });
 }
-exports.restoreRun = restoreRun;
 
 
 /***/ }),
@@ -65084,13 +65093,23 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.NullStateProvider = exports.StateProvider = void 0;
 const core = __importStar(__nccwpck_require__(7484));
@@ -65159,15 +65178,32 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isCacheFeatureAvailable = exports.getInputAsBool = exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.isExactKeyMatch = exports.isGhes = void 0;
+exports.isGhes = isGhes;
+exports.isExactKeyMatch = isExactKeyMatch;
+exports.logWarning = logWarning;
+exports.isValidEvent = isValidEvent;
+exports.getInputAsArray = getInputAsArray;
+exports.getInputAsInt = getInputAsInt;
+exports.getInputAsBool = getInputAsBool;
+exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
 const cache = __importStar(__nccwpck_require__(5116));
 const core = __importStar(__nccwpck_require__(7484));
 const constants_1 = __nccwpck_require__(7242);
@@ -65179,25 +65215,21 @@ function isGhes() {
     const isLocalHost = hostname.endsWith(".LOCALHOST");
     return !isGitHubHost && !isGitHubEnterpriseCloudHost && !isLocalHost;
 }
-exports.isGhes = isGhes;
 function isExactKeyMatch(key, cacheKey) {
     return !!(cacheKey &&
         cacheKey.localeCompare(key, undefined, {
             sensitivity: "accent"
         }) === 0);
 }
-exports.isExactKeyMatch = isExactKeyMatch;
 function logWarning(message) {
     const warningPrefix = "[warning]";
     core.info(`${warningPrefix}${message}`);
 }
-exports.logWarning = logWarning;
 // Cache token authorized for all events that are tied to a ref
 // See GitHub Context https://help.github.com/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions#github-context
 function isValidEvent() {
     return constants_1.RefKey in process.env && Boolean(process.env[constants_1.RefKey]);
 }
-exports.isValidEvent = isValidEvent;
 function getInputAsArray(name, options) {
     return core
         .getInput(name, options)
@@ -65205,7 +65237,6 @@ function getInputAsArray(name, options) {
         .map(s => s.replace(/^!\s+/, "!").trim())
         .filter(x => x !== "");
 }
-exports.getInputAsArray = getInputAsArray;
 function getInputAsInt(name, options) {
     const value = parseInt(core.getInput(name, options));
     if (isNaN(value) || value < 0) {
@@ -65213,12 +65244,10 @@ function getInputAsInt(name, options) {
     }
     return value;
 }
-exports.getInputAsInt = getInputAsInt;
 function getInputAsBool(name, options) {
     const result = core.getInput(name, options);
     return result.toLowerCase() === "true";
 }
-exports.getInputAsBool = getInputAsBool;
 function isCacheFeatureAvailable() {
     if (cache.isFeatureAvailable()) {
         return true;
@@ -65231,7 +65260,6 @@ Otherwise please upgrade to GHES version >= 3.5 and If you are also using Github
     logWarning("An internal error has occurred in cache backend. Please check https://www.githubstatus.com/ for any ongoing issue in actions.");
     return false;
 }
-exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
 
 
 /***/ }),
