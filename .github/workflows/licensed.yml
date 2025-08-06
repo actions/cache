@@ -21,9 +21,19 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1.7'
+
       - name: Install licensed tool
         run: |
-          brew install licensed@5.0.4
+          cd "$RUNNER_TEMP"
+          curl -Lfs -o licensed.tar.gz https://github.com/licensee/licensed/archive/refs/tags/v5.0.4.tar.gz
+          tar -xzf licensed.tar.gz
+          cd licensed-5.0.4
+          bundle install
 
       - name: Check cached dependency records
-        run: licensed status
+        working-directory: ${{ github.workspace }}
+        run: $RUNNER_TEMP/licensed-5.0.4/exe/licensed status
