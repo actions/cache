@@ -36,4 +36,6 @@ jobs:
 
       - name: Check cached dependency records
         working-directory: ${{ github.workspace }}
-        run: $RUNNER_TEMP/licensed-5.0.4/exe/licensed status
+        run: |
+          cd $RUNNER_TEMP/licensed-5.0.4
+          bundle exec exe/licensed status -C ${{ github.workspace }}
