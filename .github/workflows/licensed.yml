@@ -35,7 +35,6 @@ jobs:
           bundle install
 
       - name: Check cached dependency records
-        working-directory: ${{ github.workspace }}
         run: |
-          cd $RUNNER_TEMP/licensed-5.0.4
-          bundle exec exe/licensed status -C ${{ github.workspace }}
+          cd ${{ github.workspace }}
+          BUNDLE_GEMFILE=$RUNNER_TEMP/licensed-5.0.4/Gemfile bundle exec $RUNNER_TEMP/licensed-5.0.4/exe/licensed status
