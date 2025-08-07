@@ -1,6 +1,6 @@
 {
   "name": "cache",
-  "version": "4.2.3",
+  "version": "4.2.4",
   "private": true,
   "description": "Cache dependencies and build outputs",
   "main": "dist/restore/index.js",
@@ -23,7 +23,7 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
-    "@actions/cache": "^4.0.4",
+    "@actions/cache": "^4.0.5",
     "@actions/core": "^1.11.1",
     "@actions/exec": "^1.1.1",
     "@actions/io": "^1.1.3"
@@ -32,7 +32,6 @@
     "@types/jest": "^27.5.2",
     "@types/nock": "^11.1.0",
     "@types/node": "^16.18.3",
-    "@protobuf-ts/plugin": "^2.9.4",
     "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.45.0",
     "@vercel/ncc": "^0.38.3",
