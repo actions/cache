@@ -40,6 +40,7 @@
 - [Swift, Objective-C - CocoaPods](#swift-objective-c---cocoapods)
 - [Swift - Swift Package Manager](#swift---swift-package-manager)
 - [Swift - Mint](#swift---mint)
+- [* - ASDF](#---asdf)
 - [* - Bazel](#---bazel)
 
 ## Bun
@@ -679,6 +680,38 @@ steps:
       key: ${{ runner.os }}-mint-${{ hashFiles('**/Mintfile') }}
       restore-keys: |
         ${{ runner.os }}-mint-
+```
+
+## * - ASDF
+
+[ASDF](https://asdf-vm.com), see [#235](https://github.com/asdf-vm/actions/issues/235):
+
+```yaml
+- name: Setup ASDF itself
+  uses: asdf-vm/actions/setup@v3
+
+- name: Cache ASDF
+  uses: actions/cache@v4
+  id: asdf-cache
+  with:
+    # https://github.com/asdf-vm/asdf/blob/master/.gitignore
+    path: |
+      ~/.asdf/installs
+      ~/.asdf/plugins
+      ~/.asdf/shims
+    key: ${{ runner.os }}-asdf-tools-${{ hashFiles('.tool-versions') }}
+    restore-keys: ${{ runner.os }}-asdf-tools-
+
+- name: Install ASDF plugins
+  uses: asdf-vm/actions/install@v3
+  # See https://github.com/asdf-vm/actions/issues/445
+  if: ${{ steps.asdf-cache.outputs.cache-hit != 'true' }}
+  with:
+    asdf_branch: v0.14.0
+
+- name: Reshim installed ASDF tools
+  shell: bash
+  run: asdf reshim
 ```
 
 ## * - Bazel
