@@ -304,3 +304,26 @@ steps:
   - name: Publish package to public
     run: ./publish.sh
 ```
+
+### Saving cache only if the build runs on the default branch
+
+Workflow runs can restore caches created in either the current branch or the default branch (usually `main`) [Reference](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#restrictions-for-accessing-a-cache).
+
+By restricting caches to the default branch, we can reduce the risk that Github evicts a cache created on the default branch. If that happens, every PR will create its own cache, increasing the cache churn.
+
+We can condition the execution of the `actions/cache/save` action on the current branch:
+
+```yaml
+steps:
+  - uses: actions/checkout@v3
+  .
+  . // restore if need be
+  .
+  - name: Build
+    run: /build.sh
+  - uses: actions/cache/save@v3
+    if: ${{ github.ref == 'refs/heads/main' }} // check we are on the default branch
+    with:
+      path: path/to/dependencies
+      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+```
