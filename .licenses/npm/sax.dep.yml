@@ -1,16 +1,17 @@
 ---
 name: sax
-version: 1.2.4
+version: 1.4.1
 type: npm
 summary: An evented streaming XML parser in JavaScript
-homepage: https://github.com/isaacs/sax-js#readme
+homepage:
 license: other
+review_changed_license: true
 licenses:
 - sources: LICENSE
   text: |
     The ISC License
 
-    Copyright (c) Isaac Z. Schlueter and Contributors
+    Copyright (c) 2010-2024 Isaac Z. Schlueter and Contributors
 
     Permission to use, copy, modify, and/or distribute this software for any
     purpose with or without fee is hereby granted, provided that the above
@@ -29,7 +30,7 @@ licenses:
     `String.fromCodePoint` by Mathias Bynens used according to terms of MIT
     License, as follows:
 
-        Copyright Mathias Bynens <https://mathiasbynens.be/>
+    Copyright (c) 2010-2024 Mathias Bynens <https://mathiasbynens.be/>
 
         Permission is hereby granted, free of charge, to any person obtaining
         a copy of this software and associated documentation files (the
