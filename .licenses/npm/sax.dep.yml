@@ -5,7 +5,6 @@ type: npm
 summary: An evented streaming XML parser in JavaScript
 homepage:
 license: other
-review_changed_license: true
 licenses:
 - sources: LICENSE
   text: |
