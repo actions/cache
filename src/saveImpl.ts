@@ -34,9 +34,9 @@ export async function saveImpl(
 
         // If restore has stored a primary key in state, reuse that
         // Else re-evaluate from inputs
-        const primaryKey =
-            stateProvider.getState(State.CachePrimaryKey) ||
-            core.getInput(Inputs.Key);
+        const primaryKey = core.getBooleanInput(Inputs.ReEvalKey)
+            ? core.getInput(Inputs.Key)
+            : (stateProvider.getState(State.CachePrimaryKey) || core.getInput(Inputs.Key));
 
         if (!primaryKey) {
             utils.logWarning(`Key is not specified.`);
