@@ -1,5 +1,9 @@
 # Releases
 
+### 3.5.0
+
+- Upgraded `@actions/cache` to v4.1.0 to integrate with the new cache service (v2) APIs & remove client side 10GiB cache size limit.
+
 ### 3.0.0
 
 - Updated minimum runner version support from node 12 -> node 16
