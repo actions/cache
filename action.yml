@@ -1,47 +1,133 @@
-name: 'Cache'
-description: 'Cache artifacts like dependencies and build outputs to improve workflow execution time'
-author: 'GitHub'
-inputs:
-  path:
-    description: 'A list of files, directories, and wildcard patterns to cache and restore'
-    required: true
-  key:
-    description: 'An explicit key for restoring and saving the cache'
-    required: true
-  restore-keys:
-    description: 'An ordered multiline string listing the prefix-matched keys, that are used for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
-    required: false
-  upload-chunk-size:
-    description: 'The chunk size used to split up large files during upload, in bytes'
-    required: false
-  enableCrossOsArchive:
-    description: 'An optional boolean when enabled, allows windows runners to save or restore caches that can be restored or saved respectively on other platforms'
-    default: 'false'
-    required: false
-  fail-on-cache-miss:
-    description: 'Fail the workflow if cache entry is not found'
-    default: 'false'
-    required: false
-  lookup-only:
-    description: 'Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache'
-    default: 'false'
-    required: false
-  save-always:
-    description: 'Run the post step to save the cache even if another step before fails'
-    default: 'false'
-    required: false
-    deprecationMessage: |
-      save-always does not work as intended and will be removed in a future release.
-      A separate `actions/cache/restore` step should be used instead.
-      See https://github.com/actions/cache/tree/main/save#always-save-cache for more details.
-outputs:
-  cache-hit:
-    description: 'A boolean value to indicate an exact match was found for the primary key'
-runs:
-  using: 'node20'
-  main: 'dist/restore/index.js'
-  post: 'dist/save/index.js'
-  post-if: "success()"
-branding:
-  icon: 'archive'
-  color: 'gray-dark'
+# -----------------------------------------------------------------------------
+# |           🤖 THE ULTIMATE ALL-IN-ONE AUTONOMOUS CI SYSTEM 🤖           |
+# |                  Designed for 100% Production Readiness                 |
+# -----------------------------------------------------------------------------
+
+name: '🚀 Ultimate Autonomous CI'
+
+# =============================================================================
+# | 🧠 1. TRIGGERS (THE SENSES) - ส่วนรับรู้และสั่งการทำงาน                    |
+# =============================================================================
+on:
+  # ทริกเกอร์เชิงรุก (Proactive): ตรวจสอบและบำรุงรักษาระบบทุกวันตอนตี 2 UTC
+  schedule:
+    - cron: '0 2 * * *'
+
+  # ทริกเกอร์เชิงรับ (Reactive): ทำงานทันทีเมื่อมีโค้ดใหม่เข้ามา
+  push:
+    branches:
+      - 'main'
+      - 'develop'
+  
+  # ทริกเกอร์ตรวจสอบคุณภาพ: ทำงานเมื่อมีการเปิด Pull Request
+  pull_request:
+    branches:
+      - 'main'
+      - 'develop'
+
+  # ทริกเกอร์ด้วยมือ: อนุญาตให้สั่งรันระบบได้เอง عندความต้องการ
+  workflow_dispatch:
+
+# =============================================================================
+# | ⚙️ PERMISSIONS - การกำหนดสิทธิ์การเข้าถึง                             |
+# =============================================================================
+# ตั้งค่าสิทธิ์ให้ Workflow สามารถสร้าง PR และ Issue ได้ ซึ่งจำเป็นสำหรับระบบ Self-Healing
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+# =============================================================================
+# |                            JOBS - กระบวนการทำงาน                          |
+# =============================================================================
+jobs:
+  # ---------------------------------------------------------------------------
+  # | JOB 1: AUTONOMOUS MAINTENANCE & VALIDATION                              |
+  # ---------------------------------------------------------------------------
+  autonomous_system:
+    name: '🛡️ Autonomous Maintain & Validate'
+    runs-on: ubuntu-latest
+
+    steps:
+      # --- Setup Phase ---
+      - name: '1.1. System Checkout'
+        uses: actions/checkout@v4
+        with:
+          # ดึงข้อมูล commit ทั้งหมดเพื่อให้สามารถเปรียบเทียบการเปลี่ยนแปลงได้
+          fetch-depth: 0 
+
+      - name: '1.2. Environment Setup (Node.js + Cache)'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          # เปิดใช้งาน Cache สำหรับ npm โดยอัตโนมัติตาม Best Practice
+          cache: 'npm'
+
+      - name: '1.3. Dependency Synchronization'
+        run: npm ci
+
+      # --- Self-Healing Phase ---
+      - name: '2.1. Heal: Auto-Patch Vulnerabilities & Format Code'
+        id: auto_heal_step
+        run: |
+          echo "Changes detected before healing: $(git status --porcelain=v1 2>/dev/null | wc -l)"
+          
+          # ซ่อมแซมช่องโหว่ความปลอดภัยระดับต่ำถึงกลางโดยอัตโนมัติ
+          npm audit fix --audit-level=moderate
+          
+          # จัดระเบียบโค้ดทั้งหมดให้เป็นมาตรฐานเดียวกัน
+          npx prettier --write .
+          
+          echo "Changes detected after healing: $(git status --porcelain=v1 2>/dev/null | wc -l)"
+          
+          # ตรวจสอบว่ามีการเปลี่ยนแปลงไฟล์หรือไม่ และส่งผลลัพธ์ออกไป
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "changes_detected=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes_detected=false" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: '2.2. Remediate: Create Pull Request with Applied Fixes'
+        if: steps.auto_heal_step.outputs.changes_detected == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'fix(auto): Apply automated security patches and formatting'
+          title: '🤖 CI [Auto-Heal]: Security & Style Fixes'
+          body: |
+            This Pull Request was automatically generated by the **Ultimate Autonomous CI** workflow.
+            
+            It contains the following automated fixes to maintain project health and security:
+            - **Security Patches**: Applied via `npm audit fix`.
+            - **Code Formatting**: Standardized using `prettier`.
+            
+            This is a routine maintenance action. Please review and merge.
+          branch: 'ci/auto-fixes'
+          delete-branch: true
+          labels: 'automated-pr, maintenance'
+          assignees: '${{ github.actor }}'
+
+      # --- Validation Phase ---
+      - name: '3.1. Validate: Build Project'
+        run: npm run build --if-present
+
+      - name: '3.2. Validate: Run All Tests'
+        run: npm test
+
+      # --- Failure Response Phase ---
+      - name: '4.1. Report: Auto-Create Issue on Critical Failure'
+        if: failure() && github.event_name != 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "🚨 CRITICAL FAILURE in CI on branch '${{ github.ref_name }}' [${{ github.sha }}]" \
+            --body "The **Ultimate Autonomous CI** workflow failed and could not self-heal.
+            - **Triggered by:** ${{ github.event_name }} by @${{ github.actor }}
+            - **Branch:** `${{ github.ref_name }}`
+            - **Commit:** `${{ github.sha }}`
+            - **Workflow Log:** [Click here to view logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+            ### **Manual intervention is urgently required.**" \
+            --label "bug,critical,ci-failure" \
+            --assignee "${{ github.actor }}"
