@@ -1,5 +1,13 @@
 # Releases
 
+### 4.3.0
+
+- Bump `@actions/cache` to [v4.1.0](https://github.com/actions/toolkit/pull/2132)
+
+### 4.2.4
+
+- Bump `@actions/cache` to v4.0.5
+
 ### 4.2.3
 
 - Bump `@actions/cache` to v4.0.3 (obfuscates SAS token in debug logs for cache entries)
