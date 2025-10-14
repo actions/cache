@@ -100111,7 +100111,7 @@ const canSaveToS3 = process.env["RUNS_ON_S3_BUCKET_CACHE"] !== undefined;
 function restoreImpl(stateProvider, earlyExit) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            if (!utils.isCacheFeatureAvailable()) {
+            if (!canSaveToS3 && !utils.isCacheFeatureAvailable()) {
                 core.setOutput(constants_1.Outputs.CacheHit, "false");
                 return;
             }

@@ -100116,7 +100116,7 @@ function saveImpl(stateProvider) {
     return __awaiter(this, void 0, void 0, function* () {
         let cacheId = -1;
         try {
-            if (!utils.isCacheFeatureAvailable()) {
+            if (!canSaveToS3 && !utils.isCacheFeatureAvailable()) {
                 return;
             }
             if (!utils.isValidEvent()) {
