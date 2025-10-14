@@ -17,7 +17,7 @@ export async function restoreImpl(
     earlyExit?: boolean | undefined
 ): Promise<string | undefined> {
     try {
-        if (!utils.isCacheFeatureAvailable()) {
+        if (!canSaveToS3 && !utils.isCacheFeatureAvailable()) {
             core.setOutput(Outputs.CacheHit, "false");
             return;
         }
