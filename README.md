@@ -34,6 +34,10 @@ Upgrading to the recommended versions will not break your workflows.
 
 Read more about the change & access the migration guide: [reference to the announcement](https://github.com/actions/cache/discussions/1510).
 
+### v5
+
+* Updated to node 24
+
 ### v4
 
 * Integrated with the new cache service (v2) APIs.
