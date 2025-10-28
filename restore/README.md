@@ -132,4 +132,4 @@ The outputs `cache-primary-key` and `cache-matched-key` can be used to check if 
 
 ### Ensuring proper restores and save happen across the actions
 
-It is very important to use the same `key` and `path` that were used by either `actions/cache` or `actions/cache/save` while saving the cache. Learn more about cache key [naming](https://github.com/actions/cache#creating-a-cache-key) and [versioning](https://github.com/actions/cache#cache-version) here.
+It is very important to use the same `key` and `path` that were used by either `actions/cache` or `actions/cache/save` while saving the cache. Learn more about cache key [naming](https://github.com/actions/cache#creating-a-cache-key) and [versioning](https://github.com/actions/cache#cache-version) here. 
