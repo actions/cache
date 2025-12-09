@@ -24,9 +24,9 @@
   "license": "MIT",
   "dependencies": {
     "@actions/cache": "file:../packages/cache",
-    "@actions/core": "^1.11.1",
-    "@actions/exec": "^1.1.1",
-    "@actions/io": "^1.1.3"
+    "@actions/core": "file:../packages/core",
+    "@actions/exec": "file:../packages/exec",
+    "@actions/io": "file:../packages/io"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
