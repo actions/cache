@@ -1,5 +1,12 @@
 # Releases
 
+## Changelog
+
+### 5.0.0
+
+- Updated to the Node.js 24 runtime.
+- Requires minimum Actions Runner version v2.327.1.
+
 ### 4.3.0
 
 - Bump `@actions/cache` to [v4.1.0](https://github.com/actions/toolkit/pull/2132)
