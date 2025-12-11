@@ -1,6 +1,6 @@
 ---
 name: "@azure/core-http-compat"
-version: 2.3.0
+version: 2.3.1
 type: npm
 summary: Core HTTP Compatibility Library to bridge the gap between Core V1 & V2 packages.
 homepage: https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/core/core-compat/

@@ -1,6 +1,6 @@
 ---
 name: "@azure/core-client"
-version: 1.10.0
+version: 1.10.1
 type: npm
 summary: Core library for interfacing with AutoRest generated code
 homepage: https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/core/core-client/

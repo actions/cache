@@ -1,6 +1,6 @@
 ---
 name: "@typespec/ts-http-runtime"
-version: 0.3.0
+version: 0.3.2
 type: npm
 summary: Isomorphic client library for making HTTP requests in node.js and browser.
 homepage: https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/core/ts-http-runtime/
