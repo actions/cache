@@ -4,8 +4,9 @@
 
 ### 5.0.0
 
-- Updated to the Node.js 24 runtime.
-- Requires minimum Actions Runner version v2.327.1.
+> [!IMPORTANT]
+> `actions/cache@v5` runs on the Node.js 24 runtime and requires a minimum Actions Runner version of `2.327.1`.
+> If you are using self-hosted runners, ensure they are updated before upgrading.
 
 ### 4.3.0
 
