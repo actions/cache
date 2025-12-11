@@ -34,6 +34,11 @@ Upgrading to the recommended versions will not break your workflows.
 
 Read more about the change & access the migration guide: [reference to the announcement](https://github.com/actions/cache/discussions/1510).
 
+### v5
+
+* Updated to node 24
+* Requires a minimum Actions Runner version of `2.327.1`
+
 ### v4
 
 * Integrated with the new cache service (v2) APIs.
@@ -68,6 +73,10 @@ See the [v2 README.md](https://github.com/actions/cache/blob/v2/README.md) for o
 Create a workflow `.yml` file in your repository's `.github/workflows` directory. An [example workflow](#example-cache-workflow) is available below. For more information, see the GitHub Help Documentation for [Creating a workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
 
 If you are using this inside a container, a POSIX-compliant `tar` needs to be included and accessible from the execution path.
+
+> **Note**
+> `actions/cache@v5` runs on Node.js 24 and requires a minimum Actions Runner version of `2.327.1`.
+> If you are using self-hosted runners, ensure they are updated before upgrading.
 
 If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are required for [Cross-OS caching](https://github.com/actions/cache/blob/main/tips-and-workarounds.md#cross-os-cache) to work. They are also recommended to be installed in general so the performance is on par with `hosted` Windows runners.
 
