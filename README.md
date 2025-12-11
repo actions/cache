@@ -21,7 +21,7 @@ The cache backend service has been rewritten from the ground up for improved per
 
 The new service will gradually roll out as of **February 1st, 2025**. The legacy service will also be sunset on the same date. Changes in these releases are **fully backward compatible**.
 
-**We are deprecating some versions of this action**. We recommend upgrading to version `v4` or `v3` as soon as possible before **February 1st, 2025.** (Upgrade instructions below).
+**We are deprecating some versions of this action**. We recommend upgrading to version `v5`, `v4` or `v3` as soon as possible before **February 1st, 2025.** (Upgrade instructions below).
 
 If you are using pinned SHAs, please use the SHAs of versions `v4.2.0` or `v3.4.0`.
 
@@ -36,7 +36,11 @@ Read more about the change & access the migration guide: [reference to the annou
 
 ### v5
 
-* Updated to node 24
+* Updated to Node.js 24
+* Bumped `@actions/cache` to `5.0.0`
+* Bumped `@actions/core` to `2.0.0`
+* Bumped `@actions/exec` to `2.0.0`
+* Bumped `@actions/io` to `2.0.0`
 
 ### v4
 
