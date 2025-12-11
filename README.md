@@ -17,6 +17,10 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 
 ### ⚠️ Important changes
 
+> [!IMPORTANT]
+> `actions/cache@v5` runs on the Node.js 24 runtime and requires a minimum Actions Runner version of `2.327.1`.
+> If you are using self-hosted runners, ensure they are updated before upgrading.
+
 The cache backend service has been rewritten from the ground up for improved performance and reliability. [actions/cache](https://github.com/actions/cache) now integrates with the new cache service (v2) APIs.
 
 The new service will gradually roll out as of **February 1st, 2025**. The legacy service will also be sunset on the same date. Changes in these releases are **fully backward compatible**.
@@ -74,9 +78,7 @@ Create a workflow `.yml` file in your repository's `.github/workflows` directory
 
 If you are using this inside a container, a POSIX-compliant `tar` needs to be included and accessible from the execution path.
 
-> **Note**
-> `actions/cache@v5` runs on Node.js 24 and requires a minimum Actions Runner version of `2.327.1`.
-> If you are using self-hosted runners, ensure they are updated before upgrading.
+Note: `actions/cache@v5` runs on Node.js 24 and requires a minimum Actions Runner version of `2.327.1`.
 
 If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are required for [Cross-OS caching](https://github.com/actions/cache/blob/main/tips-and-workarounds.md#cross-os-cache) to work. They are also recommended to be installed in general so the performance is on par with `hosted` Windows runners.
 
