@@ -19,24 +19,17 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 
 The cache backend service has been rewritten from the ground up for improved performance and reliability. [actions/cache](https://github.com/actions/cache) now integrates with the new cache service (v2) APIs.
 
-The new service will gradually roll out as of **February 1st, 2025**. The legacy service will also be sunset on the same date. Changes in these releases are **fully backward compatible**.
+The new service will gradually roll out as of **February 1st, 2025**. The legacy service will also be sunset on the same date. Changes in these release are **fully backward compatible**.
 
 **We are deprecating some versions of this action**. We recommend upgrading to version `v4` or `v3` as soon as possible before **February 1st, 2025.** (Upgrade instructions below).
 
-If you are using pinned SHAs, please use the SHAs of versions `v4.2.0` or `v3.4.0`.
+If you are using pinned SHAs, please use the SHAs of versions `v4.2.0` or `v3.4.0`
 
 If you do not upgrade, all workflow runs using any of the deprecated [actions/cache](https://github.com/actions/cache) will fail.
 
 Upgrading to the recommended versions will not break your workflows.
 
-> **Additionally, if you are managing your own GitHub runners, you must update your runner version to `2.231.0` or newer to ensure compatibility with the new cache service.**  
-> Failure to update both the action version and your runner version may result in workflow failures after the migration date.
-
 Read more about the change & access the migration guide: [reference to the announcement](https://github.com/actions/cache/discussions/1510).
-
-### v5
-
-* Updated to node 24
 
 ### v4
 
