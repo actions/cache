@@ -2,6 +2,10 @@
 
 ## Changelog
 
+### 5.0.1
+
+- Update `@azure/storage-blob` to `^12.29.1` via `@actions/cache@5.0.1` [#1685](https://github.com/actions/cache/pull/1685)
+
 ### 5.0.0
 
 > [!IMPORTANT]
