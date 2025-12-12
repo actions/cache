@@ -1,6 +1,6 @@
 ---
 name: strnum
-version: 2.1.1
+version: 2.1.2
 type: npm
 summary: Parse String to Number based on configuration
 homepage:
