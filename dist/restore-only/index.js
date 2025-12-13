@@ -44358,12 +44358,15 @@ function getInputAsInt(name, options) {
     return value;
 }
 function getCompressionLevel(name, options) {
-    const compressionLevel = getInputAsInt(name, options);
-    if (compressionLevel === undefined) {
+    const rawValue = core.getInput(name, options);
+    if (rawValue === "") {
         return undefined;
     }
-    if (compressionLevel > 9) {
-        logWarning(`Invalid compression-level provided: ${compressionLevel}. Expected a value between 0 (no compression) and 9 (maximum compression).`);
+    const compressionLevel = parseInt(rawValue, 10);
+    if (isNaN(compressionLevel) ||
+        compressionLevel < 0 ||
+        compressionLevel > 9) {
+        logWarning(`Invalid compression-level provided: ${rawValue}. Expected a value between 0 (no compression) and 9 (maximum compression).`);
         return undefined;
     }
     return compressionLevel;
