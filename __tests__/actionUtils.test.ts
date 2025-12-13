@@ -197,6 +197,14 @@ test("getCompressionLevel allows zero for no compression", () => {
     expect(actionUtils.getCompressionLevel("foo")).toBe(0);
 });
 
+test("getCompressionLevel returns undefined for negative values", () => {
+    const infoMock = jest.spyOn(core, "info");
+
+    testUtils.setInput("foo", "-3");
+    expect(actionUtils.getCompressionLevel("foo")).toBeUndefined();
+    expect(infoMock).not.toHaveBeenCalledWith(expect.stringContaining("compression-level"));
+});
+
 test("getCompressionLevel returns undefined and warns if input is too large", () => {
     const infoMock = jest.spyOn(core, "info");
     testUtils.setInput("foo", "11");
@@ -218,15 +226,15 @@ test("setCompressionLevel sets no-compression flag when zero", () => {
     expect(process.env["GZIP"]).toBe("-0");
 });
 
-    test("higher compression level produces smaller gzip output", () => {
-        const data = Buffer.alloc(8 * 1024, "A");
+test("higher compression level produces smaller gzip output", () => {
+    const data = Buffer.alloc(8 * 1024, "A");
 
-        const level0 = zlib.gzipSync(data, { level: 0 });
-        const level9 = zlib.gzipSync(data, { level: 9 });
+    const level0 = zlib.gzipSync(data, { level: 0 });
+    const level9 = zlib.gzipSync(data, { level: 9 });
 
-        expect(level0.byteLength).toBeGreaterThan(level9.byteLength);
-        expect(level0.byteLength - level9.byteLength).toBeGreaterThan(1000);
-    });
+    expect(level0.byteLength).toBeGreaterThan(level9.byteLength);
+    expect(level0.byteLength - level9.byteLength).toBeGreaterThan(1000);
+});
 
 test("getInputAsInt throws if required and value missing", () => {
     expect(() =>

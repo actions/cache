@@ -136,3 +136,54 @@ test("save with valid inputs uploads a cache", async () => {
 
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
+
+test("negative compression level leaves env unset in combined flow", async () => {
+    const failedMock = jest.spyOn(core, "setFailed");
+    const setCompressionLevelMock = jest.spyOn(
+        actionUtils,
+        "setCompressionLevel"
+    );
+
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const savedCacheKey = "Linux-node-";
+
+    jest.spyOn(core, "getState")
+        // Cache Entry State
+        .mockImplementationOnce(() => {
+            return primaryKey;
+        })
+        // Cache Key State
+        .mockImplementationOnce(() => {
+            return savedCacheKey;
+        });
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.UploadChunkSize, "4000000");
+    testUtils.setInput(Inputs.CompressionLevel, "-5");
+
+    const cacheId = 4;
+    const saveCacheMock = jest
+        .spyOn(cache, "saveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(cacheId);
+        });
+
+    await saveRun();
+
+    expect(process.env["ZSTD_CLEVEL"]).toBeUndefined();
+    expect(process.env["GZIP"]).toBeUndefined();
+    expect(setCompressionLevelMock).not.toHaveBeenCalled();
+
+    expect(saveCacheMock).toHaveBeenCalledTimes(1);
+    expect(saveCacheMock).toHaveBeenCalledWith(
+        [inputPath],
+        primaryKey,
+        {
+            uploadChunkSize: 4000000
+        },
+        false
+    );
+
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});

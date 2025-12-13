@@ -473,7 +473,10 @@ test("save applies compression level when provided", async () => {
 
 test("save skips setting compression when value is out of range", async () => {
     const failedMock = jest.spyOn(core, "setFailed");
-    const setCompressionLevelMock = jest.spyOn(actionUtils, "setCompressionLevel");
+    const setCompressionLevelMock = jest.spyOn(
+        actionUtils,
+        "setCompressionLevel"
+    );
 
     const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
     const savedCacheKey = "Linux-node-";
@@ -492,6 +495,57 @@ test("save skips setting compression when value is out of range", async () => {
     testUtils.setInput(Inputs.Path, inputPath);
     testUtils.setInput(Inputs.UploadChunkSize, "4000000");
     testUtils.setInput(Inputs.CompressionLevel, "99");
+
+    const cacheId = 4;
+    const saveCacheMock = jest
+        .spyOn(cache, "saveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(cacheId);
+        });
+
+    await saveImpl(new StateProvider());
+
+    expect(process.env["ZSTD_CLEVEL"]).toBeUndefined();
+    expect(process.env["GZIP"]).toBeUndefined();
+    expect(setCompressionLevelMock).not.toHaveBeenCalled();
+
+    expect(saveCacheMock).toHaveBeenCalledTimes(1);
+    expect(saveCacheMock).toHaveBeenCalledWith(
+        [inputPath],
+        primaryKey,
+        {
+            uploadChunkSize: 4000000
+        },
+        false
+    );
+
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
+test("save skips setting compression when value is negative", async () => {
+    const failedMock = jest.spyOn(core, "setFailed");
+    const setCompressionLevelMock = jest.spyOn(
+        actionUtils,
+        "setCompressionLevel"
+    );
+
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const savedCacheKey = "Linux-node-";
+
+    jest.spyOn(core, "getState")
+        // Cache Entry State
+        .mockImplementationOnce(() => {
+            return savedCacheKey;
+        })
+        // Cache Key State
+        .mockImplementationOnce(() => {
+            return primaryKey;
+        });
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.UploadChunkSize, "4000000");
+    testUtils.setInput(Inputs.CompressionLevel, "-1");
 
     const cacheId = 4;
     const saveCacheMock = jest
