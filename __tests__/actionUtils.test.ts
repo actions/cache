@@ -197,12 +197,14 @@ test("getCompressionLevel allows zero for no compression", () => {
     expect(actionUtils.getCompressionLevel("foo")).toBe(0);
 });
 
-test("getCompressionLevel returns undefined for negative values", () => {
+test("getCompressionLevel returns undefined and warns for negative values", () => {
     const infoMock = jest.spyOn(core, "info");
 
     testUtils.setInput("foo", "-3");
     expect(actionUtils.getCompressionLevel("foo")).toBeUndefined();
-    expect(infoMock).not.toHaveBeenCalledWith(expect.stringContaining("compression-level"));
+    expect(infoMock).toHaveBeenCalledWith(
+        "[warning]Invalid compression-level provided: -3. Expected a value between 0 (no compression) and 9 (maximum compression)."
+    );
 });
 
 test("getCompressionLevel returns undefined and warns if input is too large", () => {

@@ -62,15 +62,21 @@ export function getCompressionLevel(
     name: string,
     options?: core.InputOptions
 ): number | undefined {
-    const compressionLevel = getInputAsInt(name, options);
+    const rawValue = core.getInput(name, options);
 
-    if (compressionLevel === undefined) {
+    if (rawValue === "") {
         return undefined;
     }
 
-    if (compressionLevel > 9) {
+    const compressionLevel = parseInt(rawValue, 10);
+
+    if (
+        isNaN(compressionLevel) ||
+        compressionLevel < 0 ||
+        compressionLevel > 9
+    ) {
         logWarning(
-            `Invalid compression-level provided: ${compressionLevel}. Expected a value between 0 (no compression) and 9 (maximum compression).`
+            `Invalid compression-level provided: ${rawValue}. Expected a value between 0 (no compression) and 9 (maximum compression).`
         );
         return undefined;
     }
