@@ -1,5 +1,6 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
+import * as zlib from "zlib";
 
 import { Events, RefKey } from "../src/constants";
 import * as actionUtils from "../src/utils/actionUtils";
@@ -22,6 +23,11 @@ beforeEach(() => {
     process.env = pristineEnv;
     delete process.env[Events.Key];
     delete process.env[RefKey];
+});
+
+afterEach(() => {
+    delete process.env["ZSTD_CLEVEL"];
+    delete process.env["GZIP"];
 });
 
 afterAll(() => {
@@ -175,6 +181,61 @@ test("getInputAsInt returns value if input is valid", () => {
 test("getInputAsInt returns undefined if input is invalid or NaN", () => {
     testUtils.setInput("foo", "bar");
     expect(actionUtils.getInputAsInt("foo")).toBeUndefined();
+});
+
+test("getCompressionLevel returns undefined if input not set", () => {
+    expect(actionUtils.getCompressionLevel("undefined")).toBeUndefined();
+});
+
+test("getCompressionLevel returns value if input is valid", () => {
+    testUtils.setInput("foo", "9");
+    expect(actionUtils.getCompressionLevel("foo")).toBe(9);
+});
+
+test("getCompressionLevel allows zero for no compression", () => {
+    testUtils.setInput("foo", "0");
+    expect(actionUtils.getCompressionLevel("foo")).toBe(0);
+});
+
+test("getCompressionLevel returns undefined and warns for negative values", () => {
+    const infoMock = jest.spyOn(core, "info");
+
+    testUtils.setInput("foo", "-3");
+    expect(actionUtils.getCompressionLevel("foo")).toBeUndefined();
+    expect(infoMock).toHaveBeenCalledWith(
+        "[warning]Invalid compression-level provided: -3. Expected a value between 0 (no compression) and 9 (maximum compression)."
+    );
+});
+
+test("getCompressionLevel returns undefined and warns if input is too large", () => {
+    const infoMock = jest.spyOn(core, "info");
+    testUtils.setInput("foo", "11");
+    expect(actionUtils.getCompressionLevel("foo")).toBeUndefined();
+    expect(infoMock).toHaveBeenCalledWith(
+        "[warning]Invalid compression-level provided: 11. Expected a value between 0 (no compression) and 9 (maximum compression)."
+    );
+});
+
+test("setCompressionLevel sets compression env vars", () => {
+    actionUtils.setCompressionLevel(7);
+    expect(process.env["ZSTD_CLEVEL"]).toBe("7");
+    expect(process.env["GZIP"]).toBe("-7");
+});
+
+test("setCompressionLevel sets no-compression flag when zero", () => {
+    actionUtils.setCompressionLevel(0);
+    expect(process.env["ZSTD_CLEVEL"]).toBe("0");
+    expect(process.env["GZIP"]).toBe("-0");
+});
+
+test("higher compression level produces smaller gzip output", () => {
+    const data = Buffer.alloc(8 * 1024, "A");
+
+    const level0 = zlib.gzipSync(data, { level: 0 });
+    const level9 = zlib.gzipSync(data, { level: 9 });
+
+    expect(level0.byteLength).toBeGreaterThan(level9.byteLength);
+    expect(level0.byteLength - level9.byteLength).toBeGreaterThan(1000);
 });
 
 test("getInputAsInt throws if required and value missing", () => {

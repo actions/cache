@@ -43,6 +43,22 @@ beforeAll(() => {
         }
     );
 
+    jest.spyOn(actionUtils, "getCompressionLevel").mockImplementation(
+        (name, options) => {
+            return jest
+                .requireActual("../src/utils/actionUtils")
+                .getCompressionLevel(name, options);
+        }
+    );
+
+    jest.spyOn(actionUtils, "setCompressionLevel").mockImplementation(
+        compressionLevel => {
+            return jest
+                .requireActual("../src/utils/actionUtils")
+                .setCompressionLevel(compressionLevel);
+        }
+    );
+
     jest.spyOn(actionUtils, "isExactKeyMatch").mockImplementation(
         (key, cacheResult) => {
             return jest
@@ -71,6 +87,8 @@ afterEach(() => {
     testUtils.clearInputs();
     delete process.env[Events.Key];
     delete process.env[RefKey];
+    delete process.env["ZSTD_CLEVEL"];
+    delete process.env["GZIP"];
 });
 
 test("save with valid inputs uploads a cache", async () => {
@@ -82,6 +100,7 @@ test("save with valid inputs uploads a cache", async () => {
     testUtils.setInput(Inputs.Key, primaryKey);
     testUtils.setInput(Inputs.Path, inputPath);
     testUtils.setInput(Inputs.UploadChunkSize, "4000000");
+    testUtils.setInput(Inputs.CompressionLevel, "0");
 
     const cacheId = 4;
     const saveCacheMock = jest
@@ -91,6 +110,45 @@ test("save with valid inputs uploads a cache", async () => {
         });
 
     await saveOnlyRun();
+
+    expect(process.env["ZSTD_CLEVEL"]).toBe("0");
+    expect(process.env["GZIP"]).toBe("-0");
+
+    expect(saveCacheMock).toHaveBeenCalledTimes(1);
+    expect(saveCacheMock).toHaveBeenCalledWith(
+        [inputPath],
+        primaryKey,
+        {
+            uploadChunkSize: 4000000
+        },
+        false
+    );
+
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
+test("negative compression level does not set env vars", async () => {
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Key, primaryKey);
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.UploadChunkSize, "4000000");
+    testUtils.setInput(Inputs.CompressionLevel, "-2");
+
+    const cacheId = 4;
+    const saveCacheMock = jest
+        .spyOn(cache, "saveCache")
+        .mockImplementationOnce(() => {
+            return Promise.resolve(cacheId);
+        });
+
+    await saveOnlyRun();
+
+    expect(process.env["ZSTD_CLEVEL"]).toBeUndefined();
+    expect(process.env["GZIP"]).toBeUndefined();
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
     expect(saveCacheMock).toHaveBeenCalledWith(

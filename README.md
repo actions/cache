@@ -33,7 +33,7 @@ If you do not upgrade, all workflow runs using any of the deprecated [actions/ca
 
 Upgrading to the recommended versions will not break your workflows.
 
-> **Additionally, if you are managing your own GitHub runners, you must update your runner version to `2.231.0` or newer to ensure compatibility with the new cache service.**  
+> **Additionally, if you are managing your own GitHub runners, you must update your runner version to `2.231.0` or newer to ensure compatibility with the new cache service.**
 > Failure to update both the action version and your runner version may result in workflow failures after the migration date.
 
 Read more about the change & access the migration guide: [reference to the announcement](https://github.com/actions/cache/discussions/1510).
@@ -87,6 +87,7 @@ If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are requir
 * `key` - An explicit key for a cache entry. See [creating a cache key](#creating-a-cache-key).
 * `path` - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `restore-keys` - An ordered multiline string listing the prefix-matched keys, that are used for restoring stale cache if no cache hit occurred for key.
+* `compression-level` - Compression level to use when creating cache archives (applies to the save step of the cache action). Use `0` for no compression and `9` for maximum compression. Defaults to the compression tool's standard level when unset.
 * `enableCrossOsArchive` - An optional boolean when enabled, allows Windows runners to save or restore caches that can be restored or saved respectively on other platforms. Default: `false`
 * `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: `false`
 * `lookup-only` - If true, only checks if cache entry exists and skips download. Does not change save cache behavior. Default: `false`
@@ -351,7 +352,7 @@ Please note that Windows environment variables (like `%LocalAppData%`) will NOT 
 
 ## Note
 
-Thank you for your interest in this GitHub repo, however, right now we are not taking contributions. 
+Thank you for your interest in this GitHub repo, however, right now we are not taking contributions.
 
 We continue to focus our resources on strategic areas that help our customers be successful while making developers' lives easier. While GitHub Actions remains a key part of this vision, we are allocating resources towards other areas of Actions and are not taking contributions to this repository at this time. The GitHub public roadmap is the best place to follow along for any updates on features we’re working on and what stage they’re in.
 
@@ -359,7 +360,7 @@ We are taking the following steps to better direct requests related to GitHub Ac
 
 1. We will be directing questions and support requests to our [Community Discussions area](https://github.com/orgs/community/discussions/categories/actions)
 
-2. High Priority bugs can be reported through Community Discussions or you can report these to our support team https://support.github.com/contact/bug-report.
+2. High Priority bugs can be reported through Community Discussions or you can report these to our support team <https://support.github.com/contact/bug-report>.
 
 3. Security Issues should be handled as per our [security.md](SECURITY.md).
 

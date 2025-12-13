@@ -25,8 +25,7 @@ export async function saveImpl(
 
         if (!utils.isValidEvent()) {
             utils.logWarning(
-                `Event Validation Error: The event type ${
-                    process.env[Events.Key]
+                `Event Validation Error: The event type ${process.env[Events.Key]
                 } is not supported because it's not tied to a branch or tag ref.`
             );
             return;
@@ -61,6 +60,14 @@ export async function saveImpl(
         const enableCrossOsArchive = utils.getInputAsBool(
             Inputs.EnableCrossOsArchive
         );
+
+        const compressionLevel = utils.getCompressionLevel(
+            Inputs.CompressionLevel
+        );
+
+        if (compressionLevel !== undefined) {
+            utils.setCompressionLevel(compressionLevel);
+        }
 
         cacheId = await cache.saveCache(
             cachePaths,
