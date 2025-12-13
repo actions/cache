@@ -9,13 +9,13 @@ The save action saves a cache. It works similarly to the `cache` action except t
 * `key` - An explicit key for a cache entry. See [creating a cache key](../README.md#creating-a-cache-key).
 * `path` - A list of files, directories, and wildcard patterns to cache. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `upload-chunk-size` - The chunk size used to split up large files during upload, in bytes
+* `compression-level` - Compression level to use when creating cache archives. Use `0` for no compression and `9` for maximum compression. Defaults to the compression tool's standard level when unset.
 
 ### Outputs
 
 This action has no outputs.
 
 ## Use cases
-
 
 ### Only save cache
 
@@ -54,6 +54,7 @@ with:
 ```
 
 #### Case 1 - Where a user would want to reuse the key as it is
+
 ```yaml
 uses: actions/cache/save@v4
 with:

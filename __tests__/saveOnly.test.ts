@@ -43,6 +43,22 @@ beforeAll(() => {
         }
     );
 
+    jest.spyOn(actionUtils, "getCompressionLevel").mockImplementation(
+        (name, options) => {
+            return jest
+                .requireActual("../src/utils/actionUtils")
+                .getCompressionLevel(name, options);
+        }
+    );
+
+    jest.spyOn(actionUtils, "setCompressionLevel").mockImplementation(
+        compressionLevel => {
+            return jest
+                .requireActual("../src/utils/actionUtils")
+                .setCompressionLevel(compressionLevel);
+        }
+    );
+
     jest.spyOn(actionUtils, "isExactKeyMatch").mockImplementation(
         (key, cacheResult) => {
             return jest
@@ -71,6 +87,8 @@ afterEach(() => {
     testUtils.clearInputs();
     delete process.env[Events.Key];
     delete process.env[RefKey];
+    delete process.env["ZSTD_CLEVEL"];
+    delete process.env["GZIP"];
 });
 
 test("save with valid inputs uploads a cache", async () => {
@@ -82,6 +100,7 @@ test("save with valid inputs uploads a cache", async () => {
     testUtils.setInput(Inputs.Key, primaryKey);
     testUtils.setInput(Inputs.Path, inputPath);
     testUtils.setInput(Inputs.UploadChunkSize, "4000000");
+    testUtils.setInput(Inputs.CompressionLevel, "0");
 
     const cacheId = 4;
     const saveCacheMock = jest
@@ -91,6 +110,9 @@ test("save with valid inputs uploads a cache", async () => {
         });
 
     await saveOnlyRun();
+
+    expect(process.env["ZSTD_CLEVEL"]).toBe("0");
+    expect(process.env["GZIP"]).toBe("-0");
 
     expect(saveCacheMock).toHaveBeenCalledTimes(1);
     expect(saveCacheMock).toHaveBeenCalledWith(

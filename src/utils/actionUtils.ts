@@ -58,6 +58,32 @@ export function getInputAsInt(
     return value;
 }
 
+export function getCompressionLevel(
+    name: string,
+    options?: core.InputOptions
+): number | undefined {
+    const compressionLevel = getInputAsInt(name, options);
+
+    if (compressionLevel === undefined) {
+        return undefined;
+    }
+
+    if (compressionLevel > 9) {
+        logWarning(
+            `Invalid compression-level provided: ${compressionLevel}. Expected a value between 0 (no compression) and 9 (maximum compression).`
+        );
+        return undefined;
+    }
+
+    return compressionLevel;
+}
+
+export function setCompressionLevel(compressionLevel: number): void {
+    const level = compressionLevel.toString();
+    process.env["ZSTD_CLEVEL"] = level;
+    process.env["GZIP"] = `-${level}`;
+}
+
 export function getInputAsBool(
     name: string,
     options?: core.InputOptions
