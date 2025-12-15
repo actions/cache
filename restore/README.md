@@ -37,7 +37,7 @@ If you are using separate jobs to create and save your cache(s) to be reused by 
 steps:
   - uses: actions/checkout@v4
 
-  - uses: actions/cache/restore@v4
+  - uses: actions/cache/restore@v5
     id: cache
     with:
       path: path/to/dependencies
@@ -69,7 +69,7 @@ steps:
   - name: Build
     run: /build-parent-module.sh
 
-  - uses: actions/cache/save@v4
+  - uses: actions/cache/save@v5
     id: cache
     with:
       path: path/to/dependencies
@@ -82,7 +82,7 @@ steps:
 steps:
   - uses: actions/checkout@v4
 
-  - uses: actions/cache/restore@v4
+  - uses: actions/cache/restore@v5
     id: cache
     with:
       path: path/to/dependencies
@@ -109,7 +109,7 @@ To fail if there is no cache hit for the primary key, leave `restore-keys` empty
 steps:
   - uses: actions/checkout@v4
 
-  - uses: actions/cache/restore@v4
+  - uses: actions/cache/restore@v5
     id: cache
     with:
       path: path/to/dependencies
