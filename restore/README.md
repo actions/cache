@@ -35,7 +35,7 @@ If you are using separate jobs to create and save your cache(s) to be reused by 
 
 ```yaml
 steps:
-  - uses: actions/checkout@v4
+  - uses: actions/checkout@v6
 
   - uses: actions/cache/restore@v5
     id: cache
@@ -64,7 +64,7 @@ In case of multi-module projects, where the built artifact of one project needs 
 
 ```yaml
 steps:
-  - uses: actions/checkout@v4
+  - uses: actions/checkout@v6
 
   - name: Build
     run: /build-parent-module.sh
@@ -80,7 +80,7 @@ steps:
 
 ```yaml
 steps:
-  - uses: actions/checkout@v4
+  - uses: actions/checkout@v6
 
   - uses: actions/cache/restore@v5
     id: cache
@@ -107,7 +107,7 @@ To fail if there is no cache hit for the primary key, leave `restore-keys` empty
 
 ```yaml
 steps:
-  - uses: actions/checkout@v4
+  - uses: actions/checkout@v6
 
   - uses: actions/cache/restore@v5
     id: cache
