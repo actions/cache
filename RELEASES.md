@@ -4,7 +4,7 @@
 
 ### 5.0.2
 
-- Bump `@actions/cache` to v5.0.3
+- Bump `@actions/cache` to v5.0.3 [#1692](https://github.com/actions/cache/pull/1692)
 
 ### 5.0.1
 
