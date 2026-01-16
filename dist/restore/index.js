@@ -2398,12 +2398,27 @@ class CacheServiceClient {
                         }
                         errorMessage = `${errorMessage}: ${body.msg}`;
                     }
+                    // Handle rate limiting - don't retry, just warn and exit
+                    // For more info, see https://docs.github.com/en/actions/reference/limits
+                    if (statusCode === http_client_1.HttpCodes.TooManyRequests) {
+                        const retryAfterHeader = response.message.headers['retry-after'];
+                        if (retryAfterHeader) {
+                            const parsedSeconds = parseInt(retryAfterHeader, 10);
+                            if (!isNaN(parsedSeconds) && parsedSeconds > 0) {
+                                (0, core_1.warning)(`You've hit a rate limit, your rate limit will reset in ${parsedSeconds} seconds`);
+                            }
+                        }
+                        throw new errors_1.RateLimitError(`Rate limited: ${errorMessage}`);
+                    }
                 }
                 catch (error) {
                     if (error instanceof SyntaxError) {
                         (0, core_1.debug)(`Raw Body: ${rawBody}`);
                     }
                     if (error instanceof errors_1.UsageError) {
+                        throw error;
+                    }
+                    if (error instanceof errors_1.RateLimitError) {
                         throw error;
                     }
                     if (errors_1.NetworkError.isNetworkErrorCode(error === null || error === void 0 ? void 0 : error.code)) {
@@ -2438,8 +2453,7 @@ class CacheServiceClient {
             http_client_1.HttpCodes.BadGateway,
             http_client_1.HttpCodes.GatewayTimeout,
             http_client_1.HttpCodes.InternalServerError,
-            http_client_1.HttpCodes.ServiceUnavailable,
-            http_client_1.HttpCodes.TooManyRequests
+            http_client_1.HttpCodes.ServiceUnavailable
         ];
         return retryableStatusCodes.includes(statusCode);
     }
@@ -2475,7 +2489,7 @@ function internalCacheTwirpClient(options) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.UsageError = exports.NetworkError = exports.GHESNotSupportedError = exports.CacheNotFoundError = exports.InvalidResponseError = exports.FilesNotFoundError = void 0;
+exports.RateLimitError = exports.UsageError = exports.NetworkError = exports.GHESNotSupportedError = exports.CacheNotFoundError = exports.InvalidResponseError = exports.FilesNotFoundError = void 0;
 class FilesNotFoundError extends Error {
     constructor(files = []) {
         let message = 'No files were found to upload';
@@ -2542,6 +2556,13 @@ UsageError.isUsageErrorMessage = (msg) => {
         return false;
     return msg.includes('insufficient usage');
 };
+class RateLimitError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'RateLimitError';
+    }
+}
+exports.RateLimitError = RateLimitError;
 //# sourceMappingURL=errors.js.map
 
 /***/ }),
@@ -9902,7 +9923,7 @@ class HttpClient {
         this._maxRetries = 1;
         this._keepAlive = false;
         this._disposed = false;
-        this.userAgent = userAgent;
+        this.userAgent = this._getUserAgentWithOrchestrationId(userAgent);
         this.handlers = handlers || [];
         this.requestOptions = requestOptions;
         if (requestOptions) {
@@ -10381,6 +10402,17 @@ class HttpClient {
             });
         }
         return proxyAgent;
+    }
+    _getUserAgentWithOrchestrationId(userAgent) {
+        const baseUserAgent = userAgent || 'actions/http-client';
+        const orchId = process.env['ACTIONS_ORCHESTRATION_ID'];
+        if (orchId) {
+            // Sanitize the orchestration ID to ensure it contains only valid characters
+            // Valid characters: 0-9, a-z, _, -, .
+            const sanitizedId = orchId.replace(/[^a-z0-9_.-]/gi, '_');
+            return `${baseUserAgent} actions_orchestration_id/${sanitizedId}`;
+        }
+        return baseUserAgent;
     }
     _performExponentialBackoff(retryNumber) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -87398,7 +87430,7 @@ function randomUUID() {
 /***/ ((module) => {
 
 "use strict";
-module.exports = /*#__PURE__*/JSON.parse('{"name":"@actions/cache","version":"5.0.1","preview":true,"description":"Actions cache lib","keywords":["github","actions","cache"],"homepage":"https://github.com/actions/toolkit/tree/main/packages/cache","license":"MIT","main":"lib/cache.js","types":"lib/cache.d.ts","directories":{"lib":"lib","test":"__tests__"},"files":["lib","!.DS_Store"],"publishConfig":{"access":"public"},"repository":{"type":"git","url":"git+https://github.com/actions/toolkit.git","directory":"packages/cache"},"scripts":{"audit-moderate":"npm install && npm audit --json --audit-level=moderate > audit.json","test":"echo \\"Error: run tests from root\\" && exit 1","tsc":"tsc"},"bugs":{"url":"https://github.com/actions/toolkit/issues"},"dependencies":{"@actions/core":"^2.0.0","@actions/exec":"^2.0.0","@actions/glob":"^0.5.0","@protobuf-ts/runtime-rpc":"^2.11.1","@actions/http-client":"^3.0.0","@actions/io":"^2.0.0","@azure/abort-controller":"^1.1.0","@azure/core-rest-pipeline":"^1.22.0","@azure/storage-blob":"^12.29.1","semver":"^6.3.1"},"devDependencies":{"@types/node":"^24.1.0","@types/semver":"^6.0.0","@protobuf-ts/plugin":"^2.9.4","typescript":"^5.2.2"},"overrides":{"uri-js":"npm:uri-js-replace@^1.0.1","node-fetch":"^3.3.2"}}');
+module.exports = /*#__PURE__*/JSON.parse('{"name":"@actions/cache","version":"5.0.3","preview":true,"description":"Actions cache lib","keywords":["github","actions","cache"],"homepage":"https://github.com/actions/toolkit/tree/main/packages/cache","license":"MIT","main":"lib/cache.js","types":"lib/cache.d.ts","directories":{"lib":"lib","test":"__tests__"},"files":["lib","!.DS_Store"],"publishConfig":{"access":"public"},"repository":{"type":"git","url":"git+https://github.com/actions/toolkit.git","directory":"packages/cache"},"scripts":{"audit-moderate":"npm install && npm audit --json --audit-level=moderate > audit.json","test":"echo \\"Error: run tests from root\\" && exit 1","tsc":"tsc"},"bugs":{"url":"https://github.com/actions/toolkit/issues"},"dependencies":{"@actions/core":"^2.0.0","@actions/exec":"^2.0.0","@actions/glob":"^0.5.0","@protobuf-ts/runtime-rpc":"^2.11.1","@actions/http-client":"^3.0.1","@actions/io":"^2.0.0","@azure/abort-controller":"^1.1.0","@azure/core-rest-pipeline":"^1.22.0","@azure/storage-blob":"^12.29.1","semver":"^6.3.1"},"devDependencies":{"@types/node":"^24.1.0","@types/semver":"^6.0.0","@protobuf-ts/plugin":"^2.9.4","typescript":"^5.2.2"},"overrides":{"uri-js":"npm:uri-js-replace@^1.0.1","node-fetch":"^3.3.2"}}');
 
 /***/ })
 
