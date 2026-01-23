@@ -3,7 +3,7 @@ name: minimatch
 version: 3.1.2
 type: npm
 summary: a glob matcher in javascript
-homepage: 
+homepage:
 license: isc
 licenses:
 - sources: LICENSE
