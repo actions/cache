@@ -10,6 +10,7 @@ on:
 
 env:
   TAG_NAME: ${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}
+
 permissions:
   contents: write
 
