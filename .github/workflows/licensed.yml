@@ -1,4 +1,6 @@
 name: Licensed
+permissions:
+  contents: read
 
 on:
   push:
