@@ -2,6 +2,11 @@
 
 ## Changelog
 
+### 5.0.3
+
+- Bump `@actions/cache` to v5.0.5 (Resolves: https://github.com/actions/cache/security/dependabot/33)
+- Bump `@actions/core` to v2.0.3
+
 ### 5.0.2
 
 - Bump `@actions/cache` to v5.0.3 [#1692](https://github.com/actions/cache/pull/1692)

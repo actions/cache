@@ -1,6 +1,6 @@
 {
   "name": "cache",
-  "version": "5.0.2",
+  "version": "5.0.3",
   "private": true,
   "description": "Cache dependencies and build outputs",
   "main": "dist/restore/index.js",
@@ -23,8 +23,8 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
-    "@actions/cache": "^5.0.3",
-    "@actions/core": "^2.0.0",
+    "@actions/cache": "^5.0.5",
+    "@actions/core": "^2.0.3",
     "@actions/exec": "^2.0.0",
     "@actions/io": "^2.0.0"
   },
