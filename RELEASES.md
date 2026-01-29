@@ -2,7 +2,8 @@
 
 ## How to prepare a release
 
-The below is relevant for maintainers with write access only.
+> [!NOTE]  
+> Relevant for maintainers with write access only.
 
 1. Switch to a new branch from `main`.
 1. Run `npm test` to ensure all tests are passing.
