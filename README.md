@@ -140,7 +140,7 @@ jobs:
       run: /primes.sh -d prime-numbers
 ```
 
-The `cache` action provides a `cache-hit` output which is set to `true` when the cache is restored using the primary `key` and `false` when the cache is restored using `restore-keys` or no cache is restored.
+The `cache` action provides a `cache-hit` output which is set to `true` when the cache is restored using the primary `key` and `false` when the cache is restored using `restore-keys`. If no cache is restored, it is set to the empty string.
 
 #### Using a combination of restore and save actions
 
