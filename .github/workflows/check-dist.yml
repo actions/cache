@@ -1,4 +1,4 @@
-name: Check dist/
+name: Check dist content
 
 on:
   push:
@@ -10,6 +10,9 @@ on:
     paths-ignore:
       - '**.md'
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   call-check-dist:
