@@ -223,6 +223,9 @@ A cache key can include any of the contexts, functions, literals, and operators 
 
 For example, using the [`hashFiles`](https://docs.github.com/en/actions/learn-github-actions/expressions#hashfiles) function allows you to create a new cache when dependencies change.
 
+> [!NOTE]  
+> The cache key is rendered during the restore stage, so can only depend on file state at that stage.
+
 ```yaml
   - uses: actions/cache@v5
     with:
