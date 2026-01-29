@@ -4,14 +4,14 @@ on:
   release:
     types: [released]
 
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
 jobs:
   publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-      packages: write
-
     steps:
       - name: Checking out
         uses: actions/checkout@v5
