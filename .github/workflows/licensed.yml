@@ -1,4 +1,4 @@
-name: Licensed
+name: License check
 
 on:
   push:
@@ -8,6 +8,9 @@ on:
     branches:
       - main
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   validate-cached-dependency-records:

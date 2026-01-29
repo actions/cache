@@ -28,3 +28,4 @@ reviewed:
   - glob # ISC
   - prettier # MIT
   - lodash # MIT
+  - "@actions/http-client" # MIT

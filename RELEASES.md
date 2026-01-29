@@ -1,6 +1,38 @@
 # Releases
 
+## How to prepare a release
+
+> [!NOTE]  
+> Relevant for maintainers with write access only.
+
+1. Switch to a new branch from `main`.
+1. Run `npm test` to ensure all tests are passing.
+1. Update the version in [`package.json`](package.json).
+1. Run `npm run build` to update the compiled files.
+1. Update this [`RELEASES.md`](RELEASES.md) with the new version and changes in the `## Changelog` section.
+1. Run `licensed cache` to update the license report.
+1. Run `licensed status` and resolve any warnings by updating the [`.licensed.yml`](.licensed.yml) file with the exceptions.
+1. Commit your changes and push your branch upstream.
+1. Open a pull request against `main` and get it reviewed and merged.
+1. Draft a new release https://github.com/actions/cache/releases use the same version number used in `package.json`
+    1. Create a new tag with the version number.
+    1. Auto generate release notes and update them to match the changes you made in `RELEASES.md`.
+    1. Toggle the set as the latest release option.
+    1. Publish the release.
+1. Navigate to https://github.com/actions/cache/actions/workflows/release-new-action-version.yml
+    1. There should be a workflow run queued with the same version number.
+    1. Approve the run to publish the new version and update the major tags for this action. 
+
 ## Changelog
+
+### 5.0.3
+
+- Bump `@actions/cache` to v5.0.5 (Resolves: https://github.com/actions/cache/security/dependabot/33)
+- Bump `@actions/core` to v2.0.3
+
+### 5.0.2
+
+- Bump `@actions/cache` to v5.0.3 [#1692](https://github.com/actions/cache/pull/1692)
 
 ### 5.0.1
 

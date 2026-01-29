@@ -10,6 +10,9 @@ on:
       - main
       - releases/**
 
+permissions:
+  contents: read
+
 jobs:
   # Build and unit test
   build:
@@ -57,6 +60,7 @@ jobs:
         path: |
           test-cache
           ~/test-cache
+
   test-restore:
     needs: test-save
     strategy:
@@ -104,6 +108,7 @@ jobs:
       with:
         key: test-proxy-${{ github.run_id }}
         path: test-cache
+
   test-proxy-restore:
     needs: test-proxy-save
     runs-on: ubuntu-latest
