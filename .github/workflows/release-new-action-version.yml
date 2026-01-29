@@ -1,4 +1,5 @@
 name: Release new action version
+
 on:
   release:
     types: [released]

@@ -1,4 +1,4 @@
-name: Check dist/
+name: Check dist content
 
 on:
   push:

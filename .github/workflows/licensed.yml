@@ -1,4 +1,4 @@
-name: Licensed
+name: License check
 
 on:
   push:
