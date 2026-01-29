@@ -23,7 +23,7 @@ If you are using separate jobs for generating common artifacts and sharing them 
 
 ```yaml
 steps:
-  - uses: actions/checkout@v4
+  - uses: actions/checkout@v6
 
   - name: Install Dependencies
     run: /install.sh
@@ -31,7 +31,7 @@ steps:
   - name: Build artifacts
     run: /build.sh
 
-  - uses: actions/cache/save@v4
+  - uses: actions/cache/save@v5
     id: cache
     with:
       path: path/to/dependencies
@@ -47,7 +47,7 @@ Let's say we have a restore step that computes a key at runtime.
 #### Restore a cache
 
 ```yaml
-uses: actions/cache/restore@v4
+uses: actions/cache/restore@v5
 id: restore-cache
 with:
     key: cache-${{ hashFiles('**/lockfiles') }}
@@ -55,7 +55,7 @@ with:
 
 #### Case 1 - Where a user would want to reuse the key as it is
 ```yaml
-uses: actions/cache/save@v4
+uses: actions/cache/save@v5
 with:
     key: ${{ steps.restore-cache.outputs.cache-primary-key }}
 ```
@@ -63,7 +63,7 @@ with:
 #### Case 2 - Where the user would want to re-evaluate the key
 
 ```yaml
-uses: actions/cache/save@v4
+uses: actions/cache/save@v5
 with:
     key: npm-cache-${{hashfiles(package-lock.json)}}
 ```
@@ -91,11 +91,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Restore cached Prime Numbers
       id: cache-prime-numbers-restore
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         key: ${{ runner.os }}-prime-numbers
         path: |
@@ -107,7 +107,7 @@ jobs:
     - name: Always Save Prime Numbers
       id: cache-prime-numbers-save
       if: always() && steps.cache-prime-numbers-restore.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         key: ${{ steps.cache-prime-numbers-restore.outputs.cache-primary-key }}
         path: |
