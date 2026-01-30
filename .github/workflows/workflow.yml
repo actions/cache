@@ -90,15 +90,86 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ubuntu:latest
-      options: --dns 127.0.0.1
+      options: --cap-add=NET_ADMIN
     services:
       squid-proxy:
         image: ubuntu/squid:latest
         ports:
           - 3128:3128
     env:
+      http_proxy: http://squid-proxy:3128
       https_proxy: http://squid-proxy:3128
     steps:
+    - name: Wait for proxy to be ready
+      shell: bash
+      run: |
+        echo "Waiting for squid proxy to be ready..."
+        echo "Resolving squid-proxy hostname:"
+        getent hosts squid-proxy || echo "DNS resolution failed"
+        for i in $(seq 1 30); do
+          if (echo > /dev/tcp/squid-proxy/3128) 2>/dev/null; then
+            echo "Proxy is ready!"
+            exit 0
+          fi
+          echo "Attempt $i: Proxy not ready, waiting..."
+          sleep 2
+        done
+        echo "Proxy failed to become ready"
+        exit 1
+      env:
+        http_proxy: ""
+        https_proxy: ""
+    - name: Install dependencies
+      run: |
+        apt-get update
+        apt-get install -y iptables curl
+    - name: Verify proxy is working
+      run: |
+        echo "Testing proxy connectivity..."
+        curl -s -o /dev/null -w "%{http_code}" --proxy http://squid-proxy:3128 http://github.com || true
+        echo "Proxy verification complete"
+    - name: Block direct traffic (enforce proxy usage)
+      run: |
+        # Get the squid-proxy container IP
+        PROXY_IP=$(getent hosts squid-proxy | awk '{ print $1 }')
+        echo "Proxy IP: $PROXY_IP"
+        
+        # Allow loopback traffic
+        iptables -A OUTPUT -o lo -j ACCEPT
+        
+        # Allow traffic to the proxy container
+        iptables -A OUTPUT -d $PROXY_IP -j ACCEPT
+        
+        # Allow established connections
+        iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+        
+        # Allow DNS (needed for initial resolution)
+        iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
+        iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT
+        
+        # Block all other outbound traffic (HTTP/HTTPS)
+        iptables -A OUTPUT -p tcp --dport 80 -j REJECT
+        iptables -A OUTPUT -p tcp --dport 443 -j REJECT
+        
+        # Log the iptables rules for debugging
+        iptables -L -v -n
+    - name: Verify direct HTTPS is blocked
+      run: |
+        echo "Testing that direct HTTPS requests fail..."
+        if curl --noproxy '*' -s --connect-timeout 5 https://github.com > /dev/null 2>&1; then
+          echo "ERROR: Direct HTTPS request succeeded - blocking is not working!"
+          exit 1
+        else
+          echo "SUCCESS: Direct HTTPS request was blocked as expected"
+        fi
+        
+        echo "Testing that HTTPS through proxy succeeds..."
+        if curl --proxy http://squid-proxy:3128 -s --connect-timeout 10 https://github.com > /dev/null 2>&1; then
+          echo "SUCCESS: HTTPS request through proxy succeeded"
+        else
+          echo "ERROR: HTTPS request through proxy failed!"
+          exit 1
+        fi
     - name: Checkout
       uses: actions/checkout@v5
     - name: Generate files
@@ -114,15 +185,86 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ubuntu:latest
-      options: --dns 127.0.0.1
+      options: --cap-add=NET_ADMIN
     services:
       squid-proxy:
         image: ubuntu/squid:latest
         ports:
           - 3128:3128
     env:
+      http_proxy: http://squid-proxy:3128
       https_proxy: http://squid-proxy:3128
     steps:
+    - name: Wait for proxy to be ready
+      shell: bash
+      run: |
+        echo "Waiting for squid proxy to be ready..."
+        echo "Resolving squid-proxy hostname:"
+        getent hosts squid-proxy || echo "DNS resolution failed"
+        for i in $(seq 1 30); do
+          if (echo > /dev/tcp/squid-proxy/3128) 2>/dev/null; then
+            echo "Proxy is ready!"
+            exit 0
+          fi
+          echo "Attempt $i: Proxy not ready, waiting..."
+          sleep 2
+        done
+        echo "Proxy failed to become ready"
+        exit 1
+      env:
+        http_proxy: ""
+        https_proxy: ""
+    - name: Install dependencies
+      run: |
+        apt-get update
+        apt-get install -y iptables curl
+    - name: Verify proxy is working
+      run: |
+        echo "Testing proxy connectivity..."
+        curl -s -o /dev/null -w "%{http_code}" --proxy http://squid-proxy:3128 http://github.com || true
+        echo "Proxy verification complete"
+    - name: Block direct traffic (enforce proxy usage)
+      run: |
+        # Get the squid-proxy container IP
+        PROXY_IP=$(getent hosts squid-proxy | awk '{ print $1 }')
+        echo "Proxy IP: $PROXY_IP"
+        
+        # Allow loopback traffic
+        iptables -A OUTPUT -o lo -j ACCEPT
+        
+        # Allow traffic to the proxy container
+        iptables -A OUTPUT -d $PROXY_IP -j ACCEPT
+        
+        # Allow established connections
+        iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+        
+        # Allow DNS (needed for initial resolution)
+        iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
+        iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT
+        
+        # Block all other outbound traffic (HTTP/HTTPS)
+        iptables -A OUTPUT -p tcp --dport 80 -j REJECT
+        iptables -A OUTPUT -p tcp --dport 443 -j REJECT
+        
+        # Log the iptables rules for debugging
+        iptables -L -v -n
+    - name: Verify direct HTTPS is blocked
+      run: |
+        echo "Testing that direct HTTPS requests fail..."
+        if curl --noproxy '*' -s --connect-timeout 5 https://github.com > /dev/null 2>&1; then
+          echo "ERROR: Direct HTTPS request succeeded - blocking is not working!"
+          exit 1
+        else
+          echo "SUCCESS: Direct HTTPS request was blocked as expected"
+        fi
+        
+        echo "Testing that HTTPS through proxy succeeds..."
+        if curl --proxy http://squid-proxy:3128 -s --connect-timeout 10 https://github.com > /dev/null 2>&1; then
+          echo "SUCCESS: HTTPS request through proxy succeeded"
+        else
+          echo "ERROR: HTTPS request through proxy failed!"
+          exit 1
+        fi
     - name: Checkout
       uses: actions/checkout@v5
     - name: Restore cache
