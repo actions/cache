@@ -153,6 +153,23 @@ jobs:
         
         # Log the iptables rules for debugging
         iptables -L -v -n
+    - name: Verify direct HTTPS is blocked
+      run: |
+        echo "Testing that direct HTTPS requests fail..."
+        if curl --noproxy '*' -s --connect-timeout 5 https://github.com > /dev/null 2>&1; then
+          echo "ERROR: Direct HTTPS request succeeded - blocking is not working!"
+          exit 1
+        else
+          echo "SUCCESS: Direct HTTPS request was blocked as expected"
+        fi
+        
+        echo "Testing that HTTPS through proxy succeeds..."
+        if curl --proxy http://squid-proxy:3128 -s --connect-timeout 10 https://github.com > /dev/null 2>&1; then
+          echo "SUCCESS: HTTPS request through proxy succeeded"
+        else
+          echo "ERROR: HTTPS request through proxy failed!"
+          exit 1
+        fi
     - name: Checkout
       uses: actions/checkout@v5
     - name: Generate files
@@ -231,6 +248,23 @@ jobs:
         
         # Log the iptables rules for debugging
         iptables -L -v -n
+    - name: Verify direct HTTPS is blocked
+      run: |
+        echo "Testing that direct HTTPS requests fail..."
+        if curl --noproxy '*' -s --connect-timeout 5 https://github.com > /dev/null 2>&1; then
+          echo "ERROR: Direct HTTPS request succeeded - blocking is not working!"
+          exit 1
+        else
+          echo "SUCCESS: Direct HTTPS request was blocked as expected"
+        fi
+        
+        echo "Testing that HTTPS through proxy succeeds..."
+        if curl --proxy http://squid-proxy:3128 -s --connect-timeout 10 https://github.com > /dev/null 2>&1; then
+          echo "SUCCESS: HTTPS request through proxy succeeded"
+        else
+          echo "ERROR: HTTPS request through proxy failed!"
+          exit 1
+        fi
     - name: Checkout
       uses: actions/checkout@v5
     - name: Restore cache
