@@ -100,10 +100,31 @@ jobs:
       http_proxy: http://squid-proxy:3128
       https_proxy: http://squid-proxy:3128
     steps:
-    - name: Install iptables
+    - name: Wait for proxy to be ready
+      run: |
+        echo "Waiting for squid proxy to be ready..."
+        for i in $(seq 1 30); do
+          if nc -z squid-proxy 3128 2>/dev/null; then
+            echo "Proxy is ready!"
+            exit 0
+          fi
+          echo "Attempt $i: Proxy not ready, waiting..."
+          sleep 1
+        done
+        echo "Proxy failed to become ready"
+        exit 1
+      env:
+        http_proxy: ""
+        https_proxy: ""
+    - name: Install dependencies
       run: |
         apt-get update
-        apt-get install -y iptables
+        apt-get install -y iptables curl
+    - name: Verify proxy is working
+      run: |
+        echo "Testing proxy connectivity..."
+        curl -s -o /dev/null -w "%{http_code}" --proxy http://squid-proxy:3128 http://github.com || true
+        echo "Proxy verification complete"
     - name: Block direct traffic (enforce proxy usage)
       run: |
         # Get the squid-proxy container IP
@@ -154,10 +175,31 @@ jobs:
       http_proxy: http://squid-proxy:3128
       https_proxy: http://squid-proxy:3128
     steps:
-    - name: Install iptables
+    - name: Wait for proxy to be ready
+      run: |
+        echo "Waiting for squid proxy to be ready..."
+        for i in $(seq 1 30); do
+          if nc -z squid-proxy 3128 2>/dev/null; then
+            echo "Proxy is ready!"
+            exit 0
+          fi
+          echo "Attempt $i: Proxy not ready, waiting..."
+          sleep 1
+        done
+        echo "Proxy failed to become ready"
+        exit 1
+      env:
+        http_proxy: ""
+        https_proxy: ""
+    - name: Install dependencies
       run: |
         apt-get update
-        apt-get install -y iptables
+        apt-get install -y iptables curl
+    - name: Verify proxy is working
+      run: |
+        echo "Testing proxy connectivity..."
+        curl -s -o /dev/null -w "%{http_code}" --proxy http://squid-proxy:3128 http://github.com || true
+        echo "Proxy verification complete"
     - name: Block direct traffic (enforce proxy usage)
       run: |
         # Get the squid-proxy container IP
