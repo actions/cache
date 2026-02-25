@@ -32,7 +32,7 @@
     "@types/jest": "^29.5.14",
     "@types/nock": "^11.1.0",
     "@types/node": "^24.1.0",
-    "@typescript-eslint/eslint-plugin": "^7.2.0",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^7.2.0",
     "@vercel/ncc": "^0.38.3",
     "eslint": "^8.28.0",
