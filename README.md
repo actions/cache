@@ -90,6 +90,7 @@ If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are requir
 * `enableCrossOsArchive` - An optional boolean when enabled, allows Windows runners to save or restore caches that can be restored or saved respectively on other platforms. Default: `false`
 * `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: `false`
 * `lookup-only` - If true, only checks if cache entry exists and skips download. Does not change save cache behavior. Default: `false`
+* `save-on-success` - If true, then the cache is written in the post action on success, or (if false) the cache will only be restored if available. Default: `true`
 
 #### Environment Variables
 
