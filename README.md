@@ -195,6 +195,7 @@ See [Examples](examples.md) for a list of `actions/cache` implementations for us
 * [Clojure - Lein Deps](./examples.md#clojure---lein-deps)
 * [D - DUB](./examples.md#d---dub)
 * [Deno](./examples.md#deno)
+* [Docker](./examples.md#docker)
 * [Elixir - Mix](./examples.md#elixir---mix)
 * [Go - Modules](./examples.md#go---modules)
 * [Haskell - Cabal](./examples.md#haskell---cabal)
