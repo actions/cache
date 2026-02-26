@@ -11,12 +11,14 @@ export enum Inputs {
 export enum Outputs {
     CacheHit = "cache-hit", // Output from cache, restore action
     CachePrimaryKey = "cache-primary-key", // Output from restore action
-    CacheMatchedKey = "cache-matched-key" // Output from restore action
+    CacheMatchedKey = "cache-matched-key", // Output from restore action
+    CachePath = "cache-path" // Output from restore action
 }
 
 export enum State {
     CachePrimaryKey = "CACHE_KEY",
-    CacheMatchedKey = "CACHE_RESULT"
+    CacheMatchedKey = "CACHE_RESULT",
+    CachePath = "CACHE_PATH"
 }
 
 export enum Events {

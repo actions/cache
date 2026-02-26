@@ -17,6 +17,7 @@ The restore action restores a cache. It works similarly to the `cache` action ex
 * `cache-hit` - A boolean value to indicate an exact match was found for the key.
 * `cache-primary-key` - Cache primary key passed in the input to use in subsequent steps of the workflow.
 * `cache-matched-key` - Key of the cache that was restored, it could either be the primary key on cache-hit or a partial/complete match of one of the restore keys.
+* `cache-path` - The list of files, directories, and wildcard patterns passed in the input.
 
 > **Note**
 `cache-hit` will be set to `true` only when cache hit occurs for the exact `key` match. For a partial key match via `restore-keys` or a cache miss, it will be set to `false`.

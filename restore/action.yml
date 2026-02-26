@@ -30,6 +30,8 @@ outputs:
     description: 'A resolved cache key for which cache match was attempted'
   cache-matched-key:
     description: 'Key of the cache that was restored, it could either be the primary key on cache-hit or a partial/complete match of one of the restore keys'
+  cache-path:
+    description: 'The list of files, directories, and wildcard patterns passed in the input'
 runs:
   using: 'node24'
   main: '../dist/restore-only/index.js'
