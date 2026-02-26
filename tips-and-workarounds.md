@@ -45,7 +45,7 @@ Caches have [branch scope restriction](https://docs.github.com/en/actions/using-
 ```yaml
 name: cleanup caches by a branch
 on:
-  pull_request:
+  pull_request_target:
     types:
       - closed
   workflow_dispatch:
