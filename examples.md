@@ -618,7 +618,7 @@ whenever possible:
       ~/.cargo/registry/cache/
       ~/.cargo/git/db/
       target/
-    key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    key: ${{ runner.os }}-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 ```
 
 ## Scala - SBT
