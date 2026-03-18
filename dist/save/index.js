@@ -46257,12 +46257,18 @@ function saveImpl(stateProvider) {
             }
             // If restore has stored a primary key in state, reuse that
             // Else re-evaluate from inputs
-            const primaryKey = stateProvider.getState(constants_1.State.CachePrimaryKey) ||
+            let primaryKey = stateProvider.getState(constants_1.State.CachePrimaryKey) ||
                 core.getInput(constants_1.Inputs.Key);
             if (!primaryKey) {
                 utils.logWarning(`Key is not specified.`);
                 return;
             }
+            const overridePrimaryKeyEnvVariable = core.getInput('override-primary-key-env-variable');
+            if (overridePrimaryKeyEnvVariable !== undefined && process.env[overridePrimaryKeyEnvVariable] !== '') {
+                core.info(`Primary key has been overridden to ${process.env[overridePrimaryKeyEnvVariable]}, was ${primaryKey}.`);
+                primaryKey = process.env[overridePrimaryKeyEnvVariable] || '';
+            }
+
             // If matched restore key is same as primary key, then do not save cache
             // NO-OP in case of SaveOnly action
             const restoredKey = stateProvider.getCacheState();

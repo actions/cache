@@ -1,5 +1,9 @@
 name: 'Cache'
-description: 'Cache artifacts like dependencies and build outputs to improve workflow execution time'
+description: |
+  Cache artifacts like dependencies and build outputs to improve workflow execution time
+
+  OneVizion Improvements:
+  - Added ability to change primary key after restore cache. This is required when primary key initially can't be generated, only after cache restore
 author: 'GitHub'
 inputs:
   path:
@@ -34,6 +38,9 @@ inputs:
       save-always does not work as intended and will be removed in a future release.
       A separate `actions/cache/restore` step should be used instead.
       See https://github.com/actions/cache/tree/main/save#always-save-cache for more details.
+  override-primary-key-env-variable:
+    description: 'Environment variable to override primary key'
+    required: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
