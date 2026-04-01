@@ -94806,7 +94806,8 @@ var Inputs;
     Inputs["UploadChunkSize"] = "upload-chunk-size";
     Inputs["EnableCrossOsArchive"] = "enableCrossOsArchive";
     Inputs["FailOnCacheMiss"] = "fail-on-cache-miss";
-    Inputs["LookupOnly"] = "lookup-only"; // Input for cache, restore action
+    Inputs["LookupOnly"] = "lookup-only";
+    Inputs["RestoreOnly"] = "restore-only"; // Input for cache, restore action
 })(Inputs || (Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -94935,6 +94936,10 @@ async function saveImpl(stateProvider) {
         }
         if (!isValidEvent()) {
             logWarning(`Event Validation Error: The event type ${process.env[Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
+            return;
+        }
+        if (getInputAsBool(Inputs.RestoreOnly)) {
+            info("Skipping saving cache as 'restore-only' option is set.");
             return;
         }
         // If restore has stored a primary key in state, reuse that
