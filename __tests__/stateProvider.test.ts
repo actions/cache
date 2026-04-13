@@ -54,7 +54,7 @@ test("StateProvider saves states", async () => {
     expect(cacheStateValue).toBe(cacheMatchedKey);
     expect(getStateMock).toHaveBeenCalledTimes(2);
     expect(saveStateMock).toHaveBeenCalledTimes(2);
-    expect(setOutputMock).toHaveBeenCalledTimes(0);
+    expect(setOutputMock).toHaveBeenCalledTimes(2);
 });
 
 test("NullStateProvider saves outputs", async () => {

@@ -100,6 +100,8 @@ If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are requir
 * `cache-hit` - A string value to indicate an exact match was found for the key.
   * If there's a cache hit, this will be 'true' or 'false' to indicate if there's an exact match for `key`.
   * If there's a cache miss, this will be an empty string.
+* `cache-primary-key` - Cache primary key passed in the input to use in subsequent steps of the workflow.
+* `cache-matched-key` - Key of the cache that was restored, it could either be the primary key on cache-hit or a partial/complete match of one of the restore keys.
 
 See [Skipping steps based on cache-hit](#skipping-steps-based-on-cache-hit) for info on using this output
 
