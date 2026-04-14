@@ -24,6 +24,7 @@
 - [Node - Lerna](#node---lerna)
 - [Node - Yarn](#node---yarn)
 - [Node - Yarn 2](#node---yarn-2)
+- [Node - pnpm](#node---pnpm)
 - [OCaml/Reason - esy](#ocamlreason---esy)
 - [PHP - Composer](#php---composer)
 - [Python - pip](#python---pip)
@@ -407,6 +408,38 @@ The yarn 2 cache directory will depend on your config. See https://yarnpkg.com/c
     key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
     restore-keys: |
       ${{ runner.os }}-yarn-
+```
+
+### Node - pnpm
+
+```yaml
+steps:
+  - uses: actions/checkout@v4
+
+  - uses: actions/setup-node@v4
+    with:
+      node-version: 24
+
+  - uses: pnpm/action-setup@v4
+    with:
+      version: 10
+
+  - name: Get pnpm store directory
+    id: pnpm-cache
+    shell: bash
+    run: |
+      echo "dir=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+
+  - uses: actions/cache@v4
+    id: cache-pnpm
+    with:
+      path: ${{ steps.pnpm-cache.outputs.dir }}
+      key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+      restore-keys: |
+        ${{ runner.os }}-pnpm-
+
+  - name: Install dependencies
+    run: pnpm install --frozen-lockfile
 ```
 
 ## OCaml/Reason - esy
