@@ -406,3 +406,34 @@ test("save with valid inputs uploads a cache", async () => {
 
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
+
+test("save with restore-only should no-op", async () => {
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const savedCacheKey = "Linux-node-";
+
+    jest.spyOn(core, "getState")
+        // Cache Entry State
+        .mockImplementationOnce(() => {
+            return savedCacheKey;
+        })
+        // Cache Key State
+        .mockImplementationOnce(() => {
+            return primaryKey;
+        });
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Path, inputPath);
+
+    testUtils.setInput(Inputs.RestoreOnly, "true");
+
+    const infoMock = jest.spyOn(core, "info");
+
+    const saveCacheMock = jest.spyOn(cache, "saveCache");
+
+    await saveImpl(new StateProvider());
+
+    expect(saveCacheMock).toHaveBeenCalledTimes(0);
+    expect(infoMock).toHaveBeenCalledWith(
+        "Skipping saving cache as 'restore-only' option is set."
+    );
+});

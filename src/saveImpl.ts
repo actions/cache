@@ -32,6 +32,11 @@ export async function saveImpl(
             return;
         }
 
+        if (utils.getInputAsBool(Inputs.RestoreOnly)) {
+            core.info("Skipping saving cache as 'restore-only' option is set.");
+            return;
+        }
+
         // If restore has stored a primary key in state, reuse that
         // Else re-evaluate from inputs
         const primaryKey =
