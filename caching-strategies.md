@@ -238,7 +238,7 @@ Case 2: Where the user would want to re-evaluate the key
 ```yaml
 uses: actions/cache/save@v5
 with:
-    key: npm-cache-${{hashfiles(package-lock.json)}}
+    key: cache-${{ hashFiles('**/lockfiles') }}
 ```
 
 ### Saving cache even if the build fails
