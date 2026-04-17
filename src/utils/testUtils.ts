@@ -42,4 +42,6 @@ export function clearInputs(): void {
     delete process.env[getInputName(Inputs.EnableCrossOsArchive)];
     delete process.env[getInputName(Inputs.FailOnCacheMiss)];
     delete process.env[getInputName(Inputs.LookupOnly)];
+    delete process.env[getInputName(Inputs.FailOnError)];
+    delete process.env[getInputName(Inputs.FailOnSaveError)];
 }

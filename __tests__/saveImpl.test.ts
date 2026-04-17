@@ -365,6 +365,84 @@ test("save with server error outputs warning", async () => {
     expect(failedMock).toHaveBeenCalledTimes(0);
 });
 
+test("save with fail-on-error and save error calls setFailed", async () => {
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const savedCacheKey = "Linux-node-";
+
+    jest.spyOn(core, "getState")
+        .mockImplementationOnce(() => savedCacheKey)
+        .mockImplementationOnce(() => primaryKey);
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.FailOnError, "true");
+
+    jest.spyOn(cache, "saveCache").mockImplementationOnce(() => {
+        throw new Error("HTTP Error Occurred");
+    });
+
+    await saveImpl(new StateProvider());
+
+    expect(failedMock).toHaveBeenCalledWith("HTTP Error Occurred");
+    expect(failedMock).toHaveBeenCalledTimes(1);
+    expect(logWarningMock).toHaveBeenCalledTimes(0);
+});
+
+test("save with fail-on-save-error (global action input) and save error calls setFailed", async () => {
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const savedCacheKey = "Linux-node-";
+
+    jest.spyOn(core, "getState")
+        .mockImplementationOnce(() => savedCacheKey)
+        .mockImplementationOnce(() => primaryKey);
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.FailOnSaveError, "true");
+
+    jest.spyOn(cache, "saveCache").mockImplementationOnce(() => {
+        throw new Error("HTTP Error Occurred");
+    });
+
+    await saveImpl(new StateProvider());
+
+    expect(failedMock).toHaveBeenCalledWith("HTTP Error Occurred");
+    expect(failedMock).toHaveBeenCalledTimes(1);
+    expect(logWarningMock).toHaveBeenCalledTimes(0);
+});
+
+test("save with fail-on-error false and save error logs warning", async () => {
+    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const savedCacheKey = "Linux-node-";
+
+    jest.spyOn(core, "getState")
+        .mockImplementationOnce(() => savedCacheKey)
+        .mockImplementationOnce(() => primaryKey);
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.FailOnError, "false");
+
+    jest.spyOn(cache, "saveCache").mockImplementationOnce(() => {
+        throw new Error("HTTP Error Occurred");
+    });
+
+    await saveImpl(new StateProvider());
+
+    expect(logWarningMock).toHaveBeenCalledWith("HTTP Error Occurred");
+    expect(logWarningMock).toHaveBeenCalledTimes(1);
+    expect(failedMock).toHaveBeenCalledTimes(0);
+});
+
 test("save with valid inputs uploads a cache", async () => {
     const failedMock = jest.spyOn(core, "setFailed");
 

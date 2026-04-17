@@ -18,6 +18,9 @@ export async function saveImpl(
     stateProvider: IStateProvider
 ): Promise<number | void> {
     let cacheId = -1;
+    const failOnError =
+        utils.getInputAsBool(Inputs.FailOnSaveError) ||
+        utils.getInputAsBool(Inputs.FailOnError);
     try {
         if (!utils.isCacheFeatureAvailable()) {
             return;
@@ -73,7 +76,11 @@ export async function saveImpl(
             core.info(`Cache saved with key: ${primaryKey}`);
         }
     } catch (error: unknown) {
-        utils.logWarning((error as Error).message);
+        if (failOnError) {
+            core.setFailed((error as Error).message);
+        } else {
+            utils.logWarning((error as Error).message);
+        }
     }
     return cacheId;
 }
