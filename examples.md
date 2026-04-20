@@ -22,6 +22,7 @@
 - [Java - Maven](#java---maven)
 - [Node - npm](#node---npm)
 - [Node - Lerna](#node---lerna)
+- [Node - pnpm](#node---pnpm)
 - [Node - Yarn](#node---yarn)
 - [Node - Yarn 2](#node---yarn-2)
 - [OCaml/Reason - esy](#ocamlreason---esy)
@@ -372,6 +373,22 @@ After [deprecation](https://github.blog/changelog/2022-10-11-github-actions-depr
   with:
     path: '**/node_modules'
     key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
+```
+
+## Node - pnpm
+
+```yaml
+- name: Get pnpm store directory
+  shell: bash
+  run: |
+    echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+- uses: actions/cache@v4
+  name: Setup pnpm cache
+  with:
+    path: ${{ env.STORE_PATH }}
+    key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+    restore-keys: |
+      ${{ runner.os }}-pnpm-store-
 ```
 
 ## Node - Yarn
