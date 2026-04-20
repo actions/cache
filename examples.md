@@ -683,6 +683,8 @@ steps:
 
 ## * - Bazel
 
+**Consider using https://github.com/bazel-contrib/setup-bazel instead!**
+
 [`bazelisk`](https://github.com/bazelbuild/bazelisk) does not have be to separately downloaded and installed because it's already included in GitHub's `ubuntu-latest` and `macos-latest` base images.
 
 ### Linux
