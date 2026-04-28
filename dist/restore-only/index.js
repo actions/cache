@@ -15235,6 +15235,8 @@ function Minimatch (pattern, options) {
   }
 
   this.options = options
+  this.maxGlobstarRecursion = options.maxGlobstarRecursion !== undefined
+    ? options.maxGlobstarRecursion : 200
   this.set = []
   this.pattern = pattern
   this.regexp = null
@@ -15482,6 +15484,9 @@ function parse (pattern, isSub) {
           re += c
           continue
         }
+
+        // coalesce consecutive non-globstar * characters
+        if (c === '*' && stateChar === '*') continue
 
         // if we already have a stateChar, then it means
         // that there was something like ** or +? in there.
@@ -15877,19 +15882,163 @@ Minimatch.prototype.match = function match (f, partial) {
 // out of pattern, then that's fine, as long as all
 // the parts match.
 Minimatch.prototype.matchOne = function (file, pattern, partial) {
-  var options = this.options
+  if (pattern.indexOf(GLOBSTAR) !== -1) {
+    return this._matchGlobstar(file, pattern, partial, 0, 0)
+  }
+  return this._matchOne(file, pattern, partial, 0, 0)
+}
 
-  this.debug('matchOne',
-    { 'this': this, file: file, pattern: pattern })
+Minimatch.prototype._matchGlobstar = function (file, pattern, partial, fileIndex, patternIndex) {
+  var i
 
-  this.debug('matchOne', file.length, pattern.length)
+  // find first globstar from patternIndex
+  var firstgs = -1
+  for (i = patternIndex; i < pattern.length; i++) {
+    if (pattern[i] === GLOBSTAR) { firstgs = i; break }
+  }
 
-  for (var fi = 0,
-      pi = 0,
-      fl = file.length,
-      pl = pattern.length
-      ; (fi < fl) && (pi < pl)
-      ; fi++, pi++) {
+  // find last globstar
+  var lastgs = -1
+  for (i = pattern.length - 1; i >= 0; i--) {
+    if (pattern[i] === GLOBSTAR) { lastgs = i; break }
+  }
+
+  var head = pattern.slice(patternIndex, firstgs)
+  var body = partial ? pattern.slice(firstgs + 1) : pattern.slice(firstgs + 1, lastgs)
+  var tail = partial ? [] : pattern.slice(lastgs + 1)
+
+  // check the head
+  if (head.length) {
+    var fileHead = file.slice(fileIndex, fileIndex + head.length)
+    if (!this._matchOne(fileHead, head, partial, 0, 0)) {
+      return false
+    }
+    fileIndex += head.length
+  }
+
+  // check the tail
+  var fileTailMatch = 0
+  if (tail.length) {
+    if (tail.length + fileIndex > file.length) return false
+
+    var tailStart = file.length - tail.length
+    if (this._matchOne(file, tail, partial, tailStart, 0)) {
+      fileTailMatch = tail.length
+    } else {
+      // affordance for stuff like a/**/* matching a/b/
+      if (file[file.length - 1] !== '' ||
+          fileIndex + tail.length === file.length) {
+        return false
+      }
+      tailStart--
+      if (!this._matchOne(file, tail, partial, tailStart, 0)) {
+        return false
+      }
+      fileTailMatch = tail.length + 1
+    }
+  }
+
+  // if body is empty (single ** between head and tail)
+  if (!body.length) {
+    var sawSome = !!fileTailMatch
+    for (i = fileIndex; i < file.length - fileTailMatch; i++) {
+      var f = String(file[i])
+      sawSome = true
+      if (f === '.' || f === '..' ||
+          (!this.options.dot && f.charAt(0) === '.')) {
+        return false
+      }
+    }
+    return partial || sawSome
+  }
+
+  // split body into segments at each GLOBSTAR
+  var bodySegments = [[[], 0]]
+  var currentBody = bodySegments[0]
+  var nonGsParts = 0
+  var nonGsPartsSums = [0]
+  for (var bi = 0; bi < body.length; bi++) {
+    var b = body[bi]
+    if (b === GLOBSTAR) {
+      nonGsPartsSums.push(nonGsParts)
+      currentBody = [[], 0]
+      bodySegments.push(currentBody)
+    } else {
+      currentBody[0].push(b)
+      nonGsParts++
+    }
+  }
+
+  var idx = bodySegments.length - 1
+  var fileLength = file.length - fileTailMatch
+  for (var si = 0; si < bodySegments.length; si++) {
+    bodySegments[si][1] = fileLength -
+      (nonGsPartsSums[idx--] + bodySegments[si][0].length)
+  }
+
+  return !!this._matchGlobStarBodySections(
+    file, bodySegments, fileIndex, 0, partial, 0, !!fileTailMatch
+  )
+}
+
+// return false for "nope, not matching"
+// return null for "not matching, cannot keep trying"
+Minimatch.prototype._matchGlobStarBodySections = function (
+  file, bodySegments, fileIndex, bodyIndex, partial, globStarDepth, sawTail
+) {
+  var bs = bodySegments[bodyIndex]
+  if (!bs) {
+    // just make sure there are no bad dots
+    for (var i = fileIndex; i < file.length; i++) {
+      sawTail = true
+      var f = file[i]
+      if (f === '.' || f === '..' ||
+          (!this.options.dot && f.charAt(0) === '.')) {
+        return false
+      }
+    }
+    return sawTail
+  }
+
+  var body = bs[0]
+  var after = bs[1]
+  while (fileIndex <= after) {
+    var m = this._matchOne(
+      file.slice(0, fileIndex + body.length),
+      body,
+      partial,
+      fileIndex,
+      0
+    )
+    // if limit exceeded, no match. intentional false negative,
+    // acceptable break in correctness for security.
+    if (m && globStarDepth < this.maxGlobstarRecursion) {
+      var sub = this._matchGlobStarBodySections(
+        file, bodySegments,
+        fileIndex + body.length, bodyIndex + 1,
+        partial, globStarDepth + 1, sawTail
+      )
+      if (sub !== false) {
+        return sub
+      }
+    }
+    var f = file[fileIndex]
+    if (f === '.' || f === '..' ||
+        (!this.options.dot && f.charAt(0) === '.')) {
+      return false
+    }
+    fileIndex++
+  }
+  return partial || null
+}
+
+Minimatch.prototype._matchOne = function (file, pattern, partial, fileIndex, patternIndex) {
+  var fi, pi, fl, pl
+  for (
+    fi = fileIndex, pi = patternIndex, fl = file.length, pl = pattern.length
+    ; (fi < fl) && (pi < pl)
+    ; fi++, pi++
+  ) {
     this.debug('matchOne loop')
     var p = pattern[pi]
     var f = file[fi]
@@ -15899,87 +16048,7 @@ Minimatch.prototype.matchOne = function (file, pattern, partial) {
     // should be impossible.
     // some invalid regexp stuff in the set.
     /* istanbul ignore if */
-    if (p === false) return false
-
-    if (p === GLOBSTAR) {
-      this.debug('GLOBSTAR', [pattern, p, f])
-
-      // "**"
-      // a/**/b/**/c would match the following:
-      // a/b/x/y/z/c
-      // a/x/y/z/b/c
-      // a/b/x/b/x/c
-      // a/b/c
-      // To do this, take the rest of the pattern after
-      // the **, and see if it would match the file remainder.
-      // If so, return success.
-      // If not, the ** "swallows" a segment, and try again.
-      // This is recursively awful.
-      //
-      // a/**/b/**/c matching a/b/x/y/z/c
-      // - a matches a
-      // - doublestar
-      //   - matchOne(b/x/y/z/c, b/**/c)
-      //     - b matches b
-      //     - doublestar
-      //       - matchOne(x/y/z/c, c) -> no
-      //       - matchOne(y/z/c, c) -> no
-      //       - matchOne(z/c, c) -> no
-      //       - matchOne(c, c) yes, hit
-      var fr = fi
-      var pr = pi + 1
-      if (pr === pl) {
-        this.debug('** at the end')
-        // a ** at the end will just swallow the rest.
-        // We have found a match.
-        // however, it will not swallow /.x, unless
-        // options.dot is set.
-        // . and .. are *never* matched by **, for explosively
-        // exponential reasons.
-        for (; fi < fl; fi++) {
-          if (file[fi] === '.' || file[fi] === '..' ||
-            (!options.dot && file[fi].charAt(0) === '.')) return false
-        }
-        return true
-      }
-
-      // ok, let's see if we can swallow whatever we can.
-      while (fr < fl) {
-        var swallowee = file[fr]
-
-        this.debug('\nglobstar while', file, fr, pattern, pr, swallowee)
-
-        // XXX remove this slice.  Just pass the start index.
-        if (this.matchOne(file.slice(fr), pattern.slice(pr), partial)) {
-          this.debug('globstar found match!', fr, fl, swallowee)
-          // found a match.
-          return true
-        } else {
-          // can't swallow "." or ".." ever.
-          // can only swallow ".foo" when explicitly asked.
-          if (swallowee === '.' || swallowee === '..' ||
-            (!options.dot && swallowee.charAt(0) === '.')) {
-            this.debug('dot detected!', file, fr, pattern, pr)
-            break
-          }
-
-          // ** swallows a segment, and continue.
-          this.debug('globstar swallow a segment, and continue')
-          fr++
-        }
-      }
-
-      // no match was found.
-      // However, in partial mode, we can't say this is necessarily over.
-      // If there's more *pattern* left, then
-      /* istanbul ignore if */
-      if (partial) {
-        // ran out of file
-        this.debug('\n>>> no match, partial?', file, fr, pattern, pr)
-        if (fr === fl) return true
-      }
-      return false
-    }
+    if (p === false || p === GLOBSTAR) return false
 
     // something other than **
     // non-magic patterns just have to match exactly
@@ -15995,17 +16064,6 @@ Minimatch.prototype.matchOne = function (file, pattern, partial) {
 
     if (!hit) return false
   }
-
-  // Note: ending in / means that we'll get a final ""
-  // at the end of the pattern.  This can only match a
-  // corresponding "" at the end of the file.
-  // If the file ends in /, then it can only match a
-  // a pattern that ends in /, unless the pattern just
-  // doesn't have any more for it. But, a/b/ should *not*
-  // match "a/b/*", even though "" matches against the
-  // [^/]*? pattern, except in partial mode, where it might
-  // simply not be reached yet.
-  // However, a/b/ should still satisfy a/*
 
   // now either we fell off the end of the pattern, or we're done.
   if (fi === fl && pi === pl) {
@@ -21401,6 +21459,24 @@ class SecureProxyConnectionError extends UndiciError {
   [kSecureProxyConnectionError] = true
 }
 
+const kMessageSizeExceededError = Symbol.for('undici.error.UND_ERR_WS_MESSAGE_SIZE_EXCEEDED')
+class MessageSizeExceededError extends UndiciError {
+  constructor (message) {
+    super(message)
+    this.name = 'MessageSizeExceededError'
+    this.message = message || 'Max decompressed message size exceeded'
+    this.code = 'UND_ERR_WS_MESSAGE_SIZE_EXCEEDED'
+  }
+
+  static [Symbol.hasInstance] (instance) {
+    return instance && instance[kMessageSizeExceededError] === true
+  }
+
+  get [kMessageSizeExceededError] () {
+    return true
+  }
+}
+
 module.exports = {
   AbortError,
   HTTPParserError,
@@ -21424,7 +21500,8 @@ module.exports = {
   ResponseExceededMaxSizeError,
   RequestRetryError,
   ResponseError,
-  SecureProxyConnectionError
+  SecureProxyConnectionError,
+  MessageSizeExceededError
 }
 
 
@@ -21500,6 +21577,10 @@ class Request {
 
     if (upgrade && typeof upgrade !== 'string') {
       throw new InvalidArgumentError('upgrade must be a string')
+    }
+
+    if (upgrade && !isValidHeaderValue(upgrade)) {
+      throw new InvalidArgumentError('invalid upgrade header')
     }
 
     if (headersTimeout != null && (!Number.isFinite(headersTimeout) || headersTimeout < 0)) {
@@ -21796,13 +21877,19 @@ function processHeader (request, key, val) {
     val = `${val}`
   }
 
-  if (request.host === null && headerName === 'host') {
+  if (headerName === 'host') {
+    if (request.host !== null) {
+      throw new InvalidArgumentError('duplicate host header')
+    }
     if (typeof val !== 'string') {
       throw new InvalidArgumentError('invalid host header')
     }
     // Consumed by Client
     request.host = val
-  } else if (request.contentLength === null && headerName === 'content-length') {
+  } else if (headerName === 'content-length') {
+    if (request.contentLength !== null) {
+      throw new InvalidArgumentError('duplicate content-length header')
+    }
     request.contentLength = parseInt(val, 10)
     if (!Number.isFinite(request.contentLength)) {
       throw new InvalidArgumentError('invalid content-length header')
@@ -44593,10 +44680,14 @@ module.exports = {
 
 const { createInflateRaw, Z_DEFAULT_WINDOWBITS } = __nccwpck_require__(38522)
 const { isValidClientWindowBits } = __nccwpck_require__(98625)
+const { MessageSizeExceededError } = __nccwpck_require__(68707)
 
 const tail = Buffer.from([0x00, 0x00, 0xff, 0xff])
 const kBuffer = Symbol('kBuffer')
 const kLength = Symbol('kLength')
+
+// Default maximum decompressed message size: 4 MB
+const kDefaultMaxDecompressedSize = 4 * 1024 * 1024
 
 class PerMessageDeflate {
   /** @type {import('node:zlib').InflateRaw} */
@@ -44604,6 +44695,15 @@ class PerMessageDeflate {
 
   #options = {}
 
+  /** @type {boolean} */
+  #aborted = false
+
+  /** @type {Function|null} */
+  #currentCallback = null
+
+  /**
+   * @param {Map<string, string>} extensions
+   */
   constructor (extensions) {
     this.#options.serverNoContextTakeover = extensions.has('server_no_context_takeover')
     this.#options.serverMaxWindowBits = extensions.get('server_max_window_bits')
@@ -44614,6 +44714,11 @@ class PerMessageDeflate {
     // 1.  Append 4 octets of 0x00 0x00 0xff 0xff to the tail end of the
     //     payload of the message.
     // 2.  Decompress the resulting data using DEFLATE.
+
+    if (this.#aborted) {
+      callback(new MessageSizeExceededError())
+      return
+    }
 
     if (!this.#inflate) {
       let windowBits = Z_DEFAULT_WINDOWBITS
@@ -44627,13 +44732,37 @@ class PerMessageDeflate {
         windowBits = Number.parseInt(this.#options.serverMaxWindowBits)
       }
 
-      this.#inflate = createInflateRaw({ windowBits })
+      try {
+        this.#inflate = createInflateRaw({ windowBits })
+      } catch (err) {
+        callback(err)
+        return
+      }
       this.#inflate[kBuffer] = []
       this.#inflate[kLength] = 0
 
       this.#inflate.on('data', (data) => {
-        this.#inflate[kBuffer].push(data)
+        if (this.#aborted) {
+          return
+        }
+
         this.#inflate[kLength] += data.length
+
+        if (this.#inflate[kLength] > kDefaultMaxDecompressedSize) {
+          this.#aborted = true
+          this.#inflate.removeAllListeners()
+          this.#inflate.destroy()
+          this.#inflate = null
+
+          if (this.#currentCallback) {
+            const cb = this.#currentCallback
+            this.#currentCallback = null
+            cb(new MessageSizeExceededError())
+          }
+          return
+        }
+
+        this.#inflate[kBuffer].push(data)
       })
 
       this.#inflate.on('error', (err) => {
@@ -44642,16 +44771,22 @@ class PerMessageDeflate {
       })
     }
 
+    this.#currentCallback = callback
     this.#inflate.write(chunk)
     if (fin) {
       this.#inflate.write(tail)
     }
 
     this.#inflate.flush(() => {
+      if (this.#aborted || !this.#inflate) {
+        return
+      }
+
       const full = Buffer.concat(this.#inflate[kBuffer], this.#inflate[kLength])
 
       this.#inflate[kBuffer].length = 0
       this.#inflate[kLength] = 0
+      this.#currentCallback = null
 
       callback(null, full)
     })
@@ -44706,6 +44841,10 @@ class ByteParser extends Writable {
   /** @type {Map<string, PerMessageDeflate>} */
   #extensions
 
+  /**
+   * @param {import('./websocket').WebSocket} ws
+   * @param {Map<string, string>|null} extensions
+   */
   constructor (ws, extensions) {
     super()
 
@@ -44848,6 +44987,7 @@ class ByteParser extends Writable {
 
         const buffer = this.consume(8)
         const upper = buffer.readUInt32BE(0)
+        const lower = buffer.readUInt32BE(4)
 
         // 2^31 is the maximum bytes an arraybuffer can contain
         // on 32-bit systems. Although, on 64-bit systems, this is
@@ -44855,14 +44995,12 @@ class ByteParser extends Writable {
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Invalid_array_length
         // https://source.chromium.org/chromium/chromium/src/+/main:v8/src/common/globals.h;drc=1946212ac0100668f14eb9e2843bdd846e510a1e;bpv=1;bpt=1;l=1275
         // https://source.chromium.org/chromium/chromium/src/+/main:v8/src/objects/js-array-buffer.h;l=34;drc=1946212ac0100668f14eb9e2843bdd846e510a1e
-        if (upper > 2 ** 31 - 1) {
+        if (upper !== 0 || lower > 2 ** 31 - 1) {
           failWebsocketConnection(this.ws, 'Received payload length > 2^31 bytes.')
           return
         }
 
-        const lower = buffer.readUInt32BE(4)
-
-        this.#info.payloadLength = (upper << 8) + lower
+        this.#info.payloadLength = lower
         this.#state = parserStates.READ_DATA
       } else if (this.#state === parserStates.READ_DATA) {
         if (this.#byteOffset < this.#info.payloadLength) {
@@ -44892,7 +45030,7 @@ class ByteParser extends Writable {
           } else {
             this.#extensions.get('permessage-deflate').decompress(body, this.#info.fin, (error, data) => {
               if (error) {
-                closeWebSocketConnection(this.ws, 1007, error.message, error.message.length)
+                failWebsocketConnection(this.ws, error.message)
                 return
               }
 
@@ -45499,6 +45637,12 @@ function parseExtensions (extensions) {
  * @param {string} value
  */
 function isValidClientWindowBits (value) {
+  // Must have at least one character
+  if (value.length === 0) {
+    return false
+  }
+
+  // Check all characters are ASCII digits
   for (let i = 0; i < value.length; i++) {
     const byte = value.charCodeAt(i)
 
@@ -45507,7 +45651,9 @@ function isValidClientWindowBits (value) {
     }
   }
 
-  return true
+  // Check numeric range: zlib requires windowBits in range 8-15
+  const num = Number.parseInt(value, 10)
+  return num >= 8 && num <= 15
 }
 
 // https://nodejs.org/api/intl.html#detecting-internationalization-support
@@ -45986,7 +46132,7 @@ class WebSocket extends EventTarget {
    * @see https://websockets.spec.whatwg.org/#feedback-from-the-protocol
    */
   #onConnectionEstablished (response, parsedExtensions) {
-    // processResponse is called when the "response’s header list has been received and initialized."
+    // processResponse is called when the "response's header list has been received and initialized."
     // once this happens, the connection is open
     this[kResponse] = response
 
@@ -82352,4383 +82498,5028 @@ Object.defineProperty(exports, "AbortError", ({ enumerable: true, get: function 
 /***/ }),
 
 /***/ 99992:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.AbortError = void 0;
-/**
- * This error is thrown when an asynchronous operation has been aborted.
- * Check for this error by testing the `name` that the name property of the
- * error matches `"AbortError"`.
- *
- * @example
- * ```ts snippet:ReadmeSampleAbortError
- * import { AbortError } from "@typespec/ts-http-runtime";
- *
- * async function doAsyncWork(options: { abortSignal: AbortSignal }): Promise<void> {
- *   if (options.abortSignal.aborted) {
- *     throw new AbortError();
- *   }
- *
- *   // do async work
- * }
- *
- * const controller = new AbortController();
- * controller.abort();
- *
- * try {
- *   doAsyncWork({ abortSignal: controller.signal });
- * } catch (e) {
- *   if (e instanceof Error && e.name === "AbortError") {
- *     // handle abort error here.
- *   }
- * }
- * ```
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var AbortError_exports = {};
+__export(AbortError_exports, {
+  AbortError: () => AbortError
+});
+module.exports = __toCommonJS(AbortError_exports);
 class AbortError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = "AbortError";
-    }
+  constructor(message) {
+    super(message);
+    this.name = "AbortError";
+  }
 }
-exports.AbortError = AbortError;
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=AbortError.js.map
+
 
 /***/ }),
 
 /***/ 36227:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isOAuth2TokenCredential = isOAuth2TokenCredential;
-exports.isBearerTokenCredential = isBearerTokenCredential;
-exports.isBasicCredential = isBasicCredential;
-exports.isApiKeyCredential = isApiKeyCredential;
-/**
- * Type guard to check if a credential is an OAuth2 token credential.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var credentials_exports = {};
+__export(credentials_exports, {
+  isApiKeyCredential: () => isApiKeyCredential,
+  isBasicCredential: () => isBasicCredential,
+  isBearerTokenCredential: () => isBearerTokenCredential,
+  isOAuth2TokenCredential: () => isOAuth2TokenCredential
+});
+module.exports = __toCommonJS(credentials_exports);
 function isOAuth2TokenCredential(credential) {
-    return "getOAuth2Token" in credential;
+  return "getOAuth2Token" in credential;
 }
-/**
- * Type guard to check if a credential is a Bearer token credential.
- */
 function isBearerTokenCredential(credential) {
-    return "getBearerToken" in credential;
+  return "getBearerToken" in credential;
 }
-/**
- * Type guard to check if a credential is a Basic auth credential.
- */
 function isBasicCredential(credential) {
-    return "username" in credential && "password" in credential;
+  return "username" in credential && "password" in credential;
 }
-/**
- * Type guard to check if a credential is an API key credential.
- */
 function isApiKeyCredential(credential) {
-    return "key" in credential;
+  return "key" in credential;
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=credentials.js.map
 
-/***/ }),
-
-/***/ 43097:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-//# sourceMappingURL=oauth2Flows.js.map
-
-/***/ }),
-
-/***/ 92097:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-//# sourceMappingURL=schemes.js.map
 
 /***/ }),
 
 /***/ 71408:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.apiVersionPolicyName = void 0;
-exports.apiVersionPolicy = apiVersionPolicy;
-exports.apiVersionPolicyName = "ApiVersionPolicy";
-/**
- * Creates a policy that sets the apiVersion as a query parameter on every request
- * @param options - Client options
- * @returns Pipeline policy that sets the apiVersion as a query parameter on every request
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var apiVersionPolicy_exports = {};
+__export(apiVersionPolicy_exports, {
+  apiVersionPolicy: () => apiVersionPolicy,
+  apiVersionPolicyName: () => apiVersionPolicyName
+});
+module.exports = __toCommonJS(apiVersionPolicy_exports);
+const apiVersionPolicyName = "ApiVersionPolicy";
 function apiVersionPolicy(options) {
-    return {
-        name: exports.apiVersionPolicyName,
-        sendRequest: (req, next) => {
-            // Use the apiVesion defined in request url directly
-            // Append one if there is no apiVesion and we have one at client options
-            const url = new URL(req.url);
-            if (!url.searchParams.get("api-version") && options.apiVersion) {
-                req.url = `${req.url}${Array.from(url.searchParams.keys()).length > 0 ? "&" : "?"}api-version=${options.apiVersion}`;
-            }
-            return next(req);
-        },
-    };
+  return {
+    name: apiVersionPolicyName,
+    sendRequest: (req, next) => {
+      const url = new URL(req.url);
+      if (!url.searchParams.get("api-version") && options.apiVersion) {
+        req.url = `${req.url}${Array.from(url.searchParams.keys()).length > 0 ? "&" : "?"}api-version=${options.apiVersion}`;
+      }
+      return next(req);
+    }
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=apiVersionPolicy.js.map
+
 
 /***/ }),
 
 /***/ 88728:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createDefaultPipeline = createDefaultPipeline;
-exports.getCachedDefaultHttpsClient = getCachedDefaultHttpsClient;
-const defaultHttpClient_js_1 = __nccwpck_require__(69468);
-const createPipelineFromOptions_js_1 = __nccwpck_require__(91810);
-const apiVersionPolicy_js_1 = __nccwpck_require__(71408);
-const credentials_js_1 = __nccwpck_require__(36227);
-const apiKeyAuthenticationPolicy_js_1 = __nccwpck_require__(42095);
-const basicAuthenticationPolicy_js_1 = __nccwpck_require__(15756);
-const bearerAuthenticationPolicy_js_1 = __nccwpck_require__(89709);
-const oauth2AuthenticationPolicy_js_1 = __nccwpck_require__(20219);
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var clientHelpers_exports = {};
+__export(clientHelpers_exports, {
+  createDefaultPipeline: () => createDefaultPipeline,
+  getCachedDefaultHttpsClient: () => getCachedDefaultHttpsClient
+});
+module.exports = __toCommonJS(clientHelpers_exports);
+var import_defaultHttpClient = __nccwpck_require__(69468);
+var import_createPipelineFromOptions = __nccwpck_require__(91810);
+var import_apiVersionPolicy = __nccwpck_require__(71408);
+var import_credentials = __nccwpck_require__(36227);
+var import_apiKeyAuthenticationPolicy = __nccwpck_require__(42095);
+var import_basicAuthenticationPolicy = __nccwpck_require__(15756);
+var import_bearerAuthenticationPolicy = __nccwpck_require__(89709);
+var import_oauth2AuthenticationPolicy = __nccwpck_require__(20219);
 let cachedHttpClient;
-/**
- * Creates a default rest pipeline to re-use accross Rest Level Clients
- */
 function createDefaultPipeline(options = {}) {
-    const pipeline = (0, createPipelineFromOptions_js_1.createPipelineFromOptions)(options);
-    pipeline.addPolicy((0, apiVersionPolicy_js_1.apiVersionPolicy)(options));
-    const { credential, authSchemes, allowInsecureConnection } = options;
-    if (credential) {
-        if ((0, credentials_js_1.isApiKeyCredential)(credential)) {
-            pipeline.addPolicy((0, apiKeyAuthenticationPolicy_js_1.apiKeyAuthenticationPolicy)({ authSchemes, credential, allowInsecureConnection }));
-        }
-        else if ((0, credentials_js_1.isBasicCredential)(credential)) {
-            pipeline.addPolicy((0, basicAuthenticationPolicy_js_1.basicAuthenticationPolicy)({ authSchemes, credential, allowInsecureConnection }));
-        }
-        else if ((0, credentials_js_1.isBearerTokenCredential)(credential)) {
-            pipeline.addPolicy((0, bearerAuthenticationPolicy_js_1.bearerAuthenticationPolicy)({ authSchemes, credential, allowInsecureConnection }));
-        }
-        else if ((0, credentials_js_1.isOAuth2TokenCredential)(credential)) {
-            pipeline.addPolicy((0, oauth2AuthenticationPolicy_js_1.oauth2AuthenticationPolicy)({ authSchemes, credential, allowInsecureConnection }));
-        }
+  const pipeline = (0, import_createPipelineFromOptions.createPipelineFromOptions)(options);
+  pipeline.addPolicy((0, import_apiVersionPolicy.apiVersionPolicy)(options));
+  const { credential, authSchemes, allowInsecureConnection } = options;
+  if (credential) {
+    if ((0, import_credentials.isApiKeyCredential)(credential)) {
+      pipeline.addPolicy(
+        (0, import_apiKeyAuthenticationPolicy.apiKeyAuthenticationPolicy)({ authSchemes, credential, allowInsecureConnection })
+      );
+    } else if ((0, import_credentials.isBasicCredential)(credential)) {
+      pipeline.addPolicy(
+        (0, import_basicAuthenticationPolicy.basicAuthenticationPolicy)({ authSchemes, credential, allowInsecureConnection })
+      );
+    } else if ((0, import_credentials.isBearerTokenCredential)(credential)) {
+      pipeline.addPolicy(
+        (0, import_bearerAuthenticationPolicy.bearerAuthenticationPolicy)({ authSchemes, credential, allowInsecureConnection })
+      );
+    } else if ((0, import_credentials.isOAuth2TokenCredential)(credential)) {
+      pipeline.addPolicy(
+        (0, import_oauth2AuthenticationPolicy.oauth2AuthenticationPolicy)({ authSchemes, credential, allowInsecureConnection })
+      );
     }
-    return pipeline;
+  }
+  return pipeline;
 }
 function getCachedDefaultHttpsClient() {
-    if (!cachedHttpClient) {
-        cachedHttpClient = (0, defaultHttpClient_js_1.createDefaultHttpClient)();
-    }
-    return cachedHttpClient;
+  if (!cachedHttpClient) {
+    cachedHttpClient = (0, import_defaultHttpClient.createDefaultHttpClient)();
+  }
+  return cachedHttpClient;
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=clientHelpers.js.map
+
 
 /***/ }),
 
 /***/ 86191:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getClient = getClient;
-const clientHelpers_js_1 = __nccwpck_require__(88728);
-const sendRequest_js_1 = __nccwpck_require__(16311);
-const urlHelpers_js_1 = __nccwpck_require__(37088);
-const checkEnvironment_js_1 = __nccwpck_require__(85086);
-/**
- * Creates a client with a default pipeline
- * @param endpoint - Base endpoint for the client
- * @param credentials - Credentials to authenticate the requests
- * @param options - Client options
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var getClient_exports = {};
+__export(getClient_exports, {
+  getClient: () => getClient
+});
+module.exports = __toCommonJS(getClient_exports);
+var import_clientHelpers = __nccwpck_require__(88728);
+var import_sendRequest = __nccwpck_require__(16311);
+var import_urlHelpers = __nccwpck_require__(37088);
+var import_checkEnvironment = __nccwpck_require__(85086);
 function getClient(endpoint, clientOptions = {}) {
-    const pipeline = clientOptions.pipeline ?? (0, clientHelpers_js_1.createDefaultPipeline)(clientOptions);
-    if (clientOptions.additionalPolicies?.length) {
-        for (const { policy, position } of clientOptions.additionalPolicies) {
-            // Sign happens after Retry and is commonly needed to occur
-            // before policies that intercept post-retry.
-            const afterPhase = position === "perRetry" ? "Sign" : undefined;
-            pipeline.addPolicy(policy, {
-                afterPhase,
-            });
-        }
+  const pipeline = clientOptions.pipeline ?? (0, import_clientHelpers.createDefaultPipeline)(clientOptions);
+  if (clientOptions.additionalPolicies?.length) {
+    for (const { policy, position } of clientOptions.additionalPolicies) {
+      const afterPhase = position === "perRetry" ? "Sign" : void 0;
+      pipeline.addPolicy(policy, {
+        afterPhase
+      });
     }
-    const { allowInsecureConnection, httpClient } = clientOptions;
-    const endpointUrl = clientOptions.endpoint ?? endpoint;
-    const client = (path, ...args) => {
-        const getUrl = (requestOptions) => (0, urlHelpers_js_1.buildRequestUrl)(endpointUrl, path, args, { allowInsecureConnection, ...requestOptions });
-        return {
-            get: (requestOptions = {}) => {
-                return buildOperation("GET", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient);
-            },
-            post: (requestOptions = {}) => {
-                return buildOperation("POST", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient);
-            },
-            put: (requestOptions = {}) => {
-                return buildOperation("PUT", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient);
-            },
-            patch: (requestOptions = {}) => {
-                return buildOperation("PATCH", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient);
-            },
-            delete: (requestOptions = {}) => {
-                return buildOperation("DELETE", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient);
-            },
-            head: (requestOptions = {}) => {
-                return buildOperation("HEAD", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient);
-            },
-            options: (requestOptions = {}) => {
-                return buildOperation("OPTIONS", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient);
-            },
-            trace: (requestOptions = {}) => {
-                return buildOperation("TRACE", getUrl(requestOptions), pipeline, requestOptions, allowInsecureConnection, httpClient);
-            },
-        };
-    };
+  }
+  const { allowInsecureConnection, httpClient } = clientOptions;
+  const endpointUrl = clientOptions.endpoint ?? endpoint;
+  const client = (path, ...args) => {
+    const getUrl = (requestOptions) => (0, import_urlHelpers.buildRequestUrl)(endpointUrl, path, args, { allowInsecureConnection, ...requestOptions });
     return {
-        path: client,
-        pathUnchecked: client,
-        pipeline,
+      get: (requestOptions = {}) => {
+        return buildOperation(
+          "GET",
+          getUrl(requestOptions),
+          pipeline,
+          requestOptions,
+          allowInsecureConnection,
+          httpClient
+        );
+      },
+      post: (requestOptions = {}) => {
+        return buildOperation(
+          "POST",
+          getUrl(requestOptions),
+          pipeline,
+          requestOptions,
+          allowInsecureConnection,
+          httpClient
+        );
+      },
+      put: (requestOptions = {}) => {
+        return buildOperation(
+          "PUT",
+          getUrl(requestOptions),
+          pipeline,
+          requestOptions,
+          allowInsecureConnection,
+          httpClient
+        );
+      },
+      patch: (requestOptions = {}) => {
+        return buildOperation(
+          "PATCH",
+          getUrl(requestOptions),
+          pipeline,
+          requestOptions,
+          allowInsecureConnection,
+          httpClient
+        );
+      },
+      delete: (requestOptions = {}) => {
+        return buildOperation(
+          "DELETE",
+          getUrl(requestOptions),
+          pipeline,
+          requestOptions,
+          allowInsecureConnection,
+          httpClient
+        );
+      },
+      head: (requestOptions = {}) => {
+        return buildOperation(
+          "HEAD",
+          getUrl(requestOptions),
+          pipeline,
+          requestOptions,
+          allowInsecureConnection,
+          httpClient
+        );
+      },
+      options: (requestOptions = {}) => {
+        return buildOperation(
+          "OPTIONS",
+          getUrl(requestOptions),
+          pipeline,
+          requestOptions,
+          allowInsecureConnection,
+          httpClient
+        );
+      },
+      trace: (requestOptions = {}) => {
+        return buildOperation(
+          "TRACE",
+          getUrl(requestOptions),
+          pipeline,
+          requestOptions,
+          allowInsecureConnection,
+          httpClient
+        );
+      }
     };
+  };
+  return {
+    path: client,
+    pathUnchecked: client,
+    pipeline
+  };
 }
 function buildOperation(method, url, pipeline, options, allowInsecureConnection, httpClient) {
-    allowInsecureConnection = options.allowInsecureConnection ?? allowInsecureConnection;
-    return {
-        then: function (onFulfilled, onrejected) {
-            return (0, sendRequest_js_1.sendRequest)(method, url, pipeline, { ...options, allowInsecureConnection }, httpClient).then(onFulfilled, onrejected);
-        },
-        async asBrowserStream() {
-            if (checkEnvironment_js_1.isNodeLike) {
-                throw new Error("`asBrowserStream` is supported only in the browser environment. Use `asNodeStream` instead to obtain the response body stream. If you require a Web stream of the response in Node, consider using `Readable.toWeb` on the result of `asNodeStream`.");
-            }
-            else {
-                return (0, sendRequest_js_1.sendRequest)(method, url, pipeline, { ...options, allowInsecureConnection, responseAsStream: true }, httpClient);
-            }
-        },
-        async asNodeStream() {
-            if (checkEnvironment_js_1.isNodeLike) {
-                return (0, sendRequest_js_1.sendRequest)(method, url, pipeline, { ...options, allowInsecureConnection, responseAsStream: true }, httpClient);
-            }
-            else {
-                throw new Error("`isNodeStream` is not supported in the browser environment. Use `asBrowserStream` to obtain the response body stream.");
-            }
-        },
-    };
+  allowInsecureConnection = options.allowInsecureConnection ?? allowInsecureConnection;
+  return {
+    then: function(onFulfilled, onrejected) {
+      return (0, import_sendRequest.sendRequest)(
+        method,
+        url,
+        pipeline,
+        { ...options, allowInsecureConnection },
+        httpClient
+      ).then(onFulfilled, onrejected);
+    },
+    async asBrowserStream() {
+      if (import_checkEnvironment.isNodeLike) {
+        throw new Error(
+          "`asBrowserStream` is supported only in the browser environment. Use `asNodeStream` instead to obtain the response body stream. If you require a Web stream of the response in Node, consider using `Readable.toWeb` on the result of `asNodeStream`."
+        );
+      } else {
+        return (0, import_sendRequest.sendRequest)(
+          method,
+          url,
+          pipeline,
+          { ...options, allowInsecureConnection, responseAsStream: true },
+          httpClient
+        );
+      }
+    },
+    async asNodeStream() {
+      if (import_checkEnvironment.isNodeLike) {
+        return (0, import_sendRequest.sendRequest)(
+          method,
+          url,
+          pipeline,
+          { ...options, allowInsecureConnection, responseAsStream: true },
+          httpClient
+        );
+      } else {
+        throw new Error(
+          "`isNodeStream` is not supported in the browser environment. Use `asBrowserStream` to obtain the response body stream."
+        );
+      }
+    }
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=getClient.js.map
+
 
 /***/ }),
 
 /***/ 18240:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.buildBodyPart = buildBodyPart;
-exports.buildMultipartBody = buildMultipartBody;
-const restError_js_1 = __nccwpck_require__(9758);
-const httpHeaders_js_1 = __nccwpck_require__(4220);
-const bytesEncoding_js_1 = __nccwpck_require__(82921);
-const typeGuards_js_1 = __nccwpck_require__(48505);
-/**
- * Get value of a header in the part descriptor ignoring case
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var multipart_exports = {};
+__export(multipart_exports, {
+  buildBodyPart: () => buildBodyPart,
+  buildMultipartBody: () => buildMultipartBody
+});
+module.exports = __toCommonJS(multipart_exports);
+var import_restError = __nccwpck_require__(9758);
+var import_httpHeaders = __nccwpck_require__(4220);
+var import_bytesEncoding = __nccwpck_require__(82921);
+var import_typeGuards = __nccwpck_require__(48505);
 function getHeaderValue(descriptor, headerName) {
-    if (descriptor.headers) {
-        const actualHeaderName = Object.keys(descriptor.headers).find((x) => x.toLowerCase() === headerName.toLowerCase());
-        if (actualHeaderName) {
-            return descriptor.headers[actualHeaderName];
-        }
+  if (descriptor.headers) {
+    const actualHeaderName = Object.keys(descriptor.headers).find(
+      (x) => x.toLowerCase() === headerName.toLowerCase()
+    );
+    if (actualHeaderName) {
+      return descriptor.headers[actualHeaderName];
     }
-    return undefined;
+  }
+  return void 0;
 }
 function getPartContentType(descriptor) {
-    const contentTypeHeader = getHeaderValue(descriptor, "content-type");
-    if (contentTypeHeader) {
-        return contentTypeHeader;
-    }
-    // Special value of null means content type is to be omitted
-    if (descriptor.contentType === null) {
-        return undefined;
-    }
-    if (descriptor.contentType) {
-        return descriptor.contentType;
-    }
-    const { body } = descriptor;
-    if (body === null || body === undefined) {
-        return undefined;
-    }
-    if (typeof body === "string" || typeof body === "number" || typeof body === "boolean") {
-        return "text/plain; charset=UTF-8";
-    }
-    if (body instanceof Blob) {
-        return body.type || "application/octet-stream";
-    }
-    if ((0, typeGuards_js_1.isBinaryBody)(body)) {
-        return "application/octet-stream";
-    }
-    // arbitrary non-text object -> generic JSON content type by default. We will try to JSON.stringify the body.
-    return "application/json";
+  const contentTypeHeader = getHeaderValue(descriptor, "content-type");
+  if (contentTypeHeader) {
+    return contentTypeHeader;
+  }
+  if (descriptor.contentType === null) {
+    return void 0;
+  }
+  if (descriptor.contentType) {
+    return descriptor.contentType;
+  }
+  const { body } = descriptor;
+  if (body === null || body === void 0) {
+    return void 0;
+  }
+  if (typeof body === "string" || typeof body === "number" || typeof body === "boolean") {
+    return "text/plain; charset=UTF-8";
+  }
+  if (body instanceof Blob) {
+    return body.type || "application/octet-stream";
+  }
+  if ((0, import_typeGuards.isBinaryBody)(body)) {
+    return "application/octet-stream";
+  }
+  return "application/json";
 }
-/**
- * Enclose value in quotes and escape special characters, for use in the Content-Disposition header
- */
 function escapeDispositionField(value) {
-    return JSON.stringify(value);
+  return JSON.stringify(value);
 }
 function getContentDisposition(descriptor) {
-    const contentDispositionHeader = getHeaderValue(descriptor, "content-disposition");
-    if (contentDispositionHeader) {
-        return contentDispositionHeader;
+  const contentDispositionHeader = getHeaderValue(descriptor, "content-disposition");
+  if (contentDispositionHeader) {
+    return contentDispositionHeader;
+  }
+  if (descriptor.dispositionType === void 0 && descriptor.name === void 0 && descriptor.filename === void 0) {
+    return void 0;
+  }
+  const dispositionType = descriptor.dispositionType ?? "form-data";
+  let disposition = dispositionType;
+  if (descriptor.name) {
+    disposition += `; name=${escapeDispositionField(descriptor.name)}`;
+  }
+  let filename = void 0;
+  if (descriptor.filename) {
+    filename = descriptor.filename;
+  } else if (typeof File !== "undefined" && descriptor.body instanceof File) {
+    const filenameFromFile = descriptor.body.name;
+    if (filenameFromFile !== "") {
+      filename = filenameFromFile;
     }
-    if (descriptor.dispositionType === undefined &&
-        descriptor.name === undefined &&
-        descriptor.filename === undefined) {
-        return undefined;
-    }
-    const dispositionType = descriptor.dispositionType ?? "form-data";
-    let disposition = dispositionType;
-    if (descriptor.name) {
-        disposition += `; name=${escapeDispositionField(descriptor.name)}`;
-    }
-    let filename = undefined;
-    if (descriptor.filename) {
-        filename = descriptor.filename;
-    }
-    else if (typeof File !== "undefined" && descriptor.body instanceof File) {
-        const filenameFromFile = descriptor.body.name;
-        if (filenameFromFile !== "") {
-            filename = filenameFromFile;
-        }
-    }
-    if (filename) {
-        disposition += `; filename=${escapeDispositionField(filename)}`;
-    }
-    return disposition;
+  }
+  if (filename) {
+    disposition += `; filename=${escapeDispositionField(filename)}`;
+  }
+  return disposition;
 }
 function normalizeBody(body, contentType) {
-    if (body === undefined) {
-        // zero-length body
-        return new Uint8Array([]);
-    }
-    // binary and primitives should go straight on the wire regardless of content type
-    if ((0, typeGuards_js_1.isBinaryBody)(body)) {
-        return body;
-    }
-    if (typeof body === "string" || typeof body === "number" || typeof body === "boolean") {
-        return (0, bytesEncoding_js_1.stringToUint8Array)(String(body), "utf-8");
-    }
-    // stringify objects for JSON-ish content types e.g. application/json, application/merge-patch+json, application/vnd.oci.manifest.v1+json, application.json; charset=UTF-8
-    if (contentType && /application\/(.+\+)?json(;.+)?/i.test(String(contentType))) {
-        return (0, bytesEncoding_js_1.stringToUint8Array)(JSON.stringify(body), "utf-8");
-    }
-    throw new restError_js_1.RestError(`Unsupported body/content-type combination: ${body}, ${contentType}`);
+  if (body === void 0) {
+    return new Uint8Array([]);
+  }
+  if ((0, import_typeGuards.isBinaryBody)(body)) {
+    return body;
+  }
+  if (typeof body === "string" || typeof body === "number" || typeof body === "boolean") {
+    return (0, import_bytesEncoding.stringToUint8Array)(String(body), "utf-8");
+  }
+  if (contentType && /application\/(.+\+)?json(;.+)?/i.test(String(contentType))) {
+    return (0, import_bytesEncoding.stringToUint8Array)(JSON.stringify(body), "utf-8");
+  }
+  throw new import_restError.RestError(`Unsupported body/content-type combination: ${body}, ${contentType}`);
 }
 function buildBodyPart(descriptor) {
-    const contentType = getPartContentType(descriptor);
-    const contentDisposition = getContentDisposition(descriptor);
-    const headers = (0, httpHeaders_js_1.createHttpHeaders)(descriptor.headers ?? {});
-    if (contentType) {
-        headers.set("content-type", contentType);
-    }
-    if (contentDisposition) {
-        headers.set("content-disposition", contentDisposition);
-    }
-    const body = normalizeBody(descriptor.body, contentType);
-    return {
-        headers,
-        body,
-    };
+  const contentType = getPartContentType(descriptor);
+  const contentDisposition = getContentDisposition(descriptor);
+  const headers = (0, import_httpHeaders.createHttpHeaders)(descriptor.headers ?? {});
+  if (contentType) {
+    headers.set("content-type", contentType);
+  }
+  if (contentDisposition) {
+    headers.set("content-disposition", contentDisposition);
+  }
+  const body = normalizeBody(descriptor.body, contentType);
+  return {
+    headers,
+    body
+  };
 }
 function buildMultipartBody(parts) {
-    return { parts: parts.map(buildBodyPart) };
+  return { parts: parts.map(buildBodyPart) };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=multipart.js.map
+
 
 /***/ }),
 
 /***/ 19635:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.operationOptionsToRequestParameters = operationOptionsToRequestParameters;
-/**
- * Helper function to convert OperationOptions to RequestParameters
- * @param options - the options that are used by Modular layer to send the request
- * @returns the result of the conversion in RequestParameters of RLC layer
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var operationOptionHelpers_exports = {};
+__export(operationOptionHelpers_exports, {
+  operationOptionsToRequestParameters: () => operationOptionsToRequestParameters
+});
+module.exports = __toCommonJS(operationOptionHelpers_exports);
 function operationOptionsToRequestParameters(options) {
-    return {
-        allowInsecureConnection: options.requestOptions?.allowInsecureConnection,
-        timeout: options.requestOptions?.timeout,
-        skipUrlEncoding: options.requestOptions?.skipUrlEncoding,
-        abortSignal: options.abortSignal,
-        onUploadProgress: options.requestOptions?.onUploadProgress,
-        onDownloadProgress: options.requestOptions?.onDownloadProgress,
-        headers: { ...options.requestOptions?.headers },
-        onResponse: options.onResponse,
-    };
+  return {
+    allowInsecureConnection: options.requestOptions?.allowInsecureConnection,
+    timeout: options.requestOptions?.timeout,
+    skipUrlEncoding: options.requestOptions?.skipUrlEncoding,
+    abortSignal: options.abortSignal,
+    onUploadProgress: options.requestOptions?.onUploadProgress,
+    onDownloadProgress: options.requestOptions?.onDownloadProgress,
+    headers: { ...options.requestOptions?.headers },
+    onResponse: options.onResponse
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=operationOptionHelpers.js.map
+
 
 /***/ }),
 
 /***/ 97332:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createRestError = createRestError;
-const restError_js_1 = __nccwpck_require__(9758);
-const httpHeaders_js_1 = __nccwpck_require__(4220);
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var restError_exports = {};
+__export(restError_exports, {
+  createRestError: () => createRestError
+});
+module.exports = __toCommonJS(restError_exports);
+var import_restError = __nccwpck_require__(9758);
+var import_httpHeaders = __nccwpck_require__(4220);
 function createRestError(messageOrResponse, response) {
-    const resp = typeof messageOrResponse === "string" ? response : messageOrResponse;
-    const internalError = resp.body?.error ?? resp.body;
-    const message = typeof messageOrResponse === "string"
-        ? messageOrResponse
-        : (internalError?.message ?? `Unexpected status code: ${resp.status}`);
-    return new restError_js_1.RestError(message, {
-        statusCode: statusCodeToNumber(resp.status),
-        code: internalError?.code,
-        request: resp.request,
-        response: toPipelineResponse(resp),
-    });
+  const resp = typeof messageOrResponse === "string" ? response : messageOrResponse;
+  const internalError = resp.body?.error ?? resp.body;
+  const message = typeof messageOrResponse === "string" ? messageOrResponse : internalError?.message ?? `Unexpected status code: ${resp.status}`;
+  return new import_restError.RestError(message, {
+    statusCode: statusCodeToNumber(resp.status),
+    code: internalError?.code,
+    request: resp.request,
+    response: toPipelineResponse(resp)
+  });
 }
 function toPipelineResponse(response) {
-    return {
-        headers: (0, httpHeaders_js_1.createHttpHeaders)(response.headers),
-        request: response.request,
-        status: statusCodeToNumber(response.status) ?? -1,
-    };
+  return {
+    headers: (0, import_httpHeaders.createHttpHeaders)(response.headers),
+    request: response.request,
+    status: statusCodeToNumber(response.status) ?? -1
+  };
 }
 function statusCodeToNumber(statusCode) {
-    const status = Number.parseInt(statusCode);
-    return Number.isNaN(status) ? undefined : status;
+  const status = Number.parseInt(statusCode);
+  return Number.isNaN(status) ? void 0 : status;
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=restError.js.map
+
 
 /***/ }),
 
 /***/ 16311:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.sendRequest = sendRequest;
-const restError_js_1 = __nccwpck_require__(9758);
-const httpHeaders_js_1 = __nccwpck_require__(4220);
-const pipelineRequest_js_1 = __nccwpck_require__(72305);
-const clientHelpers_js_1 = __nccwpck_require__(88728);
-const typeGuards_js_1 = __nccwpck_require__(48505);
-const multipart_js_1 = __nccwpck_require__(18240);
-/**
- * Helper function to send request used by the client
- * @param method - method to use to send the request
- * @param url - url to send the request to
- * @param pipeline - pipeline with the policies to run when sending the request
- * @param options - request options
- * @param customHttpClient - a custom HttpClient to use when making the request
- * @returns returns and HttpResponse
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var sendRequest_exports = {};
+__export(sendRequest_exports, {
+  getRequestBody: () => getRequestBody,
+  sendRequest: () => sendRequest
+});
+module.exports = __toCommonJS(sendRequest_exports);
+var import_restError = __nccwpck_require__(9758);
+var import_httpHeaders = __nccwpck_require__(4220);
+var import_pipelineRequest = __nccwpck_require__(72305);
+var import_clientHelpers = __nccwpck_require__(88728);
+var import_typeGuards = __nccwpck_require__(48505);
+var import_multipart = __nccwpck_require__(18240);
 async function sendRequest(method, url, pipeline, options = {}, customHttpClient) {
-    const httpClient = customHttpClient ?? (0, clientHelpers_js_1.getCachedDefaultHttpsClient)();
-    const request = buildPipelineRequest(method, url, options);
-    try {
-        const response = await pipeline.sendRequest(httpClient, request);
-        const headers = response.headers.toJSON();
-        const stream = response.readableStreamBody ?? response.browserStreamBody;
-        const parsedBody = options.responseAsStream || stream !== undefined ? undefined : getResponseBody(response);
-        const body = stream ?? parsedBody;
-        if (options?.onResponse) {
-            options.onResponse({ ...response, request, rawHeaders: headers, parsedBody });
-        }
-        return {
-            request,
-            headers,
-            status: `${response.status}`,
-            body,
-        };
+  const httpClient = customHttpClient ?? (0, import_clientHelpers.getCachedDefaultHttpsClient)();
+  const request = buildPipelineRequest(method, url, options);
+  try {
+    const response = await pipeline.sendRequest(httpClient, request);
+    const headers = response.headers.toJSON();
+    const stream = response.readableStreamBody ?? response.browserStreamBody;
+    const parsedBody = options.responseAsStream || stream !== void 0 ? void 0 : getResponseBody(response);
+    const body = stream ?? parsedBody;
+    if (options?.onResponse) {
+      options.onResponse({ ...response, request, rawHeaders: headers, parsedBody });
     }
-    catch (e) {
-        if ((0, restError_js_1.isRestError)(e) && e.response && options.onResponse) {
-            const { response } = e;
-            const rawHeaders = response.headers.toJSON();
-            // UNBRANDED DIFFERENCE: onResponse callback does not have a second __legacyError property
-            options?.onResponse({ ...response, request, rawHeaders }, e);
-        }
-        throw e;
+    return {
+      request,
+      headers,
+      status: `${response.status}`,
+      body
+    };
+  } catch (e) {
+    if ((0, import_restError.isRestError)(e) && e.response && options.onResponse) {
+      const { response } = e;
+      const rawHeaders = response.headers.toJSON();
+      options?.onResponse({ ...response, request, rawHeaders }, e);
     }
+    throw e;
+  }
 }
-/**
- * Function to determine the request content type
- * @param options - request options InternalRequestParameters
- * @returns returns the content-type
- */
 function getRequestContentType(options = {}) {
-    return (options.contentType ??
-        options.headers?.["content-type"] ??
-        getContentType(options.body));
+  if (options.contentType) {
+    return options.contentType;
+  }
+  const headerContentType = options.headers?.["content-type"];
+  if (typeof headerContentType === "string") {
+    return headerContentType;
+  }
+  return getContentType(options.body);
 }
-/**
- * Function to determine the content-type of a body
- * this is used if an explicit content-type is not provided
- * @param body - body in the request
- * @returns returns the content-type
- */
 function getContentType(body) {
-    if (ArrayBuffer.isView(body)) {
-        return "application/octet-stream";
+  if (body === void 0) {
+    return void 0;
+  }
+  if (ArrayBuffer.isView(body)) {
+    return "application/octet-stream";
+  }
+  if ((0, import_typeGuards.isBlob)(body) && body.type) {
+    return body.type;
+  }
+  if (typeof body === "string") {
+    try {
+      JSON.parse(body);
+      return "application/json";
+    } catch (error) {
+      return void 0;
     }
-    if (typeof body === "string") {
-        try {
-            JSON.parse(body);
-            return "application/json";
-        }
-        catch (error) {
-            // If we fail to parse the body, it is not json
-            return undefined;
-        }
-    }
-    // By default return json
-    return "application/json";
+  }
+  return "application/json";
 }
 function buildPipelineRequest(method, url, options = {}) {
-    const requestContentType = getRequestContentType(options);
-    const { body, multipartBody } = getRequestBody(options.body, requestContentType);
-    const hasContent = body !== undefined || multipartBody !== undefined;
-    const headers = (0, httpHeaders_js_1.createHttpHeaders)({
-        ...(options.headers ? options.headers : {}),
-        accept: options.accept ?? options.headers?.accept ?? "application/json",
-        ...(hasContent &&
-            requestContentType && {
-            "content-type": requestContentType,
-        }),
-    });
-    return (0, pipelineRequest_js_1.createPipelineRequest)({
-        url,
-        method,
-        body,
-        multipartBody,
-        headers,
-        allowInsecureConnection: options.allowInsecureConnection,
-        abortSignal: options.abortSignal,
-        onUploadProgress: options.onUploadProgress,
-        onDownloadProgress: options.onDownloadProgress,
-        timeout: options.timeout,
-        enableBrowserStreams: true,
-        streamResponseStatusCodes: options.responseAsStream
-            ? new Set([Number.POSITIVE_INFINITY])
-            : undefined,
-    });
+  const requestContentType = getRequestContentType(options);
+  const { body, multipartBody } = getRequestBody(options.body, requestContentType);
+  const headers = (0, import_httpHeaders.createHttpHeaders)({
+    ...options.headers ? options.headers : {},
+    accept: options.accept ?? options.headers?.accept ?? "application/json",
+    ...requestContentType && {
+      "content-type": requestContentType
+    }
+  });
+  return (0, import_pipelineRequest.createPipelineRequest)({
+    url,
+    method,
+    body,
+    multipartBody,
+    headers,
+    allowInsecureConnection: options.allowInsecureConnection,
+    abortSignal: options.abortSignal,
+    onUploadProgress: options.onUploadProgress,
+    onDownloadProgress: options.onDownloadProgress,
+    timeout: options.timeout,
+    enableBrowserStreams: true,
+    streamResponseStatusCodes: options.responseAsStream ? /* @__PURE__ */ new Set([Number.POSITIVE_INFINITY]) : void 0
+  });
 }
-/**
- * Prepares the body before sending the request
- */
 function getRequestBody(body, contentType = "") {
-    if (body === undefined) {
-        return { body: undefined };
-    }
-    if (typeof FormData !== "undefined" && body instanceof FormData) {
+  if (body === void 0) {
+    return { body: void 0 };
+  }
+  if (typeof FormData !== "undefined" && body instanceof FormData) {
+    return { body };
+  }
+  if ((0, import_typeGuards.isBlob)(body)) {
+    return { body };
+  }
+  if ((0, import_typeGuards.isReadableStream)(body)) {
+    return { body };
+  }
+  if (typeof body === "function") {
+    return { body };
+  }
+  if (ArrayBuffer.isView(body)) {
+    return { body: body instanceof Uint8Array ? body : JSON.stringify(body) };
+  }
+  const firstType = contentType.split(";")[0];
+  switch (firstType) {
+    case "application/json":
+      return { body: JSON.stringify(body) };
+    case "multipart/form-data":
+      if (Array.isArray(body)) {
+        return { multipartBody: (0, import_multipart.buildMultipartBody)(body) };
+      }
+      return { body: JSON.stringify(body) };
+    case "text/plain":
+      return { body: String(body) };
+    default:
+      if (typeof body === "string") {
         return { body };
-    }
-    if ((0, typeGuards_js_1.isReadableStream)(body)) {
-        return { body };
-    }
-    if (ArrayBuffer.isView(body)) {
-        return { body: body instanceof Uint8Array ? body : JSON.stringify(body) };
-    }
-    const firstType = contentType.split(";")[0];
-    switch (firstType) {
-        case "application/json":
-            return { body: JSON.stringify(body) };
-        case "multipart/form-data":
-            if (Array.isArray(body)) {
-                return { multipartBody: (0, multipart_js_1.buildMultipartBody)(body) };
-            }
-            return { body: JSON.stringify(body) };
-        case "text/plain":
-            return { body: String(body) };
-        default:
-            if (typeof body === "string") {
-                return { body };
-            }
-            return { body: JSON.stringify(body) };
-    }
+      }
+      return { body: JSON.stringify(body) };
+  }
 }
-/**
- * Prepares the response body
- */
 function getResponseBody(response) {
-    // Set the default response type
-    const contentType = response.headers.get("content-type") ?? "";
-    const firstType = contentType.split(";")[0];
-    const bodyToParse = response.bodyAsText ?? "";
-    if (firstType === "text/plain") {
-        return String(bodyToParse);
+  const contentType = response.headers.get("content-type") ?? "";
+  const firstType = contentType.split(";")[0];
+  const bodyToParse = response.bodyAsText ?? "";
+  if (firstType === "text/plain") {
+    return String(bodyToParse);
+  }
+  try {
+    return bodyToParse ? JSON.parse(bodyToParse) : void 0;
+  } catch (error) {
+    if (firstType === "application/json") {
+      throw createParseError(response, error);
     }
-    // Default to "application/json" and fallback to string;
-    try {
-        return bodyToParse ? JSON.parse(bodyToParse) : undefined;
-    }
-    catch (error) {
-        // If we were supposed to get a JSON object and failed to
-        // parse, throw a parse error
-        if (firstType === "application/json") {
-            throw createParseError(response, error);
-        }
-        // We are not sure how to handle the response so we return it as
-        // plain text.
-        return String(bodyToParse);
-    }
+    return String(bodyToParse);
+  }
 }
 function createParseError(response, err) {
-    const msg = `Error "${err}" occurred while parsing the response body - ${response.bodyAsText}.`;
-    const errCode = err.code ?? restError_js_1.RestError.PARSE_ERROR;
-    return new restError_js_1.RestError(msg, {
-        code: errCode,
-        statusCode: response.status,
-        request: response.request,
-        response: response,
-    });
+  const msg = `Error "${err}" occurred while parsing the response body - ${response.bodyAsText}.`;
+  const errCode = err.code ?? import_restError.RestError.PARSE_ERROR;
+  return new import_restError.RestError(msg, {
+    code: errCode,
+    statusCode: response.status,
+    request: response.request,
+    response
+  });
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=sendRequest.js.map
+
 
 /***/ }),
 
 /***/ 37088:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.buildRequestUrl = buildRequestUrl;
-exports.buildBaseUrl = buildBaseUrl;
-exports.replaceAll = replaceAll;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var urlHelpers_exports = {};
+__export(urlHelpers_exports, {
+  appendQueryParams: () => appendQueryParams,
+  buildBaseUrl: () => buildBaseUrl,
+  buildRequestUrl: () => buildRequestUrl,
+  replaceAll: () => replaceAll
+});
+module.exports = __toCommonJS(urlHelpers_exports);
 function isQueryParameterWithOptions(x) {
-    const value = x.value;
-    return (value !== undefined && value.toString !== undefined && typeof value.toString === "function");
+  if (typeof x !== "object" || x === null || !Object.hasOwn(x, "value")) {
+    return false;
+  }
+  const value = x.value;
+  return typeof value?.toString === "function";
 }
-/**
- * Builds the request url, filling in query and path parameters
- * @param endpoint - base url which can be a template url
- * @param routePath - path to append to the endpoint
- * @param pathParameters - values of the path parameters
- * @param options - request parameters including query parameters
- * @returns a full url with path and query parameters
- */
 function buildRequestUrl(endpoint, routePath, pathParameters, options = {}) {
-    if (routePath.startsWith("https://") || routePath.startsWith("http://")) {
-        return routePath;
-    }
-    endpoint = buildBaseUrl(endpoint, options);
-    routePath = buildRoutePath(routePath, pathParameters, options);
-    const requestUrl = appendQueryParams(`${endpoint}/${routePath}`, options);
-    const url = new URL(requestUrl);
-    return (url
-        .toString()
-        // Remove double forward slashes
-        .replace(/([^:]\/)\/+/g, "$1"));
+  if (routePath.startsWith("https://") || routePath.startsWith("http://")) {
+    return routePath;
+  }
+  endpoint = buildBaseUrl(endpoint, options);
+  const updatedRoutePath = buildRoutePath(routePath, pathParameters, options);
+  const requestUrl = appendQueryParams(appendPath(endpoint, updatedRoutePath), options);
+  const url = new URL(requestUrl);
+  return url.toString();
+}
+function appendPath(endpoint, pathToAppend) {
+  const endpointSearchStart = endpoint.indexOf("?");
+  const pathSearchStart = pathToAppend.indexOf("?");
+  const endpointParts = endpointSearchStart !== -1 ? [endpoint.substring(0, endpointSearchStart), endpoint.substring(endpointSearchStart + 1)] : [endpoint, ""];
+  const pathParts = pathSearchStart !== -1 ? [pathToAppend.substring(0, pathSearchStart), pathToAppend.substring(pathSearchStart + 1)] : [pathToAppend, ""];
+  const combinedSearch = [endpointParts[1], pathParts[1].replaceAll("?", "&")].filter(Boolean).join("&");
+  const baseEndpoint = endpointParts[0].replace(/(^[^:]+:\/\/[^/]+)\/\/+/, "$1/");
+  const basePathToAppend = pathParts[0];
+  let combinedUrl = baseEndpoint;
+  if (!baseEndpoint.endsWith("/") && !basePathToAppend.startsWith("/") && basePathToAppend !== "") {
+    combinedUrl += `/${basePathToAppend}`;
+  } else if (baseEndpoint.endsWith("/") && basePathToAppend.startsWith("/")) {
+    combinedUrl += basePathToAppend.substring(1);
+  } else {
+    combinedUrl += basePathToAppend;
+  }
+  if (combinedSearch) {
+    combinedUrl += `?${combinedSearch}`;
+  }
+  return combinedUrl;
 }
 function getQueryParamValue(key, allowReserved, style, param) {
-    let separator;
-    if (style === "pipeDelimited") {
-        separator = "|";
+  let separator;
+  if (style === "pipeDelimited") {
+    separator = "|";
+  } else if (style === "spaceDelimited") {
+    separator = "%20";
+  } else {
+    separator = ",";
+  }
+  let paramValues;
+  if (Array.isArray(param)) {
+    paramValues = param;
+  } else if (typeof param === "object" && param.toString === Object.prototype.toString) {
+    paramValues = Object.entries(param).flat();
+  } else {
+    paramValues = [param];
+  }
+  const value = paramValues.map((p) => {
+    if (p === null || p === void 0) {
+      return "";
     }
-    else if (style === "spaceDelimited") {
-        separator = "%20";
+    if (!p.toString || typeof p.toString !== "function") {
+      throw new Error(`Query parameters must be able to be represented as string, ${key} can't`);
     }
-    else {
-        separator = ",";
+    const rawValue = p.toISOString !== void 0 ? p.toISOString() : p.toString();
+    return allowReserved ? rawValue : encodeURIComponent(rawValue);
+  }).join(separator);
+  return `${allowReserved ? key : encodeURIComponent(key)}=${value}`;
+}
+function simpleParseQueryParams(queryString) {
+  const result = /* @__PURE__ */ new Map();
+  if (!queryString || queryString[0] !== "?") {
+    return result;
+  }
+  queryString = queryString.slice(1);
+  const pairs = queryString.split("&");
+  for (const pair of pairs) {
+    const eqIndex = pair.indexOf("=");
+    const name = eqIndex === -1 ? pair : pair.substring(0, eqIndex);
+    const value = eqIndex === -1 ? "" : pair.substring(eqIndex + 1);
+    const existingValue = result.get(name);
+    if (existingValue !== void 0) {
+      if (Array.isArray(existingValue)) {
+        existingValue.push(value);
+      } else {
+        result.set(name, [existingValue, value]);
+      }
+    } else {
+      result.set(name, value);
     }
-    let paramValues;
-    if (Array.isArray(param)) {
-        paramValues = param;
-    }
-    else if (typeof param === "object" && param.toString === Object.prototype.toString) {
-        // If the parameter is an object without a custom toString implementation (e.g. a Date),
-        // then we should deconstruct the object into an array [key1, value1, key2, value2, ...].
-        paramValues = Object.entries(param).flat();
-    }
-    else {
-        paramValues = [param];
-    }
-    const value = paramValues
-        .map((p) => {
-        if (p === null || p === undefined) {
-            return "";
-        }
-        if (!p.toString || typeof p.toString !== "function") {
-            throw new Error(`Query parameters must be able to be represented as string, ${key} can't`);
-        }
-        const rawValue = p.toISOString !== undefined ? p.toISOString() : p.toString();
-        return allowReserved ? rawValue : encodeURIComponent(rawValue);
-    })
-        .join(separator);
-    return `${allowReserved ? key : encodeURIComponent(key)}=${value}`;
+  }
+  return result;
 }
 function appendQueryParams(url, options = {}) {
-    if (!options.queryParameters) {
-        return url;
+  if (!options.queryParameters) {
+    return url;
+  }
+  const parsedUrl = new URL(url);
+  const queryParams = options.queryParameters;
+  const existingParams = simpleParseQueryParams(parsedUrl.search);
+  const newParamStrings = [];
+  for (const key of Object.keys(queryParams)) {
+    const param = queryParams[key];
+    if (param === void 0 || param === null) {
+      continue;
     }
-    const parsedUrl = new URL(url);
-    const queryParams = options.queryParameters;
-    const paramStrings = [];
-    for (const key of Object.keys(queryParams)) {
-        const param = queryParams[key];
-        if (param === undefined || param === null) {
-            continue;
+    const hasMetadata = isQueryParameterWithOptions(param);
+    const rawValue = hasMetadata ? param.value : param;
+    const explode = hasMetadata ? param.explode ?? false : false;
+    const style = hasMetadata && param.style ? param.style : "form";
+    if (explode) {
+      if (Array.isArray(rawValue)) {
+        for (const item of rawValue) {
+          newParamStrings.push(
+            getQueryParamValue(key, options.skipUrlEncoding ?? false, style, item)
+          );
         }
-        const hasMetadata = isQueryParameterWithOptions(param);
-        const rawValue = hasMetadata ? param.value : param;
-        const explode = hasMetadata ? (param.explode ?? false) : false;
-        const style = hasMetadata && param.style ? param.style : "form";
-        if (explode) {
-            if (Array.isArray(rawValue)) {
-                for (const item of rawValue) {
-                    paramStrings.push(getQueryParamValue(key, options.skipUrlEncoding ?? false, style, item));
-                }
-            }
-            else if (typeof rawValue === "object") {
-                // For object explode, the name of the query parameter is ignored and we use the object key instead
-                for (const [actualKey, value] of Object.entries(rawValue)) {
-                    paramStrings.push(getQueryParamValue(actualKey, options.skipUrlEncoding ?? false, style, value));
-                }
-            }
-            else {
-                // Explode doesn't really make sense for primitives
-                throw new Error("explode can only be set to true for objects and arrays");
-            }
+      } else if (rawValue !== null && typeof rawValue === "object") {
+        for (const [actualKey, value] of Object.entries(rawValue)) {
+          newParamStrings.push(
+            getQueryParamValue(actualKey, options.skipUrlEncoding ?? false, style, value)
+          );
         }
-        else {
-            paramStrings.push(getQueryParamValue(key, options.skipUrlEncoding ?? false, style, rawValue));
-        }
+      } else {
+        throw new Error("explode can only be set to true for objects and arrays");
+      }
+    } else {
+      newParamStrings.push(
+        getQueryParamValue(key, options.skipUrlEncoding ?? false, style, rawValue)
+      );
     }
-    if (parsedUrl.search !== "") {
-        parsedUrl.search += "&";
+  }
+  for (const paramString of newParamStrings) {
+    const eqIndex = paramString.indexOf("=");
+    const name = paramString.substring(0, eqIndex);
+    const value = paramString.substring(eqIndex + 1);
+    const existingValue = existingParams.get(name);
+    if (existingValue !== void 0) {
+      if (Array.isArray(existingValue)) {
+        if (!existingValue.includes(value)) {
+          existingValue.push(value);
+        }
+      } else if (existingValue !== value) {
+        existingParams.set(name, [existingValue, value]);
+      }
+    } else {
+      existingParams.set(name, value);
     }
-    parsedUrl.search += paramStrings.join("&");
-    return parsedUrl.toString();
+  }
+  const searchPieces = [];
+  for (const [name, value] of existingParams) {
+    if (Array.isArray(value)) {
+      for (const subValue of value) {
+        searchPieces.push(`${name}=${subValue}`);
+      }
+    } else {
+      searchPieces.push(`${name}=${value}`);
+    }
+  }
+  parsedUrl.search = searchPieces.length ? `?${searchPieces.join("&")}` : "";
+  return parsedUrl.toString();
 }
 function buildBaseUrl(endpoint, options) {
-    if (!options.pathParameters) {
-        return endpoint;
-    }
-    const pathParams = options.pathParameters;
-    for (const [key, param] of Object.entries(pathParams)) {
-        if (param === undefined || param === null) {
-            throw new Error(`Path parameters ${key} must not be undefined or null`);
-        }
-        if (!param.toString || typeof param.toString !== "function") {
-            throw new Error(`Path parameters must be able to be represented as string, ${key} can't`);
-        }
-        let value = param.toISOString !== undefined ? param.toISOString() : String(param);
-        if (!options.skipUrlEncoding) {
-            value = encodeURIComponent(param);
-        }
-        endpoint = replaceAll(endpoint, `{${key}}`, value) ?? "";
-    }
+  if (!options.pathParameters) {
     return endpoint;
+  }
+  const pathParams = options.pathParameters;
+  for (const [key, param] of Object.entries(pathParams)) {
+    if (param === void 0 || param === null) {
+      throw new Error(`Path parameters ${key} must not be undefined or null`);
+    }
+    if (!param.toString || typeof param.toString !== "function") {
+      throw new Error(`Path parameters must be able to be represented as string, ${key} can't`);
+    }
+    let value = param.toISOString !== void 0 ? param.toISOString() : String(param);
+    if (!options.skipUrlEncoding) {
+      value = encodeURIComponent(param);
+    }
+    endpoint = replaceAll(endpoint, `{${key}}`, value) ?? "";
+  }
+  return endpoint;
 }
 function buildRoutePath(routePath, pathParameters, options = {}) {
-    for (const pathParam of pathParameters) {
-        const allowReserved = typeof pathParam === "object" && (pathParam.allowReserved ?? false);
-        let value = typeof pathParam === "object" ? pathParam.value : pathParam;
-        if (!options.skipUrlEncoding && !allowReserved) {
-            value = encodeURIComponent(value);
-        }
-        routePath = routePath.replace(/\{[\w-]+\}/, String(value));
+  for (const pathParam of pathParameters) {
+    const allowReserved = typeof pathParam === "object" && (pathParam.allowReserved ?? false);
+    let value = typeof pathParam === "object" ? pathParam.value : pathParam;
+    if (!options.skipUrlEncoding && !allowReserved) {
+      value = encodeURIComponent(value);
     }
-    return routePath;
+    routePath = routePath.replace(/\{[\w-]+\}/, String(value));
+  }
+  return routePath;
 }
-/**
- * Replace all of the instances of searchValue in value with the provided replaceValue.
- * @param value - The value to search and replace in.
- * @param searchValue - The value to search for in the value argument.
- * @param replaceValue - The value to replace searchValue with in the value argument.
- * @returns The value where each instance of searchValue was replaced with replacedValue.
- */
 function replaceAll(value, searchValue, replaceValue) {
-    return !value || !searchValue ? value : value.split(searchValue).join(replaceValue || "");
+  return !value || !searchValue ? value : value.split(searchValue).join(replaceValue || "");
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=urlHelpers.js.map
+
 
 /***/ }),
 
 /***/ 31255:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DEFAULT_RETRY_POLICY_COUNT = exports.SDK_VERSION = void 0;
-exports.SDK_VERSION = "0.3.2";
-exports.DEFAULT_RETRY_POLICY_COUNT = 3;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var constants_exports = {};
+__export(constants_exports, {
+  DEFAULT_RETRY_POLICY_COUNT: () => DEFAULT_RETRY_POLICY_COUNT,
+  SDK_VERSION: () => SDK_VERSION
+});
+module.exports = __toCommonJS(constants_exports);
+const SDK_VERSION = "0.3.5";
+const DEFAULT_RETRY_POLICY_COUNT = 3;
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=constants.js.map
+
 
 /***/ }),
 
 /***/ 91810:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createPipelineFromOptions = createPipelineFromOptions;
-const logPolicy_js_1 = __nccwpck_require__(47129);
-const pipeline_js_1 = __nccwpck_require__(22338);
-const redirectPolicy_js_1 = __nccwpck_require__(92187);
-const userAgentPolicy_js_1 = __nccwpck_require__(91691);
-const decompressResponsePolicy_js_1 = __nccwpck_require__(35035);
-const defaultRetryPolicy_js_1 = __nccwpck_require__(32462);
-const formDataPolicy_js_1 = __nccwpck_require__(14197);
-const checkEnvironment_js_1 = __nccwpck_require__(85086);
-const proxyPolicy_js_1 = __nccwpck_require__(80067);
-const agentPolicy_js_1 = __nccwpck_require__(85366);
-const tlsPolicy_js_1 = __nccwpck_require__(96690);
-const multipartPolicy_js_1 = __nccwpck_require__(27427);
-/**
- * Create a new pipeline with a default set of customizable policies.
- * @param options - Options to configure a custom pipeline.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var createPipelineFromOptions_exports = {};
+__export(createPipelineFromOptions_exports, {
+  createPipelineFromOptions: () => createPipelineFromOptions
+});
+module.exports = __toCommonJS(createPipelineFromOptions_exports);
+var import_logPolicy = __nccwpck_require__(47129);
+var import_pipeline = __nccwpck_require__(22338);
+var import_redirectPolicy = __nccwpck_require__(92187);
+var import_userAgentPolicy = __nccwpck_require__(91691);
+var import_decompressResponsePolicy = __nccwpck_require__(35035);
+var import_defaultRetryPolicy = __nccwpck_require__(32462);
+var import_formDataPolicy = __nccwpck_require__(14197);
+var import_checkEnvironment = __nccwpck_require__(85086);
+var import_proxyPolicy = __nccwpck_require__(80067);
+var import_agentPolicy = __nccwpck_require__(85366);
+var import_tlsPolicy = __nccwpck_require__(96690);
+var import_multipartPolicy = __nccwpck_require__(27427);
 function createPipelineFromOptions(options) {
-    const pipeline = (0, pipeline_js_1.createEmptyPipeline)();
-    if (checkEnvironment_js_1.isNodeLike) {
-        if (options.agent) {
-            pipeline.addPolicy((0, agentPolicy_js_1.agentPolicy)(options.agent));
-        }
-        if (options.tlsOptions) {
-            pipeline.addPolicy((0, tlsPolicy_js_1.tlsPolicy)(options.tlsOptions));
-        }
-        pipeline.addPolicy((0, proxyPolicy_js_1.proxyPolicy)(options.proxyOptions));
-        pipeline.addPolicy((0, decompressResponsePolicy_js_1.decompressResponsePolicy)());
+  const pipeline = (0, import_pipeline.createEmptyPipeline)();
+  if (import_checkEnvironment.isNodeLike) {
+    if (options.agent) {
+      pipeline.addPolicy((0, import_agentPolicy.agentPolicy)(options.agent));
     }
-    pipeline.addPolicy((0, formDataPolicy_js_1.formDataPolicy)(), { beforePolicies: [multipartPolicy_js_1.multipartPolicyName] });
-    pipeline.addPolicy((0, userAgentPolicy_js_1.userAgentPolicy)(options.userAgentOptions));
-    // The multipart policy is added after policies with no phase, so that
-    // policies can be added between it and formDataPolicy to modify
-    // properties (e.g., making the boundary constant in recorded tests).
-    pipeline.addPolicy((0, multipartPolicy_js_1.multipartPolicy)(), { afterPhase: "Deserialize" });
-    pipeline.addPolicy((0, defaultRetryPolicy_js_1.defaultRetryPolicy)(options.retryOptions), { phase: "Retry" });
-    if (checkEnvironment_js_1.isNodeLike) {
-        // Both XHR and Fetch expect to handle redirects automatically,
-        // so only include this policy when we're in Node.
-        pipeline.addPolicy((0, redirectPolicy_js_1.redirectPolicy)(options.redirectOptions), { afterPhase: "Retry" });
+    if (options.tlsOptions) {
+      pipeline.addPolicy((0, import_tlsPolicy.tlsPolicy)(options.tlsOptions));
     }
-    pipeline.addPolicy((0, logPolicy_js_1.logPolicy)(options.loggingOptions), { afterPhase: "Sign" });
-    return pipeline;
+    pipeline.addPolicy((0, import_proxyPolicy.proxyPolicy)(options.proxyOptions));
+    pipeline.addPolicy((0, import_decompressResponsePolicy.decompressResponsePolicy)());
+  }
+  pipeline.addPolicy((0, import_formDataPolicy.formDataPolicy)(), { beforePolicies: [import_multipartPolicy.multipartPolicyName] });
+  pipeline.addPolicy((0, import_userAgentPolicy.userAgentPolicy)(options.userAgentOptions));
+  pipeline.addPolicy((0, import_multipartPolicy.multipartPolicy)(), { afterPhase: "Deserialize" });
+  pipeline.addPolicy((0, import_defaultRetryPolicy.defaultRetryPolicy)(options.retryOptions), { phase: "Retry" });
+  if (import_checkEnvironment.isNodeLike) {
+    pipeline.addPolicy((0, import_redirectPolicy.redirectPolicy)(options.redirectOptions), { afterPhase: "Retry" });
+  }
+  pipeline.addPolicy((0, import_logPolicy.logPolicy)(options.loggingOptions), { afterPhase: "Sign" });
+  return pipeline;
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=createPipelineFromOptions.js.map
+
 
 /***/ }),
 
 /***/ 69468:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createDefaultHttpClient = createDefaultHttpClient;
-const nodeHttpClient_js_1 = __nccwpck_require__(21167);
-/**
- * Create the correct HttpClient for the current environment.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var defaultHttpClient_exports = {};
+__export(defaultHttpClient_exports, {
+  createDefaultHttpClient: () => createDefaultHttpClient
+});
+module.exports = __toCommonJS(defaultHttpClient_exports);
+var import_nodeHttpClient = __nccwpck_require__(21167);
 function createDefaultHttpClient() {
-    return (0, nodeHttpClient_js_1.createNodeHttpClient)();
+  return (0, import_nodeHttpClient.createNodeHttpClient)();
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=defaultHttpClient.js.map
+
 
 /***/ }),
 
 /***/ 4220:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createHttpHeaders = createHttpHeaders;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var httpHeaders_exports = {};
+__export(httpHeaders_exports, {
+  createHttpHeaders: () => createHttpHeaders
+});
+module.exports = __toCommonJS(httpHeaders_exports);
 function normalizeName(name) {
-    return name.toLowerCase();
+  return name.toLowerCase();
 }
 function* headerIterator(map) {
-    for (const entry of map.values()) {
-        yield [entry.name, entry.value];
-    }
+  for (const entry of map.values()) {
+    yield [entry.name, entry.value];
+  }
 }
 class HttpHeadersImpl {
-    _headersMap;
-    constructor(rawHeaders) {
-        this._headersMap = new Map();
-        if (rawHeaders) {
-            for (const headerName of Object.keys(rawHeaders)) {
-                this.set(headerName, rawHeaders[headerName]);
-            }
-        }
+  _headersMap;
+  constructor(rawHeaders) {
+    this._headersMap = /* @__PURE__ */ new Map();
+    if (rawHeaders) {
+      for (const headerName of Object.keys(rawHeaders)) {
+        this.set(headerName, rawHeaders[headerName]);
+      }
     }
-    /**
-     * Set a header in this collection with the provided name and value. The name is
-     * case-insensitive.
-     * @param name - The name of the header to set. This value is case-insensitive.
-     * @param value - The value of the header to set.
-     */
-    set(name, value) {
-        this._headersMap.set(normalizeName(name), { name, value: String(value).trim() });
+  }
+  /**
+   * Set a header in this collection with the provided name and value. The name is
+   * case-insensitive.
+   * @param name - The name of the header to set. This value is case-insensitive.
+   * @param value - The value of the header to set.
+   */
+  set(name, value) {
+    this._headersMap.set(normalizeName(name), { name, value: String(value).trim() });
+  }
+  /**
+   * Get the header value for the provided header name, or undefined if no header exists in this
+   * collection with the provided name.
+   * @param name - The name of the header. This value is case-insensitive.
+   */
+  get(name) {
+    return this._headersMap.get(normalizeName(name))?.value;
+  }
+  /**
+   * Get whether or not this header collection contains a header entry for the provided header name.
+   * @param name - The name of the header to set. This value is case-insensitive.
+   */
+  has(name) {
+    return this._headersMap.has(normalizeName(name));
+  }
+  /**
+   * Remove the header with the provided headerName.
+   * @param name - The name of the header to remove.
+   */
+  delete(name) {
+    this._headersMap.delete(normalizeName(name));
+  }
+  /**
+   * Get the JSON object representation of this HTTP header collection.
+   */
+  toJSON(options = {}) {
+    const result = {};
+    if (options.preserveCase) {
+      for (const entry of this._headersMap.values()) {
+        result[entry.name] = entry.value;
+      }
+    } else {
+      for (const [normalizedName, entry] of this._headersMap) {
+        result[normalizedName] = entry.value;
+      }
     }
-    /**
-     * Get the header value for the provided header name, or undefined if no header exists in this
-     * collection with the provided name.
-     * @param name - The name of the header. This value is case-insensitive.
-     */
-    get(name) {
-        return this._headersMap.get(normalizeName(name))?.value;
-    }
-    /**
-     * Get whether or not this header collection contains a header entry for the provided header name.
-     * @param name - The name of the header to set. This value is case-insensitive.
-     */
-    has(name) {
-        return this._headersMap.has(normalizeName(name));
-    }
-    /**
-     * Remove the header with the provided headerName.
-     * @param name - The name of the header to remove.
-     */
-    delete(name) {
-        this._headersMap.delete(normalizeName(name));
-    }
-    /**
-     * Get the JSON object representation of this HTTP header collection.
-     */
-    toJSON(options = {}) {
-        const result = {};
-        if (options.preserveCase) {
-            for (const entry of this._headersMap.values()) {
-                result[entry.name] = entry.value;
-            }
-        }
-        else {
-            for (const [normalizedName, entry] of this._headersMap) {
-                result[normalizedName] = entry.value;
-            }
-        }
-        return result;
-    }
-    /**
-     * Get the string representation of this HTTP header collection.
-     */
-    toString() {
-        return JSON.stringify(this.toJSON({ preserveCase: true }));
-    }
-    /**
-     * Iterate over tuples of header [name, value] pairs.
-     */
-    [Symbol.iterator]() {
-        return headerIterator(this._headersMap);
-    }
+    return result;
+  }
+  /**
+   * Get the string representation of this HTTP header collection.
+   */
+  toString() {
+    return JSON.stringify(this.toJSON({ preserveCase: true }));
+  }
+  /**
+   * Iterate over tuples of header [name, value] pairs.
+   */
+  [Symbol.iterator]() {
+    return headerIterator(this._headersMap);
+  }
 }
-/**
- * Creates an object that satisfies the `HttpHeaders` interface.
- * @param rawHeaders - A simple object representing initial headers
- */
 function createHttpHeaders(rawHeaders) {
-    return new HttpHeadersImpl(rawHeaders);
+  return new HttpHeadersImpl(rawHeaders);
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=httpHeaders.js.map
+
 
 /***/ }),
 
 /***/ 41958:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createRestError = exports.operationOptionsToRequestParameters = exports.getClient = exports.createDefaultHttpClient = exports.uint8ArrayToString = exports.stringToUint8Array = exports.isRestError = exports.RestError = exports.createEmptyPipeline = exports.createPipelineRequest = exports.createHttpHeaders = exports.TypeSpecRuntimeLogger = exports.setLogLevel = exports.getLogLevel = exports.createClientLogger = exports.AbortError = void 0;
-const tslib_1 = __nccwpck_require__(61860);
-var AbortError_js_1 = __nccwpck_require__(99992);
-Object.defineProperty(exports, "AbortError", ({ enumerable: true, get: function () { return AbortError_js_1.AbortError; } }));
-var logger_js_1 = __nccwpck_require__(18459);
-Object.defineProperty(exports, "createClientLogger", ({ enumerable: true, get: function () { return logger_js_1.createClientLogger; } }));
-Object.defineProperty(exports, "getLogLevel", ({ enumerable: true, get: function () { return logger_js_1.getLogLevel; } }));
-Object.defineProperty(exports, "setLogLevel", ({ enumerable: true, get: function () { return logger_js_1.setLogLevel; } }));
-Object.defineProperty(exports, "TypeSpecRuntimeLogger", ({ enumerable: true, get: function () { return logger_js_1.TypeSpecRuntimeLogger; } }));
-var httpHeaders_js_1 = __nccwpck_require__(4220);
-Object.defineProperty(exports, "createHttpHeaders", ({ enumerable: true, get: function () { return httpHeaders_js_1.createHttpHeaders; } }));
-tslib_1.__exportStar(__nccwpck_require__(92097), exports);
-tslib_1.__exportStar(__nccwpck_require__(43097), exports);
-var pipelineRequest_js_1 = __nccwpck_require__(72305);
-Object.defineProperty(exports, "createPipelineRequest", ({ enumerable: true, get: function () { return pipelineRequest_js_1.createPipelineRequest; } }));
-var pipeline_js_1 = __nccwpck_require__(22338);
-Object.defineProperty(exports, "createEmptyPipeline", ({ enumerable: true, get: function () { return pipeline_js_1.createEmptyPipeline; } }));
-var restError_js_1 = __nccwpck_require__(9758);
-Object.defineProperty(exports, "RestError", ({ enumerable: true, get: function () { return restError_js_1.RestError; } }));
-Object.defineProperty(exports, "isRestError", ({ enumerable: true, get: function () { return restError_js_1.isRestError; } }));
-var bytesEncoding_js_1 = __nccwpck_require__(82921);
-Object.defineProperty(exports, "stringToUint8Array", ({ enumerable: true, get: function () { return bytesEncoding_js_1.stringToUint8Array; } }));
-Object.defineProperty(exports, "uint8ArrayToString", ({ enumerable: true, get: function () { return bytesEncoding_js_1.uint8ArrayToString; } }));
-var defaultHttpClient_js_1 = __nccwpck_require__(69468);
-Object.defineProperty(exports, "createDefaultHttpClient", ({ enumerable: true, get: function () { return defaultHttpClient_js_1.createDefaultHttpClient; } }));
-var getClient_js_1 = __nccwpck_require__(86191);
-Object.defineProperty(exports, "getClient", ({ enumerable: true, get: function () { return getClient_js_1.getClient; } }));
-var operationOptionHelpers_js_1 = __nccwpck_require__(19635);
-Object.defineProperty(exports, "operationOptionsToRequestParameters", ({ enumerable: true, get: function () { return operationOptionHelpers_js_1.operationOptionsToRequestParameters; } }));
-var restError_js_2 = __nccwpck_require__(97332);
-Object.defineProperty(exports, "createRestError", ({ enumerable: true, get: function () { return restError_js_2.createRestError; } }));
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var src_exports = {};
+__export(src_exports, {
+  AbortError: () => import_AbortError.AbortError,
+  RestError: () => import_restError.RestError,
+  TypeSpecRuntimeLogger: () => import_logger.TypeSpecRuntimeLogger,
+  createClientLogger: () => import_logger.createClientLogger,
+  createDefaultHttpClient: () => import_defaultHttpClient.createDefaultHttpClient,
+  createEmptyPipeline: () => import_pipeline.createEmptyPipeline,
+  createHttpHeaders: () => import_httpHeaders.createHttpHeaders,
+  createPipelineRequest: () => import_pipelineRequest.createPipelineRequest,
+  createRestError: () => import_restError2.createRestError,
+  getClient: () => import_getClient.getClient,
+  getLogLevel: () => import_logger.getLogLevel,
+  isRestError: () => import_restError.isRestError,
+  operationOptionsToRequestParameters: () => import_operationOptionHelpers.operationOptionsToRequestParameters,
+  setLogLevel: () => import_logger.setLogLevel,
+  stringToUint8Array: () => import_bytesEncoding.stringToUint8Array,
+  uint8ArrayToString: () => import_bytesEncoding.uint8ArrayToString
+});
+module.exports = __toCommonJS(src_exports);
+var import_AbortError = __nccwpck_require__(99992);
+var import_logger = __nccwpck_require__(18459);
+var import_httpHeaders = __nccwpck_require__(4220);
+var import_pipelineRequest = __nccwpck_require__(72305);
+var import_pipeline = __nccwpck_require__(22338);
+var import_restError = __nccwpck_require__(9758);
+var import_bytesEncoding = __nccwpck_require__(82921);
+var import_defaultHttpClient = __nccwpck_require__(69468);
+var import_getClient = __nccwpck_require__(86191);
+var import_operationOptionHelpers = __nccwpck_require__(19635);
+var import_restError2 = __nccwpck_require__(97332);
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=index.js.map
+
 
 /***/ }),
 
 /***/ 3644:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.logger = void 0;
-const logger_js_1 = __nccwpck_require__(18459);
-exports.logger = (0, logger_js_1.createClientLogger)("ts-http-runtime");
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var log_exports = {};
+__export(log_exports, {
+  logger: () => logger
+});
+module.exports = __toCommonJS(log_exports);
+var import_logger = __nccwpck_require__(18459);
+const logger = (0, import_logger.createClientLogger)("ts-http-runtime");
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=log.js.map
+
 
 /***/ }),
 
 /***/ 36836:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const log_js_1 = __nccwpck_require__(38029);
-const debugEnvVariable = (typeof process !== "undefined" && process.env && process.env.DEBUG) || undefined;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var debug_exports = {};
+__export(debug_exports, {
+  default: () => debug_default
+});
+module.exports = __toCommonJS(debug_exports);
+var import_log = __nccwpck_require__(38029);
+const debugEnvVariable = typeof process !== "undefined" && process.env && process.env.DEBUG || void 0;
 let enabledString;
 let enabledNamespaces = [];
 let skippedNamespaces = [];
 const debuggers = [];
 if (debugEnvVariable) {
-    enable(debugEnvVariable);
+  enable(debugEnvVariable);
 }
-const debugObj = Object.assign((namespace) => {
+const debugObj = Object.assign(
+  (namespace) => {
     return createDebugger(namespace);
-}, {
+  },
+  {
     enable,
     enabled,
     disable,
-    log: log_js_1.log,
-});
+    log: import_log.log
+  }
+);
 function enable(namespaces) {
-    enabledString = namespaces;
-    enabledNamespaces = [];
-    skippedNamespaces = [];
-    const namespaceList = namespaces.split(",").map((ns) => ns.trim());
-    for (const ns of namespaceList) {
-        if (ns.startsWith("-")) {
-            skippedNamespaces.push(ns.substring(1));
-        }
-        else {
-            enabledNamespaces.push(ns);
-        }
+  enabledString = namespaces;
+  enabledNamespaces = [];
+  skippedNamespaces = [];
+  const namespaceList = namespaces.split(",").map((ns) => ns.trim());
+  for (const ns of namespaceList) {
+    if (ns.startsWith("-")) {
+      skippedNamespaces.push(ns.substring(1));
+    } else {
+      enabledNamespaces.push(ns);
     }
-    for (const instance of debuggers) {
-        instance.enabled = enabled(instance.namespace);
-    }
+  }
+  for (const instance of debuggers) {
+    instance.enabled = enabled(instance.namespace);
+  }
 }
 function enabled(namespace) {
-    if (namespace.endsWith("*")) {
-        return true;
+  if (namespace.endsWith("*")) {
+    return true;
+  }
+  for (const skipped of skippedNamespaces) {
+    if (namespaceMatches(namespace, skipped)) {
+      return false;
     }
-    for (const skipped of skippedNamespaces) {
-        if (namespaceMatches(namespace, skipped)) {
-            return false;
-        }
+  }
+  for (const enabledNamespace of enabledNamespaces) {
+    if (namespaceMatches(namespace, enabledNamespace)) {
+      return true;
     }
-    for (const enabledNamespace of enabledNamespaces) {
-        if (namespaceMatches(namespace, enabledNamespace)) {
-            return true;
-        }
-    }
-    return false;
+  }
+  return false;
 }
-/**
- * Given a namespace, check if it matches a pattern.
- * Patterns only have a single wildcard character which is *.
- * The behavior of * is that it matches zero or more other characters.
- */
 function namespaceMatches(namespace, patternToMatch) {
-    // simple case, no pattern matching required
-    if (patternToMatch.indexOf("*") === -1) {
-        return namespace === patternToMatch;
+  if (patternToMatch.indexOf("*") === -1) {
+    return namespace === patternToMatch;
+  }
+  let pattern = patternToMatch;
+  if (patternToMatch.indexOf("**") !== -1) {
+    const patternParts = [];
+    let lastCharacter = "";
+    for (const character of patternToMatch) {
+      if (character === "*" && lastCharacter === "*") {
+        continue;
+      } else {
+        lastCharacter = character;
+        patternParts.push(character);
+      }
     }
-    let pattern = patternToMatch;
-    // normalize successive * if needed
-    if (patternToMatch.indexOf("**") !== -1) {
-        const patternParts = [];
-        let lastCharacter = "";
-        for (const character of patternToMatch) {
-            if (character === "*" && lastCharacter === "*") {
-                continue;
-            }
-            else {
-                lastCharacter = character;
-                patternParts.push(character);
-            }
+    pattern = patternParts.join("");
+  }
+  let namespaceIndex = 0;
+  let patternIndex = 0;
+  const patternLength = pattern.length;
+  const namespaceLength = namespace.length;
+  let lastWildcard = -1;
+  let lastWildcardNamespace = -1;
+  while (namespaceIndex < namespaceLength && patternIndex < patternLength) {
+    if (pattern[patternIndex] === "*") {
+      lastWildcard = patternIndex;
+      patternIndex++;
+      if (patternIndex === patternLength) {
+        return true;
+      }
+      while (namespace[namespaceIndex] !== pattern[patternIndex]) {
+        namespaceIndex++;
+        if (namespaceIndex === namespaceLength) {
+          return false;
         }
-        pattern = patternParts.join("");
+      }
+      lastWildcardNamespace = namespaceIndex;
+      namespaceIndex++;
+      patternIndex++;
+      continue;
+    } else if (pattern[patternIndex] === namespace[namespaceIndex]) {
+      patternIndex++;
+      namespaceIndex++;
+    } else if (lastWildcard >= 0) {
+      patternIndex = lastWildcard + 1;
+      namespaceIndex = lastWildcardNamespace + 1;
+      if (namespaceIndex === namespaceLength) {
+        return false;
+      }
+      while (namespace[namespaceIndex] !== pattern[patternIndex]) {
+        namespaceIndex++;
+        if (namespaceIndex === namespaceLength) {
+          return false;
+        }
+      }
+      lastWildcardNamespace = namespaceIndex;
+      namespaceIndex++;
+      patternIndex++;
+      continue;
+    } else {
+      return false;
     }
-    let namespaceIndex = 0;
-    let patternIndex = 0;
-    const patternLength = pattern.length;
-    const namespaceLength = namespace.length;
-    let lastWildcard = -1;
-    let lastWildcardNamespace = -1;
-    while (namespaceIndex < namespaceLength && patternIndex < patternLength) {
-        if (pattern[patternIndex] === "*") {
-            lastWildcard = patternIndex;
-            patternIndex++;
-            if (patternIndex === patternLength) {
-                // if wildcard is the last character, it will match the remaining namespace string
-                return true;
-            }
-            // now we let the wildcard eat characters until we match the next literal in the pattern
-            while (namespace[namespaceIndex] !== pattern[patternIndex]) {
-                namespaceIndex++;
-                // reached the end of the namespace without a match
-                if (namespaceIndex === namespaceLength) {
-                    return false;
-                }
-            }
-            // now that we have a match, let's try to continue on
-            // however, it's possible we could find a later match
-            // so keep a reference in case we have to backtrack
-            lastWildcardNamespace = namespaceIndex;
-            namespaceIndex++;
-            patternIndex++;
-            continue;
-        }
-        else if (pattern[patternIndex] === namespace[namespaceIndex]) {
-            // simple case: literal pattern matches so keep going
-            patternIndex++;
-            namespaceIndex++;
-        }
-        else if (lastWildcard >= 0) {
-            // special case: we don't have a literal match, but there is a previous wildcard
-            // which we can backtrack to and try having the wildcard eat the match instead
-            patternIndex = lastWildcard + 1;
-            namespaceIndex = lastWildcardNamespace + 1;
-            // we've reached the end of the namespace without a match
-            if (namespaceIndex === namespaceLength) {
-                return false;
-            }
-            // similar to the previous logic, let's keep going until we find the next literal match
-            while (namespace[namespaceIndex] !== pattern[patternIndex]) {
-                namespaceIndex++;
-                if (namespaceIndex === namespaceLength) {
-                    return false;
-                }
-            }
-            lastWildcardNamespace = namespaceIndex;
-            namespaceIndex++;
-            patternIndex++;
-            continue;
-        }
-        else {
-            return false;
-        }
-    }
-    const namespaceDone = namespaceIndex === namespace.length;
-    const patternDone = patternIndex === pattern.length;
-    // this is to detect the case of an unneeded final wildcard
-    // e.g. the pattern `ab*` should match the string `ab`
-    const trailingWildCard = patternIndex === pattern.length - 1 && pattern[patternIndex] === "*";
-    return namespaceDone && (patternDone || trailingWildCard);
+  }
+  const namespaceDone = namespaceIndex === namespace.length;
+  const patternDone = patternIndex === pattern.length;
+  const trailingWildCard = patternIndex === pattern.length - 1 && pattern[patternIndex] === "*";
+  return namespaceDone && (patternDone || trailingWildCard);
 }
 function disable() {
-    const result = enabledString || "";
-    enable("");
-    return result;
+  const result = enabledString || "";
+  enable("");
+  return result;
 }
 function createDebugger(namespace) {
-    const newDebugger = Object.assign(debug, {
-        enabled: enabled(namespace),
-        destroy,
-        log: debugObj.log,
-        namespace,
-        extend,
-    });
-    function debug(...args) {
-        if (!newDebugger.enabled) {
-            return;
-        }
-        if (args.length > 0) {
-            args[0] = `${namespace} ${args[0]}`;
-        }
-        newDebugger.log(...args);
+  const newDebugger = Object.assign(debug, {
+    enabled: enabled(namespace),
+    destroy,
+    log: debugObj.log,
+    namespace,
+    extend
+  });
+  function debug(...args) {
+    if (!newDebugger.enabled) {
+      return;
     }
-    debuggers.push(newDebugger);
-    return newDebugger;
+    if (args.length > 0) {
+      args[0] = `${namespace} ${args[0]}`;
+    }
+    newDebugger.log(...args);
+  }
+  debuggers.push(newDebugger);
+  return newDebugger;
 }
 function destroy() {
-    const index = debuggers.indexOf(this);
-    if (index >= 0) {
-        debuggers.splice(index, 1);
-        return true;
-    }
-    return false;
+  const index = debuggers.indexOf(this);
+  if (index >= 0) {
+    debuggers.splice(index, 1);
+    return true;
+  }
+  return false;
 }
 function extend(namespace) {
-    const newDebugger = createDebugger(`${this.namespace}:${namespace}`);
-    newDebugger.log = this.log;
-    return newDebugger;
+  const newDebugger = createDebugger(`${this.namespace}:${namespace}`);
+  newDebugger.log = this.log;
+  return newDebugger;
 }
-exports["default"] = debugObj;
+var debug_default = debugObj;
 //# sourceMappingURL=debug.js.map
+
 
 /***/ }),
 
 /***/ 82490:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createLoggerContext = void 0;
-var logger_js_1 = __nccwpck_require__(18459);
-Object.defineProperty(exports, "createLoggerContext", ({ enumerable: true, get: function () { return logger_js_1.createLoggerContext; } }));
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var internal_exports = {};
+__export(internal_exports, {
+  createLoggerContext: () => import_logger.createLoggerContext
+});
+module.exports = __toCommonJS(internal_exports);
+var import_logger = __nccwpck_require__(18459);
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=internal.js.map
+
 
 /***/ }),
 
 /***/ 38029:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.log = log;
-const tslib_1 = __nccwpck_require__(61860);
-const node_os_1 = __nccwpck_require__(48161);
-const node_util_1 = tslib_1.__importDefault(__nccwpck_require__(57975));
-const node_process_1 = tslib_1.__importDefault(__nccwpck_require__(1708));
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var log_exports = {};
+__export(log_exports, {
+  log: () => log
+});
+module.exports = __toCommonJS(log_exports);
+var import_node_os = __nccwpck_require__(48161);
+var import_node_util = __toESM(__nccwpck_require__(57975));
+var import_node_process = __toESM(__nccwpck_require__(1708));
 function log(message, ...args) {
-    node_process_1.default.stderr.write(`${node_util_1.default.format(message, ...args)}${node_os_1.EOL}`);
+  import_node_process.default.stderr.write(`${import_node_util.default.format(message, ...args)}${import_node_os.EOL}`);
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=log.js.map
+
 
 /***/ }),
 
 /***/ 18459:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.TypeSpecRuntimeLogger = void 0;
-exports.createLoggerContext = createLoggerContext;
-exports.setLogLevel = setLogLevel;
-exports.getLogLevel = getLogLevel;
-exports.createClientLogger = createClientLogger;
-const tslib_1 = __nccwpck_require__(61860);
-const debug_js_1 = tslib_1.__importDefault(__nccwpck_require__(36836));
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var logger_exports = {};
+__export(logger_exports, {
+  TypeSpecRuntimeLogger: () => TypeSpecRuntimeLogger,
+  createClientLogger: () => createClientLogger,
+  createLoggerContext: () => createLoggerContext,
+  getLogLevel: () => getLogLevel,
+  setLogLevel: () => setLogLevel
+});
+module.exports = __toCommonJS(logger_exports);
+var import_debug = __toESM(__nccwpck_require__(36836));
 const TYPESPEC_RUNTIME_LOG_LEVELS = ["verbose", "info", "warning", "error"];
 const levelMap = {
-    verbose: 400,
-    info: 300,
-    warning: 200,
-    error: 100,
+  verbose: 400,
+  info: 300,
+  warning: 200,
+  error: 100
 };
 function patchLogMethod(parent, child) {
-    child.log = (...args) => {
-        parent.log(...args);
-    };
+  child.log = (...args) => {
+    parent.log(...args);
+  };
 }
 function isTypeSpecRuntimeLogLevel(level) {
-    return TYPESPEC_RUNTIME_LOG_LEVELS.includes(level);
+  return TYPESPEC_RUNTIME_LOG_LEVELS.includes(level);
 }
-/**
- * Creates a logger context base on the provided options.
- * @param options - The options for creating a logger context.
- * @returns The logger context.
- */
 function createLoggerContext(options) {
-    const registeredLoggers = new Set();
-    const logLevelFromEnv = (typeof process !== "undefined" && process.env && process.env[options.logLevelEnvVarName]) ||
-        undefined;
-    let logLevel;
-    const clientLogger = (0, debug_js_1.default)(options.namespace);
-    clientLogger.log = (...args) => {
-        debug_js_1.default.log(...args);
-    };
-    function contextSetLogLevel(level) {
-        if (level && !isTypeSpecRuntimeLogLevel(level)) {
-            throw new Error(`Unknown log level '${level}'. Acceptable values: ${TYPESPEC_RUNTIME_LOG_LEVELS.join(",")}`);
-        }
-        logLevel = level;
-        const enabledNamespaces = [];
-        for (const logger of registeredLoggers) {
-            if (shouldEnable(logger)) {
-                enabledNamespaces.push(logger.namespace);
-            }
-        }
-        debug_js_1.default.enable(enabledNamespaces.join(","));
+  const registeredLoggers = /* @__PURE__ */ new Set();
+  const logLevelFromEnv = typeof process !== "undefined" && process.env && process.env[options.logLevelEnvVarName] || void 0;
+  let logLevel;
+  const clientLogger = (0, import_debug.default)(options.namespace);
+  clientLogger.log = (...args) => {
+    import_debug.default.log(...args);
+  };
+  function contextSetLogLevel(level) {
+    if (level && !isTypeSpecRuntimeLogLevel(level)) {
+      throw new Error(
+        `Unknown log level '${level}'. Acceptable values: ${TYPESPEC_RUNTIME_LOG_LEVELS.join(",")}`
+      );
     }
-    if (logLevelFromEnv) {
-        // avoid calling setLogLevel because we don't want a mis-set environment variable to crash
-        if (isTypeSpecRuntimeLogLevel(logLevelFromEnv)) {
-            contextSetLogLevel(logLevelFromEnv);
-        }
-        else {
-            console.error(`${options.logLevelEnvVarName} set to unknown log level '${logLevelFromEnv}'; logging is not enabled. Acceptable values: ${TYPESPEC_RUNTIME_LOG_LEVELS.join(", ")}.`);
-        }
+    logLevel = level;
+    const enabledNamespaces = [];
+    for (const logger of registeredLoggers) {
+      if (shouldEnable(logger)) {
+        enabledNamespaces.push(logger.namespace);
+      }
     }
-    function shouldEnable(logger) {
-        return Boolean(logLevel && levelMap[logger.level] <= levelMap[logLevel]);
+    import_debug.default.enable(enabledNamespaces.join(","));
+  }
+  if (logLevelFromEnv) {
+    if (isTypeSpecRuntimeLogLevel(logLevelFromEnv)) {
+      contextSetLogLevel(logLevelFromEnv);
+    } else {
+      console.error(
+        `${options.logLevelEnvVarName} set to unknown log level '${logLevelFromEnv}'; logging is not enabled. Acceptable values: ${TYPESPEC_RUNTIME_LOG_LEVELS.join(
+          ", "
+        )}.`
+      );
     }
-    function createLogger(parent, level) {
-        const logger = Object.assign(parent.extend(level), {
-            level,
-        });
-        patchLogMethod(parent, logger);
-        if (shouldEnable(logger)) {
-            const enabledNamespaces = debug_js_1.default.disable();
-            debug_js_1.default.enable(enabledNamespaces + "," + logger.namespace);
-        }
-        registeredLoggers.add(logger);
-        return logger;
+  }
+  function shouldEnable(logger) {
+    return Boolean(logLevel && levelMap[logger.level] <= levelMap[logLevel]);
+  }
+  function createLogger(parent, level) {
+    const logger = Object.assign(parent.extend(level), {
+      level
+    });
+    patchLogMethod(parent, logger);
+    if (shouldEnable(logger)) {
+      const enabledNamespaces = import_debug.default.disable();
+      import_debug.default.enable(enabledNamespaces + "," + logger.namespace);
     }
-    function contextGetLogLevel() {
-        return logLevel;
-    }
-    function contextCreateClientLogger(namespace) {
-        const clientRootLogger = clientLogger.extend(namespace);
-        patchLogMethod(clientLogger, clientRootLogger);
-        return {
-            error: createLogger(clientRootLogger, "error"),
-            warning: createLogger(clientRootLogger, "warning"),
-            info: createLogger(clientRootLogger, "info"),
-            verbose: createLogger(clientRootLogger, "verbose"),
-        };
-    }
+    registeredLoggers.add(logger);
+    return logger;
+  }
+  function contextGetLogLevel() {
+    return logLevel;
+  }
+  function contextCreateClientLogger(namespace) {
+    const clientRootLogger = clientLogger.extend(namespace);
+    patchLogMethod(clientLogger, clientRootLogger);
     return {
-        setLogLevel: contextSetLogLevel,
-        getLogLevel: contextGetLogLevel,
-        createClientLogger: contextCreateClientLogger,
-        logger: clientLogger,
+      error: createLogger(clientRootLogger, "error"),
+      warning: createLogger(clientRootLogger, "warning"),
+      info: createLogger(clientRootLogger, "info"),
+      verbose: createLogger(clientRootLogger, "verbose")
     };
+  }
+  return {
+    setLogLevel: contextSetLogLevel,
+    getLogLevel: contextGetLogLevel,
+    createClientLogger: contextCreateClientLogger,
+    logger: clientLogger
+  };
 }
 const context = createLoggerContext({
-    logLevelEnvVarName: "TYPESPEC_RUNTIME_LOG_LEVEL",
-    namespace: "typeSpecRuntime",
+  logLevelEnvVarName: "TYPESPEC_RUNTIME_LOG_LEVEL",
+  namespace: "typeSpecRuntime"
 });
-/**
- * Immediately enables logging at the specified log level. If no level is specified, logging is disabled.
- * @param level - The log level to enable for logging.
- * Options from most verbose to least verbose are:
- * - verbose
- * - info
- * - warning
- * - error
- */
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-exports.TypeSpecRuntimeLogger = context.logger;
-/**
- * Retrieves the currently specified log level.
- */
+const TypeSpecRuntimeLogger = context.logger;
 function setLogLevel(logLevel) {
-    context.setLogLevel(logLevel);
+  context.setLogLevel(logLevel);
 }
-/**
- * Retrieves the currently specified log level.
- */
 function getLogLevel() {
-    return context.getLogLevel();
+  return context.getLogLevel();
 }
-/**
- * Creates a logger for use by the SDKs that inherits from `TypeSpecRuntimeLogger`.
- * @param namespace - The name of the SDK package.
- * @hidden
- */
 function createClientLogger(namespace) {
-    return context.createClientLogger(namespace);
+  return context.createClientLogger(namespace);
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=logger.js.map
+
 
 /***/ }),
 
 /***/ 21167:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getBodyLength = getBodyLength;
-exports.createNodeHttpClient = createNodeHttpClient;
-const tslib_1 = __nccwpck_require__(61860);
-const node_http_1 = tslib_1.__importDefault(__nccwpck_require__(37067));
-const node_https_1 = tslib_1.__importDefault(__nccwpck_require__(44708));
-const node_zlib_1 = tslib_1.__importDefault(__nccwpck_require__(38522));
-const node_stream_1 = __nccwpck_require__(57075);
-const AbortError_js_1 = __nccwpck_require__(99992);
-const httpHeaders_js_1 = __nccwpck_require__(4220);
-const restError_js_1 = __nccwpck_require__(9758);
-const log_js_1 = __nccwpck_require__(3644);
-const sanitizer_js_1 = __nccwpck_require__(7784);
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var nodeHttpClient_exports = {};
+__export(nodeHttpClient_exports, {
+  createNodeHttpClient: () => createNodeHttpClient,
+  getBodyLength: () => getBodyLength
+});
+module.exports = __toCommonJS(nodeHttpClient_exports);
+var import_node_http = __toESM(__nccwpck_require__(37067));
+var import_node_https = __toESM(__nccwpck_require__(44708));
+var import_node_zlib = __toESM(__nccwpck_require__(38522));
+var import_node_stream = __nccwpck_require__(57075);
+var import_AbortError = __nccwpck_require__(99992);
+var import_httpHeaders = __nccwpck_require__(4220);
+var import_restError = __nccwpck_require__(9758);
+var import_log = __nccwpck_require__(3644);
+var import_sanitizer = __nccwpck_require__(7784);
 const DEFAULT_TLS_SETTINGS = {};
 function isReadableStream(body) {
-    return body && typeof body.pipe === "function";
+  return body && typeof body.pipe === "function";
 }
 function isStreamComplete(stream) {
-    if (stream.readable === false) {
-        return Promise.resolve();
-    }
-    return new Promise((resolve) => {
-        const handler = () => {
-            resolve();
-            stream.removeListener("close", handler);
-            stream.removeListener("end", handler);
-            stream.removeListener("error", handler);
-        };
-        stream.on("close", handler);
-        stream.on("end", handler);
-        stream.on("error", handler);
-    });
+  if (stream.readable === false) {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    const handler = () => {
+      resolve();
+      stream.removeListener("close", handler);
+      stream.removeListener("end", handler);
+      stream.removeListener("error", handler);
+    };
+    stream.on("close", handler);
+    stream.on("end", handler);
+    stream.on("error", handler);
+  });
 }
 function isArrayBuffer(body) {
-    return body && typeof body.byteLength === "number";
+  return body && typeof body.byteLength === "number";
 }
-class ReportTransform extends node_stream_1.Transform {
-    loadedBytes = 0;
-    progressCallback;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-    _transform(chunk, _encoding, callback) {
-        this.push(chunk);
-        this.loadedBytes += chunk.length;
-        try {
-            this.progressCallback({ loadedBytes: this.loadedBytes });
-            callback();
-        }
-        catch (e) {
-            callback(e);
-        }
+class ReportTransform extends import_node_stream.Transform {
+  loadedBytes = 0;
+  progressCallback;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+  _transform(chunk, _encoding, callback) {
+    this.push(chunk);
+    this.loadedBytes += chunk.length;
+    try {
+      this.progressCallback({ loadedBytes: this.loadedBytes });
+      callback();
+    } catch (e) {
+      callback(e);
     }
-    constructor(progressCallback) {
-        super();
-        this.progressCallback = progressCallback;
-    }
+  }
+  constructor(progressCallback) {
+    super();
+    this.progressCallback = progressCallback;
+  }
 }
-/**
- * A HttpClient implementation that uses Node's "https" module to send HTTPS requests.
- * @internal
- */
 class NodeHttpClient {
-    cachedHttpAgent;
-    cachedHttpsAgents = new WeakMap();
-    /**
-     * Makes a request over an underlying transport layer and returns the response.
-     * @param request - The request to be made.
-     */
-    async sendRequest(request) {
-        const abortController = new AbortController();
-        let abortListener;
-        if (request.abortSignal) {
-            if (request.abortSignal.aborted) {
-                throw new AbortError_js_1.AbortError("The operation was aborted. Request has already been canceled.");
-            }
-            abortListener = (event) => {
-                if (event.type === "abort") {
-                    abortController.abort();
-                }
-            };
-            request.abortSignal.addEventListener("abort", abortListener);
+  cachedHttpAgent;
+  cachedHttpsAgents = /* @__PURE__ */ new WeakMap();
+  /**
+   * Makes a request over an underlying transport layer and returns the response.
+   * @param request - The request to be made.
+   */
+  async sendRequest(request) {
+    const abortController = new AbortController();
+    let abortListener;
+    if (request.abortSignal) {
+      if (request.abortSignal.aborted) {
+        throw new import_AbortError.AbortError("The operation was aborted. Request has already been canceled.");
+      }
+      abortListener = (event) => {
+        if (event.type === "abort") {
+          abortController.abort();
         }
-        let timeoutId;
-        if (request.timeout > 0) {
-            timeoutId = setTimeout(() => {
-                const sanitizer = new sanitizer_js_1.Sanitizer();
-                log_js_1.logger.info(`request to '${sanitizer.sanitizeUrl(request.url)}' timed out. canceling...`);
-                abortController.abort();
-            }, request.timeout);
-        }
-        const acceptEncoding = request.headers.get("Accept-Encoding");
-        const shouldDecompress = acceptEncoding?.includes("gzip") || acceptEncoding?.includes("deflate");
-        let body = typeof request.body === "function" ? request.body() : request.body;
-        if (body && !request.headers.has("Content-Length")) {
-            const bodyLength = getBodyLength(body);
-            if (bodyLength !== null) {
-                request.headers.set("Content-Length", bodyLength);
-            }
-        }
-        let responseStream;
-        try {
-            if (body && request.onUploadProgress) {
-                const onUploadProgress = request.onUploadProgress;
-                const uploadReportStream = new ReportTransform(onUploadProgress);
-                uploadReportStream.on("error", (e) => {
-                    log_js_1.logger.error("Error in upload progress", e);
-                });
-                if (isReadableStream(body)) {
-                    body.pipe(uploadReportStream);
-                }
-                else {
-                    uploadReportStream.end(body);
-                }
-                body = uploadReportStream;
-            }
-            const res = await this.makeRequest(request, abortController, body);
-            if (timeoutId !== undefined) {
-                clearTimeout(timeoutId);
-            }
-            const headers = getResponseHeaders(res);
-            const status = res.statusCode ?? 0;
-            const response = {
-                status,
-                headers,
-                request,
-            };
-            // Responses to HEAD must not have a body.
-            // If they do return a body, that body must be ignored.
-            if (request.method === "HEAD") {
-                // call resume() and not destroy() to avoid closing the socket
-                // and losing keep alive
-                res.resume();
-                return response;
-            }
-            responseStream = shouldDecompress ? getDecodedResponseStream(res, headers) : res;
-            const onDownloadProgress = request.onDownloadProgress;
-            if (onDownloadProgress) {
-                const downloadReportStream = new ReportTransform(onDownloadProgress);
-                downloadReportStream.on("error", (e) => {
-                    log_js_1.logger.error("Error in download progress", e);
-                });
-                responseStream.pipe(downloadReportStream);
-                responseStream = downloadReportStream;
-            }
-            if (
-            // Value of POSITIVE_INFINITY in streamResponseStatusCodes is considered as any status code
-            request.streamResponseStatusCodes?.has(Number.POSITIVE_INFINITY) ||
-                request.streamResponseStatusCodes?.has(response.status)) {
-                response.readableStreamBody = responseStream;
-            }
-            else {
-                response.bodyAsText = await streamToText(responseStream);
-            }
-            return response;
-        }
-        finally {
-            // clean up event listener
-            if (request.abortSignal && abortListener) {
-                let uploadStreamDone = Promise.resolve();
-                if (isReadableStream(body)) {
-                    uploadStreamDone = isStreamComplete(body);
-                }
-                let downloadStreamDone = Promise.resolve();
-                if (isReadableStream(responseStream)) {
-                    downloadStreamDone = isStreamComplete(responseStream);
-                }
-                Promise.all([uploadStreamDone, downloadStreamDone])
-                    .then(() => {
-                    // eslint-disable-next-line promise/always-return
-                    if (abortListener) {
-                        request.abortSignal?.removeEventListener("abort", abortListener);
-                    }
-                })
-                    .catch((e) => {
-                    log_js_1.logger.warning("Error when cleaning up abortListener on httpRequest", e);
-                });
-            }
-        }
+      };
+      request.abortSignal.addEventListener("abort", abortListener);
     }
-    makeRequest(request, abortController, body) {
-        const url = new URL(request.url);
-        const isInsecure = url.protocol !== "https:";
-        if (isInsecure && !request.allowInsecureConnection) {
-            throw new Error(`Cannot connect to ${request.url} while allowInsecureConnection is false.`);
-        }
-        const agent = request.agent ?? this.getOrCreateAgent(request, isInsecure);
-        const options = {
-            agent,
-            hostname: url.hostname,
-            path: `${url.pathname}${url.search}`,
-            port: url.port,
-            method: request.method,
-            headers: request.headers.toJSON({ preserveCase: true }),
-            ...request.requestOverrides,
-        };
-        return new Promise((resolve, reject) => {
-            const req = isInsecure ? node_http_1.default.request(options, resolve) : node_https_1.default.request(options, resolve);
-            req.once("error", (err) => {
-                reject(new restError_js_1.RestError(err.message, { code: err.code ?? restError_js_1.RestError.REQUEST_SEND_ERROR, request }));
-            });
-            abortController.signal.addEventListener("abort", () => {
-                const abortError = new AbortError_js_1.AbortError("The operation was aborted. Rejecting from abort signal callback while making request.");
-                req.destroy(abortError);
-                reject(abortError);
-            });
-            if (body && isReadableStream(body)) {
-                body.pipe(req);
-            }
-            else if (body) {
-                if (typeof body === "string" || Buffer.isBuffer(body)) {
-                    req.end(body);
-                }
-                else if (isArrayBuffer(body)) {
-                    req.end(ArrayBuffer.isView(body) ? Buffer.from(body.buffer) : Buffer.from(body));
-                }
-                else {
-                    log_js_1.logger.error("Unrecognized body type", body);
-                    reject(new restError_js_1.RestError("Unrecognized body type"));
-                }
-            }
-            else {
-                // streams don't like "undefined" being passed as data
-                req.end();
-            }
+    let timeoutId;
+    if (request.timeout > 0) {
+      timeoutId = setTimeout(() => {
+        const sanitizer = new import_sanitizer.Sanitizer();
+        import_log.logger.info(`request to '${sanitizer.sanitizeUrl(request.url)}' timed out. canceling...`);
+        abortController.abort();
+      }, request.timeout);
+    }
+    const acceptEncoding = request.headers.get("Accept-Encoding");
+    const shouldDecompress = acceptEncoding?.includes("gzip") || acceptEncoding?.includes("deflate");
+    let body = typeof request.body === "function" ? request.body() : request.body;
+    if (body && !request.headers.has("Content-Length")) {
+      const bodyLength = getBodyLength(body);
+      if (bodyLength !== null) {
+        request.headers.set("Content-Length", bodyLength);
+      }
+    }
+    let responseStream;
+    try {
+      if (body && request.onUploadProgress) {
+        const onUploadProgress = request.onUploadProgress;
+        const uploadReportStream = new ReportTransform(onUploadProgress);
+        uploadReportStream.on("error", (e) => {
+          import_log.logger.error("Error in upload progress", e);
         });
-    }
-    getOrCreateAgent(request, isInsecure) {
-        const disableKeepAlive = request.disableKeepAlive;
-        // Handle Insecure requests first
-        if (isInsecure) {
-            if (disableKeepAlive) {
-                // keepAlive:false is the default so we don't need a custom Agent
-                return node_http_1.default.globalAgent;
-            }
-            if (!this.cachedHttpAgent) {
-                // If there is no cached agent create a new one and cache it.
-                this.cachedHttpAgent = new node_http_1.default.Agent({ keepAlive: true });
-            }
-            return this.cachedHttpAgent;
+        if (isReadableStream(body)) {
+          body.pipe(uploadReportStream);
+        } else {
+          uploadReportStream.end(body);
         }
-        else {
-            if (disableKeepAlive && !request.tlsSettings) {
-                // When there are no tlsSettings and keepAlive is false
-                // we don't need a custom agent
-                return node_https_1.default.globalAgent;
-            }
-            // We use the tlsSettings to index cached clients
-            const tlsSettings = request.tlsSettings ?? DEFAULT_TLS_SETTINGS;
-            // Get the cached agent or create a new one with the
-            // provided values for keepAlive and tlsSettings
-            let agent = this.cachedHttpsAgents.get(tlsSettings);
-            if (agent && agent.options.keepAlive === !disableKeepAlive) {
-                return agent;
-            }
-            log_js_1.logger.info("No cached TLS Agent exist, creating a new Agent");
-            agent = new node_https_1.default.Agent({
-                // keepAlive is true if disableKeepAlive is false.
-                keepAlive: !disableKeepAlive,
-                // Since we are spreading, if no tslSettings were provided, nothing is added to the agent options.
-                ...tlsSettings,
-            });
-            this.cachedHttpsAgents.set(tlsSettings, agent);
-            return agent;
+        body = uploadReportStream;
+      }
+      const res = await this.makeRequest(request, abortController, body);
+      if (timeoutId !== void 0) {
+        clearTimeout(timeoutId);
+      }
+      const headers = getResponseHeaders(res);
+      const status = res.statusCode ?? 0;
+      const response = {
+        status,
+        headers,
+        request
+      };
+      if (request.method === "HEAD") {
+        res.resume();
+        return response;
+      }
+      responseStream = shouldDecompress ? getDecodedResponseStream(res, headers) : res;
+      const onDownloadProgress = request.onDownloadProgress;
+      if (onDownloadProgress) {
+        const downloadReportStream = new ReportTransform(onDownloadProgress);
+        downloadReportStream.on("error", (e) => {
+          import_log.logger.error("Error in download progress", e);
+        });
+        responseStream.pipe(downloadReportStream);
+        responseStream = downloadReportStream;
+      }
+      if (
+        // Value of POSITIVE_INFINITY in streamResponseStatusCodes is considered as any status code
+        request.streamResponseStatusCodes?.has(Number.POSITIVE_INFINITY) || request.streamResponseStatusCodes?.has(response.status)
+      ) {
+        response.readableStreamBody = responseStream;
+      } else {
+        response.bodyAsText = await streamToText(responseStream);
+      }
+      return response;
+    } finally {
+      if (request.abortSignal && abortListener) {
+        let uploadStreamDone = Promise.resolve();
+        if (isReadableStream(body)) {
+          uploadStreamDone = isStreamComplete(body);
         }
+        let downloadStreamDone = Promise.resolve();
+        if (isReadableStream(responseStream)) {
+          downloadStreamDone = isStreamComplete(responseStream);
+        }
+        Promise.all([uploadStreamDone, downloadStreamDone]).then(() => {
+          if (abortListener) {
+            request.abortSignal?.removeEventListener("abort", abortListener);
+          }
+        }).catch((e) => {
+          import_log.logger.warning("Error when cleaning up abortListener on httpRequest", e);
+        });
+      }
     }
+  }
+  makeRequest(request, abortController, body) {
+    const url = new URL(request.url);
+    const isInsecure = url.protocol !== "https:";
+    if (isInsecure && !request.allowInsecureConnection) {
+      throw new Error(`Cannot connect to ${request.url} while allowInsecureConnection is false.`);
+    }
+    const agent = request.agent ?? this.getOrCreateAgent(request, isInsecure);
+    const options = {
+      agent,
+      hostname: url.hostname,
+      path: `${url.pathname}${url.search}`,
+      port: url.port,
+      method: request.method,
+      headers: request.headers.toJSON({ preserveCase: true }),
+      ...request.requestOverrides
+    };
+    return new Promise((resolve, reject) => {
+      const req = isInsecure ? import_node_http.default.request(options, resolve) : import_node_https.default.request(options, resolve);
+      req.once("error", (err) => {
+        reject(
+          new import_restError.RestError(err.message, { code: err.code ?? import_restError.RestError.REQUEST_SEND_ERROR, request })
+        );
+      });
+      abortController.signal.addEventListener("abort", () => {
+        const abortError = new import_AbortError.AbortError(
+          "The operation was aborted. Rejecting from abort signal callback while making request."
+        );
+        req.destroy(abortError);
+        reject(abortError);
+      });
+      if (body && isReadableStream(body)) {
+        body.pipe(req);
+      } else if (body) {
+        if (typeof body === "string" || Buffer.isBuffer(body)) {
+          req.end(body);
+        } else if (isArrayBuffer(body)) {
+          req.end(ArrayBuffer.isView(body) ? Buffer.from(body.buffer) : Buffer.from(body));
+        } else {
+          import_log.logger.error("Unrecognized body type", body);
+          reject(new import_restError.RestError("Unrecognized body type"));
+        }
+      } else {
+        req.end();
+      }
+    });
+  }
+  getOrCreateAgent(request, isInsecure) {
+    const disableKeepAlive = request.disableKeepAlive;
+    if (isInsecure) {
+      if (disableKeepAlive) {
+        return import_node_http.default.globalAgent;
+      }
+      if (!this.cachedHttpAgent) {
+        this.cachedHttpAgent = new import_node_http.default.Agent({ keepAlive: true });
+      }
+      return this.cachedHttpAgent;
+    } else {
+      if (disableKeepAlive && !request.tlsSettings) {
+        return import_node_https.default.globalAgent;
+      }
+      const tlsSettings = request.tlsSettings ?? DEFAULT_TLS_SETTINGS;
+      let agent = this.cachedHttpsAgents.get(tlsSettings);
+      if (agent && agent.options.keepAlive === !disableKeepAlive) {
+        return agent;
+      }
+      import_log.logger.info("No cached TLS Agent exist, creating a new Agent");
+      agent = new import_node_https.default.Agent({
+        // keepAlive is true if disableKeepAlive is false.
+        keepAlive: !disableKeepAlive,
+        // Since we are spreading, if no tslSettings were provided, nothing is added to the agent options.
+        ...tlsSettings
+      });
+      this.cachedHttpsAgents.set(tlsSettings, agent);
+      return agent;
+    }
+  }
 }
 function getResponseHeaders(res) {
-    const headers = (0, httpHeaders_js_1.createHttpHeaders)();
-    for (const header of Object.keys(res.headers)) {
-        const value = res.headers[header];
-        if (Array.isArray(value)) {
-            if (value.length > 0) {
-                headers.set(header, value[0]);
-            }
-        }
-        else if (value) {
-            headers.set(header, value);
-        }
+  const headers = (0, import_httpHeaders.createHttpHeaders)();
+  for (const header of Object.keys(res.headers)) {
+    const value = res.headers[header];
+    if (Array.isArray(value)) {
+      if (value.length > 0) {
+        headers.set(header, value[0]);
+      }
+    } else if (value) {
+      headers.set(header, value);
     }
-    return headers;
+  }
+  return headers;
 }
 function getDecodedResponseStream(stream, headers) {
-    const contentEncoding = headers.get("Content-Encoding");
-    if (contentEncoding === "gzip") {
-        const unzip = node_zlib_1.default.createGunzip();
-        stream.pipe(unzip);
-        return unzip;
-    }
-    else if (contentEncoding === "deflate") {
-        const inflate = node_zlib_1.default.createInflate();
-        stream.pipe(inflate);
-        return inflate;
-    }
-    return stream;
+  const contentEncoding = headers.get("Content-Encoding");
+  if (contentEncoding === "gzip") {
+    const unzip = import_node_zlib.default.createGunzip();
+    stream.pipe(unzip);
+    return unzip;
+  } else if (contentEncoding === "deflate") {
+    const inflate = import_node_zlib.default.createInflate();
+    stream.pipe(inflate);
+    return inflate;
+  }
+  return stream;
 }
 function streamToText(stream) {
-    return new Promise((resolve, reject) => {
-        const buffer = [];
-        stream.on("data", (chunk) => {
-            if (Buffer.isBuffer(chunk)) {
-                buffer.push(chunk);
-            }
-            else {
-                buffer.push(Buffer.from(chunk));
-            }
-        });
-        stream.on("end", () => {
-            resolve(Buffer.concat(buffer).toString("utf8"));
-        });
-        stream.on("error", (e) => {
-            if (e && e?.name === "AbortError") {
-                reject(e);
-            }
-            else {
-                reject(new restError_js_1.RestError(`Error reading response as text: ${e.message}`, {
-                    code: restError_js_1.RestError.PARSE_ERROR,
-                }));
-            }
-        });
+  return new Promise((resolve, reject) => {
+    const buffer = [];
+    stream.on("data", (chunk) => {
+      if (Buffer.isBuffer(chunk)) {
+        buffer.push(chunk);
+      } else {
+        buffer.push(Buffer.from(chunk));
+      }
     });
+    stream.on("end", () => {
+      resolve(Buffer.concat(buffer).toString("utf8"));
+    });
+    stream.on("error", (e) => {
+      if (e && e?.name === "AbortError") {
+        reject(e);
+      } else {
+        reject(
+          new import_restError.RestError(`Error reading response as text: ${e.message}`, {
+            code: import_restError.RestError.PARSE_ERROR
+          })
+        );
+      }
+    });
+  });
 }
-/** @internal */
 function getBodyLength(body) {
-    if (!body) {
-        return 0;
-    }
-    else if (Buffer.isBuffer(body)) {
-        return body.length;
-    }
-    else if (isReadableStream(body)) {
-        return null;
-    }
-    else if (isArrayBuffer(body)) {
-        return body.byteLength;
-    }
-    else if (typeof body === "string") {
-        return Buffer.from(body).length;
-    }
-    else {
-        return null;
-    }
+  if (!body) {
+    return 0;
+  } else if (Buffer.isBuffer(body)) {
+    return body.length;
+  } else if (isReadableStream(body)) {
+    return null;
+  } else if (isArrayBuffer(body)) {
+    return body.byteLength;
+  } else if (typeof body === "string") {
+    return Buffer.from(body).length;
+  } else {
+    return null;
+  }
 }
-/**
- * Create a new HttpClient instance for the NodeJS environment.
- * @internal
- */
 function createNodeHttpClient() {
-    return new NodeHttpClient();
+  return new NodeHttpClient();
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=nodeHttpClient.js.map
+
 
 /***/ }),
 
 /***/ 22338:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createEmptyPipeline = createEmptyPipeline;
-const ValidPhaseNames = new Set(["Deserialize", "Serialize", "Retry", "Sign"]);
-/**
- * A private implementation of Pipeline.
- * Do not export this class from the package.
- * @internal
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var pipeline_exports = {};
+__export(pipeline_exports, {
+  createEmptyPipeline: () => createEmptyPipeline
+});
+module.exports = __toCommonJS(pipeline_exports);
+const ValidPhaseNames = /* @__PURE__ */ new Set(["Deserialize", "Serialize", "Retry", "Sign"]);
 class HttpPipeline {
-    _policies = [];
-    _orderedPolicies;
-    constructor(policies) {
-        this._policies = policies?.slice(0) ?? [];
-        this._orderedPolicies = undefined;
+  _policies = [];
+  _orderedPolicies;
+  constructor(policies) {
+    this._policies = policies?.slice(0) ?? [];
+    this._orderedPolicies = void 0;
+  }
+  addPolicy(policy, options = {}) {
+    if (options.phase && options.afterPhase) {
+      throw new Error("Policies inside a phase cannot specify afterPhase.");
     }
-    addPolicy(policy, options = {}) {
-        if (options.phase && options.afterPhase) {
-            throw new Error("Policies inside a phase cannot specify afterPhase.");
-        }
-        if (options.phase && !ValidPhaseNames.has(options.phase)) {
-            throw new Error(`Invalid phase name: ${options.phase}`);
-        }
-        if (options.afterPhase && !ValidPhaseNames.has(options.afterPhase)) {
-            throw new Error(`Invalid afterPhase name: ${options.afterPhase}`);
-        }
-        this._policies.push({
-            policy,
-            options,
-        });
-        this._orderedPolicies = undefined;
+    if (options.phase && !ValidPhaseNames.has(options.phase)) {
+      throw new Error(`Invalid phase name: ${options.phase}`);
     }
-    removePolicy(options) {
-        const removedPolicies = [];
-        this._policies = this._policies.filter((policyDescriptor) => {
-            if ((options.name && policyDescriptor.policy.name === options.name) ||
-                (options.phase && policyDescriptor.options.phase === options.phase)) {
-                removedPolicies.push(policyDescriptor.policy);
-                return false;
-            }
-            else {
-                return true;
-            }
-        });
-        this._orderedPolicies = undefined;
-        return removedPolicies;
+    if (options.afterPhase && !ValidPhaseNames.has(options.afterPhase)) {
+      throw new Error(`Invalid afterPhase name: ${options.afterPhase}`);
     }
-    sendRequest(httpClient, request) {
-        const policies = this.getOrderedPolicies();
-        const pipeline = policies.reduceRight((next, policy) => {
-            return (req) => {
-                return policy.sendRequest(req, next);
-            };
-        }, (req) => httpClient.sendRequest(req));
-        return pipeline(request);
+    this._policies.push({
+      policy,
+      options
+    });
+    this._orderedPolicies = void 0;
+  }
+  removePolicy(options) {
+    const removedPolicies = [];
+    this._policies = this._policies.filter((policyDescriptor) => {
+      if (options.name && policyDescriptor.policy.name === options.name || options.phase && policyDescriptor.options.phase === options.phase) {
+        removedPolicies.push(policyDescriptor.policy);
+        return false;
+      } else {
+        return true;
+      }
+    });
+    this._orderedPolicies = void 0;
+    return removedPolicies;
+  }
+  sendRequest(httpClient, request) {
+    const policies = this.getOrderedPolicies();
+    const pipeline = policies.reduceRight(
+      (next, policy) => {
+        return (req) => {
+          return policy.sendRequest(req, next);
+        };
+      },
+      (req) => httpClient.sendRequest(req)
+    );
+    return pipeline(request);
+  }
+  getOrderedPolicies() {
+    if (!this._orderedPolicies) {
+      this._orderedPolicies = this.orderPolicies();
     }
-    getOrderedPolicies() {
-        if (!this._orderedPolicies) {
-            this._orderedPolicies = this.orderPolicies();
-        }
-        return this._orderedPolicies;
+    return this._orderedPolicies;
+  }
+  clone() {
+    return new HttpPipeline(this._policies);
+  }
+  static create() {
+    return new HttpPipeline();
+  }
+  orderPolicies() {
+    const result = [];
+    const policyMap = /* @__PURE__ */ new Map();
+    function createPhase(name) {
+      return {
+        name,
+        policies: /* @__PURE__ */ new Set(),
+        hasRun: false,
+        hasAfterPolicies: false
+      };
     }
-    clone() {
-        return new HttpPipeline(this._policies);
+    const serializePhase = createPhase("Serialize");
+    const noPhase = createPhase("None");
+    const deserializePhase = createPhase("Deserialize");
+    const retryPhase = createPhase("Retry");
+    const signPhase = createPhase("Sign");
+    const orderedPhases = [serializePhase, noPhase, deserializePhase, retryPhase, signPhase];
+    function getPhase(phase) {
+      if (phase === "Retry") {
+        return retryPhase;
+      } else if (phase === "Serialize") {
+        return serializePhase;
+      } else if (phase === "Deserialize") {
+        return deserializePhase;
+      } else if (phase === "Sign") {
+        return signPhase;
+      } else {
+        return noPhase;
+      }
     }
-    static create() {
-        return new HttpPipeline();
+    for (const descriptor of this._policies) {
+      const policy = descriptor.policy;
+      const options = descriptor.options;
+      const policyName = policy.name;
+      if (policyMap.has(policyName)) {
+        throw new Error("Duplicate policy names not allowed in pipeline");
+      }
+      const node = {
+        policy,
+        dependsOn: /* @__PURE__ */ new Set(),
+        dependants: /* @__PURE__ */ new Set()
+      };
+      if (options.afterPhase) {
+        node.afterPhase = getPhase(options.afterPhase);
+        node.afterPhase.hasAfterPolicies = true;
+      }
+      policyMap.set(policyName, node);
+      const phase = getPhase(options.phase);
+      phase.policies.add(node);
     }
-    orderPolicies() {
-        /**
-         * The goal of this method is to reliably order pipeline policies
-         * based on their declared requirements when they were added.
-         *
-         * Order is first determined by phase:
-         *
-         * 1. Serialize Phase
-         * 2. Policies not in a phase
-         * 3. Deserialize Phase
-         * 4. Retry Phase
-         * 5. Sign Phase
-         *
-         * Within each phase, policies are executed in the order
-         * they were added unless they were specified to execute
-         * before/after other policies or after a particular phase.
-         *
-         * To determine the final order, we will walk the policy list
-         * in phase order multiple times until all dependencies are
-         * satisfied.
-         *
-         * `afterPolicies` are the set of policies that must be
-         * executed before a given policy. This requirement is
-         * considered satisfied when each of the listed policies
-         * have been scheduled.
-         *
-         * `beforePolicies` are the set of policies that must be
-         * executed after a given policy. Since this dependency
-         * can be expressed by converting it into a equivalent
-         * `afterPolicies` declarations, they are normalized
-         * into that form for simplicity.
-         *
-         * An `afterPhase` dependency is considered satisfied when all
-         * policies in that phase have scheduled.
-         *
-         */
-        const result = [];
-        // Track all policies we know about.
-        const policyMap = new Map();
-        function createPhase(name) {
-            return {
-                name,
-                policies: new Set(),
-                hasRun: false,
-                hasAfterPolicies: false,
-            };
+    for (const descriptor of this._policies) {
+      const { policy, options } = descriptor;
+      const policyName = policy.name;
+      const node = policyMap.get(policyName);
+      if (!node) {
+        throw new Error(`Missing node for policy ${policyName}`);
+      }
+      if (options.afterPolicies) {
+        for (const afterPolicyName of options.afterPolicies) {
+          const afterNode = policyMap.get(afterPolicyName);
+          if (afterNode) {
+            node.dependsOn.add(afterNode);
+            afterNode.dependants.add(node);
+          }
         }
-        // Track policies for each phase.
-        const serializePhase = createPhase("Serialize");
-        const noPhase = createPhase("None");
-        const deserializePhase = createPhase("Deserialize");
-        const retryPhase = createPhase("Retry");
-        const signPhase = createPhase("Sign");
-        // a list of phases in order
-        const orderedPhases = [serializePhase, noPhase, deserializePhase, retryPhase, signPhase];
-        // Small helper function to map phase name to each Phase
-        function getPhase(phase) {
-            if (phase === "Retry") {
-                return retryPhase;
-            }
-            else if (phase === "Serialize") {
-                return serializePhase;
-            }
-            else if (phase === "Deserialize") {
-                return deserializePhase;
-            }
-            else if (phase === "Sign") {
-                return signPhase;
-            }
-            else {
-                return noPhase;
-            }
+      }
+      if (options.beforePolicies) {
+        for (const beforePolicyName of options.beforePolicies) {
+          const beforeNode = policyMap.get(beforePolicyName);
+          if (beforeNode) {
+            beforeNode.dependsOn.add(node);
+            node.dependants.add(beforeNode);
+          }
         }
-        // First walk each policy and create a node to track metadata.
-        for (const descriptor of this._policies) {
-            const policy = descriptor.policy;
-            const options = descriptor.options;
-            const policyName = policy.name;
-            if (policyMap.has(policyName)) {
-                throw new Error("Duplicate policy names not allowed in pipeline");
-            }
-            const node = {
-                policy,
-                dependsOn: new Set(),
-                dependants: new Set(),
-            };
-            if (options.afterPhase) {
-                node.afterPhase = getPhase(options.afterPhase);
-                node.afterPhase.hasAfterPolicies = true;
-            }
-            policyMap.set(policyName, node);
-            const phase = getPhase(options.phase);
-            phase.policies.add(node);
-        }
-        // Now that each policy has a node, connect dependency references.
-        for (const descriptor of this._policies) {
-            const { policy, options } = descriptor;
-            const policyName = policy.name;
-            const node = policyMap.get(policyName);
-            if (!node) {
-                throw new Error(`Missing node for policy ${policyName}`);
-            }
-            if (options.afterPolicies) {
-                for (const afterPolicyName of options.afterPolicies) {
-                    const afterNode = policyMap.get(afterPolicyName);
-                    if (afterNode) {
-                        // Linking in both directions helps later
-                        // when we want to notify dependants.
-                        node.dependsOn.add(afterNode);
-                        afterNode.dependants.add(node);
-                    }
-                }
-            }
-            if (options.beforePolicies) {
-                for (const beforePolicyName of options.beforePolicies) {
-                    const beforeNode = policyMap.get(beforePolicyName);
-                    if (beforeNode) {
-                        // To execute before another node, make it
-                        // depend on the current node.
-                        beforeNode.dependsOn.add(node);
-                        node.dependants.add(beforeNode);
-                    }
-                }
-            }
-        }
-        function walkPhase(phase) {
-            phase.hasRun = true;
-            // Sets iterate in insertion order
-            for (const node of phase.policies) {
-                if (node.afterPhase && (!node.afterPhase.hasRun || node.afterPhase.policies.size)) {
-                    // If this node is waiting on a phase to complete,
-                    // we need to skip it for now.
-                    // Even if the phase is empty, we should wait for it
-                    // to be walked to avoid re-ordering policies.
-                    continue;
-                }
-                if (node.dependsOn.size === 0) {
-                    // If there's nothing else we're waiting for, we can
-                    // add this policy to the result list.
-                    result.push(node.policy);
-                    // Notify anything that depends on this policy that
-                    // the policy has been scheduled.
-                    for (const dependant of node.dependants) {
-                        dependant.dependsOn.delete(node);
-                    }
-                    policyMap.delete(node.policy.name);
-                    phase.policies.delete(node);
-                }
-            }
-        }
-        function walkPhases() {
-            for (const phase of orderedPhases) {
-                walkPhase(phase);
-                // if the phase isn't complete
-                if (phase.policies.size > 0 && phase !== noPhase) {
-                    if (!noPhase.hasRun) {
-                        // Try running noPhase to see if that unblocks this phase next tick.
-                        // This can happen if a phase that happens before noPhase
-                        // is waiting on a noPhase policy to complete.
-                        walkPhase(noPhase);
-                    }
-                    // Don't proceed to the next phase until this phase finishes.
-                    return;
-                }
-                if (phase.hasAfterPolicies) {
-                    // Run any policies unblocked by this phase
-                    walkPhase(noPhase);
-                }
-            }
-        }
-        // Iterate until we've put every node in the result list.
-        let iteration = 0;
-        while (policyMap.size > 0) {
-            iteration++;
-            const initialResultLength = result.length;
-            // Keep walking each phase in order until we can order every node.
-            walkPhases();
-            // The result list *should* get at least one larger each time
-            // after the first full pass.
-            // Otherwise, we're going to loop forever.
-            if (result.length <= initialResultLength && iteration > 1) {
-                throw new Error("Cannot satisfy policy dependencies due to requirements cycle.");
-            }
-        }
-        return result;
+      }
     }
+    function walkPhase(phase) {
+      phase.hasRun = true;
+      for (const node of phase.policies) {
+        if (node.afterPhase && (!node.afterPhase.hasRun || node.afterPhase.policies.size)) {
+          continue;
+        }
+        if (node.dependsOn.size === 0) {
+          result.push(node.policy);
+          for (const dependant of node.dependants) {
+            dependant.dependsOn.delete(node);
+          }
+          policyMap.delete(node.policy.name);
+          phase.policies.delete(node);
+        }
+      }
+    }
+    function walkPhases() {
+      for (const phase of orderedPhases) {
+        walkPhase(phase);
+        if (phase.policies.size > 0 && phase !== noPhase) {
+          if (!noPhase.hasRun) {
+            walkPhase(noPhase);
+          }
+          return;
+        }
+        if (phase.hasAfterPolicies) {
+          walkPhase(noPhase);
+        }
+      }
+    }
+    let iteration = 0;
+    while (policyMap.size > 0) {
+      iteration++;
+      const initialResultLength = result.length;
+      walkPhases();
+      if (result.length <= initialResultLength && iteration > 1) {
+        throw new Error("Cannot satisfy policy dependencies due to requirements cycle.");
+      }
+    }
+    return result;
+  }
 }
-/**
- * Creates a totally empty pipeline.
- * Useful for testing or creating a custom one.
- */
 function createEmptyPipeline() {
-    return HttpPipeline.create();
+  return HttpPipeline.create();
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=pipeline.js.map
+
 
 /***/ }),
 
 /***/ 72305:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createPipelineRequest = createPipelineRequest;
-const httpHeaders_js_1 = __nccwpck_require__(4220);
-const uuidUtils_js_1 = __nccwpck_require__(5023);
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var pipelineRequest_exports = {};
+__export(pipelineRequest_exports, {
+  createPipelineRequest: () => createPipelineRequest
+});
+module.exports = __toCommonJS(pipelineRequest_exports);
+var import_httpHeaders = __nccwpck_require__(4220);
+var import_uuidUtils = __nccwpck_require__(5023);
 class PipelineRequestImpl {
-    url;
-    method;
-    headers;
-    timeout;
-    withCredentials;
-    body;
-    multipartBody;
-    formData;
-    streamResponseStatusCodes;
-    enableBrowserStreams;
-    proxySettings;
-    disableKeepAlive;
-    abortSignal;
-    requestId;
-    allowInsecureConnection;
-    onUploadProgress;
-    onDownloadProgress;
-    requestOverrides;
-    authSchemes;
-    constructor(options) {
-        this.url = options.url;
-        this.body = options.body;
-        this.headers = options.headers ?? (0, httpHeaders_js_1.createHttpHeaders)();
-        this.method = options.method ?? "GET";
-        this.timeout = options.timeout ?? 0;
-        this.multipartBody = options.multipartBody;
-        this.formData = options.formData;
-        this.disableKeepAlive = options.disableKeepAlive ?? false;
-        this.proxySettings = options.proxySettings;
-        this.streamResponseStatusCodes = options.streamResponseStatusCodes;
-        this.withCredentials = options.withCredentials ?? false;
-        this.abortSignal = options.abortSignal;
-        this.onUploadProgress = options.onUploadProgress;
-        this.onDownloadProgress = options.onDownloadProgress;
-        this.requestId = options.requestId || (0, uuidUtils_js_1.randomUUID)();
-        this.allowInsecureConnection = options.allowInsecureConnection ?? false;
-        this.enableBrowserStreams = options.enableBrowserStreams ?? false;
-        this.requestOverrides = options.requestOverrides;
-        this.authSchemes = options.authSchemes;
-    }
+  url;
+  method;
+  headers;
+  timeout;
+  withCredentials;
+  body;
+  multipartBody;
+  formData;
+  streamResponseStatusCodes;
+  enableBrowserStreams;
+  proxySettings;
+  disableKeepAlive;
+  abortSignal;
+  requestId;
+  allowInsecureConnection;
+  onUploadProgress;
+  onDownloadProgress;
+  requestOverrides;
+  authSchemes;
+  constructor(options) {
+    this.url = options.url;
+    this.body = options.body;
+    this.headers = options.headers ?? (0, import_httpHeaders.createHttpHeaders)();
+    this.method = options.method ?? "GET";
+    this.timeout = options.timeout ?? 0;
+    this.multipartBody = options.multipartBody;
+    this.formData = options.formData;
+    this.disableKeepAlive = options.disableKeepAlive ?? false;
+    this.proxySettings = options.proxySettings;
+    this.streamResponseStatusCodes = options.streamResponseStatusCodes;
+    this.withCredentials = options.withCredentials ?? false;
+    this.abortSignal = options.abortSignal;
+    this.onUploadProgress = options.onUploadProgress;
+    this.onDownloadProgress = options.onDownloadProgress;
+    this.requestId = options.requestId || (0, import_uuidUtils.randomUUID)();
+    this.allowInsecureConnection = options.allowInsecureConnection ?? false;
+    this.enableBrowserStreams = options.enableBrowserStreams ?? false;
+    this.requestOverrides = options.requestOverrides;
+    this.authSchemes = options.authSchemes;
+  }
 }
-/**
- * Creates a new pipeline request with the given options.
- * This method is to allow for the easy setting of default values and not required.
- * @param options - The options to create the request with.
- */
 function createPipelineRequest(options) {
-    return new PipelineRequestImpl(options);
+  return new PipelineRequestImpl(options);
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=pipelineRequest.js.map
+
 
 /***/ }),
 
 /***/ 85366:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.agentPolicyName = void 0;
-exports.agentPolicy = agentPolicy;
-/**
- * Name of the Agent Policy
- */
-exports.agentPolicyName = "agentPolicy";
-/**
- * Gets a pipeline policy that sets http.agent
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var agentPolicy_exports = {};
+__export(agentPolicy_exports, {
+  agentPolicy: () => agentPolicy,
+  agentPolicyName: () => agentPolicyName
+});
+module.exports = __toCommonJS(agentPolicy_exports);
+const agentPolicyName = "agentPolicy";
 function agentPolicy(agent) {
-    return {
-        name: exports.agentPolicyName,
-        sendRequest: async (req, next) => {
-            // Users may define an agent on the request, honor it over the client level one
-            if (!req.agent) {
-                req.agent = agent;
-            }
-            return next(req);
-        },
-    };
+  return {
+    name: agentPolicyName,
+    sendRequest: async (req, next) => {
+      if (!req.agent) {
+        req.agent = agent;
+      }
+      return next(req);
+    }
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=agentPolicy.js.map
+
 
 /***/ }),
 
 /***/ 42095:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.apiKeyAuthenticationPolicyName = void 0;
-exports.apiKeyAuthenticationPolicy = apiKeyAuthenticationPolicy;
-const checkInsecureConnection_js_1 = __nccwpck_require__(42302);
-/**
- * Name of the API Key Authentication Policy
- */
-exports.apiKeyAuthenticationPolicyName = "apiKeyAuthenticationPolicy";
-/**
- * Gets a pipeline policy that adds API key authentication to requests
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var apiKeyAuthenticationPolicy_exports = {};
+__export(apiKeyAuthenticationPolicy_exports, {
+  apiKeyAuthenticationPolicy: () => apiKeyAuthenticationPolicy,
+  apiKeyAuthenticationPolicyName: () => apiKeyAuthenticationPolicyName
+});
+module.exports = __toCommonJS(apiKeyAuthenticationPolicy_exports);
+var import_checkInsecureConnection = __nccwpck_require__(42302);
+const apiKeyAuthenticationPolicyName = "apiKeyAuthenticationPolicy";
 function apiKeyAuthenticationPolicy(options) {
-    return {
-        name: exports.apiKeyAuthenticationPolicyName,
-        async sendRequest(request, next) {
-            // Ensure allowInsecureConnection is explicitly set when sending request to non-https URLs
-            (0, checkInsecureConnection_js_1.ensureSecureConnection)(request, options);
-            const scheme = (request.authSchemes ?? options.authSchemes)?.find((x) => x.kind === "apiKey");
-            // Skip adding authentication header if no API key authentication scheme is found
-            if (!scheme) {
-                return next(request);
-            }
-            if (scheme.apiKeyLocation !== "header") {
-                throw new Error(`Unsupported API key location: ${scheme.apiKeyLocation}`);
-            }
-            request.headers.set(scheme.name, options.credential.key);
-            return next(request);
-        },
-    };
+  return {
+    name: apiKeyAuthenticationPolicyName,
+    async sendRequest(request, next) {
+      (0, import_checkInsecureConnection.ensureSecureConnection)(request, options);
+      const scheme = (request.authSchemes ?? options.authSchemes)?.find((x) => x.kind === "apiKey");
+      if (!scheme) {
+        return next(request);
+      }
+      if (scheme.apiKeyLocation !== "header") {
+        throw new Error(`Unsupported API key location: ${scheme.apiKeyLocation}`);
+      }
+      request.headers.set(scheme.name, options.credential.key);
+      return next(request);
+    }
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=apiKeyAuthenticationPolicy.js.map
+
 
 /***/ }),
 
 /***/ 15756:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.basicAuthenticationPolicyName = void 0;
-exports.basicAuthenticationPolicy = basicAuthenticationPolicy;
-const bytesEncoding_js_1 = __nccwpck_require__(82921);
-const checkInsecureConnection_js_1 = __nccwpck_require__(42302);
-/**
- * Name of the Basic Authentication Policy
- */
-exports.basicAuthenticationPolicyName = "bearerAuthenticationPolicy";
-/**
- * Gets a pipeline policy that adds basic authentication to requests
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var basicAuthenticationPolicy_exports = {};
+__export(basicAuthenticationPolicy_exports, {
+  basicAuthenticationPolicy: () => basicAuthenticationPolicy,
+  basicAuthenticationPolicyName: () => basicAuthenticationPolicyName
+});
+module.exports = __toCommonJS(basicAuthenticationPolicy_exports);
+var import_bytesEncoding = __nccwpck_require__(82921);
+var import_checkInsecureConnection = __nccwpck_require__(42302);
+const basicAuthenticationPolicyName = "bearerAuthenticationPolicy";
 function basicAuthenticationPolicy(options) {
-    return {
-        name: exports.basicAuthenticationPolicyName,
-        async sendRequest(request, next) {
-            // Ensure allowInsecureConnection is explicitly set when sending request to non-https URLs
-            (0, checkInsecureConnection_js_1.ensureSecureConnection)(request, options);
-            const scheme = (request.authSchemes ?? options.authSchemes)?.find((x) => x.kind === "http" && x.scheme === "basic");
-            // Skip adding authentication header if no basic authentication scheme is found
-            if (!scheme) {
-                return next(request);
-            }
-            const { username, password } = options.credential;
-            const headerValue = (0, bytesEncoding_js_1.uint8ArrayToString)((0, bytesEncoding_js_1.stringToUint8Array)(`${username}:${password}`, "utf-8"), "base64");
-            request.headers.set("Authorization", `Basic ${headerValue}`);
-            return next(request);
-        },
-    };
+  return {
+    name: basicAuthenticationPolicyName,
+    async sendRequest(request, next) {
+      (0, import_checkInsecureConnection.ensureSecureConnection)(request, options);
+      const scheme = (request.authSchemes ?? options.authSchemes)?.find(
+        (x) => x.kind === "http" && x.scheme === "basic"
+      );
+      if (!scheme) {
+        return next(request);
+      }
+      const { username, password } = options.credential;
+      const headerValue = (0, import_bytesEncoding.uint8ArrayToString)(
+        (0, import_bytesEncoding.stringToUint8Array)(`${username}:${password}`, "utf-8"),
+        "base64"
+      );
+      request.headers.set("Authorization", `Basic ${headerValue}`);
+      return next(request);
+    }
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=basicAuthenticationPolicy.js.map
+
 
 /***/ }),
 
 /***/ 89709:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.bearerAuthenticationPolicyName = void 0;
-exports.bearerAuthenticationPolicy = bearerAuthenticationPolicy;
-const checkInsecureConnection_js_1 = __nccwpck_require__(42302);
-/**
- * Name of the Bearer Authentication Policy
- */
-exports.bearerAuthenticationPolicyName = "bearerAuthenticationPolicy";
-/**
- * Gets a pipeline policy that adds bearer token authentication to requests
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var bearerAuthenticationPolicy_exports = {};
+__export(bearerAuthenticationPolicy_exports, {
+  bearerAuthenticationPolicy: () => bearerAuthenticationPolicy,
+  bearerAuthenticationPolicyName: () => bearerAuthenticationPolicyName
+});
+module.exports = __toCommonJS(bearerAuthenticationPolicy_exports);
+var import_checkInsecureConnection = __nccwpck_require__(42302);
+const bearerAuthenticationPolicyName = "bearerAuthenticationPolicy";
 function bearerAuthenticationPolicy(options) {
-    return {
-        name: exports.bearerAuthenticationPolicyName,
-        async sendRequest(request, next) {
-            // Ensure allowInsecureConnection is explicitly set when sending request to non-https URLs
-            (0, checkInsecureConnection_js_1.ensureSecureConnection)(request, options);
-            const scheme = (request.authSchemes ?? options.authSchemes)?.find((x) => x.kind === "http" && x.scheme === "bearer");
-            // Skip adding authentication header if no bearer authentication scheme is found
-            if (!scheme) {
-                return next(request);
-            }
-            const token = await options.credential.getBearerToken({
-                abortSignal: request.abortSignal,
-            });
-            request.headers.set("Authorization", `Bearer ${token}`);
-            return next(request);
-        },
-    };
+  return {
+    name: bearerAuthenticationPolicyName,
+    async sendRequest(request, next) {
+      (0, import_checkInsecureConnection.ensureSecureConnection)(request, options);
+      const scheme = (request.authSchemes ?? options.authSchemes)?.find(
+        (x) => x.kind === "http" && x.scheme === "bearer"
+      );
+      if (!scheme) {
+        return next(request);
+      }
+      const token = await options.credential.getBearerToken({
+        abortSignal: request.abortSignal
+      });
+      request.headers.set("Authorization", `Bearer ${token}`);
+      return next(request);
+    }
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=bearerAuthenticationPolicy.js.map
+
 
 /***/ }),
 
 /***/ 42302:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ensureSecureConnection = ensureSecureConnection;
-const log_js_1 = __nccwpck_require__(3644);
-// Ensure the warining is only emitted once
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var checkInsecureConnection_exports = {};
+__export(checkInsecureConnection_exports, {
+  ensureSecureConnection: () => ensureSecureConnection
+});
+module.exports = __toCommonJS(checkInsecureConnection_exports);
+var import_log = __nccwpck_require__(3644);
 let insecureConnectionWarningEmmitted = false;
-/**
- * Checks if the request is allowed to be sent over an insecure connection.
- *
- * A request is allowed to be sent over an insecure connection when:
- * - The `allowInsecureConnection` option is set to `true`.
- * - The request has the `allowInsecureConnection` property set to `true`.
- * - The request is being sent to `localhost` or `127.0.0.1`
- */
 function allowInsecureConnection(request, options) {
-    if (options.allowInsecureConnection && request.allowInsecureConnection) {
-        const url = new URL(request.url);
-        if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
-            return true;
-        }
+  if (options.allowInsecureConnection && request.allowInsecureConnection) {
+    const url = new URL(request.url);
+    if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
+      return true;
     }
-    return false;
+  }
+  return false;
 }
-/**
- * Logs a warning about sending a token over an insecure connection.
- *
- * This function will emit a node warning once, but log the warning every time.
- */
 function emitInsecureConnectionWarning() {
-    const warning = "Sending token over insecure transport. Assume any token issued is compromised.";
-    log_js_1.logger.warning(warning);
-    if (typeof process?.emitWarning === "function" && !insecureConnectionWarningEmmitted) {
-        insecureConnectionWarningEmmitted = true;
-        process.emitWarning(warning);
-    }
+  const warning = "Sending token over insecure transport. Assume any token issued is compromised.";
+  import_log.logger.warning(warning);
+  if (typeof process?.emitWarning === "function" && !insecureConnectionWarningEmmitted) {
+    insecureConnectionWarningEmmitted = true;
+    process.emitWarning(warning);
+  }
 }
-/**
- * Ensures that authentication is only allowed over HTTPS unless explicitly allowed.
- * Throws an error if the connection is not secure and not explicitly allowed.
- */
 function ensureSecureConnection(request, options) {
-    if (!request.url.toLowerCase().startsWith("https://")) {
-        if (allowInsecureConnection(request, options)) {
-            emitInsecureConnectionWarning();
-        }
-        else {
-            throw new Error("Authentication is not permitted for non-TLS protected (non-https) URLs when allowInsecureConnection is false.");
-        }
+  if (!request.url.toLowerCase().startsWith("https://")) {
+    if (allowInsecureConnection(request, options)) {
+      emitInsecureConnectionWarning();
+    } else {
+      throw new Error(
+        "Authentication is not permitted for non-TLS protected (non-https) URLs when allowInsecureConnection is false."
+      );
     }
+  }
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=checkInsecureConnection.js.map
+
 
 /***/ }),
 
 /***/ 20219:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.oauth2AuthenticationPolicyName = void 0;
-exports.oauth2AuthenticationPolicy = oauth2AuthenticationPolicy;
-const checkInsecureConnection_js_1 = __nccwpck_require__(42302);
-/**
- * Name of the OAuth2 Authentication Policy
- */
-exports.oauth2AuthenticationPolicyName = "oauth2AuthenticationPolicy";
-/**
- * Gets a pipeline policy that adds authorization header from OAuth2 schemes
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var oauth2AuthenticationPolicy_exports = {};
+__export(oauth2AuthenticationPolicy_exports, {
+  oauth2AuthenticationPolicy: () => oauth2AuthenticationPolicy,
+  oauth2AuthenticationPolicyName: () => oauth2AuthenticationPolicyName
+});
+module.exports = __toCommonJS(oauth2AuthenticationPolicy_exports);
+var import_checkInsecureConnection = __nccwpck_require__(42302);
+const oauth2AuthenticationPolicyName = "oauth2AuthenticationPolicy";
 function oauth2AuthenticationPolicy(options) {
-    return {
-        name: exports.oauth2AuthenticationPolicyName,
-        async sendRequest(request, next) {
-            // Ensure allowInsecureConnection is explicitly set when sending request to non-https URLs
-            (0, checkInsecureConnection_js_1.ensureSecureConnection)(request, options);
-            const scheme = (request.authSchemes ?? options.authSchemes)?.find((x) => x.kind === "oauth2");
-            // Skip adding authentication header if no OAuth2 authentication scheme is found
-            if (!scheme) {
-                return next(request);
-            }
-            const token = await options.credential.getOAuth2Token(scheme.flows, {
-                abortSignal: request.abortSignal,
-            });
-            request.headers.set("Authorization", `Bearer ${token}`);
-            return next(request);
-        },
-    };
+  return {
+    name: oauth2AuthenticationPolicyName,
+    async sendRequest(request, next) {
+      (0, import_checkInsecureConnection.ensureSecureConnection)(request, options);
+      const scheme = (request.authSchemes ?? options.authSchemes)?.find((x) => x.kind === "oauth2");
+      if (!scheme) {
+        return next(request);
+      }
+      const token = await options.credential.getOAuth2Token(scheme.flows, {
+        abortSignal: request.abortSignal
+      });
+      request.headers.set("Authorization", `Bearer ${token}`);
+      return next(request);
+    }
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=oauth2AuthenticationPolicy.js.map
+
 
 /***/ }),
 
 /***/ 35035:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.decompressResponsePolicyName = void 0;
-exports.decompressResponsePolicy = decompressResponsePolicy;
-/**
- * The programmatic identifier of the decompressResponsePolicy.
- */
-exports.decompressResponsePolicyName = "decompressResponsePolicy";
-/**
- * A policy to enable response decompression according to Accept-Encoding header
- * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var decompressResponsePolicy_exports = {};
+__export(decompressResponsePolicy_exports, {
+  decompressResponsePolicy: () => decompressResponsePolicy,
+  decompressResponsePolicyName: () => decompressResponsePolicyName
+});
+module.exports = __toCommonJS(decompressResponsePolicy_exports);
+const decompressResponsePolicyName = "decompressResponsePolicy";
 function decompressResponsePolicy() {
-    return {
-        name: exports.decompressResponsePolicyName,
-        async sendRequest(request, next) {
-            // HEAD requests have no body
-            if (request.method !== "HEAD") {
-                request.headers.set("Accept-Encoding", "gzip,deflate");
-            }
-            return next(request);
-        },
-    };
+  return {
+    name: decompressResponsePolicyName,
+    async sendRequest(request, next) {
+      if (request.method !== "HEAD") {
+        request.headers.set("Accept-Encoding", "gzip,deflate");
+      }
+      return next(request);
+    }
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=decompressResponsePolicy.js.map
+
 
 /***/ }),
 
 /***/ 32462:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.defaultRetryPolicyName = void 0;
-exports.defaultRetryPolicy = defaultRetryPolicy;
-const exponentialRetryStrategy_js_1 = __nccwpck_require__(98102);
-const throttlingRetryStrategy_js_1 = __nccwpck_require__(21112);
-const retryPolicy_js_1 = __nccwpck_require__(43345);
-const constants_js_1 = __nccwpck_require__(31255);
-/**
- * Name of the {@link defaultRetryPolicy}
- */
-exports.defaultRetryPolicyName = "defaultRetryPolicy";
-/**
- * A policy that retries according to three strategies:
- * - When the server sends a 429 response with a Retry-After header.
- * - When there are errors in the underlying transport layer (e.g. DNS lookup failures).
- * - Or otherwise if the outgoing request fails, it will retry with an exponentially increasing delay.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var defaultRetryPolicy_exports = {};
+__export(defaultRetryPolicy_exports, {
+  defaultRetryPolicy: () => defaultRetryPolicy,
+  defaultRetryPolicyName: () => defaultRetryPolicyName
+});
+module.exports = __toCommonJS(defaultRetryPolicy_exports);
+var import_exponentialRetryStrategy = __nccwpck_require__(98102);
+var import_throttlingRetryStrategy = __nccwpck_require__(21112);
+var import_retryPolicy = __nccwpck_require__(43345);
+var import_constants = __nccwpck_require__(31255);
+const defaultRetryPolicyName = "defaultRetryPolicy";
 function defaultRetryPolicy(options = {}) {
-    return {
-        name: exports.defaultRetryPolicyName,
-        sendRequest: (0, retryPolicy_js_1.retryPolicy)([(0, throttlingRetryStrategy_js_1.throttlingRetryStrategy)(), (0, exponentialRetryStrategy_js_1.exponentialRetryStrategy)(options)], {
-            maxRetries: options.maxRetries ?? constants_js_1.DEFAULT_RETRY_POLICY_COUNT,
-        }).sendRequest,
-    };
+  return {
+    name: defaultRetryPolicyName,
+    sendRequest: (0, import_retryPolicy.retryPolicy)([(0, import_throttlingRetryStrategy.throttlingRetryStrategy)(), (0, import_exponentialRetryStrategy.exponentialRetryStrategy)(options)], {
+      maxRetries: options.maxRetries ?? import_constants.DEFAULT_RETRY_POLICY_COUNT
+    }).sendRequest
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=defaultRetryPolicy.js.map
+
 
 /***/ }),
 
 /***/ 74656:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.exponentialRetryPolicyName = void 0;
-exports.exponentialRetryPolicy = exponentialRetryPolicy;
-const exponentialRetryStrategy_js_1 = __nccwpck_require__(98102);
-const retryPolicy_js_1 = __nccwpck_require__(43345);
-const constants_js_1 = __nccwpck_require__(31255);
-/**
- * The programmatic identifier of the exponentialRetryPolicy.
- */
-exports.exponentialRetryPolicyName = "exponentialRetryPolicy";
-/**
- * A policy that attempts to retry requests while introducing an exponentially increasing delay.
- * @param options - Options that configure retry logic.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var exponentialRetryPolicy_exports = {};
+__export(exponentialRetryPolicy_exports, {
+  exponentialRetryPolicy: () => exponentialRetryPolicy,
+  exponentialRetryPolicyName: () => exponentialRetryPolicyName
+});
+module.exports = __toCommonJS(exponentialRetryPolicy_exports);
+var import_exponentialRetryStrategy = __nccwpck_require__(98102);
+var import_retryPolicy = __nccwpck_require__(43345);
+var import_constants = __nccwpck_require__(31255);
+const exponentialRetryPolicyName = "exponentialRetryPolicy";
 function exponentialRetryPolicy(options = {}) {
-    return (0, retryPolicy_js_1.retryPolicy)([
-        (0, exponentialRetryStrategy_js_1.exponentialRetryStrategy)({
-            ...options,
-            ignoreSystemErrors: true,
-        }),
-    ], {
-        maxRetries: options.maxRetries ?? constants_js_1.DEFAULT_RETRY_POLICY_COUNT,
-    });
+  return (0, import_retryPolicy.retryPolicy)(
+    [
+      (0, import_exponentialRetryStrategy.exponentialRetryStrategy)({
+        ...options,
+        ignoreSystemErrors: true
+      })
+    ],
+    {
+      maxRetries: options.maxRetries ?? import_constants.DEFAULT_RETRY_POLICY_COUNT
+    }
+  );
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=exponentialRetryPolicy.js.map
+
 
 /***/ }),
 
 /***/ 14197:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.formDataPolicyName = void 0;
-exports.formDataPolicy = formDataPolicy;
-const bytesEncoding_js_1 = __nccwpck_require__(82921);
-const checkEnvironment_js_1 = __nccwpck_require__(85086);
-const httpHeaders_js_1 = __nccwpck_require__(4220);
-/**
- * The programmatic identifier of the formDataPolicy.
- */
-exports.formDataPolicyName = "formDataPolicy";
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var formDataPolicy_exports = {};
+__export(formDataPolicy_exports, {
+  formDataPolicy: () => formDataPolicy,
+  formDataPolicyName: () => formDataPolicyName
+});
+module.exports = __toCommonJS(formDataPolicy_exports);
+var import_bytesEncoding = __nccwpck_require__(82921);
+var import_checkEnvironment = __nccwpck_require__(85086);
+var import_httpHeaders = __nccwpck_require__(4220);
+const formDataPolicyName = "formDataPolicy";
 function formDataToFormDataMap(formData) {
-    const formDataMap = {};
-    for (const [key, value] of formData.entries()) {
-        formDataMap[key] ??= [];
-        formDataMap[key].push(value);
-    }
-    return formDataMap;
+  const formDataMap = {};
+  for (const [key, value] of formData.entries()) {
+    formDataMap[key] ??= [];
+    formDataMap[key].push(value);
+  }
+  return formDataMap;
 }
-/**
- * A policy that encodes FormData on the request into the body.
- */
 function formDataPolicy() {
-    return {
-        name: exports.formDataPolicyName,
-        async sendRequest(request, next) {
-            if (checkEnvironment_js_1.isNodeLike && typeof FormData !== "undefined" && request.body instanceof FormData) {
-                request.formData = formDataToFormDataMap(request.body);
-                request.body = undefined;
-            }
-            if (request.formData) {
-                const contentType = request.headers.get("Content-Type");
-                if (contentType && contentType.indexOf("application/x-www-form-urlencoded") !== -1) {
-                    request.body = wwwFormUrlEncode(request.formData);
-                }
-                else {
-                    await prepareFormData(request.formData, request);
-                }
-                request.formData = undefined;
-            }
-            return next(request);
-        },
-    };
+  return {
+    name: formDataPolicyName,
+    async sendRequest(request, next) {
+      if (import_checkEnvironment.isNodeLike && typeof FormData !== "undefined" && request.body instanceof FormData) {
+        request.formData = formDataToFormDataMap(request.body);
+        request.body = void 0;
+      }
+      if (request.formData) {
+        const contentType = request.headers.get("Content-Type");
+        if (contentType && contentType.indexOf("application/x-www-form-urlencoded") !== -1) {
+          request.body = wwwFormUrlEncode(request.formData);
+        } else {
+          await prepareFormData(request.formData, request);
+        }
+        request.formData = void 0;
+      }
+      return next(request);
+    }
+  };
 }
 function wwwFormUrlEncode(formData) {
-    const urlSearchParams = new URLSearchParams();
-    for (const [key, value] of Object.entries(formData)) {
-        if (Array.isArray(value)) {
-            for (const subValue of value) {
-                urlSearchParams.append(key, subValue.toString());
-            }
-        }
-        else {
-            urlSearchParams.append(key, value.toString());
-        }
+  const urlSearchParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(formData)) {
+    if (Array.isArray(value)) {
+      for (const subValue of value) {
+        urlSearchParams.append(key, subValue.toString());
+      }
+    } else {
+      urlSearchParams.append(key, value.toString());
     }
-    return urlSearchParams.toString();
+  }
+  return urlSearchParams.toString();
 }
 async function prepareFormData(formData, request) {
-    // validate content type (multipart/form-data)
-    const contentType = request.headers.get("Content-Type");
-    if (contentType && !contentType.startsWith("multipart/form-data")) {
-        // content type is specified and is not multipart/form-data. Exit.
-        return;
+  const contentType = request.headers.get("Content-Type");
+  if (contentType && !contentType.startsWith("multipart/form-data")) {
+    return;
+  }
+  request.headers.set("Content-Type", contentType ?? "multipart/form-data");
+  const parts = [];
+  for (const [fieldName, values] of Object.entries(formData)) {
+    for (const value of Array.isArray(values) ? values : [values]) {
+      if (typeof value === "string") {
+        parts.push({
+          headers: (0, import_httpHeaders.createHttpHeaders)({
+            "Content-Disposition": `form-data; name="${fieldName}"`
+          }),
+          body: (0, import_bytesEncoding.stringToUint8Array)(value, "utf-8")
+        });
+      } else if (value === void 0 || value === null || typeof value !== "object") {
+        throw new Error(
+          `Unexpected value for key ${fieldName}: ${value}. Value should be serialized to string first.`
+        );
+      } else {
+        const fileName = value.name || "blob";
+        const headers = (0, import_httpHeaders.createHttpHeaders)();
+        headers.set(
+          "Content-Disposition",
+          `form-data; name="${fieldName}"; filename="${fileName}"`
+        );
+        headers.set("Content-Type", value.type || "application/octet-stream");
+        parts.push({
+          headers,
+          body: value
+        });
+      }
     }
-    request.headers.set("Content-Type", contentType ?? "multipart/form-data");
-    // set body to MultipartRequestBody using content from FormDataMap
-    const parts = [];
-    for (const [fieldName, values] of Object.entries(formData)) {
-        for (const value of Array.isArray(values) ? values : [values]) {
-            if (typeof value === "string") {
-                parts.push({
-                    headers: (0, httpHeaders_js_1.createHttpHeaders)({
-                        "Content-Disposition": `form-data; name="${fieldName}"`,
-                    }),
-                    body: (0, bytesEncoding_js_1.stringToUint8Array)(value, "utf-8"),
-                });
-            }
-            else if (value === undefined || value === null || typeof value !== "object") {
-                throw new Error(`Unexpected value for key ${fieldName}: ${value}. Value should be serialized to string first.`);
-            }
-            else {
-                // using || instead of ?? here since if value.name is empty we should create a file name
-                const fileName = value.name || "blob";
-                const headers = (0, httpHeaders_js_1.createHttpHeaders)();
-                headers.set("Content-Disposition", `form-data; name="${fieldName}"; filename="${fileName}"`);
-                // again, || is used since an empty value.type means the content type is unset
-                headers.set("Content-Type", value.type || "application/octet-stream");
-                parts.push({
-                    headers,
-                    body: value,
-                });
-            }
-        }
-    }
-    request.multipartBody = { parts };
+  }
+  request.multipartBody = { parts };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=formDataPolicy.js.map
+
 
 /***/ }),
 
 /***/ 44960:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.userAgentPolicyName = exports.userAgentPolicy = exports.tlsPolicyName = exports.tlsPolicy = exports.redirectPolicyName = exports.redirectPolicy = exports.getDefaultProxySettings = exports.proxyPolicyName = exports.proxyPolicy = exports.multipartPolicyName = exports.multipartPolicy = exports.logPolicyName = exports.logPolicy = exports.formDataPolicyName = exports.formDataPolicy = exports.throttlingRetryPolicyName = exports.throttlingRetryPolicy = exports.systemErrorRetryPolicyName = exports.systemErrorRetryPolicy = exports.retryPolicy = exports.exponentialRetryPolicyName = exports.exponentialRetryPolicy = exports.defaultRetryPolicyName = exports.defaultRetryPolicy = exports.decompressResponsePolicyName = exports.decompressResponsePolicy = exports.agentPolicyName = exports.agentPolicy = void 0;
-var agentPolicy_js_1 = __nccwpck_require__(85366);
-Object.defineProperty(exports, "agentPolicy", ({ enumerable: true, get: function () { return agentPolicy_js_1.agentPolicy; } }));
-Object.defineProperty(exports, "agentPolicyName", ({ enumerable: true, get: function () { return agentPolicy_js_1.agentPolicyName; } }));
-var decompressResponsePolicy_js_1 = __nccwpck_require__(35035);
-Object.defineProperty(exports, "decompressResponsePolicy", ({ enumerable: true, get: function () { return decompressResponsePolicy_js_1.decompressResponsePolicy; } }));
-Object.defineProperty(exports, "decompressResponsePolicyName", ({ enumerable: true, get: function () { return decompressResponsePolicy_js_1.decompressResponsePolicyName; } }));
-var defaultRetryPolicy_js_1 = __nccwpck_require__(32462);
-Object.defineProperty(exports, "defaultRetryPolicy", ({ enumerable: true, get: function () { return defaultRetryPolicy_js_1.defaultRetryPolicy; } }));
-Object.defineProperty(exports, "defaultRetryPolicyName", ({ enumerable: true, get: function () { return defaultRetryPolicy_js_1.defaultRetryPolicyName; } }));
-var exponentialRetryPolicy_js_1 = __nccwpck_require__(74656);
-Object.defineProperty(exports, "exponentialRetryPolicy", ({ enumerable: true, get: function () { return exponentialRetryPolicy_js_1.exponentialRetryPolicy; } }));
-Object.defineProperty(exports, "exponentialRetryPolicyName", ({ enumerable: true, get: function () { return exponentialRetryPolicy_js_1.exponentialRetryPolicyName; } }));
-var retryPolicy_js_1 = __nccwpck_require__(43345);
-Object.defineProperty(exports, "retryPolicy", ({ enumerable: true, get: function () { return retryPolicy_js_1.retryPolicy; } }));
-var systemErrorRetryPolicy_js_1 = __nccwpck_require__(92418);
-Object.defineProperty(exports, "systemErrorRetryPolicy", ({ enumerable: true, get: function () { return systemErrorRetryPolicy_js_1.systemErrorRetryPolicy; } }));
-Object.defineProperty(exports, "systemErrorRetryPolicyName", ({ enumerable: true, get: function () { return systemErrorRetryPolicy_js_1.systemErrorRetryPolicyName; } }));
-var throttlingRetryPolicy_js_1 = __nccwpck_require__(24728);
-Object.defineProperty(exports, "throttlingRetryPolicy", ({ enumerable: true, get: function () { return throttlingRetryPolicy_js_1.throttlingRetryPolicy; } }));
-Object.defineProperty(exports, "throttlingRetryPolicyName", ({ enumerable: true, get: function () { return throttlingRetryPolicy_js_1.throttlingRetryPolicyName; } }));
-var formDataPolicy_js_1 = __nccwpck_require__(14197);
-Object.defineProperty(exports, "formDataPolicy", ({ enumerable: true, get: function () { return formDataPolicy_js_1.formDataPolicy; } }));
-Object.defineProperty(exports, "formDataPolicyName", ({ enumerable: true, get: function () { return formDataPolicy_js_1.formDataPolicyName; } }));
-var logPolicy_js_1 = __nccwpck_require__(47129);
-Object.defineProperty(exports, "logPolicy", ({ enumerable: true, get: function () { return logPolicy_js_1.logPolicy; } }));
-Object.defineProperty(exports, "logPolicyName", ({ enumerable: true, get: function () { return logPolicy_js_1.logPolicyName; } }));
-var multipartPolicy_js_1 = __nccwpck_require__(27427);
-Object.defineProperty(exports, "multipartPolicy", ({ enumerable: true, get: function () { return multipartPolicy_js_1.multipartPolicy; } }));
-Object.defineProperty(exports, "multipartPolicyName", ({ enumerable: true, get: function () { return multipartPolicy_js_1.multipartPolicyName; } }));
-var proxyPolicy_js_1 = __nccwpck_require__(80067);
-Object.defineProperty(exports, "proxyPolicy", ({ enumerable: true, get: function () { return proxyPolicy_js_1.proxyPolicy; } }));
-Object.defineProperty(exports, "proxyPolicyName", ({ enumerable: true, get: function () { return proxyPolicy_js_1.proxyPolicyName; } }));
-Object.defineProperty(exports, "getDefaultProxySettings", ({ enumerable: true, get: function () { return proxyPolicy_js_1.getDefaultProxySettings; } }));
-var redirectPolicy_js_1 = __nccwpck_require__(92187);
-Object.defineProperty(exports, "redirectPolicy", ({ enumerable: true, get: function () { return redirectPolicy_js_1.redirectPolicy; } }));
-Object.defineProperty(exports, "redirectPolicyName", ({ enumerable: true, get: function () { return redirectPolicy_js_1.redirectPolicyName; } }));
-var tlsPolicy_js_1 = __nccwpck_require__(96690);
-Object.defineProperty(exports, "tlsPolicy", ({ enumerable: true, get: function () { return tlsPolicy_js_1.tlsPolicy; } }));
-Object.defineProperty(exports, "tlsPolicyName", ({ enumerable: true, get: function () { return tlsPolicy_js_1.tlsPolicyName; } }));
-var userAgentPolicy_js_1 = __nccwpck_require__(91691);
-Object.defineProperty(exports, "userAgentPolicy", ({ enumerable: true, get: function () { return userAgentPolicy_js_1.userAgentPolicy; } }));
-Object.defineProperty(exports, "userAgentPolicyName", ({ enumerable: true, get: function () { return userAgentPolicy_js_1.userAgentPolicyName; } }));
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var internal_exports = {};
+__export(internal_exports, {
+  agentPolicy: () => import_agentPolicy.agentPolicy,
+  agentPolicyName: () => import_agentPolicy.agentPolicyName,
+  decompressResponsePolicy: () => import_decompressResponsePolicy.decompressResponsePolicy,
+  decompressResponsePolicyName: () => import_decompressResponsePolicy.decompressResponsePolicyName,
+  defaultRetryPolicy: () => import_defaultRetryPolicy.defaultRetryPolicy,
+  defaultRetryPolicyName: () => import_defaultRetryPolicy.defaultRetryPolicyName,
+  exponentialRetryPolicy: () => import_exponentialRetryPolicy.exponentialRetryPolicy,
+  exponentialRetryPolicyName: () => import_exponentialRetryPolicy.exponentialRetryPolicyName,
+  formDataPolicy: () => import_formDataPolicy.formDataPolicy,
+  formDataPolicyName: () => import_formDataPolicy.formDataPolicyName,
+  getDefaultProxySettings: () => import_proxyPolicy.getDefaultProxySettings,
+  logPolicy: () => import_logPolicy.logPolicy,
+  logPolicyName: () => import_logPolicy.logPolicyName,
+  multipartPolicy: () => import_multipartPolicy.multipartPolicy,
+  multipartPolicyName: () => import_multipartPolicy.multipartPolicyName,
+  proxyPolicy: () => import_proxyPolicy.proxyPolicy,
+  proxyPolicyName: () => import_proxyPolicy.proxyPolicyName,
+  redirectPolicy: () => import_redirectPolicy.redirectPolicy,
+  redirectPolicyName: () => import_redirectPolicy.redirectPolicyName,
+  retryPolicy: () => import_retryPolicy.retryPolicy,
+  systemErrorRetryPolicy: () => import_systemErrorRetryPolicy.systemErrorRetryPolicy,
+  systemErrorRetryPolicyName: () => import_systemErrorRetryPolicy.systemErrorRetryPolicyName,
+  throttlingRetryPolicy: () => import_throttlingRetryPolicy.throttlingRetryPolicy,
+  throttlingRetryPolicyName: () => import_throttlingRetryPolicy.throttlingRetryPolicyName,
+  tlsPolicy: () => import_tlsPolicy.tlsPolicy,
+  tlsPolicyName: () => import_tlsPolicy.tlsPolicyName,
+  userAgentPolicy: () => import_userAgentPolicy.userAgentPolicy,
+  userAgentPolicyName: () => import_userAgentPolicy.userAgentPolicyName
+});
+module.exports = __toCommonJS(internal_exports);
+var import_agentPolicy = __nccwpck_require__(85366);
+var import_decompressResponsePolicy = __nccwpck_require__(35035);
+var import_defaultRetryPolicy = __nccwpck_require__(32462);
+var import_exponentialRetryPolicy = __nccwpck_require__(74656);
+var import_retryPolicy = __nccwpck_require__(43345);
+var import_systemErrorRetryPolicy = __nccwpck_require__(92418);
+var import_throttlingRetryPolicy = __nccwpck_require__(24728);
+var import_formDataPolicy = __nccwpck_require__(14197);
+var import_logPolicy = __nccwpck_require__(47129);
+var import_multipartPolicy = __nccwpck_require__(27427);
+var import_proxyPolicy = __nccwpck_require__(80067);
+var import_redirectPolicy = __nccwpck_require__(92187);
+var import_tlsPolicy = __nccwpck_require__(96690);
+var import_userAgentPolicy = __nccwpck_require__(91691);
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=internal.js.map
+
 
 /***/ }),
 
 /***/ 47129:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.logPolicyName = void 0;
-exports.logPolicy = logPolicy;
-const log_js_1 = __nccwpck_require__(3644);
-const sanitizer_js_1 = __nccwpck_require__(7784);
-/**
- * The programmatic identifier of the logPolicy.
- */
-exports.logPolicyName = "logPolicy";
-/**
- * A policy that logs all requests and responses.
- * @param options - Options to configure logPolicy.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var logPolicy_exports = {};
+__export(logPolicy_exports, {
+  logPolicy: () => logPolicy,
+  logPolicyName: () => logPolicyName
+});
+module.exports = __toCommonJS(logPolicy_exports);
+var import_log = __nccwpck_require__(3644);
+var import_sanitizer = __nccwpck_require__(7784);
+const logPolicyName = "logPolicy";
 function logPolicy(options = {}) {
-    const logger = options.logger ?? log_js_1.logger.info;
-    const sanitizer = new sanitizer_js_1.Sanitizer({
-        additionalAllowedHeaderNames: options.additionalAllowedHeaderNames,
-        additionalAllowedQueryParameters: options.additionalAllowedQueryParameters,
-    });
-    return {
-        name: exports.logPolicyName,
-        async sendRequest(request, next) {
-            if (!logger.enabled) {
-                return next(request);
-            }
-            logger(`Request: ${sanitizer.sanitize(request)}`);
-            const response = await next(request);
-            logger(`Response status code: ${response.status}`);
-            logger(`Headers: ${sanitizer.sanitize(response.headers)}`);
-            return response;
-        },
-    };
+  const logger = options.logger ?? import_log.logger.info;
+  const sanitizer = new import_sanitizer.Sanitizer({
+    additionalAllowedHeaderNames: options.additionalAllowedHeaderNames,
+    additionalAllowedQueryParameters: options.additionalAllowedQueryParameters
+  });
+  return {
+    name: logPolicyName,
+    async sendRequest(request, next) {
+      if (!logger.enabled) {
+        return next(request);
+      }
+      logger(`Request: ${sanitizer.sanitize(request)}`);
+      const response = await next(request);
+      logger(`Response status code: ${response.status}`);
+      logger(`Headers: ${sanitizer.sanitize(response.headers)}`);
+      return response;
+    }
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=logPolicy.js.map
+
 
 /***/ }),
 
 /***/ 27427:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.multipartPolicyName = void 0;
-exports.multipartPolicy = multipartPolicy;
-const bytesEncoding_js_1 = __nccwpck_require__(82921);
-const typeGuards_js_1 = __nccwpck_require__(48505);
-const uuidUtils_js_1 = __nccwpck_require__(5023);
-const concat_js_1 = __nccwpck_require__(20547);
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var multipartPolicy_exports = {};
+__export(multipartPolicy_exports, {
+  multipartPolicy: () => multipartPolicy,
+  multipartPolicyName: () => multipartPolicyName
+});
+module.exports = __toCommonJS(multipartPolicy_exports);
+var import_bytesEncoding = __nccwpck_require__(82921);
+var import_typeGuards = __nccwpck_require__(48505);
+var import_uuidUtils = __nccwpck_require__(5023);
+var import_concat = __nccwpck_require__(20547);
 function generateBoundary() {
-    return `----AzSDKFormBoundary${(0, uuidUtils_js_1.randomUUID)()}`;
+  return `----AzSDKFormBoundary${(0, import_uuidUtils.randomUUID)()}`;
 }
 function encodeHeaders(headers) {
-    let result = "";
-    for (const [key, value] of headers) {
-        result += `${key}: ${value}\r\n`;
-    }
-    return result;
+  let result = "";
+  for (const [key, value] of headers) {
+    result += `${key}: ${value}\r
+`;
+  }
+  return result;
 }
 function getLength(source) {
-    if (source instanceof Uint8Array) {
-        return source.byteLength;
-    }
-    else if ((0, typeGuards_js_1.isBlob)(source)) {
-        // if was created using createFile then -1 means we have an unknown size
-        return source.size === -1 ? undefined : source.size;
-    }
-    else {
-        return undefined;
-    }
+  if (source instanceof Uint8Array) {
+    return source.byteLength;
+  } else if ((0, import_typeGuards.isBlob)(source)) {
+    return source.size === -1 ? void 0 : source.size;
+  } else {
+    return void 0;
+  }
 }
 function getTotalLength(sources) {
-    let total = 0;
-    for (const source of sources) {
-        const partLength = getLength(source);
-        if (partLength === undefined) {
-            return undefined;
-        }
-        else {
-            total += partLength;
-        }
+  let total = 0;
+  for (const source of sources) {
+    const partLength = getLength(source);
+    if (partLength === void 0) {
+      return void 0;
+    } else {
+      total += partLength;
     }
-    return total;
+  }
+  return total;
 }
 async function buildRequestBody(request, parts, boundary) {
-    const sources = [
-        (0, bytesEncoding_js_1.stringToUint8Array)(`--${boundary}`, "utf-8"),
-        ...parts.flatMap((part) => [
-            (0, bytesEncoding_js_1.stringToUint8Array)("\r\n", "utf-8"),
-            (0, bytesEncoding_js_1.stringToUint8Array)(encodeHeaders(part.headers), "utf-8"),
-            (0, bytesEncoding_js_1.stringToUint8Array)("\r\n", "utf-8"),
-            part.body,
-            (0, bytesEncoding_js_1.stringToUint8Array)(`\r\n--${boundary}`, "utf-8"),
-        ]),
-        (0, bytesEncoding_js_1.stringToUint8Array)("--\r\n\r\n", "utf-8"),
-    ];
-    const contentLength = getTotalLength(sources);
-    if (contentLength) {
-        request.headers.set("Content-Length", contentLength);
-    }
-    request.body = await (0, concat_js_1.concat)(sources);
+  const sources = [
+    (0, import_bytesEncoding.stringToUint8Array)(`--${boundary}`, "utf-8"),
+    ...parts.flatMap((part) => [
+      (0, import_bytesEncoding.stringToUint8Array)("\r\n", "utf-8"),
+      (0, import_bytesEncoding.stringToUint8Array)(encodeHeaders(part.headers), "utf-8"),
+      (0, import_bytesEncoding.stringToUint8Array)("\r\n", "utf-8"),
+      part.body,
+      (0, import_bytesEncoding.stringToUint8Array)(`\r
+--${boundary}`, "utf-8")
+    ]),
+    (0, import_bytesEncoding.stringToUint8Array)("--\r\n\r\n", "utf-8")
+  ];
+  const contentLength = getTotalLength(sources);
+  if (contentLength) {
+    request.headers.set("Content-Length", contentLength);
+  }
+  request.body = await (0, import_concat.concat)(sources);
 }
-/**
- * Name of multipart policy
- */
-exports.multipartPolicyName = "multipartPolicy";
+const multipartPolicyName = "multipartPolicy";
 const maxBoundaryLength = 70;
-const validBoundaryCharacters = new Set(`abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'()+,-./:=?`);
+const validBoundaryCharacters = new Set(
+  `abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'()+,-./:=?`
+);
 function assertValidBoundary(boundary) {
-    if (boundary.length > maxBoundaryLength) {
-        throw new Error(`Multipart boundary "${boundary}" exceeds maximum length of 70 characters`);
-    }
-    if (Array.from(boundary).some((x) => !validBoundaryCharacters.has(x))) {
-        throw new Error(`Multipart boundary "${boundary}" contains invalid characters`);
-    }
+  if (boundary.length > maxBoundaryLength) {
+    throw new Error(`Multipart boundary "${boundary}" exceeds maximum length of 70 characters`);
+  }
+  if (Array.from(boundary).some((x) => !validBoundaryCharacters.has(x))) {
+    throw new Error(`Multipart boundary "${boundary}" contains invalid characters`);
+  }
 }
-/**
- * Pipeline policy for multipart requests
- */
 function multipartPolicy() {
-    return {
-        name: exports.multipartPolicyName,
-        async sendRequest(request, next) {
-            if (!request.multipartBody) {
-                return next(request);
-            }
-            if (request.body) {
-                throw new Error("multipartBody and regular body cannot be set at the same time");
-            }
-            let boundary = request.multipartBody.boundary;
-            const contentTypeHeader = request.headers.get("Content-Type") ?? "multipart/mixed";
-            const parsedHeader = contentTypeHeader.match(/^(multipart\/[^ ;]+)(?:; *boundary=(.+))?$/);
-            if (!parsedHeader) {
-                throw new Error(`Got multipart request body, but content-type header was not multipart: ${contentTypeHeader}`);
-            }
-            const [, contentType, parsedBoundary] = parsedHeader;
-            if (parsedBoundary && boundary && parsedBoundary !== boundary) {
-                throw new Error(`Multipart boundary was specified as ${parsedBoundary} in the header, but got ${boundary} in the request body`);
-            }
-            boundary ??= parsedBoundary;
-            if (boundary) {
-                assertValidBoundary(boundary);
-            }
-            else {
-                boundary = generateBoundary();
-            }
-            request.headers.set("Content-Type", `${contentType}; boundary=${boundary}`);
-            await buildRequestBody(request, request.multipartBody.parts, boundary);
-            request.multipartBody = undefined;
-            return next(request);
-        },
-    };
+  return {
+    name: multipartPolicyName,
+    async sendRequest(request, next) {
+      if (!request.multipartBody) {
+        return next(request);
+      }
+      if (request.body) {
+        throw new Error("multipartBody and regular body cannot be set at the same time");
+      }
+      let boundary = request.multipartBody.boundary;
+      const contentTypeHeader = request.headers.get("Content-Type") ?? "multipart/mixed";
+      const parsedHeader = contentTypeHeader.match(/^(multipart\/[^ ;]+)(?:; *boundary=(.+))?$/);
+      if (!parsedHeader) {
+        throw new Error(
+          `Got multipart request body, but content-type header was not multipart: ${contentTypeHeader}`
+        );
+      }
+      const [, contentType, parsedBoundary] = parsedHeader;
+      if (parsedBoundary && boundary && parsedBoundary !== boundary) {
+        throw new Error(
+          `Multipart boundary was specified as ${parsedBoundary} in the header, but got ${boundary} in the request body`
+        );
+      }
+      boundary ??= parsedBoundary;
+      if (boundary) {
+        assertValidBoundary(boundary);
+      } else {
+        boundary = generateBoundary();
+      }
+      request.headers.set("Content-Type", `${contentType}; boundary=${boundary}`);
+      await buildRequestBody(request, request.multipartBody.parts, boundary);
+      request.multipartBody = void 0;
+      return next(request);
+    }
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=multipartPolicy.js.map
+
 
 /***/ }),
 
 /***/ 80067:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.globalNoProxyList = exports.proxyPolicyName = void 0;
-exports.loadNoProxy = loadNoProxy;
-exports.getDefaultProxySettings = getDefaultProxySettings;
-exports.proxyPolicy = proxyPolicy;
-const https_proxy_agent_1 = __nccwpck_require__(3669);
-const http_proxy_agent_1 = __nccwpck_require__(81970);
-const log_js_1 = __nccwpck_require__(3644);
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var proxyPolicy_exports = {};
+__export(proxyPolicy_exports, {
+  getDefaultProxySettings: () => getDefaultProxySettings,
+  globalNoProxyList: () => globalNoProxyList,
+  loadNoProxy: () => loadNoProxy,
+  proxyPolicy: () => proxyPolicy,
+  proxyPolicyName: () => proxyPolicyName
+});
+module.exports = __toCommonJS(proxyPolicy_exports);
+var import_https_proxy_agent = __nccwpck_require__(3669);
+var import_http_proxy_agent = __nccwpck_require__(81970);
+var import_log = __nccwpck_require__(3644);
 const HTTPS_PROXY = "HTTPS_PROXY";
 const HTTP_PROXY = "HTTP_PROXY";
 const ALL_PROXY = "ALL_PROXY";
 const NO_PROXY = "NO_PROXY";
-/**
- * The programmatic identifier of the proxyPolicy.
- */
-exports.proxyPolicyName = "proxyPolicy";
-/**
- * Stores the patterns specified in NO_PROXY environment variable.
- * @internal
- */
-exports.globalNoProxyList = [];
+const proxyPolicyName = "proxyPolicy";
+const globalNoProxyList = [];
 let noProxyListLoaded = false;
-/** A cache of whether a host should bypass the proxy. */
-const globalBypassedMap = new Map();
+const globalBypassedMap = /* @__PURE__ */ new Map();
 function getEnvironmentValue(name) {
-    if (process.env[name]) {
-        return process.env[name];
-    }
-    else if (process.env[name.toLowerCase()]) {
-        return process.env[name.toLowerCase()];
-    }
-    return undefined;
+  if (process.env[name]) {
+    return process.env[name];
+  } else if (process.env[name.toLowerCase()]) {
+    return process.env[name.toLowerCase()];
+  }
+  return void 0;
 }
 function loadEnvironmentProxyValue() {
-    if (!process) {
-        return undefined;
-    }
-    const httpsProxy = getEnvironmentValue(HTTPS_PROXY);
-    const allProxy = getEnvironmentValue(ALL_PROXY);
-    const httpProxy = getEnvironmentValue(HTTP_PROXY);
-    return httpsProxy || allProxy || httpProxy;
+  if (!process) {
+    return void 0;
+  }
+  const httpsProxy = getEnvironmentValue(HTTPS_PROXY);
+  const allProxy = getEnvironmentValue(ALL_PROXY);
+  const httpProxy = getEnvironmentValue(HTTP_PROXY);
+  return httpsProxy || allProxy || httpProxy;
 }
-/**
- * Check whether the host of a given `uri` matches any pattern in the no proxy list.
- * If there's a match, any request sent to the same host shouldn't have the proxy settings set.
- * This implementation is a port of https://github.com/Azure/azure-sdk-for-net/blob/8cca811371159e527159c7eb65602477898683e2/sdk/core/Azure.Core/src/Pipeline/Internal/HttpEnvironmentProxy.cs#L210
- */
 function isBypassed(uri, noProxyList, bypassedMap) {
-    if (noProxyList.length === 0) {
-        return false;
-    }
-    const host = new URL(uri).hostname;
-    if (bypassedMap?.has(host)) {
-        return bypassedMap.get(host);
-    }
-    let isBypassedFlag = false;
-    for (const pattern of noProxyList) {
-        if (pattern[0] === ".") {
-            // This should match either domain it self or any subdomain or host
-            // .foo.com will match foo.com it self or *.foo.com
-            if (host.endsWith(pattern)) {
-                isBypassedFlag = true;
-            }
-            else {
-                if (host.length === pattern.length - 1 && host === pattern.slice(1)) {
-                    isBypassedFlag = true;
-                }
-            }
+  if (noProxyList.length === 0) {
+    return false;
+  }
+  const host = new URL(uri).hostname;
+  if (bypassedMap?.has(host)) {
+    return bypassedMap.get(host);
+  }
+  let isBypassedFlag = false;
+  for (const pattern of noProxyList) {
+    if (pattern[0] === ".") {
+      if (host.endsWith(pattern)) {
+        isBypassedFlag = true;
+      } else {
+        if (host.length === pattern.length - 1 && host === pattern.slice(1)) {
+          isBypassedFlag = true;
         }
-        else {
-            if (host === pattern) {
-                isBypassedFlag = true;
-            }
-        }
+      }
+    } else {
+      if (host === pattern) {
+        isBypassedFlag = true;
+      }
     }
-    bypassedMap?.set(host, isBypassedFlag);
-    return isBypassedFlag;
+  }
+  bypassedMap?.set(host, isBypassedFlag);
+  return isBypassedFlag;
 }
 function loadNoProxy() {
-    const noProxy = getEnvironmentValue(NO_PROXY);
-    noProxyListLoaded = true;
-    if (noProxy) {
-        return noProxy
-            .split(",")
-            .map((item) => item.trim())
-            .filter((item) => item.length);
-    }
-    return [];
+  const noProxy = getEnvironmentValue(NO_PROXY);
+  noProxyListLoaded = true;
+  if (noProxy) {
+    return noProxy.split(",").map((item) => item.trim()).filter((item) => item.length);
+  }
+  return [];
 }
-/**
- * This method converts a proxy url into `ProxySettings` for use with ProxyPolicy.
- * If no argument is given, it attempts to parse a proxy URL from the environment
- * variables `HTTPS_PROXY` or `HTTP_PROXY`.
- * @param proxyUrl - The url of the proxy to use. May contain authentication information.
- * @deprecated - Internally this method is no longer necessary when setting proxy information.
- */
 function getDefaultProxySettings(proxyUrl) {
+  if (!proxyUrl) {
+    proxyUrl = loadEnvironmentProxyValue();
     if (!proxyUrl) {
-        proxyUrl = loadEnvironmentProxyValue();
-        if (!proxyUrl) {
-            return undefined;
-        }
+      return void 0;
     }
-    const parsedUrl = new URL(proxyUrl);
-    const schema = parsedUrl.protocol ? parsedUrl.protocol + "//" : "";
-    return {
-        host: schema + parsedUrl.hostname,
-        port: Number.parseInt(parsedUrl.port || "80"),
-        username: parsedUrl.username,
-        password: parsedUrl.password,
-    };
+  }
+  const parsedUrl = new URL(proxyUrl);
+  const schema = parsedUrl.protocol ? parsedUrl.protocol + "//" : "";
+  return {
+    host: schema + parsedUrl.hostname,
+    port: Number.parseInt(parsedUrl.port || "80"),
+    username: parsedUrl.username,
+    password: parsedUrl.password
+  };
 }
-/**
- * This method attempts to parse a proxy URL from the environment
- * variables `HTTPS_PROXY` or `HTTP_PROXY`.
- */
 function getDefaultProxySettingsInternal() {
-    const envProxy = loadEnvironmentProxyValue();
-    return envProxy ? new URL(envProxy) : undefined;
+  const envProxy = loadEnvironmentProxyValue();
+  return envProxy ? new URL(envProxy) : void 0;
 }
 function getUrlFromProxySettings(settings) {
-    let parsedProxyUrl;
-    try {
-        parsedProxyUrl = new URL(settings.host);
-    }
-    catch {
-        throw new Error(`Expecting a valid host string in proxy settings, but found "${settings.host}".`);
-    }
-    parsedProxyUrl.port = String(settings.port);
-    if (settings.username) {
-        parsedProxyUrl.username = settings.username;
-    }
-    if (settings.password) {
-        parsedProxyUrl.password = settings.password;
-    }
-    return parsedProxyUrl;
+  let parsedProxyUrl;
+  try {
+    parsedProxyUrl = new URL(settings.host);
+  } catch {
+    throw new Error(
+      `Expecting a valid host string in proxy settings, but found "${settings.host}".`
+    );
+  }
+  parsedProxyUrl.port = String(settings.port);
+  if (settings.username) {
+    parsedProxyUrl.username = settings.username;
+  }
+  if (settings.password) {
+    parsedProxyUrl.password = settings.password;
+  }
+  return parsedProxyUrl;
 }
 function setProxyAgentOnRequest(request, cachedAgents, proxyUrl) {
-    // Custom Agent should take precedence so if one is present
-    // we should skip to avoid overwriting it.
-    if (request.agent) {
-        return;
+  if (request.agent) {
+    return;
+  }
+  const url = new URL(request.url);
+  const isInsecure = url.protocol !== "https:";
+  if (request.tlsSettings) {
+    import_log.logger.warning(
+      "TLS settings are not supported in combination with custom Proxy, certificates provided to the client will be ignored."
+    );
+  }
+  if (isInsecure) {
+    if (!cachedAgents.httpProxyAgent) {
+      cachedAgents.httpProxyAgent = new import_http_proxy_agent.HttpProxyAgent(proxyUrl);
     }
-    const url = new URL(request.url);
-    const isInsecure = url.protocol !== "https:";
-    if (request.tlsSettings) {
-        log_js_1.logger.warning("TLS settings are not supported in combination with custom Proxy, certificates provided to the client will be ignored.");
+    request.agent = cachedAgents.httpProxyAgent;
+  } else {
+    if (!cachedAgents.httpsProxyAgent) {
+      cachedAgents.httpsProxyAgent = new import_https_proxy_agent.HttpsProxyAgent(proxyUrl);
     }
-    const headers = request.headers.toJSON();
-    if (isInsecure) {
-        if (!cachedAgents.httpProxyAgent) {
-            cachedAgents.httpProxyAgent = new http_proxy_agent_1.HttpProxyAgent(proxyUrl, { headers });
-        }
-        request.agent = cachedAgents.httpProxyAgent;
-    }
-    else {
-        if (!cachedAgents.httpsProxyAgent) {
-            cachedAgents.httpsProxyAgent = new https_proxy_agent_1.HttpsProxyAgent(proxyUrl, { headers });
-        }
-        request.agent = cachedAgents.httpsProxyAgent;
-    }
+    request.agent = cachedAgents.httpsProxyAgent;
+  }
 }
-/**
- * A policy that allows one to apply proxy settings to all requests.
- * If not passed static settings, they will be retrieved from the HTTPS_PROXY
- * or HTTP_PROXY environment variables.
- * @param proxySettings - ProxySettings to use on each request.
- * @param options - additional settings, for example, custom NO_PROXY patterns
- */
 function proxyPolicy(proxySettings, options) {
-    if (!noProxyListLoaded) {
-        exports.globalNoProxyList.push(...loadNoProxy());
+  if (!noProxyListLoaded) {
+    globalNoProxyList.push(...loadNoProxy());
+  }
+  const defaultProxy = proxySettings ? getUrlFromProxySettings(proxySettings) : getDefaultProxySettingsInternal();
+  const cachedAgents = {};
+  return {
+    name: proxyPolicyName,
+    async sendRequest(request, next) {
+      if (!request.proxySettings && defaultProxy && !isBypassed(
+        request.url,
+        options?.customNoProxyList ?? globalNoProxyList,
+        options?.customNoProxyList ? void 0 : globalBypassedMap
+      )) {
+        setProxyAgentOnRequest(request, cachedAgents, defaultProxy);
+      } else if (request.proxySettings) {
+        setProxyAgentOnRequest(
+          request,
+          cachedAgents,
+          getUrlFromProxySettings(request.proxySettings)
+        );
+      }
+      return next(request);
     }
-    const defaultProxy = proxySettings
-        ? getUrlFromProxySettings(proxySettings)
-        : getDefaultProxySettingsInternal();
-    const cachedAgents = {};
-    return {
-        name: exports.proxyPolicyName,
-        async sendRequest(request, next) {
-            if (!request.proxySettings &&
-                defaultProxy &&
-                !isBypassed(request.url, options?.customNoProxyList ?? exports.globalNoProxyList, options?.customNoProxyList ? undefined : globalBypassedMap)) {
-                setProxyAgentOnRequest(request, cachedAgents, defaultProxy);
-            }
-            else if (request.proxySettings) {
-                setProxyAgentOnRequest(request, cachedAgents, getUrlFromProxySettings(request.proxySettings));
-            }
-            return next(request);
-        },
-    };
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=proxyPolicy.js.map
+
 
 /***/ }),
 
 /***/ 92187:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.redirectPolicyName = void 0;
-exports.redirectPolicy = redirectPolicy;
-/**
- * The programmatic identifier of the redirectPolicy.
- */
-exports.redirectPolicyName = "redirectPolicy";
-/**
- * Methods that are allowed to follow redirects 301 and 302
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var redirectPolicy_exports = {};
+__export(redirectPolicy_exports, {
+  redirectPolicy: () => redirectPolicy,
+  redirectPolicyName: () => redirectPolicyName
+});
+module.exports = __toCommonJS(redirectPolicy_exports);
+var import_log = __nccwpck_require__(3644);
+const redirectPolicyName = "redirectPolicy";
 const allowedRedirect = ["GET", "HEAD"];
-/**
- * A policy to follow Location headers from the server in order
- * to support server-side redirection.
- * In the browser, this policy is not used.
- * @param options - Options to control policy behavior.
- */
 function redirectPolicy(options = {}) {
-    const { maxRetries = 20 } = options;
-    return {
-        name: exports.redirectPolicyName,
-        async sendRequest(request, next) {
-            const response = await next(request);
-            return handleRedirect(next, response, maxRetries);
-        },
-    };
-}
-async function handleRedirect(next, response, maxRetries, currentRetries = 0) {
-    const { request, status, headers } = response;
-    const locationHeader = headers.get("location");
-    if (locationHeader &&
-        (status === 300 ||
-            (status === 301 && allowedRedirect.includes(request.method)) ||
-            (status === 302 && allowedRedirect.includes(request.method)) ||
-            (status === 303 && request.method === "POST") ||
-            status === 307) &&
-        currentRetries < maxRetries) {
-        const url = new URL(locationHeader, request.url);
-        request.url = url.toString();
-        // POST request with Status code 303 should be converted into a
-        // redirected GET request if the redirect url is present in the location header
-        if (status === 303) {
-            request.method = "GET";
-            request.headers.delete("Content-Length");
-            delete request.body;
-        }
-        request.headers.delete("Authorization");
-        const res = await next(request);
-        return handleRedirect(next, res, maxRetries, currentRetries + 1);
+  const { maxRetries = 20, allowCrossOriginRedirects = false } = options;
+  return {
+    name: redirectPolicyName,
+    async sendRequest(request, next) {
+      const response = await next(request);
+      return handleRedirect(next, response, maxRetries, allowCrossOriginRedirects);
     }
-    return response;
+  };
 }
+async function handleRedirect(next, response, maxRetries, allowCrossOriginRedirects, currentRetries = 0) {
+  const { request, status, headers } = response;
+  const locationHeader = headers.get("location");
+  if (locationHeader && (status === 300 || status === 301 && allowedRedirect.includes(request.method) || status === 302 && allowedRedirect.includes(request.method) || status === 303 && request.method === "POST" || status === 307) && currentRetries < maxRetries) {
+    const url = new URL(locationHeader, request.url);
+    if (!allowCrossOriginRedirects) {
+      const originalUrl = new URL(request.url);
+      if (url.origin !== originalUrl.origin) {
+        import_log.logger.verbose(
+          `Skipping cross-origin redirect from ${originalUrl.origin} to ${url.origin}.`
+        );
+        return response;
+      }
+    }
+    request.url = url.toString();
+    if (status === 303) {
+      request.method = "GET";
+      request.headers.delete("Content-Length");
+      delete request.body;
+    }
+    request.headers.delete("Authorization");
+    const res = await next(request);
+    return handleRedirect(next, res, maxRetries, allowCrossOriginRedirects, currentRetries + 1);
+  }
+  return response;
+}
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=redirectPolicy.js.map
+
 
 /***/ }),
 
 /***/ 43345:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.retryPolicy = retryPolicy;
-const helpers_js_1 = __nccwpck_require__(77566);
-const AbortError_js_1 = __nccwpck_require__(99992);
-const logger_js_1 = __nccwpck_require__(18459);
-const constants_js_1 = __nccwpck_require__(31255);
-const retryPolicyLogger = (0, logger_js_1.createClientLogger)("ts-http-runtime retryPolicy");
-/**
- * The programmatic identifier of the retryPolicy.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var retryPolicy_exports = {};
+__export(retryPolicy_exports, {
+  retryPolicy: () => retryPolicy
+});
+module.exports = __toCommonJS(retryPolicy_exports);
+var import_helpers = __nccwpck_require__(77566);
+var import_restError = __nccwpck_require__(9758);
+var import_AbortError = __nccwpck_require__(99992);
+var import_logger = __nccwpck_require__(18459);
+var import_constants = __nccwpck_require__(31255);
+const retryPolicyLogger = (0, import_logger.createClientLogger)("ts-http-runtime retryPolicy");
 const retryPolicyName = "retryPolicy";
-/**
- * retryPolicy is a generic policy to enable retrying requests when certain conditions are met
- */
-function retryPolicy(strategies, options = { maxRetries: constants_js_1.DEFAULT_RETRY_POLICY_COUNT }) {
-    const logger = options.logger || retryPolicyLogger;
-    return {
-        name: retryPolicyName,
-        async sendRequest(request, next) {
-            let response;
-            let responseError;
-            let retryCount = -1;
-            retryRequest: while (true) {
-                retryCount += 1;
-                response = undefined;
-                responseError = undefined;
-                try {
-                    logger.info(`Retry ${retryCount}: Attempting to send request`, request.requestId);
-                    response = await next(request);
-                    logger.info(`Retry ${retryCount}: Received a response from request`, request.requestId);
-                }
-                catch (e) {
-                    logger.error(`Retry ${retryCount}: Received an error from request`, request.requestId);
-                    // RestErrors are valid targets for the retry strategies.
-                    // If none of the retry strategies can work with them, they will be thrown later in this policy.
-                    // If the received error is not a RestError, it is immediately thrown.
-                    responseError = e;
-                    if (!e || responseError.name !== "RestError") {
-                        throw e;
-                    }
-                    response = responseError.response;
-                }
-                if (request.abortSignal?.aborted) {
-                    logger.error(`Retry ${retryCount}: Request aborted.`);
-                    const abortError = new AbortError_js_1.AbortError();
-                    throw abortError;
-                }
-                if (retryCount >= (options.maxRetries ?? constants_js_1.DEFAULT_RETRY_POLICY_COUNT)) {
-                    logger.info(`Retry ${retryCount}: Maximum retries reached. Returning the last received response, or throwing the last received error.`);
-                    if (responseError) {
-                        throw responseError;
-                    }
-                    else if (response) {
-                        return response;
-                    }
-                    else {
-                        throw new Error("Maximum retries reached with no response or error to throw");
-                    }
-                }
-                logger.info(`Retry ${retryCount}: Processing ${strategies.length} retry strategies.`);
-                strategiesLoop: for (const strategy of strategies) {
-                    const strategyLogger = strategy.logger || logger;
-                    strategyLogger.info(`Retry ${retryCount}: Processing retry strategy ${strategy.name}.`);
-                    const modifiers = strategy.retry({
-                        retryCount,
-                        response,
-                        responseError,
-                    });
-                    if (modifiers.skipStrategy) {
-                        strategyLogger.info(`Retry ${retryCount}: Skipped.`);
-                        continue strategiesLoop;
-                    }
-                    const { errorToThrow, retryAfterInMs, redirectTo } = modifiers;
-                    if (errorToThrow) {
-                        strategyLogger.error(`Retry ${retryCount}: Retry strategy ${strategy.name} throws error:`, errorToThrow);
-                        throw errorToThrow;
-                    }
-                    if (retryAfterInMs || retryAfterInMs === 0) {
-                        strategyLogger.info(`Retry ${retryCount}: Retry strategy ${strategy.name} retries after ${retryAfterInMs}`);
-                        await (0, helpers_js_1.delay)(retryAfterInMs, undefined, { abortSignal: request.abortSignal });
-                        continue retryRequest;
-                    }
-                    if (redirectTo) {
-                        strategyLogger.info(`Retry ${retryCount}: Retry strategy ${strategy.name} redirects to ${redirectTo}`);
-                        request.url = redirectTo;
-                        continue retryRequest;
-                    }
-                }
-                if (responseError) {
-                    logger.info(`None of the retry strategies could work with the received error. Throwing it.`);
-                    throw responseError;
-                }
-                if (response) {
-                    logger.info(`None of the retry strategies could work with the received response. Returning it.`);
-                    return response;
-                }
-                // If all the retries skip and there's no response,
-                // we're still in the retry loop, so a new request will be sent
-                // until `maxRetries` is reached.
-            }
-        },
-    };
+function retryPolicy(strategies, options = { maxRetries: import_constants.DEFAULT_RETRY_POLICY_COUNT }) {
+  const logger = options.logger || retryPolicyLogger;
+  return {
+    name: retryPolicyName,
+    async sendRequest(request, next) {
+      let response;
+      let responseError;
+      let retryCount = -1;
+      retryRequest: while (true) {
+        retryCount += 1;
+        response = void 0;
+        responseError = void 0;
+        try {
+          logger.info(`Retry ${retryCount}: Attempting to send request`, request.requestId);
+          response = await next(request);
+          logger.info(`Retry ${retryCount}: Received a response from request`, request.requestId);
+        } catch (e) {
+          logger.error(`Retry ${retryCount}: Received an error from request`, request.requestId);
+          if (!(0, import_restError.isRestError)(e)) {
+            throw e;
+          }
+          responseError = e;
+          response = e.response;
+        }
+        if (request.abortSignal?.aborted) {
+          logger.error(`Retry ${retryCount}: Request aborted.`);
+          const abortError = new import_AbortError.AbortError();
+          throw abortError;
+        }
+        if (retryCount >= (options.maxRetries ?? import_constants.DEFAULT_RETRY_POLICY_COUNT)) {
+          logger.info(
+            `Retry ${retryCount}: Maximum retries reached. Returning the last received response, or throwing the last received error.`
+          );
+          if (responseError) {
+            throw responseError;
+          } else if (response) {
+            return response;
+          } else {
+            throw new Error("Maximum retries reached with no response or error to throw");
+          }
+        }
+        logger.info(`Retry ${retryCount}: Processing ${strategies.length} retry strategies.`);
+        strategiesLoop: for (const strategy of strategies) {
+          const strategyLogger = strategy.logger || logger;
+          strategyLogger.info(`Retry ${retryCount}: Processing retry strategy ${strategy.name}.`);
+          const modifiers = strategy.retry({
+            retryCount,
+            response,
+            responseError
+          });
+          if (modifiers.skipStrategy) {
+            strategyLogger.info(`Retry ${retryCount}: Skipped.`);
+            continue strategiesLoop;
+          }
+          const { errorToThrow, retryAfterInMs, redirectTo } = modifiers;
+          if (errorToThrow) {
+            strategyLogger.error(
+              `Retry ${retryCount}: Retry strategy ${strategy.name} throws error:`,
+              errorToThrow
+            );
+            throw errorToThrow;
+          }
+          if (retryAfterInMs || retryAfterInMs === 0) {
+            strategyLogger.info(
+              `Retry ${retryCount}: Retry strategy ${strategy.name} retries after ${retryAfterInMs}`
+            );
+            await (0, import_helpers.delay)(retryAfterInMs, void 0, { abortSignal: request.abortSignal });
+            continue retryRequest;
+          }
+          if (redirectTo) {
+            strategyLogger.info(
+              `Retry ${retryCount}: Retry strategy ${strategy.name} redirects to ${redirectTo}`
+            );
+            request.url = redirectTo;
+            continue retryRequest;
+          }
+        }
+        if (responseError) {
+          logger.info(
+            `None of the retry strategies could work with the received error. Throwing it.`
+          );
+          throw responseError;
+        }
+        if (response) {
+          logger.info(
+            `None of the retry strategies could work with the received response. Returning it.`
+          );
+          return response;
+        }
+      }
+    }
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=retryPolicy.js.map
+
 
 /***/ }),
 
 /***/ 92418:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.systemErrorRetryPolicyName = void 0;
-exports.systemErrorRetryPolicy = systemErrorRetryPolicy;
-const exponentialRetryStrategy_js_1 = __nccwpck_require__(98102);
-const retryPolicy_js_1 = __nccwpck_require__(43345);
-const constants_js_1 = __nccwpck_require__(31255);
-/**
- * Name of the {@link systemErrorRetryPolicy}
- */
-exports.systemErrorRetryPolicyName = "systemErrorRetryPolicy";
-/**
- * A retry policy that specifically seeks to handle errors in the
- * underlying transport layer (e.g. DNS lookup failures) rather than
- * retryable error codes from the server itself.
- * @param options - Options that customize the policy.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var systemErrorRetryPolicy_exports = {};
+__export(systemErrorRetryPolicy_exports, {
+  systemErrorRetryPolicy: () => systemErrorRetryPolicy,
+  systemErrorRetryPolicyName: () => systemErrorRetryPolicyName
+});
+module.exports = __toCommonJS(systemErrorRetryPolicy_exports);
+var import_exponentialRetryStrategy = __nccwpck_require__(98102);
+var import_retryPolicy = __nccwpck_require__(43345);
+var import_constants = __nccwpck_require__(31255);
+const systemErrorRetryPolicyName = "systemErrorRetryPolicy";
 function systemErrorRetryPolicy(options = {}) {
-    return {
-        name: exports.systemErrorRetryPolicyName,
-        sendRequest: (0, retryPolicy_js_1.retryPolicy)([
-            (0, exponentialRetryStrategy_js_1.exponentialRetryStrategy)({
-                ...options,
-                ignoreHttpStatusCodes: true,
-            }),
-        ], {
-            maxRetries: options.maxRetries ?? constants_js_1.DEFAULT_RETRY_POLICY_COUNT,
-        }).sendRequest,
-    };
+  return {
+    name: systemErrorRetryPolicyName,
+    sendRequest: (0, import_retryPolicy.retryPolicy)(
+      [
+        (0, import_exponentialRetryStrategy.exponentialRetryStrategy)({
+          ...options,
+          ignoreHttpStatusCodes: true
+        })
+      ],
+      {
+        maxRetries: options.maxRetries ?? import_constants.DEFAULT_RETRY_POLICY_COUNT
+      }
+    ).sendRequest
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=systemErrorRetryPolicy.js.map
+
 
 /***/ }),
 
 /***/ 24728:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.throttlingRetryPolicyName = void 0;
-exports.throttlingRetryPolicy = throttlingRetryPolicy;
-const throttlingRetryStrategy_js_1 = __nccwpck_require__(21112);
-const retryPolicy_js_1 = __nccwpck_require__(43345);
-const constants_js_1 = __nccwpck_require__(31255);
-/**
- * Name of the {@link throttlingRetryPolicy}
- */
-exports.throttlingRetryPolicyName = "throttlingRetryPolicy";
-/**
- * A policy that retries when the server sends a 429 response with a Retry-After header.
- *
- * To learn more, please refer to
- * https://learn.microsoft.com/azure/azure-resource-manager/resource-manager-request-limits,
- * https://learn.microsoft.com/azure/azure-subscription-service-limits and
- * https://learn.microsoft.com/azure/virtual-machines/troubleshooting/troubleshooting-throttling-errors
- *
- * @param options - Options that configure retry logic.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var throttlingRetryPolicy_exports = {};
+__export(throttlingRetryPolicy_exports, {
+  throttlingRetryPolicy: () => throttlingRetryPolicy,
+  throttlingRetryPolicyName: () => throttlingRetryPolicyName
+});
+module.exports = __toCommonJS(throttlingRetryPolicy_exports);
+var import_throttlingRetryStrategy = __nccwpck_require__(21112);
+var import_retryPolicy = __nccwpck_require__(43345);
+var import_constants = __nccwpck_require__(31255);
+const throttlingRetryPolicyName = "throttlingRetryPolicy";
 function throttlingRetryPolicy(options = {}) {
-    return {
-        name: exports.throttlingRetryPolicyName,
-        sendRequest: (0, retryPolicy_js_1.retryPolicy)([(0, throttlingRetryStrategy_js_1.throttlingRetryStrategy)()], {
-            maxRetries: options.maxRetries ?? constants_js_1.DEFAULT_RETRY_POLICY_COUNT,
-        }).sendRequest,
-    };
+  return {
+    name: throttlingRetryPolicyName,
+    sendRequest: (0, import_retryPolicy.retryPolicy)([(0, import_throttlingRetryStrategy.throttlingRetryStrategy)()], {
+      maxRetries: options.maxRetries ?? import_constants.DEFAULT_RETRY_POLICY_COUNT
+    }).sendRequest
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=throttlingRetryPolicy.js.map
+
 
 /***/ }),
 
 /***/ 96690:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.tlsPolicyName = void 0;
-exports.tlsPolicy = tlsPolicy;
-/**
- * Name of the TLS Policy
- */
-exports.tlsPolicyName = "tlsPolicy";
-/**
- * Gets a pipeline policy that adds the client certificate to the HttpClient agent for authentication.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var tlsPolicy_exports = {};
+__export(tlsPolicy_exports, {
+  tlsPolicy: () => tlsPolicy,
+  tlsPolicyName: () => tlsPolicyName
+});
+module.exports = __toCommonJS(tlsPolicy_exports);
+const tlsPolicyName = "tlsPolicy";
 function tlsPolicy(tlsSettings) {
-    return {
-        name: exports.tlsPolicyName,
-        sendRequest: async (req, next) => {
-            // Users may define a request tlsSettings, honor those over the client level one
-            if (!req.tlsSettings) {
-                req.tlsSettings = tlsSettings;
-            }
-            return next(req);
-        },
-    };
+  return {
+    name: tlsPolicyName,
+    sendRequest: async (req, next) => {
+      if (!req.tlsSettings) {
+        req.tlsSettings = tlsSettings;
+      }
+      return next(req);
+    }
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=tlsPolicy.js.map
+
 
 /***/ }),
 
 /***/ 91691:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.userAgentPolicyName = void 0;
-exports.userAgentPolicy = userAgentPolicy;
-const userAgent_js_1 = __nccwpck_require__(62731);
-const UserAgentHeaderName = (0, userAgent_js_1.getUserAgentHeaderName)();
-/**
- * The programmatic identifier of the userAgentPolicy.
- */
-exports.userAgentPolicyName = "userAgentPolicy";
-/**
- * A policy that sets the User-Agent header (or equivalent) to reflect
- * the library version.
- * @param options - Options to customize the user agent value.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var userAgentPolicy_exports = {};
+__export(userAgentPolicy_exports, {
+  userAgentPolicy: () => userAgentPolicy,
+  userAgentPolicyName: () => userAgentPolicyName
+});
+module.exports = __toCommonJS(userAgentPolicy_exports);
+var import_userAgent = __nccwpck_require__(62731);
+const UserAgentHeaderName = (0, import_userAgent.getUserAgentHeaderName)();
+const userAgentPolicyName = "userAgentPolicy";
 function userAgentPolicy(options = {}) {
-    const userAgentValue = (0, userAgent_js_1.getUserAgentValue)(options.userAgentPrefix);
-    return {
-        name: exports.userAgentPolicyName,
-        async sendRequest(request, next) {
-            if (!request.headers.has(UserAgentHeaderName)) {
-                request.headers.set(UserAgentHeaderName, await userAgentValue);
-            }
-            return next(request);
-        },
-    };
+  const userAgentValue = (0, import_userAgent.getUserAgentValue)(options.userAgentPrefix);
+  return {
+    name: userAgentPolicyName,
+    async sendRequest(request, next) {
+      if (!request.headers.has(UserAgentHeaderName)) {
+        request.headers.set(UserAgentHeaderName, await userAgentValue);
+      }
+      return next(request);
+    }
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=userAgentPolicy.js.map
+
 
 /***/ }),
 
 /***/ 9758:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.RestError = void 0;
-exports.isRestError = isRestError;
-const error_js_1 = __nccwpck_require__(52573);
-const inspect_js_1 = __nccwpck_require__(37639);
-const sanitizer_js_1 = __nccwpck_require__(7784);
-const errorSanitizer = new sanitizer_js_1.Sanitizer();
-/**
- * A custom error type for failed pipeline requests.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var restError_exports = {};
+__export(restError_exports, {
+  RestError: () => RestError,
+  isRestError: () => isRestError
+});
+module.exports = __toCommonJS(restError_exports);
+var import_error = __nccwpck_require__(52573);
+var import_inspect = __nccwpck_require__(37639);
+var import_sanitizer = __nccwpck_require__(7784);
+const errorSanitizer = new import_sanitizer.Sanitizer();
 class RestError extends Error {
-    /**
-     * Something went wrong when making the request.
-     * This means the actual request failed for some reason,
-     * such as a DNS issue or the connection being lost.
-     */
-    static REQUEST_SEND_ERROR = "REQUEST_SEND_ERROR";
-    /**
-     * This means that parsing the response from the server failed.
-     * It may have been malformed.
-     */
-    static PARSE_ERROR = "PARSE_ERROR";
-    /**
-     * The code of the error itself (use statics on RestError if possible.)
-     */
-    code;
-    /**
-     * The HTTP status code of the request (if applicable.)
-     */
-    statusCode;
-    /**
-     * The request that was made.
-     * This property is non-enumerable.
-     */
-    request;
-    /**
-     * The response received (if any.)
-     * This property is non-enumerable.
-     */
-    response;
-    /**
-     * Bonus property set by the throw site.
-     */
-    details;
-    constructor(message, options = {}) {
-        super(message);
-        this.name = "RestError";
-        this.code = options.code;
-        this.statusCode = options.statusCode;
-        // The request and response may contain sensitive information in the headers or body.
-        // To help prevent this sensitive information being accidentally logged, the request and response
-        // properties are marked as non-enumerable here. This prevents them showing up in the output of
-        // JSON.stringify and console.log.
-        Object.defineProperty(this, "request", { value: options.request, enumerable: false });
-        Object.defineProperty(this, "response", { value: options.response, enumerable: false });
-        // Only include useful agent information in the request for logging, as the full agent object
-        // may contain large binary data.
-        const agent = this.request?.agent
-            ? {
-                maxFreeSockets: this.request.agent.maxFreeSockets,
-                maxSockets: this.request.agent.maxSockets,
-            }
-            : undefined;
-        // Logging method for util.inspect in Node
-        Object.defineProperty(this, inspect_js_1.custom, {
-            value: () => {
-                // Extract non-enumerable properties and add them back. This is OK since in this output the request and
-                // response get sanitized.
-                return `RestError: ${this.message} \n ${errorSanitizer.sanitize({
-                    ...this,
-                    request: { ...this.request, agent },
-                    response: this.response,
-                })}`;
-            },
-            enumerable: false,
-        });
-        Object.setPrototypeOf(this, RestError.prototype);
-    }
+  /**
+   * Something went wrong when making the request.
+   * This means the actual request failed for some reason,
+   * such as a DNS issue or the connection being lost.
+   */
+  static REQUEST_SEND_ERROR = "REQUEST_SEND_ERROR";
+  /**
+   * This means that parsing the response from the server failed.
+   * It may have been malformed.
+   */
+  static PARSE_ERROR = "PARSE_ERROR";
+  /**
+   * The code of the error itself (use statics on RestError if possible.)
+   */
+  code;
+  /**
+   * The HTTP status code of the request (if applicable.)
+   */
+  statusCode;
+  /**
+   * The request that was made.
+   * This property is non-enumerable.
+   */
+  request;
+  /**
+   * The response received (if any.)
+   * This property is non-enumerable.
+   */
+  response;
+  /**
+   * Bonus property set by the throw site.
+   */
+  details;
+  constructor(message, options = {}) {
+    super(message);
+    this.name = "RestError";
+    this.code = options.code;
+    this.statusCode = options.statusCode;
+    Object.defineProperty(this, "request", { value: options.request, enumerable: false });
+    Object.defineProperty(this, "response", { value: options.response, enumerable: false });
+    const agent = this.request?.agent ? {
+      maxFreeSockets: this.request.agent.maxFreeSockets,
+      maxSockets: this.request.agent.maxSockets
+    } : void 0;
+    Object.defineProperty(this, import_inspect.custom, {
+      value: () => {
+        return `RestError: ${this.message} 
+ ${errorSanitizer.sanitize({
+          ...this,
+          request: { ...this.request, agent },
+          response: this.response
+        })}`;
+      },
+      enumerable: false
+    });
+    Object.setPrototypeOf(this, RestError.prototype);
+  }
 }
-exports.RestError = RestError;
-/**
- * Typeguard for RestError
- * @param e - Something caught by a catch clause.
- */
 function isRestError(e) {
-    if (e instanceof RestError) {
-        return true;
-    }
-    return (0, error_js_1.isError)(e) && e.name === "RestError";
+  if (e instanceof RestError) {
+    return true;
+  }
+  return (0, import_error.isError)(e) && e.name === "RestError";
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=restError.js.map
+
 
 /***/ }),
 
 /***/ 98102:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.exponentialRetryStrategy = exponentialRetryStrategy;
-exports.isExponentialRetryResponse = isExponentialRetryResponse;
-exports.isSystemError = isSystemError;
-const delay_js_1 = __nccwpck_require__(66776);
-const throttlingRetryStrategy_js_1 = __nccwpck_require__(21112);
-// intervals are in milliseconds
-const DEFAULT_CLIENT_RETRY_INTERVAL = 1000;
-const DEFAULT_CLIENT_MAX_RETRY_INTERVAL = 1000 * 64;
-/**
- * A retry strategy that retries with an exponentially increasing delay in these two cases:
- * - When there are errors in the underlying transport layer (e.g. DNS lookup failures).
- * - Or otherwise if the outgoing request fails (408, greater or equal than 500, except for 501 and 505).
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var exponentialRetryStrategy_exports = {};
+__export(exponentialRetryStrategy_exports, {
+  exponentialRetryStrategy: () => exponentialRetryStrategy,
+  isExponentialRetryResponse: () => isExponentialRetryResponse,
+  isSystemError: () => isSystemError
+});
+module.exports = __toCommonJS(exponentialRetryStrategy_exports);
+var import_delay = __nccwpck_require__(66776);
+var import_throttlingRetryStrategy = __nccwpck_require__(21112);
+const DEFAULT_CLIENT_RETRY_INTERVAL = 1e3;
+const DEFAULT_CLIENT_MAX_RETRY_INTERVAL = 1e3 * 64;
 function exponentialRetryStrategy(options = {}) {
-    const retryInterval = options.retryDelayInMs ?? DEFAULT_CLIENT_RETRY_INTERVAL;
-    const maxRetryInterval = options.maxRetryDelayInMs ?? DEFAULT_CLIENT_MAX_RETRY_INTERVAL;
-    return {
-        name: "exponentialRetryStrategy",
-        retry({ retryCount, response, responseError }) {
-            const matchedSystemError = isSystemError(responseError);
-            const ignoreSystemErrors = matchedSystemError && options.ignoreSystemErrors;
-            const isExponential = isExponentialRetryResponse(response);
-            const ignoreExponentialResponse = isExponential && options.ignoreHttpStatusCodes;
-            const unknownResponse = response && ((0, throttlingRetryStrategy_js_1.isThrottlingRetryResponse)(response) || !isExponential);
-            if (unknownResponse || ignoreExponentialResponse || ignoreSystemErrors) {
-                return { skipStrategy: true };
-            }
-            if (responseError && !matchedSystemError && !isExponential) {
-                return { errorToThrow: responseError };
-            }
-            return (0, delay_js_1.calculateRetryDelay)(retryCount, {
-                retryDelayInMs: retryInterval,
-                maxRetryDelayInMs: maxRetryInterval,
-            });
-        },
-    };
-}
-/**
- * A response is a retry response if it has status codes:
- * - 408, or
- * - Greater or equal than 500, except for 501 and 505.
- */
-function isExponentialRetryResponse(response) {
-    return Boolean(response &&
-        response.status !== undefined &&
-        (response.status >= 500 || response.status === 408) &&
-        response.status !== 501 &&
-        response.status !== 505);
-}
-/**
- * Determines whether an error from a pipeline response was triggered in the network layer.
- */
-function isSystemError(err) {
-    if (!err) {
-        return false;
+  const retryInterval = options.retryDelayInMs ?? DEFAULT_CLIENT_RETRY_INTERVAL;
+  const maxRetryInterval = options.maxRetryDelayInMs ?? DEFAULT_CLIENT_MAX_RETRY_INTERVAL;
+  return {
+    name: "exponentialRetryStrategy",
+    retry({ retryCount, response, responseError }) {
+      const matchedSystemError = isSystemError(responseError);
+      const ignoreSystemErrors = matchedSystemError && options.ignoreSystemErrors;
+      const isExponential = isExponentialRetryResponse(response);
+      const ignoreExponentialResponse = isExponential && options.ignoreHttpStatusCodes;
+      const unknownResponse = response && ((0, import_throttlingRetryStrategy.isThrottlingRetryResponse)(response) || !isExponential);
+      if (unknownResponse || ignoreExponentialResponse || ignoreSystemErrors) {
+        return { skipStrategy: true };
+      }
+      if (responseError && !matchedSystemError && !isExponential) {
+        return { errorToThrow: responseError };
+      }
+      return (0, import_delay.calculateRetryDelay)(retryCount, {
+        retryDelayInMs: retryInterval,
+        maxRetryDelayInMs: maxRetryInterval
+      });
     }
-    return (err.code === "ETIMEDOUT" ||
-        err.code === "ESOCKETTIMEDOUT" ||
-        err.code === "ECONNREFUSED" ||
-        err.code === "ECONNRESET" ||
-        err.code === "ENOENT" ||
-        err.code === "ENOTFOUND");
+  };
 }
+function isExponentialRetryResponse(response) {
+  return Boolean(
+    response && response.status !== void 0 && (response.status >= 500 || response.status === 408) && response.status !== 501 && response.status !== 505
+  );
+}
+function isSystemError(err) {
+  if (!err) {
+    return false;
+  }
+  return err.code === "ETIMEDOUT" || err.code === "ESOCKETTIMEDOUT" || err.code === "ECONNREFUSED" || err.code === "ECONNRESET" || err.code === "ENOENT" || err.code === "ENOTFOUND";
+}
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=exponentialRetryStrategy.js.map
+
 
 /***/ }),
 
 /***/ 21112:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isThrottlingRetryResponse = isThrottlingRetryResponse;
-exports.throttlingRetryStrategy = throttlingRetryStrategy;
-const helpers_js_1 = __nccwpck_require__(77566);
-/**
- * The header that comes back from services representing
- * the amount of time (minimum) to wait to retry (in seconds or timestamp after which we can retry).
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var throttlingRetryStrategy_exports = {};
+__export(throttlingRetryStrategy_exports, {
+  isThrottlingRetryResponse: () => isThrottlingRetryResponse,
+  throttlingRetryStrategy: () => throttlingRetryStrategy
+});
+module.exports = __toCommonJS(throttlingRetryStrategy_exports);
+var import_helpers = __nccwpck_require__(77566);
 const RetryAfterHeader = "Retry-After";
-/**
- * The headers that come back from services representing
- * the amount of time (minimum) to wait to retry.
- *
- * "retry-after-ms", "x-ms-retry-after-ms" : milliseconds
- * "Retry-After" : seconds or timestamp
- */
 const AllRetryAfterHeaders = ["retry-after-ms", "x-ms-retry-after-ms", RetryAfterHeader];
-/**
- * A response is a throttling retry response if it has a throttling status code (429 or 503),
- * as long as one of the [ "Retry-After" or "retry-after-ms" or "x-ms-retry-after-ms" ] headers has a valid value.
- *
- * Returns the `retryAfterInMs` value if the response is a throttling retry response.
- * If not throttling retry response, returns `undefined`.
- *
- * @internal
- */
 function getRetryAfterInMs(response) {
-    if (!(response && [429, 503].includes(response.status)))
-        return undefined;
-    try {
-        // Headers: "retry-after-ms", "x-ms-retry-after-ms", "Retry-After"
-        for (const header of AllRetryAfterHeaders) {
-            const retryAfterValue = (0, helpers_js_1.parseHeaderValueAsNumber)(response, header);
-            if (retryAfterValue === 0 || retryAfterValue) {
-                // "Retry-After" header ==> seconds
-                // "retry-after-ms", "x-ms-retry-after-ms" headers ==> milli-seconds
-                const multiplyingFactor = header === RetryAfterHeader ? 1000 : 1;
-                return retryAfterValue * multiplyingFactor; // in milli-seconds
-            }
-        }
-        // RetryAfterHeader ("Retry-After") has a special case where it might be formatted as a date instead of a number of seconds
-        const retryAfterHeader = response.headers.get(RetryAfterHeader);
-        if (!retryAfterHeader)
-            return;
-        const date = Date.parse(retryAfterHeader);
-        const diff = date - Date.now();
-        // negative diff would mean a date in the past, so retry asap with 0 milliseconds
-        return Number.isFinite(diff) ? Math.max(0, diff) : undefined;
+  if (!(response && [429, 503].includes(response.status))) return void 0;
+  try {
+    for (const header of AllRetryAfterHeaders) {
+      const retryAfterValue = (0, import_helpers.parseHeaderValueAsNumber)(response, header);
+      if (retryAfterValue === 0 || retryAfterValue) {
+        const multiplyingFactor = header === RetryAfterHeader ? 1e3 : 1;
+        return retryAfterValue * multiplyingFactor;
+      }
     }
-    catch {
-        return undefined;
-    }
+    const retryAfterHeader = response.headers.get(RetryAfterHeader);
+    if (!retryAfterHeader) return;
+    const date = Date.parse(retryAfterHeader);
+    const diff = date - Date.now();
+    return Number.isFinite(diff) ? Math.max(0, diff) : void 0;
+  } catch {
+    return void 0;
+  }
 }
-/**
- * A response is a retry response if it has a throttling status code (429 or 503),
- * as long as one of the [ "Retry-After" or "retry-after-ms" or "x-ms-retry-after-ms" ] headers has a valid value.
- */
 function isThrottlingRetryResponse(response) {
-    return Number.isFinite(getRetryAfterInMs(response));
+  return Number.isFinite(getRetryAfterInMs(response));
 }
 function throttlingRetryStrategy() {
-    return {
-        name: "throttlingRetryStrategy",
-        retry({ response }) {
-            const retryAfterInMs = getRetryAfterInMs(response);
-            if (!Number.isFinite(retryAfterInMs)) {
-                return { skipStrategy: true };
-            }
-            return {
-                retryAfterInMs,
-            };
-        },
-    };
+  return {
+    name: "throttlingRetryStrategy",
+    retry({ response }) {
+      const retryAfterInMs = getRetryAfterInMs(response);
+      if (!Number.isFinite(retryAfterInMs)) {
+        return { skipStrategy: true };
+      }
+      return {
+        retryAfterInMs
+      };
+    }
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=throttlingRetryStrategy.js.map
+
 
 /***/ }),
 
 /***/ 82921:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.uint8ArrayToString = uint8ArrayToString;
-exports.stringToUint8Array = stringToUint8Array;
-/**
- * The helper that transforms bytes with specific character encoding into string
- * @param bytes - the uint8array bytes
- * @param format - the format we use to encode the byte
- * @returns a string of the encoded string
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var bytesEncoding_exports = {};
+__export(bytesEncoding_exports, {
+  stringToUint8Array: () => stringToUint8Array,
+  uint8ArrayToString: () => uint8ArrayToString
+});
+module.exports = __toCommonJS(bytesEncoding_exports);
 function uint8ArrayToString(bytes, format) {
-    return Buffer.from(bytes).toString(format);
+  return Buffer.from(bytes).toString(format);
 }
-/**
- * The helper that transforms string to specific character encoded bytes array.
- * @param value - the string to be converted
- * @param format - the format we use to decode the value
- * @returns a uint8array
- */
 function stringToUint8Array(value, format) {
-    return Buffer.from(value, format);
+  return Buffer.from(value, format);
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=bytesEncoding.js.map
+
 
 /***/ }),
 
 /***/ 85086:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isReactNative = exports.isNodeRuntime = exports.isNodeLike = exports.isBun = exports.isDeno = exports.isWebWorker = exports.isBrowser = void 0;
-/**
- * A constant that indicates whether the environment the code is running is a Web Browser.
- */
-// eslint-disable-next-line @azure/azure-sdk/ts-no-window
-exports.isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
-/**
- * A constant that indicates whether the environment the code is running is a Web Worker.
- */
-exports.isWebWorker = typeof self === "object" &&
-    typeof self?.importScripts === "function" &&
-    (self.constructor?.name === "DedicatedWorkerGlobalScope" ||
-        self.constructor?.name === "ServiceWorkerGlobalScope" ||
-        self.constructor?.name === "SharedWorkerGlobalScope");
-/**
- * A constant that indicates whether the environment the code is running is Deno.
- */
-exports.isDeno = typeof Deno !== "undefined" &&
-    typeof Deno.version !== "undefined" &&
-    typeof Deno.version.deno !== "undefined";
-/**
- * A constant that indicates whether the environment the code is running is Bun.sh.
- */
-exports.isBun = typeof Bun !== "undefined" && typeof Bun.version !== "undefined";
-/**
- * A constant that indicates whether the environment the code is running is a Node.js compatible environment.
- */
-exports.isNodeLike = typeof globalThis.process !== "undefined" &&
-    Boolean(globalThis.process.version) &&
-    Boolean(globalThis.process.versions?.node);
-/**
- * A constant that indicates whether the environment the code is running is Node.JS.
- */
-exports.isNodeRuntime = exports.isNodeLike && !exports.isBun && !exports.isDeno;
-/**
- * A constant that indicates whether the environment the code is running is in React-Native.
- */
-// https://github.com/facebook/react-native/blob/main/packages/react-native/Libraries/Core/setUpNavigator.js
-exports.isReactNative = typeof navigator !== "undefined" && navigator?.product === "ReactNative";
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var checkEnvironment_exports = {};
+__export(checkEnvironment_exports, {
+  isBrowser: () => isBrowser,
+  isBun: () => isBun,
+  isDeno: () => isDeno,
+  isNodeLike: () => isNodeLike,
+  isNodeRuntime: () => isNodeRuntime,
+  isReactNative: () => isReactNative,
+  isWebWorker: () => isWebWorker
+});
+module.exports = __toCommonJS(checkEnvironment_exports);
+const isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
+const isWebWorker = typeof self === "object" && typeof self?.importScripts === "function" && (self.constructor?.name === "DedicatedWorkerGlobalScope" || self.constructor?.name === "ServiceWorkerGlobalScope" || self.constructor?.name === "SharedWorkerGlobalScope");
+const isDeno = typeof Deno !== "undefined" && typeof Deno.version !== "undefined" && typeof Deno.version.deno !== "undefined";
+const isBun = typeof Bun !== "undefined" && typeof Bun.version !== "undefined";
+const isNodeLike = typeof globalThis.process !== "undefined" && Boolean(globalThis.process.version) && Boolean(globalThis.process.versions?.node);
+const isNodeRuntime = isNodeLike && !isBun && !isDeno;
+const isReactNative = typeof navigator !== "undefined" && navigator?.product === "ReactNative";
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=checkEnvironment.js.map
+
 
 /***/ }),
 
 /***/ 20547:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.concat = concat;
-const stream_1 = __nccwpck_require__(2203);
-const typeGuards_js_1 = __nccwpck_require__(48505);
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var concat_exports = {};
+__export(concat_exports, {
+  concat: () => concat
+});
+module.exports = __toCommonJS(concat_exports);
+var import_stream = __nccwpck_require__(2203);
+var import_typeGuards = __nccwpck_require__(48505);
 async function* streamAsyncIterator() {
-    const reader = this.getReader();
-    try {
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-                return;
-            }
-            yield value;
-        }
+  const reader = this.getReader();
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        return;
+      }
+      yield value;
     }
-    finally {
-        reader.releaseLock();
-    }
+  } finally {
+    reader.releaseLock();
+  }
 }
 function makeAsyncIterable(webStream) {
-    if (!webStream[Symbol.asyncIterator]) {
-        webStream[Symbol.asyncIterator] = streamAsyncIterator.bind(webStream);
-    }
-    if (!webStream.values) {
-        webStream.values = streamAsyncIterator.bind(webStream);
-    }
+  if (!webStream[Symbol.asyncIterator]) {
+    webStream[Symbol.asyncIterator] = streamAsyncIterator.bind(webStream);
+  }
+  if (!webStream.values) {
+    webStream.values = streamAsyncIterator.bind(webStream);
+  }
 }
 function ensureNodeStream(stream) {
-    if (stream instanceof ReadableStream) {
-        makeAsyncIterable(stream);
-        return stream_1.Readable.fromWeb(stream);
-    }
-    else {
-        return stream;
-    }
+  if (stream instanceof ReadableStream) {
+    makeAsyncIterable(stream);
+    return import_stream.Readable.fromWeb(stream);
+  } else {
+    return stream;
+  }
 }
 function toStream(source) {
-    if (source instanceof Uint8Array) {
-        return stream_1.Readable.from(Buffer.from(source));
-    }
-    else if ((0, typeGuards_js_1.isBlob)(source)) {
-        return ensureNodeStream(source.stream());
-    }
-    else {
-        return ensureNodeStream(source);
-    }
+  if (source instanceof Uint8Array) {
+    return import_stream.Readable.from(Buffer.from(source));
+  } else if ((0, import_typeGuards.isBlob)(source)) {
+    return ensureNodeStream(source.stream());
+  } else {
+    return ensureNodeStream(source);
+  }
 }
-/**
- * Utility function that concatenates a set of binary inputs into one combined output.
- *
- * @param sources - array of sources for the concatenation
- * @returns - in Node, a (() =\> NodeJS.ReadableStream) which, when read, produces a concatenation of all the inputs.
- *           In browser, returns a `Blob` representing all the concatenated inputs.
- *
- * @internal
- */
 async function concat(sources) {
-    return function () {
-        const streams = sources.map((x) => (typeof x === "function" ? x() : x)).map(toStream);
-        return stream_1.Readable.from((async function* () {
-            for (const stream of streams) {
-                for await (const chunk of stream) {
-                    yield chunk;
-                }
-            }
-        })());
-    };
+  return function() {
+    const streams = sources.map((x) => typeof x === "function" ? x() : x).map(toStream);
+    return import_stream.Readable.from(
+      (async function* () {
+        for (const stream of streams) {
+          for await (const chunk of stream) {
+            yield chunk;
+          }
+        }
+      })()
+    );
+  };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=concat.js.map
+
 
 /***/ }),
 
 /***/ 66776:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.calculateRetryDelay = calculateRetryDelay;
-const random_js_1 = __nccwpck_require__(78640);
-/**
- * Calculates the delay interval for retry attempts using exponential delay with jitter.
- * @param retryAttempt - The current retry attempt number.
- * @param config - The exponential retry configuration.
- * @returns An object containing the calculated retry delay.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var delay_exports = {};
+__export(delay_exports, {
+  calculateRetryDelay: () => calculateRetryDelay
+});
+module.exports = __toCommonJS(delay_exports);
+var import_random = __nccwpck_require__(78640);
 function calculateRetryDelay(retryAttempt, config) {
-    // Exponentially increase the delay each time
-    const exponentialDelay = config.retryDelayInMs * Math.pow(2, retryAttempt);
-    // Don't let the delay exceed the maximum
-    const clampedDelay = Math.min(config.maxRetryDelayInMs, exponentialDelay);
-    // Allow the final value to have some "jitter" (within 50% of the delay size) so
-    // that retries across multiple clients don't occur simultaneously.
-    const retryAfterInMs = clampedDelay / 2 + (0, random_js_1.getRandomIntegerInclusive)(0, clampedDelay / 2);
-    return { retryAfterInMs };
+  const exponentialDelay = config.retryDelayInMs * Math.pow(2, retryAttempt);
+  const clampedDelay = Math.min(config.maxRetryDelayInMs, exponentialDelay);
+  const retryAfterInMs = clampedDelay / 2 + (0, import_random.getRandomIntegerInclusive)(0, clampedDelay / 2);
+  return { retryAfterInMs };
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=delay.js.map
+
 
 /***/ }),
 
 /***/ 52573:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isError = isError;
-const object_js_1 = __nccwpck_require__(53632);
-/**
- * Typeguard for an error object shape (has name and message)
- * @param e - Something caught by a catch clause.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var error_exports = {};
+__export(error_exports, {
+  isError: () => isError
+});
+module.exports = __toCommonJS(error_exports);
+var import_object = __nccwpck_require__(53632);
 function isError(e) {
-    if ((0, object_js_1.isObject)(e)) {
-        const hasName = typeof e.name === "string";
-        const hasMessage = typeof e.message === "string";
-        return hasName && hasMessage;
-    }
-    return false;
+  if ((0, import_object.isObject)(e)) {
+    const hasName = typeof e.name === "string";
+    const hasMessage = typeof e.message === "string";
+    return hasName && hasMessage;
+  }
+  return false;
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=error.js.map
+
 
 /***/ }),
 
 /***/ 77566:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.delay = delay;
-exports.parseHeaderValueAsNumber = parseHeaderValueAsNumber;
-const AbortError_js_1 = __nccwpck_require__(99992);
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var helpers_exports = {};
+__export(helpers_exports, {
+  delay: () => delay,
+  parseHeaderValueAsNumber: () => parseHeaderValueAsNumber
+});
+module.exports = __toCommonJS(helpers_exports);
+var import_AbortError = __nccwpck_require__(99992);
 const StandardAbortMessage = "The operation was aborted.";
-/**
- * A wrapper for setTimeout that resolves a promise after delayInMs milliseconds.
- * @param delayInMs - The number of milliseconds to be delayed.
- * @param value - The value to be resolved with after a timeout of t milliseconds.
- * @param options - The options for delay - currently abort options
- *                  - abortSignal - The abortSignal associated with containing operation.
- *                  - abortErrorMsg - The abort error message associated with containing operation.
- * @returns Resolved promise
- */
 function delay(delayInMs, value, options) {
-    return new Promise((resolve, reject) => {
-        let timer = undefined;
-        let onAborted = undefined;
-        const rejectOnAbort = () => {
-            return reject(new AbortError_js_1.AbortError(options?.abortErrorMsg ? options?.abortErrorMsg : StandardAbortMessage));
-        };
-        const removeListeners = () => {
-            if (options?.abortSignal && onAborted) {
-                options.abortSignal.removeEventListener("abort", onAborted);
-            }
-        };
-        onAborted = () => {
-            if (timer) {
-                clearTimeout(timer);
-            }
-            removeListeners();
-            return rejectOnAbort();
-        };
-        if (options?.abortSignal && options.abortSignal.aborted) {
-            return rejectOnAbort();
-        }
-        timer = setTimeout(() => {
-            removeListeners();
-            resolve(value);
-        }, delayInMs);
-        if (options?.abortSignal) {
-            options.abortSignal.addEventListener("abort", onAborted);
-        }
-    });
+  return new Promise((resolve, reject) => {
+    let timer = void 0;
+    let onAborted = void 0;
+    const rejectOnAbort = () => {
+      return reject(
+        new import_AbortError.AbortError(options?.abortErrorMsg ? options?.abortErrorMsg : StandardAbortMessage)
+      );
+    };
+    const removeListeners = () => {
+      if (options?.abortSignal && onAborted) {
+        options.abortSignal.removeEventListener("abort", onAborted);
+      }
+    };
+    onAborted = () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      removeListeners();
+      return rejectOnAbort();
+    };
+    if (options?.abortSignal && options.abortSignal.aborted) {
+      return rejectOnAbort();
+    }
+    timer = setTimeout(() => {
+      removeListeners();
+      resolve(value);
+    }, delayInMs);
+    if (options?.abortSignal) {
+      options.abortSignal.addEventListener("abort", onAborted);
+    }
+  });
 }
-/**
- * @internal
- * @returns the parsed value or undefined if the parsed value is invalid.
- */
 function parseHeaderValueAsNumber(response, headerName) {
-    const value = response.headers.get(headerName);
-    if (!value)
-        return;
-    const valueAsNum = Number(value);
-    if (Number.isNaN(valueAsNum))
-        return;
-    return valueAsNum;
+  const value = response.headers.get(headerName);
+  if (!value) return;
+  const valueAsNum = Number(value);
+  if (Number.isNaN(valueAsNum)) return;
+  return valueAsNum;
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=helpers.js.map
+
 
 /***/ }),
 
 /***/ 37639:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.custom = void 0;
-const node_util_1 = __nccwpck_require__(57975);
-exports.custom = node_util_1.inspect.custom;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var inspect_exports = {};
+__export(inspect_exports, {
+  custom: () => custom
+});
+module.exports = __toCommonJS(inspect_exports);
+var import_node_util = __nccwpck_require__(57975);
+const custom = import_node_util.inspect.custom;
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=inspect.js.map
+
 
 /***/ }),
 
 /***/ 95750:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Sanitizer = exports.uint8ArrayToString = exports.stringToUint8Array = exports.isWebWorker = exports.isReactNative = exports.isDeno = exports.isNodeRuntime = exports.isNodeLike = exports.isBun = exports.isBrowser = exports.randomUUID = exports.computeSha256Hmac = exports.computeSha256Hash = exports.isError = exports.isObject = exports.getRandomIntegerInclusive = exports.calculateRetryDelay = void 0;
-var delay_js_1 = __nccwpck_require__(66776);
-Object.defineProperty(exports, "calculateRetryDelay", ({ enumerable: true, get: function () { return delay_js_1.calculateRetryDelay; } }));
-var random_js_1 = __nccwpck_require__(78640);
-Object.defineProperty(exports, "getRandomIntegerInclusive", ({ enumerable: true, get: function () { return random_js_1.getRandomIntegerInclusive; } }));
-var object_js_1 = __nccwpck_require__(53632);
-Object.defineProperty(exports, "isObject", ({ enumerable: true, get: function () { return object_js_1.isObject; } }));
-var error_js_1 = __nccwpck_require__(52573);
-Object.defineProperty(exports, "isError", ({ enumerable: true, get: function () { return error_js_1.isError; } }));
-var sha256_js_1 = __nccwpck_require__(2016);
-Object.defineProperty(exports, "computeSha256Hash", ({ enumerable: true, get: function () { return sha256_js_1.computeSha256Hash; } }));
-Object.defineProperty(exports, "computeSha256Hmac", ({ enumerable: true, get: function () { return sha256_js_1.computeSha256Hmac; } }));
-var uuidUtils_js_1 = __nccwpck_require__(5023);
-Object.defineProperty(exports, "randomUUID", ({ enumerable: true, get: function () { return uuidUtils_js_1.randomUUID; } }));
-var checkEnvironment_js_1 = __nccwpck_require__(85086);
-Object.defineProperty(exports, "isBrowser", ({ enumerable: true, get: function () { return checkEnvironment_js_1.isBrowser; } }));
-Object.defineProperty(exports, "isBun", ({ enumerable: true, get: function () { return checkEnvironment_js_1.isBun; } }));
-Object.defineProperty(exports, "isNodeLike", ({ enumerable: true, get: function () { return checkEnvironment_js_1.isNodeLike; } }));
-Object.defineProperty(exports, "isNodeRuntime", ({ enumerable: true, get: function () { return checkEnvironment_js_1.isNodeRuntime; } }));
-Object.defineProperty(exports, "isDeno", ({ enumerable: true, get: function () { return checkEnvironment_js_1.isDeno; } }));
-Object.defineProperty(exports, "isReactNative", ({ enumerable: true, get: function () { return checkEnvironment_js_1.isReactNative; } }));
-Object.defineProperty(exports, "isWebWorker", ({ enumerable: true, get: function () { return checkEnvironment_js_1.isWebWorker; } }));
-var bytesEncoding_js_1 = __nccwpck_require__(82921);
-Object.defineProperty(exports, "stringToUint8Array", ({ enumerable: true, get: function () { return bytesEncoding_js_1.stringToUint8Array; } }));
-Object.defineProperty(exports, "uint8ArrayToString", ({ enumerable: true, get: function () { return bytesEncoding_js_1.uint8ArrayToString; } }));
-var sanitizer_js_1 = __nccwpck_require__(7784);
-Object.defineProperty(exports, "Sanitizer", ({ enumerable: true, get: function () { return sanitizer_js_1.Sanitizer; } }));
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var internal_exports = {};
+__export(internal_exports, {
+  Sanitizer: () => import_sanitizer.Sanitizer,
+  calculateRetryDelay: () => import_delay.calculateRetryDelay,
+  computeSha256Hash: () => import_sha256.computeSha256Hash,
+  computeSha256Hmac: () => import_sha256.computeSha256Hmac,
+  getRandomIntegerInclusive: () => import_random.getRandomIntegerInclusive,
+  isBrowser: () => import_checkEnvironment.isBrowser,
+  isBun: () => import_checkEnvironment.isBun,
+  isDeno: () => import_checkEnvironment.isDeno,
+  isError: () => import_error.isError,
+  isNodeLike: () => import_checkEnvironment.isNodeLike,
+  isNodeRuntime: () => import_checkEnvironment.isNodeRuntime,
+  isObject: () => import_object.isObject,
+  isReactNative: () => import_checkEnvironment.isReactNative,
+  isWebWorker: () => import_checkEnvironment.isWebWorker,
+  randomUUID: () => import_uuidUtils.randomUUID,
+  stringToUint8Array: () => import_bytesEncoding.stringToUint8Array,
+  uint8ArrayToString: () => import_bytesEncoding.uint8ArrayToString
+});
+module.exports = __toCommonJS(internal_exports);
+var import_delay = __nccwpck_require__(66776);
+var import_random = __nccwpck_require__(78640);
+var import_object = __nccwpck_require__(53632);
+var import_error = __nccwpck_require__(52573);
+var import_sha256 = __nccwpck_require__(2016);
+var import_uuidUtils = __nccwpck_require__(5023);
+var import_checkEnvironment = __nccwpck_require__(85086);
+var import_bytesEncoding = __nccwpck_require__(82921);
+var import_sanitizer = __nccwpck_require__(7784);
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=internal.js.map
+
 
 /***/ }),
 
 /***/ 53632:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isObject = isObject;
-/**
- * Helper to determine when an input is a generic JS object.
- * @returns true when input is an object type that is not null, Array, RegExp, or Date.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var object_exports = {};
+__export(object_exports, {
+  isObject: () => isObject
+});
+module.exports = __toCommonJS(object_exports);
 function isObject(input) {
-    return (typeof input === "object" &&
-        input !== null &&
-        !Array.isArray(input) &&
-        !(input instanceof RegExp) &&
-        !(input instanceof Date));
+  return typeof input === "object" && input !== null && !Array.isArray(input) && !(input instanceof RegExp) && !(input instanceof Date);
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=object.js.map
+
 
 /***/ }),
 
 /***/ 78640:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getRandomIntegerInclusive = getRandomIntegerInclusive;
-/**
- * Returns a random integer value between a lower and upper bound,
- * inclusive of both bounds.
- * Note that this uses Math.random and isn't secure. If you need to use
- * this for any kind of security purpose, find a better source of random.
- * @param min - The smallest integer value allowed.
- * @param max - The largest integer value allowed.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var random_exports = {};
+__export(random_exports, {
+  getRandomIntegerInclusive: () => getRandomIntegerInclusive
+});
+module.exports = __toCommonJS(random_exports);
 function getRandomIntegerInclusive(min, max) {
-    // Make sure inputs are integers.
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    // Pick a random offset from zero to the size of the range.
-    // Since Math.random() can never return 1, we have to make the range one larger
-    // in order to be inclusive of the maximum value after we take the floor.
-    const offset = Math.floor(Math.random() * (max - min + 1));
-    return offset + min;
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  const offset = Math.floor(Math.random() * (max - min + 1));
+  return offset + min;
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=random.js.map
+
 
 /***/ }),
 
 /***/ 7784:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Sanitizer = void 0;
-const object_js_1 = __nccwpck_require__(53632);
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var sanitizer_exports = {};
+__export(sanitizer_exports, {
+  Sanitizer: () => Sanitizer
+});
+module.exports = __toCommonJS(sanitizer_exports);
+var import_object = __nccwpck_require__(53632);
 const RedactedString = "REDACTED";
-// Make sure this list is up-to-date with the one under core/logger/Readme#Keyconcepts
 const defaultAllowedHeaderNames = [
-    "x-ms-client-request-id",
-    "x-ms-return-client-request-id",
-    "x-ms-useragent",
-    "x-ms-correlation-request-id",
-    "x-ms-request-id",
-    "client-request-id",
-    "ms-cv",
-    "return-client-request-id",
-    "traceparent",
-    "Access-Control-Allow-Credentials",
-    "Access-Control-Allow-Headers",
-    "Access-Control-Allow-Methods",
-    "Access-Control-Allow-Origin",
-    "Access-Control-Expose-Headers",
-    "Access-Control-Max-Age",
-    "Access-Control-Request-Headers",
-    "Access-Control-Request-Method",
-    "Origin",
-    "Accept",
-    "Accept-Encoding",
-    "Cache-Control",
-    "Connection",
-    "Content-Length",
-    "Content-Type",
-    "Date",
-    "ETag",
-    "Expires",
-    "If-Match",
-    "If-Modified-Since",
-    "If-None-Match",
-    "If-Unmodified-Since",
-    "Last-Modified",
-    "Pragma",
-    "Request-Id",
-    "Retry-After",
-    "Server",
-    "Transfer-Encoding",
-    "User-Agent",
-    "WWW-Authenticate",
+  "x-ms-client-request-id",
+  "x-ms-return-client-request-id",
+  "x-ms-useragent",
+  "x-ms-correlation-request-id",
+  "x-ms-request-id",
+  "client-request-id",
+  "ms-cv",
+  "return-client-request-id",
+  "traceparent",
+  "Access-Control-Allow-Credentials",
+  "Access-Control-Allow-Headers",
+  "Access-Control-Allow-Methods",
+  "Access-Control-Allow-Origin",
+  "Access-Control-Expose-Headers",
+  "Access-Control-Max-Age",
+  "Access-Control-Request-Headers",
+  "Access-Control-Request-Method",
+  "Origin",
+  "Accept",
+  "Accept-Encoding",
+  "Cache-Control",
+  "Connection",
+  "Content-Length",
+  "Content-Type",
+  "Date",
+  "ETag",
+  "Expires",
+  "If-Match",
+  "If-Modified-Since",
+  "If-None-Match",
+  "If-Unmodified-Since",
+  "Last-Modified",
+  "Pragma",
+  "Request-Id",
+  "Retry-After",
+  "Server",
+  "Transfer-Encoding",
+  "User-Agent",
+  "WWW-Authenticate"
 ];
 const defaultAllowedQueryParameters = ["api-version"];
-/**
- * A utility class to sanitize objects for logging.
- */
 class Sanitizer {
-    allowedHeaderNames;
-    allowedQueryParameters;
-    constructor({ additionalAllowedHeaderNames: allowedHeaderNames = [], additionalAllowedQueryParameters: allowedQueryParameters = [], } = {}) {
-        allowedHeaderNames = defaultAllowedHeaderNames.concat(allowedHeaderNames);
-        allowedQueryParameters = defaultAllowedQueryParameters.concat(allowedQueryParameters);
-        this.allowedHeaderNames = new Set(allowedHeaderNames.map((n) => n.toLowerCase()));
-        this.allowedQueryParameters = new Set(allowedQueryParameters.map((p) => p.toLowerCase()));
+  allowedHeaderNames;
+  allowedQueryParameters;
+  constructor({
+    additionalAllowedHeaderNames: allowedHeaderNames = [],
+    additionalAllowedQueryParameters: allowedQueryParameters = []
+  } = {}) {
+    allowedHeaderNames = defaultAllowedHeaderNames.concat(allowedHeaderNames);
+    allowedQueryParameters = defaultAllowedQueryParameters.concat(allowedQueryParameters);
+    this.allowedHeaderNames = new Set(allowedHeaderNames.map((n) => n.toLowerCase()));
+    this.allowedQueryParameters = new Set(allowedQueryParameters.map((p) => p.toLowerCase()));
+  }
+  /**
+   * Sanitizes an object for logging.
+   * @param obj - The object to sanitize
+   * @returns - The sanitized object as a string
+   */
+  sanitize(obj) {
+    const seen = /* @__PURE__ */ new Set();
+    return JSON.stringify(
+      obj,
+      (key, value) => {
+        if (value instanceof Error) {
+          return {
+            ...value,
+            name: value.name,
+            message: value.message
+          };
+        }
+        if (key === "headers" && (0, import_object.isObject)(value)) {
+          return this.sanitizeHeaders(value);
+        } else if (key === "url" && typeof value === "string") {
+          return this.sanitizeUrl(value);
+        } else if (key === "query" && (0, import_object.isObject)(value)) {
+          return this.sanitizeQuery(value);
+        } else if (key === "body") {
+          return void 0;
+        } else if (key === "response") {
+          return void 0;
+        } else if (key === "operationSpec") {
+          return void 0;
+        } else if (Array.isArray(value) || (0, import_object.isObject)(value)) {
+          if (seen.has(value)) {
+            return "[Circular]";
+          }
+          seen.add(value);
+        }
+        return value;
+      },
+      2
+    );
+  }
+  /**
+   * Sanitizes a URL for logging.
+   * @param value - The URL to sanitize
+   * @returns - The sanitized URL as a string
+   */
+  sanitizeUrl(value) {
+    if (typeof value !== "string" || value === null || value === "") {
+      return value;
     }
-    /**
-     * Sanitizes an object for logging.
-     * @param obj - The object to sanitize
-     * @returns - The sanitized object as a string
-     */
-    sanitize(obj) {
-        const seen = new Set();
-        return JSON.stringify(obj, (key, value) => {
-            // Ensure Errors include their interesting non-enumerable members
-            if (value instanceof Error) {
-                return {
-                    ...value,
-                    name: value.name,
-                    message: value.message,
-                };
-            }
-            if (key === "headers") {
-                return this.sanitizeHeaders(value);
-            }
-            else if (key === "url") {
-                return this.sanitizeUrl(value);
-            }
-            else if (key === "query") {
-                return this.sanitizeQuery(value);
-            }
-            else if (key === "body") {
-                // Don't log the request body
-                return undefined;
-            }
-            else if (key === "response") {
-                // Don't log response again
-                return undefined;
-            }
-            else if (key === "operationSpec") {
-                // When using sendOperationRequest, the request carries a massive
-                // field with the autorest spec. No need to log it.
-                return undefined;
-            }
-            else if (Array.isArray(value) || (0, object_js_1.isObject)(value)) {
-                if (seen.has(value)) {
-                    return "[Circular]";
-                }
-                seen.add(value);
-            }
-            return value;
-        }, 2);
+    const url = new URL(value);
+    if (!url.search) {
+      return value;
     }
-    /**
-     * Sanitizes a URL for logging.
-     * @param value - The URL to sanitize
-     * @returns - The sanitized URL as a string
-     */
-    sanitizeUrl(value) {
-        if (typeof value !== "string" || value === null || value === "") {
-            return value;
-        }
-        const url = new URL(value);
-        if (!url.search) {
-            return value;
-        }
-        for (const [key] of url.searchParams) {
-            if (!this.allowedQueryParameters.has(key.toLowerCase())) {
-                url.searchParams.set(key, RedactedString);
-            }
-        }
-        return url.toString();
+    for (const [key] of url.searchParams) {
+      if (!this.allowedQueryParameters.has(key.toLowerCase())) {
+        url.searchParams.set(key, RedactedString);
+      }
     }
-    sanitizeHeaders(obj) {
-        const sanitized = {};
-        for (const key of Object.keys(obj)) {
-            if (this.allowedHeaderNames.has(key.toLowerCase())) {
-                sanitized[key] = obj[key];
-            }
-            else {
-                sanitized[key] = RedactedString;
-            }
-        }
-        return sanitized;
+    return url.toString();
+  }
+  sanitizeHeaders(obj) {
+    const sanitized = {};
+    for (const key of Object.keys(obj)) {
+      if (this.allowedHeaderNames.has(key.toLowerCase())) {
+        sanitized[key] = obj[key];
+      } else {
+        sanitized[key] = RedactedString;
+      }
     }
-    sanitizeQuery(value) {
-        if (typeof value !== "object" || value === null) {
-            return value;
-        }
-        const sanitized = {};
-        for (const k of Object.keys(value)) {
-            if (this.allowedQueryParameters.has(k.toLowerCase())) {
-                sanitized[k] = value[k];
-            }
-            else {
-                sanitized[k] = RedactedString;
-            }
-        }
-        return sanitized;
+    return sanitized;
+  }
+  sanitizeQuery(value) {
+    if (typeof value !== "object" || value === null) {
+      return value;
     }
+    const sanitized = {};
+    for (const k of Object.keys(value)) {
+      if (this.allowedQueryParameters.has(k.toLowerCase())) {
+        sanitized[k] = value[k];
+      } else {
+        sanitized[k] = RedactedString;
+      }
+    }
+    return sanitized;
+  }
 }
-exports.Sanitizer = Sanitizer;
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=sanitizer.js.map
+
 
 /***/ }),
 
 /***/ 2016:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.computeSha256Hmac = computeSha256Hmac;
-exports.computeSha256Hash = computeSha256Hash;
-const node_crypto_1 = __nccwpck_require__(77598);
-/**
- * Generates a SHA-256 HMAC signature.
- * @param key - The HMAC key represented as a base64 string, used to generate the cryptographic HMAC hash.
- * @param stringToSign - The data to be signed.
- * @param encoding - The textual encoding to use for the returned HMAC digest.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var sha256_exports = {};
+__export(sha256_exports, {
+  computeSha256Hash: () => computeSha256Hash,
+  computeSha256Hmac: () => computeSha256Hmac
+});
+module.exports = __toCommonJS(sha256_exports);
+var import_node_crypto = __nccwpck_require__(77598);
 async function computeSha256Hmac(key, stringToSign, encoding) {
-    const decodedKey = Buffer.from(key, "base64");
-    return (0, node_crypto_1.createHmac)("sha256", decodedKey).update(stringToSign).digest(encoding);
+  const decodedKey = Buffer.from(key, "base64");
+  return (0, import_node_crypto.createHmac)("sha256", decodedKey).update(stringToSign).digest(encoding);
 }
-/**
- * Generates a SHA-256 hash.
- * @param content - The data to be included in the hash.
- * @param encoding - The textual encoding to use for the returned hash.
- */
 async function computeSha256Hash(content, encoding) {
-    return (0, node_crypto_1.createHash)("sha256").update(content).digest(encoding);
+  return (0, import_node_crypto.createHash)("sha256").update(content).digest(encoding);
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=sha256.js.map
+
 
 /***/ }),
 
 /***/ 48505:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isNodeReadableStream = isNodeReadableStream;
-exports.isWebReadableStream = isWebReadableStream;
-exports.isBinaryBody = isBinaryBody;
-exports.isReadableStream = isReadableStream;
-exports.isBlob = isBlob;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var typeGuards_exports = {};
+__export(typeGuards_exports, {
+  isBinaryBody: () => isBinaryBody,
+  isBlob: () => isBlob,
+  isNodeReadableStream: () => isNodeReadableStream,
+  isReadableStream: () => isReadableStream,
+  isWebReadableStream: () => isWebReadableStream
+});
+module.exports = __toCommonJS(typeGuards_exports);
 function isNodeReadableStream(x) {
-    return Boolean(x && typeof x["pipe"] === "function");
+  return Boolean(x && typeof x["pipe"] === "function");
 }
 function isWebReadableStream(x) {
-    return Boolean(x &&
-        typeof x.getReader === "function" &&
-        typeof x.tee === "function");
+  return Boolean(
+    x && typeof x.getReader === "function" && typeof x.tee === "function"
+  );
 }
 function isBinaryBody(body) {
-    return (body !== undefined &&
-        (body instanceof Uint8Array ||
-            isReadableStream(body) ||
-            typeof body === "function" ||
-            body instanceof Blob));
+  return body !== void 0 && (body instanceof Uint8Array || isReadableStream(body) || typeof body === "function" || typeof Blob !== "undefined" && body instanceof Blob);
 }
 function isReadableStream(x) {
-    return isNodeReadableStream(x) || isWebReadableStream(x);
+  return isNodeReadableStream(x) || isWebReadableStream(x);
 }
 function isBlob(x) {
-    return typeof x.stream === "function";
+  return typeof Blob !== "undefined" && x instanceof Blob;
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=typeGuards.js.map
+
 
 /***/ }),
 
 /***/ 62731:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getUserAgentHeaderName = getUserAgentHeaderName;
-exports.getUserAgentValue = getUserAgentValue;
-const userAgentPlatform_js_1 = __nccwpck_require__(83196);
-const constants_js_1 = __nccwpck_require__(31255);
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var userAgent_exports = {};
+__export(userAgent_exports, {
+  getUserAgentHeaderName: () => getUserAgentHeaderName,
+  getUserAgentValue: () => getUserAgentValue
+});
+module.exports = __toCommonJS(userAgent_exports);
+var import_userAgentPlatform = __nccwpck_require__(83196);
+var import_constants = __nccwpck_require__(31255);
 function getUserAgentString(telemetryInfo) {
-    const parts = [];
-    for (const [key, value] of telemetryInfo) {
-        const token = value ? `${key}/${value}` : key;
-        parts.push(token);
-    }
-    return parts.join(" ");
+  const parts = [];
+  for (const [key, value] of telemetryInfo) {
+    const token = value ? `${key}/${value}` : key;
+    parts.push(token);
+  }
+  return parts.join(" ");
 }
-/**
- * @internal
- */
 function getUserAgentHeaderName() {
-    return (0, userAgentPlatform_js_1.getHeaderName)();
+  return (0, import_userAgentPlatform.getHeaderName)();
 }
-/**
- * @internal
- */
 async function getUserAgentValue(prefix) {
-    const runtimeInfo = new Map();
-    runtimeInfo.set("ts-http-runtime", constants_js_1.SDK_VERSION);
-    await (0, userAgentPlatform_js_1.setPlatformSpecificData)(runtimeInfo);
-    const defaultAgent = getUserAgentString(runtimeInfo);
-    const userAgentValue = prefix ? `${prefix} ${defaultAgent}` : defaultAgent;
-    return userAgentValue;
+  const runtimeInfo = /* @__PURE__ */ new Map();
+  runtimeInfo.set("ts-http-runtime", import_constants.SDK_VERSION);
+  await (0, import_userAgentPlatform.setPlatformSpecificData)(runtimeInfo);
+  const defaultAgent = getUserAgentString(runtimeInfo);
+  const userAgentValue = prefix ? `${prefix} ${defaultAgent}` : defaultAgent;
+  return userAgentValue;
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=userAgent.js.map
+
 
 /***/ }),
 
 /***/ 83196:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getHeaderName = getHeaderName;
-exports.setPlatformSpecificData = setPlatformSpecificData;
-const tslib_1 = __nccwpck_require__(61860);
-const node_os_1 = tslib_1.__importDefault(__nccwpck_require__(48161));
-const node_process_1 = tslib_1.__importDefault(__nccwpck_require__(1708));
-/**
- * @internal
- */
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var userAgentPlatform_exports = {};
+__export(userAgentPlatform_exports, {
+  getHeaderName: () => getHeaderName,
+  setPlatformSpecificData: () => setPlatformSpecificData
+});
+module.exports = __toCommonJS(userAgentPlatform_exports);
+var import_node_os = __toESM(__nccwpck_require__(48161));
+var import_node_process = __toESM(__nccwpck_require__(1708));
 function getHeaderName() {
-    return "User-Agent";
+  return "User-Agent";
 }
-/**
- * @internal
- */
 async function setPlatformSpecificData(map) {
-    if (node_process_1.default && node_process_1.default.versions) {
-        const osInfo = `${node_os_1.default.type()} ${node_os_1.default.release()}; ${node_os_1.default.arch()}`;
-        const versions = node_process_1.default.versions;
-        if (versions.bun) {
-            map.set("Bun", `${versions.bun} (${osInfo})`);
-        }
-        else if (versions.deno) {
-            map.set("Deno", `${versions.deno} (${osInfo})`);
-        }
-        else if (versions.node) {
-            map.set("Node", `${versions.node} (${osInfo})`);
-        }
+  if (import_node_process.default && import_node_process.default.versions) {
+    const osInfo = `${import_node_os.default.type()} ${import_node_os.default.release()}; ${import_node_os.default.arch()}`;
+    if (import_node_process.default.versions.bun) {
+      map.set("Bun", `${import_node_process.default.versions.bun} (${osInfo})`);
+    } else if (import_node_process.default.versions.deno) {
+      map.set("Deno", `${import_node_process.default.versions.deno} (${osInfo})`);
+    } else if (import_node_process.default.versions.node) {
+      map.set("Node", `${import_node_process.default.versions.node} (${osInfo})`);
     }
+  }
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=userAgentPlatform.js.map
+
 
 /***/ }),
 
 /***/ 5023:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((module) => {
 
-"use strict";
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.randomUUID = randomUUID;
-/**
- * Generated Universally Unique Identifier
- *
- * @returns RFC4122 v4 UUID.
- */
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var uuidUtils_exports = {};
+__export(uuidUtils_exports, {
+  randomUUID: () => randomUUID
+});
+module.exports = __toCommonJS(uuidUtils_exports);
 function randomUUID() {
-    return crypto.randomUUID();
+  return crypto.randomUUID();
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
 //# sourceMappingURL=uuidUtils.js.map
+
 
 /***/ }),
 
 /***/ 50591:
 /***/ ((module) => {
 
-(()=>{"use strict";var t={d:(e,i)=>{for(var n in i)t.o(i,n)&&!t.o(e,n)&&Object.defineProperty(e,n,{enumerable:!0,get:i[n]})},o:(t,e)=>Object.prototype.hasOwnProperty.call(t,e),r:t=>{"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(t,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(t,"__esModule",{value:!0})}},e={};t.r(e),t.d(e,{XMLBuilder:()=>lt,XMLParser:()=>tt,XMLValidator:()=>pt});const i=":A-Za-z_\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD",n=new RegExp("^["+i+"]["+i+"\\-.\\d\\u00B7\\u0300-\\u036F\\u203F-\\u2040]*$");function s(t,e){const i=[];let n=e.exec(t);for(;n;){const s=[];s.startIndex=e.lastIndex-n[0].length;const r=n.length;for(let t=0;t<r;t++)s.push(n[t]);i.push(s),n=e.exec(t)}return i}const r=function(t){return!(null==n.exec(t))},o={allowBooleanAttributes:!1,unpairedTags:[]};function a(t,e){e=Object.assign({},o,e);const i=[];let n=!1,s=!1;"\ufeff"===t[0]&&(t=t.substr(1));for(let o=0;o<t.length;o++)if("<"===t[o]&&"?"===t[o+1]){if(o+=2,o=u(t,o),o.err)return o}else{if("<"!==t[o]){if(l(t[o]))continue;return x("InvalidChar","char '"+t[o]+"' is not expected.",b(t,o))}{let a=o;if(o++,"!"===t[o]){o=h(t,o);continue}{let d=!1;"/"===t[o]&&(d=!0,o++);let p="";for(;o<t.length&&">"!==t[o]&&" "!==t[o]&&"\t"!==t[o]&&"\n"!==t[o]&&"\r"!==t[o];o++)p+=t[o];if(p=p.trim(),"/"===p[p.length-1]&&(p=p.substring(0,p.length-1),o--),!r(p)){let e;return e=0===p.trim().length?"Invalid space after '<'.":"Tag '"+p+"' is an invalid name.",x("InvalidTag",e,b(t,o))}const c=f(t,o);if(!1===c)return x("InvalidAttr","Attributes for '"+p+"' have open quote.",b(t,o));let N=c.value;if(o=c.index,"/"===N[N.length-1]){const i=o-N.length;N=N.substring(0,N.length-1);const s=g(N,e);if(!0!==s)return x(s.err.code,s.err.msg,b(t,i+s.err.line));n=!0}else if(d){if(!c.tagClosed)return x("InvalidTag","Closing tag '"+p+"' doesn't have proper closing.",b(t,o));if(N.trim().length>0)return x("InvalidTag","Closing tag '"+p+"' can't have attributes or invalid starting.",b(t,a));if(0===i.length)return x("InvalidTag","Closing tag '"+p+"' has not been opened.",b(t,a));{const e=i.pop();if(p!==e.tagName){let i=b(t,e.tagStartPos);return x("InvalidTag","Expected closing tag '"+e.tagName+"' (opened in line "+i.line+", col "+i.col+") instead of closing tag '"+p+"'.",b(t,a))}0==i.length&&(s=!0)}}else{const r=g(N,e);if(!0!==r)return x(r.err.code,r.err.msg,b(t,o-N.length+r.err.line));if(!0===s)return x("InvalidXml","Multiple possible root nodes found.",b(t,o));-1!==e.unpairedTags.indexOf(p)||i.push({tagName:p,tagStartPos:a}),n=!0}for(o++;o<t.length;o++)if("<"===t[o]){if("!"===t[o+1]){o++,o=h(t,o);continue}if("?"!==t[o+1])break;if(o=u(t,++o),o.err)return o}else if("&"===t[o]){const e=m(t,o);if(-1==e)return x("InvalidChar","char '&' is not expected.",b(t,o));o=e}else if(!0===s&&!l(t[o]))return x("InvalidXml","Extra text at the end",b(t,o));"<"===t[o]&&o--}}}return n?1==i.length?x("InvalidTag","Unclosed tag '"+i[0].tagName+"'.",b(t,i[0].tagStartPos)):!(i.length>0)||x("InvalidXml","Invalid '"+JSON.stringify(i.map((t=>t.tagName)),null,4).replace(/\r?\n/g,"")+"' found.",{line:1,col:1}):x("InvalidXml","Start tag expected.",1)}function l(t){return" "===t||"\t"===t||"\n"===t||"\r"===t}function u(t,e){const i=e;for(;e<t.length;e++)if("?"!=t[e]&&" "!=t[e]);else{const n=t.substr(i,e-i);if(e>5&&"xml"===n)return x("InvalidXml","XML declaration allowed only at the start of the document.",b(t,e));if("?"==t[e]&&">"==t[e+1]){e++;break}}return e}function h(t,e){if(t.length>e+5&&"-"===t[e+1]&&"-"===t[e+2]){for(e+=3;e<t.length;e++)if("-"===t[e]&&"-"===t[e+1]&&">"===t[e+2]){e+=2;break}}else if(t.length>e+8&&"D"===t[e+1]&&"O"===t[e+2]&&"C"===t[e+3]&&"T"===t[e+4]&&"Y"===t[e+5]&&"P"===t[e+6]&&"E"===t[e+7]){let i=1;for(e+=8;e<t.length;e++)if("<"===t[e])i++;else if(">"===t[e]&&(i--,0===i))break}else if(t.length>e+9&&"["===t[e+1]&&"C"===t[e+2]&&"D"===t[e+3]&&"A"===t[e+4]&&"T"===t[e+5]&&"A"===t[e+6]&&"["===t[e+7])for(e+=8;e<t.length;e++)if("]"===t[e]&&"]"===t[e+1]&&">"===t[e+2]){e+=2;break}return e}const d='"',p="'";function f(t,e){let i="",n="",s=!1;for(;e<t.length;e++){if(t[e]===d||t[e]===p)""===n?n=t[e]:n!==t[e]||(n="");else if(">"===t[e]&&""===n){s=!0;break}i+=t[e]}return""===n&&{value:i,index:e,tagClosed:s}}const c=new RegExp("(\\s*)([^\\s=]+)(\\s*=)?(\\s*(['\"])(([\\s\\S])*?)\\5)?","g");function g(t,e){const i=s(t,c),n={};for(let t=0;t<i.length;t++){if(0===i[t][1].length)return x("InvalidAttr","Attribute '"+i[t][2]+"' has no space in starting.",E(i[t]));if(void 0!==i[t][3]&&void 0===i[t][4])return x("InvalidAttr","Attribute '"+i[t][2]+"' is without value.",E(i[t]));if(void 0===i[t][3]&&!e.allowBooleanAttributes)return x("InvalidAttr","boolean attribute '"+i[t][2]+"' is not allowed.",E(i[t]));const s=i[t][2];if(!N(s))return x("InvalidAttr","Attribute '"+s+"' is an invalid name.",E(i[t]));if(n.hasOwnProperty(s))return x("InvalidAttr","Attribute '"+s+"' is repeated.",E(i[t]));n[s]=1}return!0}function m(t,e){if(";"===t[++e])return-1;if("#"===t[e])return function(t,e){let i=/\d/;for("x"===t[e]&&(e++,i=/[\da-fA-F]/);e<t.length;e++){if(";"===t[e])return e;if(!t[e].match(i))break}return-1}(t,++e);let i=0;for(;e<t.length;e++,i++)if(!(t[e].match(/\w/)&&i<20)){if(";"===t[e])break;return-1}return e}function x(t,e,i){return{err:{code:t,msg:e,line:i.line||i,col:i.col}}}function N(t){return r(t)}function b(t,e){const i=t.substring(0,e).split(/\r?\n/);return{line:i.length,col:i[i.length-1].length+1}}function E(t){return t.startIndex+t[1].length}const v={preserveOrder:!1,attributeNamePrefix:"@_",attributesGroupName:!1,textNodeName:"#text",ignoreAttributes:!0,removeNSPrefix:!1,allowBooleanAttributes:!1,parseTagValue:!0,parseAttributeValue:!1,trimValues:!0,cdataPropName:!1,numberParseOptions:{hex:!0,leadingZeros:!0,eNotation:!0},tagValueProcessor:function(t,e){return e},attributeValueProcessor:function(t,e){return e},stopNodes:[],alwaysCreateTextNode:!1,isArray:()=>!1,commentPropName:!1,unpairedTags:[],processEntities:!0,htmlEntities:!1,ignoreDeclaration:!1,ignorePiTags:!1,transformTagName:!1,transformAttributeName:!1,updateTag:function(t,e,i){return t},captureMetaData:!1};let T;T="function"!=typeof Symbol?"@@xmlMetadata":Symbol("XML Node Metadata");class y{constructor(t){this.tagname=t,this.child=[],this[":@"]={}}add(t,e){"__proto__"===t&&(t="#__proto__"),this.child.push({[t]:e})}addChild(t,e){"__proto__"===t.tagname&&(t.tagname="#__proto__"),t[":@"]&&Object.keys(t[":@"]).length>0?this.child.push({[t.tagname]:t.child,":@":t[":@"]}):this.child.push({[t.tagname]:t.child}),void 0!==e&&(this.child[this.child.length-1][T]={startIndex:e})}static getMetaDataSymbol(){return T}}class w{constructor(t){this.suppressValidationErr=!t}readDocType(t,e){const i={};if("O"!==t[e+3]||"C"!==t[e+4]||"T"!==t[e+5]||"Y"!==t[e+6]||"P"!==t[e+7]||"E"!==t[e+8])throw new Error("Invalid Tag instead of DOCTYPE");{e+=9;let n=1,s=!1,r=!1,o="";for(;e<t.length;e++)if("<"!==t[e]||r)if(">"===t[e]){if(r?"-"===t[e-1]&&"-"===t[e-2]&&(r=!1,n--):n--,0===n)break}else"["===t[e]?s=!0:o+=t[e];else{if(s&&P(t,"!ENTITY",e)){let n,s;e+=7,[n,s,e]=this.readEntityExp(t,e+1,this.suppressValidationErr),-1===s.indexOf("&")&&(i[n]={regx:RegExp(`&${n};`,"g"),val:s})}else if(s&&P(t,"!ELEMENT",e)){e+=8;const{index:i}=this.readElementExp(t,e+1);e=i}else if(s&&P(t,"!ATTLIST",e))e+=8;else if(s&&P(t,"!NOTATION",e)){e+=9;const{index:i}=this.readNotationExp(t,e+1,this.suppressValidationErr);e=i}else{if(!P(t,"!--",e))throw new Error("Invalid DOCTYPE");r=!0}n++,o=""}if(0!==n)throw new Error("Unclosed DOCTYPE")}return{entities:i,i:e}}readEntityExp(t,e){e=I(t,e);let i="";for(;e<t.length&&!/\s/.test(t[e])&&'"'!==t[e]&&"'"!==t[e];)i+=t[e],e++;if(O(i),e=I(t,e),!this.suppressValidationErr){if("SYSTEM"===t.substring(e,e+6).toUpperCase())throw new Error("External entities are not supported");if("%"===t[e])throw new Error("Parameter entities are not supported")}let n="";return[e,n]=this.readIdentifierVal(t,e,"entity"),[i,n,--e]}readNotationExp(t,e){e=I(t,e);let i="";for(;e<t.length&&!/\s/.test(t[e]);)i+=t[e],e++;!this.suppressValidationErr&&O(i),e=I(t,e);const n=t.substring(e,e+6).toUpperCase();if(!this.suppressValidationErr&&"SYSTEM"!==n&&"PUBLIC"!==n)throw new Error(`Expected SYSTEM or PUBLIC, found "${n}"`);e+=n.length,e=I(t,e);let s=null,r=null;if("PUBLIC"===n)[e,s]=this.readIdentifierVal(t,e,"publicIdentifier"),'"'!==t[e=I(t,e)]&&"'"!==t[e]||([e,r]=this.readIdentifierVal(t,e,"systemIdentifier"));else if("SYSTEM"===n&&([e,r]=this.readIdentifierVal(t,e,"systemIdentifier"),!this.suppressValidationErr&&!r))throw new Error("Missing mandatory system identifier for SYSTEM notation");return{notationName:i,publicIdentifier:s,systemIdentifier:r,index:--e}}readIdentifierVal(t,e,i){let n="";const s=t[e];if('"'!==s&&"'"!==s)throw new Error(`Expected quoted string, found "${s}"`);for(e++;e<t.length&&t[e]!==s;)n+=t[e],e++;if(t[e]!==s)throw new Error(`Unterminated ${i} value`);return[++e,n]}readElementExp(t,e){e=I(t,e);let i="";for(;e<t.length&&!/\s/.test(t[e]);)i+=t[e],e++;if(!this.suppressValidationErr&&!r(i))throw new Error(`Invalid element name: "${i}"`);let n="";if("E"===t[e=I(t,e)]&&P(t,"MPTY",e))e+=4;else if("A"===t[e]&&P(t,"NY",e))e+=2;else if("("===t[e]){for(e++;e<t.length&&")"!==t[e];)n+=t[e],e++;if(")"!==t[e])throw new Error("Unterminated content model")}else if(!this.suppressValidationErr)throw new Error(`Invalid Element Expression, found "${t[e]}"`);return{elementName:i,contentModel:n.trim(),index:e}}readAttlistExp(t,e){e=I(t,e);let i="";for(;e<t.length&&!/\s/.test(t[e]);)i+=t[e],e++;O(i),e=I(t,e);let n="";for(;e<t.length&&!/\s/.test(t[e]);)n+=t[e],e++;if(!O(n))throw new Error(`Invalid attribute name: "${n}"`);e=I(t,e);let s="";if("NOTATION"===t.substring(e,e+8).toUpperCase()){if(s="NOTATION","("!==t[e=I(t,e+=8)])throw new Error(`Expected '(', found "${t[e]}"`);e++;let i=[];for(;e<t.length&&")"!==t[e];){let n="";for(;e<t.length&&"|"!==t[e]&&")"!==t[e];)n+=t[e],e++;if(n=n.trim(),!O(n))throw new Error(`Invalid notation name: "${n}"`);i.push(n),"|"===t[e]&&(e++,e=I(t,e))}if(")"!==t[e])throw new Error("Unterminated list of notations");e++,s+=" ("+i.join("|")+")"}else{for(;e<t.length&&!/\s/.test(t[e]);)s+=t[e],e++;const i=["CDATA","ID","IDREF","IDREFS","ENTITY","ENTITIES","NMTOKEN","NMTOKENS"];if(!this.suppressValidationErr&&!i.includes(s.toUpperCase()))throw new Error(`Invalid attribute type: "${s}"`)}e=I(t,e);let r="";return"#REQUIRED"===t.substring(e,e+8).toUpperCase()?(r="#REQUIRED",e+=8):"#IMPLIED"===t.substring(e,e+7).toUpperCase()?(r="#IMPLIED",e+=7):[e,r]=this.readIdentifierVal(t,e,"ATTLIST"),{elementName:i,attributeName:n,attributeType:s,defaultValue:r,index:e}}}const I=(t,e)=>{for(;e<t.length&&/\s/.test(t[e]);)e++;return e};function P(t,e,i){for(let n=0;n<e.length;n++)if(e[n]!==t[i+n+1])return!1;return!0}function O(t){if(r(t))return t;throw new Error(`Invalid entity name ${t}`)}const A=/^[-+]?0x[a-fA-F0-9]+$/,S=/^([\-\+])?(0*)([0-9]*(\.[0-9]*)?)$/,C={hex:!0,leadingZeros:!0,decimalPoint:".",eNotation:!0};const V=/^([-+])?(0*)(\d*(\.\d*)?[eE][-\+]?\d+)$/;function $(t){return"function"==typeof t?t:Array.isArray(t)?e=>{for(const i of t){if("string"==typeof i&&e===i)return!0;if(i instanceof RegExp&&i.test(e))return!0}}:()=>!1}class D{constructor(t){if(this.options=t,this.currentNode=null,this.tagsNodeStack=[],this.docTypeEntities={},this.lastEntities={apos:{regex:/&(apos|#39|#x27);/g,val:"'"},gt:{regex:/&(gt|#62|#x3E);/g,val:">"},lt:{regex:/&(lt|#60|#x3C);/g,val:"<"},quot:{regex:/&(quot|#34|#x22);/g,val:'"'}},this.ampEntity={regex:/&(amp|#38|#x26);/g,val:"&"},this.htmlEntities={space:{regex:/&(nbsp|#160);/g,val:" "},cent:{regex:/&(cent|#162);/g,val:"¢"},pound:{regex:/&(pound|#163);/g,val:"£"},yen:{regex:/&(yen|#165);/g,val:"¥"},euro:{regex:/&(euro|#8364);/g,val:"€"},copyright:{regex:/&(copy|#169);/g,val:"©"},reg:{regex:/&(reg|#174);/g,val:"®"},inr:{regex:/&(inr|#8377);/g,val:"₹"},num_dec:{regex:/&#([0-9]{1,7});/g,val:(t,e)=>String.fromCodePoint(Number.parseInt(e,10))},num_hex:{regex:/&#x([0-9a-fA-F]{1,6});/g,val:(t,e)=>String.fromCodePoint(Number.parseInt(e,16))}},this.addExternalEntities=j,this.parseXml=L,this.parseTextData=M,this.resolveNameSpace=F,this.buildAttributesMap=k,this.isItStopNode=Y,this.replaceEntitiesValue=B,this.readStopNodeData=W,this.saveTextToParentTag=R,this.addChild=U,this.ignoreAttributesFn=$(this.options.ignoreAttributes),this.options.stopNodes&&this.options.stopNodes.length>0){this.stopNodesExact=new Set,this.stopNodesWildcard=new Set;for(let t=0;t<this.options.stopNodes.length;t++){const e=this.options.stopNodes[t];"string"==typeof e&&(e.startsWith("*.")?this.stopNodesWildcard.add(e.substring(2)):this.stopNodesExact.add(e))}}}}function j(t){const e=Object.keys(t);for(let i=0;i<e.length;i++){const n=e[i];this.lastEntities[n]={regex:new RegExp("&"+n+";","g"),val:t[n]}}}function M(t,e,i,n,s,r,o){if(void 0!==t&&(this.options.trimValues&&!n&&(t=t.trim()),t.length>0)){o||(t=this.replaceEntitiesValue(t));const n=this.options.tagValueProcessor(e,t,i,s,r);return null==n?t:typeof n!=typeof t||n!==t?n:this.options.trimValues||t.trim()===t?q(t,this.options.parseTagValue,this.options.numberParseOptions):t}}function F(t){if(this.options.removeNSPrefix){const e=t.split(":"),i="/"===t.charAt(0)?"/":"";if("xmlns"===e[0])return"";2===e.length&&(t=i+e[1])}return t}const _=new RegExp("([^\\s=]+)\\s*(=\\s*(['\"])([\\s\\S]*?)\\3)?","gm");function k(t,e){if(!0!==this.options.ignoreAttributes&&"string"==typeof t){const i=s(t,_),n=i.length,r={};for(let t=0;t<n;t++){const n=this.resolveNameSpace(i[t][1]);if(this.ignoreAttributesFn(n,e))continue;let s=i[t][4],o=this.options.attributeNamePrefix+n;if(n.length)if(this.options.transformAttributeName&&(o=this.options.transformAttributeName(o)),"__proto__"===o&&(o="#__proto__"),void 0!==s){this.options.trimValues&&(s=s.trim()),s=this.replaceEntitiesValue(s);const t=this.options.attributeValueProcessor(n,s,e);r[o]=null==t?s:typeof t!=typeof s||t!==s?t:q(s,this.options.parseAttributeValue,this.options.numberParseOptions)}else this.options.allowBooleanAttributes&&(r[o]=!0)}if(!Object.keys(r).length)return;if(this.options.attributesGroupName){const t={};return t[this.options.attributesGroupName]=r,t}return r}}const L=function(t){t=t.replace(/\r\n?/g,"\n");const e=new y("!xml");let i=e,n="",s="";const r=new w(this.options.processEntities);for(let o=0;o<t.length;o++)if("<"===t[o])if("/"===t[o+1]){const e=G(t,">",o,"Closing Tag is not closed.");let r=t.substring(o+2,e).trim();if(this.options.removeNSPrefix){const t=r.indexOf(":");-1!==t&&(r=r.substr(t+1))}this.options.transformTagName&&(r=this.options.transformTagName(r)),i&&(n=this.saveTextToParentTag(n,i,s));const a=s.substring(s.lastIndexOf(".")+1);if(r&&-1!==this.options.unpairedTags.indexOf(r))throw new Error(`Unpaired tag can not be used as closing tag: </${r}>`);let l=0;a&&-1!==this.options.unpairedTags.indexOf(a)?(l=s.lastIndexOf(".",s.lastIndexOf(".")-1),this.tagsNodeStack.pop()):l=s.lastIndexOf("."),s=s.substring(0,l),i=this.tagsNodeStack.pop(),n="",o=e}else if("?"===t[o+1]){let e=X(t,o,!1,"?>");if(!e)throw new Error("Pi Tag is not closed.");if(n=this.saveTextToParentTag(n,i,s),this.options.ignoreDeclaration&&"?xml"===e.tagName||this.options.ignorePiTags);else{const t=new y(e.tagName);t.add(this.options.textNodeName,""),e.tagName!==e.tagExp&&e.attrExpPresent&&(t[":@"]=this.buildAttributesMap(e.tagExp,s)),this.addChild(i,t,s,o)}o=e.closeIndex+1}else if("!--"===t.substr(o+1,3)){const e=G(t,"--\x3e",o+4,"Comment is not closed.");if(this.options.commentPropName){const r=t.substring(o+4,e-2);n=this.saveTextToParentTag(n,i,s),i.add(this.options.commentPropName,[{[this.options.textNodeName]:r}])}o=e}else if("!D"===t.substr(o+1,2)){const e=r.readDocType(t,o);this.docTypeEntities=e.entities,o=e.i}else if("!["===t.substr(o+1,2)){const e=G(t,"]]>",o,"CDATA is not closed.")-2,r=t.substring(o+9,e);n=this.saveTextToParentTag(n,i,s);let a=this.parseTextData(r,i.tagname,s,!0,!1,!0,!0);null==a&&(a=""),this.options.cdataPropName?i.add(this.options.cdataPropName,[{[this.options.textNodeName]:r}]):i.add(this.options.textNodeName,a),o=e+2}else{let r=X(t,o,this.options.removeNSPrefix),a=r.tagName;const l=r.rawTagName;let u=r.tagExp,h=r.attrExpPresent,d=r.closeIndex;if(this.options.transformTagName){const t=this.options.transformTagName(a);u===a&&(u=t),a=t}i&&n&&"!xml"!==i.tagname&&(n=this.saveTextToParentTag(n,i,s,!1));const p=i;p&&-1!==this.options.unpairedTags.indexOf(p.tagname)&&(i=this.tagsNodeStack.pop(),s=s.substring(0,s.lastIndexOf("."))),a!==e.tagname&&(s+=s?"."+a:a);const f=o;if(this.isItStopNode(this.stopNodesExact,this.stopNodesWildcard,s,a)){let e="";if(u.length>0&&u.lastIndexOf("/")===u.length-1)"/"===a[a.length-1]?(a=a.substr(0,a.length-1),s=s.substr(0,s.length-1),u=a):u=u.substr(0,u.length-1),o=r.closeIndex;else if(-1!==this.options.unpairedTags.indexOf(a))o=r.closeIndex;else{const i=this.readStopNodeData(t,l,d+1);if(!i)throw new Error(`Unexpected end of ${l}`);o=i.i,e=i.tagContent}const n=new y(a);a!==u&&h&&(n[":@"]=this.buildAttributesMap(u,s)),e&&(e=this.parseTextData(e,a,s,!0,h,!0,!0)),s=s.substr(0,s.lastIndexOf(".")),n.add(this.options.textNodeName,e),this.addChild(i,n,s,f)}else{if(u.length>0&&u.lastIndexOf("/")===u.length-1){if("/"===a[a.length-1]?(a=a.substr(0,a.length-1),s=s.substr(0,s.length-1),u=a):u=u.substr(0,u.length-1),this.options.transformTagName){const t=this.options.transformTagName(a);u===a&&(u=t),a=t}const t=new y(a);a!==u&&h&&(t[":@"]=this.buildAttributesMap(u,s)),this.addChild(i,t,s,f),s=s.substr(0,s.lastIndexOf("."))}else{const t=new y(a);this.tagsNodeStack.push(i),a!==u&&h&&(t[":@"]=this.buildAttributesMap(u,s)),this.addChild(i,t,s,f),i=t}n="",o=d}}else n+=t[o];return e.child};function U(t,e,i,n){this.options.captureMetaData||(n=void 0);const s=this.options.updateTag(e.tagname,i,e[":@"]);!1===s||("string"==typeof s?(e.tagname=s,t.addChild(e,n)):t.addChild(e,n))}const B=function(t){if(this.options.processEntities){for(let e in this.docTypeEntities){const i=this.docTypeEntities[e];t=t.replace(i.regx,i.val)}for(let e in this.lastEntities){const i=this.lastEntities[e];t=t.replace(i.regex,i.val)}if(this.options.htmlEntities)for(let e in this.htmlEntities){const i=this.htmlEntities[e];t=t.replace(i.regex,i.val)}t=t.replace(this.ampEntity.regex,this.ampEntity.val)}return t};function R(t,e,i,n){return t&&(void 0===n&&(n=0===e.child.length),void 0!==(t=this.parseTextData(t,e.tagname,i,!1,!!e[":@"]&&0!==Object.keys(e[":@"]).length,n))&&""!==t&&e.add(this.options.textNodeName,t),t=""),t}function Y(t,e,i,n){return!(!e||!e.has(n))||!(!t||!t.has(i))}function G(t,e,i,n){const s=t.indexOf(e,i);if(-1===s)throw new Error(n);return s+e.length-1}function X(t,e,i,n=">"){const s=function(t,e,i=">"){let n,s="";for(let r=e;r<t.length;r++){let e=t[r];if(n)e===n&&(n="");else if('"'===e||"'"===e)n=e;else if(e===i[0]){if(!i[1])return{data:s,index:r};if(t[r+1]===i[1])return{data:s,index:r}}else"\t"===e&&(e=" ");s+=e}}(t,e+1,n);if(!s)return;let r=s.data;const o=s.index,a=r.search(/\s/);let l=r,u=!0;-1!==a&&(l=r.substring(0,a),r=r.substring(a+1).trimStart());const h=l;if(i){const t=l.indexOf(":");-1!==t&&(l=l.substr(t+1),u=l!==s.data.substr(t+1))}return{tagName:l,tagExp:r,closeIndex:o,attrExpPresent:u,rawTagName:h}}function W(t,e,i){const n=i;let s=1;for(;i<t.length;i++)if("<"===t[i])if("/"===t[i+1]){const r=G(t,">",i,`${e} is not closed`);if(t.substring(i+2,r).trim()===e&&(s--,0===s))return{tagContent:t.substring(n,i),i:r};i=r}else if("?"===t[i+1])i=G(t,"?>",i+1,"StopNode is not closed.");else if("!--"===t.substr(i+1,3))i=G(t,"--\x3e",i+3,"StopNode is not closed.");else if("!["===t.substr(i+1,2))i=G(t,"]]>",i,"StopNode is not closed.")-2;else{const n=X(t,i,">");n&&((n&&n.tagName)===e&&"/"!==n.tagExp[n.tagExp.length-1]&&s++,i=n.closeIndex)}}function q(t,e,i){if(e&&"string"==typeof t){const e=t.trim();return"true"===e||"false"!==e&&function(t,e={}){if(e=Object.assign({},C,e),!t||"string"!=typeof t)return t;let i=t.trim();if(void 0!==e.skipLike&&e.skipLike.test(i))return t;if("0"===t)return 0;if(e.hex&&A.test(i))return function(t){if(parseInt)return parseInt(t,16);if(Number.parseInt)return Number.parseInt(t,16);if(window&&window.parseInt)return window.parseInt(t,16);throw new Error("parseInt, Number.parseInt, window.parseInt are not supported")}(i);if(-1!==i.search(/.+[eE].+/))return function(t,e,i){if(!i.eNotation)return t;const n=e.match(V);if(n){let s=n[1]||"";const r=-1===n[3].indexOf("e")?"E":"e",o=n[2],a=s?t[o.length+1]===r:t[o.length]===r;return o.length>1&&a?t:1!==o.length||!n[3].startsWith(`.${r}`)&&n[3][0]!==r?i.leadingZeros&&!a?(e=(n[1]||"")+n[3],Number(e)):t:Number(e)}return t}(t,i,e);{const s=S.exec(i);if(s){const r=s[1]||"",o=s[2];let a=(n=s[3])&&-1!==n.indexOf(".")?("."===(n=n.replace(/0+$/,""))?n="0":"."===n[0]?n="0"+n:"."===n[n.length-1]&&(n=n.substring(0,n.length-1)),n):n;const l=r?"."===t[o.length+1]:"."===t[o.length];if(!e.leadingZeros&&(o.length>1||1===o.length&&!l))return t;{const n=Number(i),s=String(n);if(0===n||-0===n)return n;if(-1!==s.search(/[eE]/))return e.eNotation?n:t;if(-1!==i.indexOf("."))return"0"===s||s===a||s===`${r}${a}`?n:t;let l=o?a:i;return o?l===s||r+l===s?n:t:l===s||l===r+s?n:t}}return t}var n}(t,i)}return void 0!==t?t:""}const Z=y.getMetaDataSymbol();function K(t,e){return Q(t,e)}function Q(t,e,i){let n;const s={};for(let r=0;r<t.length;r++){const o=t[r],a=z(o);let l="";if(l=void 0===i?a:i+"."+a,a===e.textNodeName)void 0===n?n=o[a]:n+=""+o[a];else{if(void 0===a)continue;if(o[a]){let t=Q(o[a],e,l);const i=H(t,e);void 0!==o[Z]&&(t[Z]=o[Z]),o[":@"]?J(t,o[":@"],l,e):1!==Object.keys(t).length||void 0===t[e.textNodeName]||e.alwaysCreateTextNode?0===Object.keys(t).length&&(e.alwaysCreateTextNode?t[e.textNodeName]="":t=""):t=t[e.textNodeName],void 0!==s[a]&&s.hasOwnProperty(a)?(Array.isArray(s[a])||(s[a]=[s[a]]),s[a].push(t)):e.isArray(a,l,i)?s[a]=[t]:s[a]=t}}}return"string"==typeof n?n.length>0&&(s[e.textNodeName]=n):void 0!==n&&(s[e.textNodeName]=n),s}function z(t){const e=Object.keys(t);for(let t=0;t<e.length;t++){const i=e[t];if(":@"!==i)return i}}function J(t,e,i,n){if(e){const s=Object.keys(e),r=s.length;for(let o=0;o<r;o++){const r=s[o];n.isArray(r,i+"."+r,!0,!0)?t[r]=[e[r]]:t[r]=e[r]}}}function H(t,e){const{textNodeName:i}=e,n=Object.keys(t).length;return 0===n||!(1!==n||!t[i]&&"boolean"!=typeof t[i]&&0!==t[i])}class tt{constructor(t){this.externalEntities={},this.options=function(t){return Object.assign({},v,t)}(t)}parse(t,e){if("string"!=typeof t&&t.toString)t=t.toString();else if("string"!=typeof t)throw new Error("XML data is accepted in String or Bytes[] form.");if(e){!0===e&&(e={});const i=a(t,e);if(!0!==i)throw Error(`${i.err.msg}:${i.err.line}:${i.err.col}`)}const i=new D(this.options);i.addExternalEntities(this.externalEntities);const n=i.parseXml(t);return this.options.preserveOrder||void 0===n?n:K(n,this.options)}addEntity(t,e){if(-1!==e.indexOf("&"))throw new Error("Entity value can't have '&'");if(-1!==t.indexOf("&")||-1!==t.indexOf(";"))throw new Error("An entity must be set without '&' and ';'. Eg. use '#xD' for '&#xD;'");if("&"===e)throw new Error("An entity with value '&' is not permitted");this.externalEntities[t]=e}static getMetaDataSymbol(){return y.getMetaDataSymbol()}}function et(t,e){let i="";return e.format&&e.indentBy.length>0&&(i="\n"),it(t,e,"",i)}function it(t,e,i,n){let s="",r=!1;for(let o=0;o<t.length;o++){const a=t[o],l=nt(a);if(void 0===l)continue;let u="";if(u=0===i.length?l:`${i}.${l}`,l===e.textNodeName){let t=a[l];rt(u,e)||(t=e.tagValueProcessor(l,t),t=ot(t,e)),r&&(s+=n),s+=t,r=!1;continue}if(l===e.cdataPropName){r&&(s+=n),s+=`<![CDATA[${a[l][0][e.textNodeName]}]]>`,r=!1;continue}if(l===e.commentPropName){s+=n+`\x3c!--${a[l][0][e.textNodeName]}--\x3e`,r=!0;continue}if("?"===l[0]){const t=st(a[":@"],e),i="?xml"===l?"":n;let o=a[l][0][e.textNodeName];o=0!==o.length?" "+o:"",s+=i+`<${l}${o}${t}?>`,r=!0;continue}let h=n;""!==h&&(h+=e.indentBy);const d=n+`<${l}${st(a[":@"],e)}`,p=it(a[l],e,u,h);-1!==e.unpairedTags.indexOf(l)?e.suppressUnpairedNode?s+=d+">":s+=d+"/>":p&&0!==p.length||!e.suppressEmptyNode?p&&p.endsWith(">")?s+=d+`>${p}${n}</${l}>`:(s+=d+">",p&&""!==n&&(p.includes("/>")||p.includes("</"))?s+=n+e.indentBy+p+n:s+=p,s+=`</${l}>`):s+=d+"/>",r=!0}return s}function nt(t){const e=Object.keys(t);for(let i=0;i<e.length;i++){const n=e[i];if(t.hasOwnProperty(n)&&":@"!==n)return n}}function st(t,e){let i="";if(t&&!e.ignoreAttributes)for(let n in t){if(!t.hasOwnProperty(n))continue;let s=e.attributeValueProcessor(n,t[n]);s=ot(s,e),!0===s&&e.suppressBooleanAttributes?i+=` ${n.substr(e.attributeNamePrefix.length)}`:i+=` ${n.substr(e.attributeNamePrefix.length)}="${s}"`}return i}function rt(t,e){let i=(t=t.substr(0,t.length-e.textNodeName.length-1)).substr(t.lastIndexOf(".")+1);for(let n in e.stopNodes)if(e.stopNodes[n]===t||e.stopNodes[n]==="*."+i)return!0;return!1}function ot(t,e){if(t&&t.length>0&&e.processEntities)for(let i=0;i<e.entities.length;i++){const n=e.entities[i];t=t.replace(n.regex,n.val)}return t}const at={attributeNamePrefix:"@_",attributesGroupName:!1,textNodeName:"#text",ignoreAttributes:!0,cdataPropName:!1,format:!1,indentBy:"  ",suppressEmptyNode:!1,suppressUnpairedNode:!0,suppressBooleanAttributes:!0,tagValueProcessor:function(t,e){return e},attributeValueProcessor:function(t,e){return e},preserveOrder:!1,commentPropName:!1,unpairedTags:[],entities:[{regex:new RegExp("&","g"),val:"&amp;"},{regex:new RegExp(">","g"),val:"&gt;"},{regex:new RegExp("<","g"),val:"&lt;"},{regex:new RegExp("'","g"),val:"&apos;"},{regex:new RegExp('"',"g"),val:"&quot;"}],processEntities:!0,stopNodes:[],oneListGroup:!1};function lt(t){this.options=Object.assign({},at,t),!0===this.options.ignoreAttributes||this.options.attributesGroupName?this.isAttribute=function(){return!1}:(this.ignoreAttributesFn=$(this.options.ignoreAttributes),this.attrPrefixLen=this.options.attributeNamePrefix.length,this.isAttribute=dt),this.processTextOrObjNode=ut,this.options.format?(this.indentate=ht,this.tagEndChar=">\n",this.newLine="\n"):(this.indentate=function(){return""},this.tagEndChar=">",this.newLine="")}function ut(t,e,i,n){const s=this.j2x(t,i+1,n.concat(e));return void 0!==t[this.options.textNodeName]&&1===Object.keys(t).length?this.buildTextValNode(t[this.options.textNodeName],e,s.attrStr,i):this.buildObjectNode(s.val,e,s.attrStr,i)}function ht(t){return this.options.indentBy.repeat(t)}function dt(t){return!(!t.startsWith(this.options.attributeNamePrefix)||t===this.options.textNodeName)&&t.substr(this.attrPrefixLen)}lt.prototype.build=function(t){return this.options.preserveOrder?et(t,this.options):(Array.isArray(t)&&this.options.arrayNodeName&&this.options.arrayNodeName.length>1&&(t={[this.options.arrayNodeName]:t}),this.j2x(t,0,[]).val)},lt.prototype.j2x=function(t,e,i){let n="",s="";const r=i.join(".");for(let o in t)if(Object.prototype.hasOwnProperty.call(t,o))if(void 0===t[o])this.isAttribute(o)&&(s+="");else if(null===t[o])this.isAttribute(o)||o===this.options.cdataPropName?s+="":"?"===o[0]?s+=this.indentate(e)+"<"+o+"?"+this.tagEndChar:s+=this.indentate(e)+"<"+o+"/"+this.tagEndChar;else if(t[o]instanceof Date)s+=this.buildTextValNode(t[o],o,"",e);else if("object"!=typeof t[o]){const i=this.isAttribute(o);if(i&&!this.ignoreAttributesFn(i,r))n+=this.buildAttrPairStr(i,""+t[o]);else if(!i)if(o===this.options.textNodeName){let e=this.options.tagValueProcessor(o,""+t[o]);s+=this.replaceEntitiesValue(e)}else s+=this.buildTextValNode(t[o],o,"",e)}else if(Array.isArray(t[o])){const n=t[o].length;let r="",a="";for(let l=0;l<n;l++){const n=t[o][l];if(void 0===n);else if(null===n)"?"===o[0]?s+=this.indentate(e)+"<"+o+"?"+this.tagEndChar:s+=this.indentate(e)+"<"+o+"/"+this.tagEndChar;else if("object"==typeof n)if(this.options.oneListGroup){const t=this.j2x(n,e+1,i.concat(o));r+=t.val,this.options.attributesGroupName&&n.hasOwnProperty(this.options.attributesGroupName)&&(a+=t.attrStr)}else r+=this.processTextOrObjNode(n,o,e,i);else if(this.options.oneListGroup){let t=this.options.tagValueProcessor(o,n);t=this.replaceEntitiesValue(t),r+=t}else r+=this.buildTextValNode(n,o,"",e)}this.options.oneListGroup&&(r=this.buildObjectNode(r,o,a,e)),s+=r}else if(this.options.attributesGroupName&&o===this.options.attributesGroupName){const e=Object.keys(t[o]),i=e.length;for(let s=0;s<i;s++)n+=this.buildAttrPairStr(e[s],""+t[o][e[s]])}else s+=this.processTextOrObjNode(t[o],o,e,i);return{attrStr:n,val:s}},lt.prototype.buildAttrPairStr=function(t,e){return e=this.options.attributeValueProcessor(t,""+e),e=this.replaceEntitiesValue(e),this.options.suppressBooleanAttributes&&"true"===e?" "+t:" "+t+'="'+e+'"'},lt.prototype.buildObjectNode=function(t,e,i,n){if(""===t)return"?"===e[0]?this.indentate(n)+"<"+e+i+"?"+this.tagEndChar:this.indentate(n)+"<"+e+i+this.closeTag(e)+this.tagEndChar;{let s="</"+e+this.tagEndChar,r="";return"?"===e[0]&&(r="?",s=""),!i&&""!==i||-1!==t.indexOf("<")?!1!==this.options.commentPropName&&e===this.options.commentPropName&&0===r.length?this.indentate(n)+`\x3c!--${t}--\x3e`+this.newLine:this.indentate(n)+"<"+e+i+r+this.tagEndChar+t+this.indentate(n)+s:this.indentate(n)+"<"+e+i+r+">"+t+s}},lt.prototype.closeTag=function(t){let e="";return-1!==this.options.unpairedTags.indexOf(t)?this.options.suppressUnpairedNode||(e="/"):e=this.options.suppressEmptyNode?"/":`></${t}`,e},lt.prototype.buildTextValNode=function(t,e,i,n){if(!1!==this.options.cdataPropName&&e===this.options.cdataPropName)return this.indentate(n)+`<![CDATA[${t}]]>`+this.newLine;if(!1!==this.options.commentPropName&&e===this.options.commentPropName)return this.indentate(n)+`\x3c!--${t}--\x3e`+this.newLine;if("?"===e[0])return this.indentate(n)+"<"+e+i+"?"+this.tagEndChar;{let s=this.options.tagValueProcessor(e,t);return s=this.replaceEntitiesValue(s),""===s?this.indentate(n)+"<"+e+i+this.closeTag(e)+this.tagEndChar:this.indentate(n)+"<"+e+i+">"+s+"</"+e+this.tagEndChar}},lt.prototype.replaceEntitiesValue=function(t){if(t&&t.length>0&&this.options.processEntities)for(let e=0;e<this.options.entities.length;e++){const i=this.options.entities[e];t=t.replace(i.regex,i.val)}return t};const pt={validate:a};module.exports=e})();
+(()=>{"use strict";var t={d:(e,i)=>{for(var n in i)t.o(i,n)&&!t.o(e,n)&&Object.defineProperty(e,n,{enumerable:!0,get:i[n]})},o:(t,e)=>Object.prototype.hasOwnProperty.call(t,e),r:t=>{"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(t,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(t,"__esModule",{value:!0})}},e={};t.r(e),t.d(e,{XMLBuilder:()=>Ot,XMLParser:()=>ft,XMLValidator:()=>$t});const i=":A-Za-z_\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD",n=new RegExp("^["+i+"]["+i+"\\-.\\d\\u00B7\\u0300-\\u036F\\u203F-\\u2040]*$");function s(t,e){const i=[];let n=e.exec(t);for(;n;){const s=[];s.startIndex=e.lastIndex-n[0].length;const r=n.length;for(let t=0;t<r;t++)s.push(n[t]);i.push(s),n=e.exec(t)}return i}const r=function(t){return!(null==n.exec(t))},o=["hasOwnProperty","toString","valueOf","__defineGetter__","__defineSetter__","__lookupGetter__","__lookupSetter__"],a=["__proto__","constructor","prototype"],h={allowBooleanAttributes:!1,unpairedTags:[]};function l(t,e){e=Object.assign({},h,e);const i=[];let n=!1,s=!1;"\ufeff"===t[0]&&(t=t.substr(1));for(let r=0;r<t.length;r++)if("<"===t[r]&&"?"===t[r+1]){if(r+=2,r=u(t,r),r.err)return r}else{if("<"!==t[r]){if(p(t[r]))continue;return b("InvalidChar","char '"+t[r]+"' is not expected.",w(t,r))}{let o=r;if(r++,"!"===t[r]){r=c(t,r);continue}{let a=!1;"/"===t[r]&&(a=!0,r++);let h="";for(;r<t.length&&">"!==t[r]&&" "!==t[r]&&"\t"!==t[r]&&"\n"!==t[r]&&"\r"!==t[r];r++)h+=t[r];if(h=h.trim(),"/"===h[h.length-1]&&(h=h.substring(0,h.length-1),r--),!y(h)){let e;return e=0===h.trim().length?"Invalid space after '<'.":"Tag '"+h+"' is an invalid name.",b("InvalidTag",e,w(t,r))}const l=g(t,r);if(!1===l)return b("InvalidAttr","Attributes for '"+h+"' have open quote.",w(t,r));let d=l.value;if(r=l.index,"/"===d[d.length-1]){const i=r-d.length;d=d.substring(0,d.length-1);const s=x(d,e);if(!0!==s)return b(s.err.code,s.err.msg,w(t,i+s.err.line));n=!0}else if(a){if(!l.tagClosed)return b("InvalidTag","Closing tag '"+h+"' doesn't have proper closing.",w(t,r));if(d.trim().length>0)return b("InvalidTag","Closing tag '"+h+"' can't have attributes or invalid starting.",w(t,o));if(0===i.length)return b("InvalidTag","Closing tag '"+h+"' has not been opened.",w(t,o));{const e=i.pop();if(h!==e.tagName){let i=w(t,e.tagStartPos);return b("InvalidTag","Expected closing tag '"+e.tagName+"' (opened in line "+i.line+", col "+i.col+") instead of closing tag '"+h+"'.",w(t,o))}0==i.length&&(s=!0)}}else{const a=x(d,e);if(!0!==a)return b(a.err.code,a.err.msg,w(t,r-d.length+a.err.line));if(!0===s)return b("InvalidXml","Multiple possible root nodes found.",w(t,r));-1!==e.unpairedTags.indexOf(h)||i.push({tagName:h,tagStartPos:o}),n=!0}for(r++;r<t.length;r++)if("<"===t[r]){if("!"===t[r+1]){r++,r=c(t,r);continue}if("?"!==t[r+1])break;if(r=u(t,++r),r.err)return r}else if("&"===t[r]){const e=N(t,r);if(-1==e)return b("InvalidChar","char '&' is not expected.",w(t,r));r=e}else if(!0===s&&!p(t[r]))return b("InvalidXml","Extra text at the end",w(t,r));"<"===t[r]&&r--}}}return n?1==i.length?b("InvalidTag","Unclosed tag '"+i[0].tagName+"'.",w(t,i[0].tagStartPos)):!(i.length>0)||b("InvalidXml","Invalid '"+JSON.stringify(i.map(t=>t.tagName),null,4).replace(/\r?\n/g,"")+"' found.",{line:1,col:1}):b("InvalidXml","Start tag expected.",1)}function p(t){return" "===t||"\t"===t||"\n"===t||"\r"===t}function u(t,e){const i=e;for(;e<t.length;e++)if("?"==t[e]||" "==t[e]){const n=t.substr(i,e-i);if(e>5&&"xml"===n)return b("InvalidXml","XML declaration allowed only at the start of the document.",w(t,e));if("?"==t[e]&&">"==t[e+1]){e++;break}continue}return e}function c(t,e){if(t.length>e+5&&"-"===t[e+1]&&"-"===t[e+2]){for(e+=3;e<t.length;e++)if("-"===t[e]&&"-"===t[e+1]&&">"===t[e+2]){e+=2;break}}else if(t.length>e+8&&"D"===t[e+1]&&"O"===t[e+2]&&"C"===t[e+3]&&"T"===t[e+4]&&"Y"===t[e+5]&&"P"===t[e+6]&&"E"===t[e+7]){let i=1;for(e+=8;e<t.length;e++)if("<"===t[e])i++;else if(">"===t[e]&&(i--,0===i))break}else if(t.length>e+9&&"["===t[e+1]&&"C"===t[e+2]&&"D"===t[e+3]&&"A"===t[e+4]&&"T"===t[e+5]&&"A"===t[e+6]&&"["===t[e+7])for(e+=8;e<t.length;e++)if("]"===t[e]&&"]"===t[e+1]&&">"===t[e+2]){e+=2;break}return e}const d='"',f="'";function g(t,e){let i="",n="",s=!1;for(;e<t.length;e++){if(t[e]===d||t[e]===f)""===n?n=t[e]:n!==t[e]||(n="");else if(">"===t[e]&&""===n){s=!0;break}i+=t[e]}return""===n&&{value:i,index:e,tagClosed:s}}const m=new RegExp("(\\s*)([^\\s=]+)(\\s*=)?(\\s*(['\"])(([\\s\\S])*?)\\5)?","g");function x(t,e){const i=s(t,m),n={};for(let t=0;t<i.length;t++){if(0===i[t][1].length)return b("InvalidAttr","Attribute '"+i[t][2]+"' has no space in starting.",v(i[t]));if(void 0!==i[t][3]&&void 0===i[t][4])return b("InvalidAttr","Attribute '"+i[t][2]+"' is without value.",v(i[t]));if(void 0===i[t][3]&&!e.allowBooleanAttributes)return b("InvalidAttr","boolean attribute '"+i[t][2]+"' is not allowed.",v(i[t]));const s=i[t][2];if(!E(s))return b("InvalidAttr","Attribute '"+s+"' is an invalid name.",v(i[t]));if(Object.prototype.hasOwnProperty.call(n,s))return b("InvalidAttr","Attribute '"+s+"' is repeated.",v(i[t]));n[s]=1}return!0}function N(t,e){if(";"===t[++e])return-1;if("#"===t[e])return function(t,e){let i=/\d/;for("x"===t[e]&&(e++,i=/[\da-fA-F]/);e<t.length;e++){if(";"===t[e])return e;if(!t[e].match(i))break}return-1}(t,++e);let i=0;for(;e<t.length;e++,i++)if(!(t[e].match(/\w/)&&i<20)){if(";"===t[e])break;return-1}return e}function b(t,e,i){return{err:{code:t,msg:e,line:i.line||i,col:i.col}}}function E(t){return r(t)}function y(t){return r(t)}function w(t,e){const i=t.substring(0,e).split(/\r?\n/);return{line:i.length,col:i[i.length-1].length+1}}function v(t){return t.startIndex+t[1].length}const T=t=>o.includes(t)?"__"+t:t,P={preserveOrder:!1,attributeNamePrefix:"@_",attributesGroupName:!1,textNodeName:"#text",ignoreAttributes:!0,removeNSPrefix:!1,allowBooleanAttributes:!1,parseTagValue:!0,parseAttributeValue:!1,trimValues:!0,cdataPropName:!1,numberParseOptions:{hex:!0,leadingZeros:!0,eNotation:!0},tagValueProcessor:function(t,e){return e},attributeValueProcessor:function(t,e){return e},stopNodes:[],alwaysCreateTextNode:!1,isArray:()=>!1,commentPropName:!1,unpairedTags:[],processEntities:!0,htmlEntities:!1,ignoreDeclaration:!1,ignorePiTags:!1,transformTagName:!1,transformAttributeName:!1,updateTag:function(t,e,i){return t},captureMetaData:!1,maxNestedTags:100,strictReservedNames:!0,jPath:!0,onDangerousProperty:T};function S(t,e){if("string"!=typeof t)return;const i=t.toLowerCase();if(o.some(t=>i===t.toLowerCase()))throw new Error(`[SECURITY] Invalid ${e}: "${t}" is a reserved JavaScript keyword that could cause prototype pollution`);if(a.some(t=>i===t.toLowerCase()))throw new Error(`[SECURITY] Invalid ${e}: "${t}" is a reserved JavaScript keyword that could cause prototype pollution`)}function A(t){return"boolean"==typeof t?{enabled:t,maxEntitySize:1e4,maxExpansionDepth:10,maxTotalExpansions:1e3,maxExpandedLength:1e5,maxEntityCount:100,allowedTags:null,tagFilter:null}:"object"==typeof t&&null!==t?{enabled:!1!==t.enabled,maxEntitySize:t.maxEntitySize??1e4,maxExpansionDepth:t.maxExpansionDepth??10,maxTotalExpansions:t.maxTotalExpansions??1e3,maxExpandedLength:t.maxExpandedLength??1e5,maxEntityCount:t.maxEntityCount??100,allowedTags:t.allowedTags??null,tagFilter:t.tagFilter??null}:A(!0)}const C=function(t){const e=Object.assign({},P,t),i=[{value:e.attributeNamePrefix,name:"attributeNamePrefix"},{value:e.attributesGroupName,name:"attributesGroupName"},{value:e.textNodeName,name:"textNodeName"},{value:e.cdataPropName,name:"cdataPropName"},{value:e.commentPropName,name:"commentPropName"}];for(const{value:t,name:e}of i)t&&S(t,e);return null===e.onDangerousProperty&&(e.onDangerousProperty=T),e.processEntities=A(e.processEntities),e.stopNodes&&Array.isArray(e.stopNodes)&&(e.stopNodes=e.stopNodes.map(t=>"string"==typeof t&&t.startsWith("*.")?".."+t.substring(2):t)),e};let O;O="function"!=typeof Symbol?"@@xmlMetadata":Symbol("XML Node Metadata");class ${constructor(t){this.tagname=t,this.child=[],this[":@"]=Object.create(null)}add(t,e){"__proto__"===t&&(t="#__proto__"),this.child.push({[t]:e})}addChild(t,e){"__proto__"===t.tagname&&(t.tagname="#__proto__"),t[":@"]&&Object.keys(t[":@"]).length>0?this.child.push({[t.tagname]:t.child,":@":t[":@"]}):this.child.push({[t.tagname]:t.child}),void 0!==e&&(this.child[this.child.length-1][O]={startIndex:e})}static getMetaDataSymbol(){return O}}class I{constructor(t){this.suppressValidationErr=!t,this.options=t}readDocType(t,e){const i=Object.create(null);let n=0;if("O"!==t[e+3]||"C"!==t[e+4]||"T"!==t[e+5]||"Y"!==t[e+6]||"P"!==t[e+7]||"E"!==t[e+8])throw new Error("Invalid Tag instead of DOCTYPE");{e+=9;let s=1,r=!1,o=!1,a="";for(;e<t.length;e++)if("<"!==t[e]||o)if(">"===t[e]){if(o?"-"===t[e-1]&&"-"===t[e-2]&&(o=!1,s--):s--,0===s)break}else"["===t[e]?r=!0:a+=t[e];else{if(r&&_(t,"!ENTITY",e)){let s,r;if(e+=7,[s,r,e]=this.readEntityExp(t,e+1,this.suppressValidationErr),-1===r.indexOf("&")){if(!1!==this.options.enabled&&this.options.maxEntityCount&&n>=this.options.maxEntityCount)throw new Error(`Entity count (${n+1}) exceeds maximum allowed (${this.options.maxEntityCount})`);const t=s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");i[s]={regx:RegExp(`&${t};`,"g"),val:r},n++}}else if(r&&_(t,"!ELEMENT",e)){e+=8;const{index:i}=this.readElementExp(t,e+1);e=i}else if(r&&_(t,"!ATTLIST",e))e+=8;else if(r&&_(t,"!NOTATION",e)){e+=9;const{index:i}=this.readNotationExp(t,e+1,this.suppressValidationErr);e=i}else{if(!_(t,"!--",e))throw new Error("Invalid DOCTYPE");o=!0}s++,a=""}if(0!==s)throw new Error("Unclosed DOCTYPE")}return{entities:i,i:e}}readEntityExp(t,e){e=j(t,e);let i="";for(;e<t.length&&!/\s/.test(t[e])&&'"'!==t[e]&&"'"!==t[e];)i+=t[e],e++;if(D(i),e=j(t,e),!this.suppressValidationErr){if("SYSTEM"===t.substring(e,e+6).toUpperCase())throw new Error("External entities are not supported");if("%"===t[e])throw new Error("Parameter entities are not supported")}let n="";if([e,n]=this.readIdentifierVal(t,e,"entity"),!1!==this.options.enabled&&this.options.maxEntitySize&&n.length>this.options.maxEntitySize)throw new Error(`Entity "${i}" size (${n.length}) exceeds maximum allowed size (${this.options.maxEntitySize})`);return[i,n,--e]}readNotationExp(t,e){e=j(t,e);let i="";for(;e<t.length&&!/\s/.test(t[e]);)i+=t[e],e++;!this.suppressValidationErr&&D(i),e=j(t,e);const n=t.substring(e,e+6).toUpperCase();if(!this.suppressValidationErr&&"SYSTEM"!==n&&"PUBLIC"!==n)throw new Error(`Expected SYSTEM or PUBLIC, found "${n}"`);e+=n.length,e=j(t,e);let s=null,r=null;if("PUBLIC"===n)[e,s]=this.readIdentifierVal(t,e,"publicIdentifier"),'"'!==t[e=j(t,e)]&&"'"!==t[e]||([e,r]=this.readIdentifierVal(t,e,"systemIdentifier"));else if("SYSTEM"===n&&([e,r]=this.readIdentifierVal(t,e,"systemIdentifier"),!this.suppressValidationErr&&!r))throw new Error("Missing mandatory system identifier for SYSTEM notation");return{notationName:i,publicIdentifier:s,systemIdentifier:r,index:--e}}readIdentifierVal(t,e,i){let n="";const s=t[e];if('"'!==s&&"'"!==s)throw new Error(`Expected quoted string, found "${s}"`);for(e++;e<t.length&&t[e]!==s;)n+=t[e],e++;if(t[e]!==s)throw new Error(`Unterminated ${i} value`);return[++e,n]}readElementExp(t,e){e=j(t,e);let i="";for(;e<t.length&&!/\s/.test(t[e]);)i+=t[e],e++;if(!this.suppressValidationErr&&!r(i))throw new Error(`Invalid element name: "${i}"`);let n="";if("E"===t[e=j(t,e)]&&_(t,"MPTY",e))e+=4;else if("A"===t[e]&&_(t,"NY",e))e+=2;else if("("===t[e]){for(e++;e<t.length&&")"!==t[e];)n+=t[e],e++;if(")"!==t[e])throw new Error("Unterminated content model")}else if(!this.suppressValidationErr)throw new Error(`Invalid Element Expression, found "${t[e]}"`);return{elementName:i,contentModel:n.trim(),index:e}}readAttlistExp(t,e){e=j(t,e);let i="";for(;e<t.length&&!/\s/.test(t[e]);)i+=t[e],e++;D(i),e=j(t,e);let n="";for(;e<t.length&&!/\s/.test(t[e]);)n+=t[e],e++;if(!D(n))throw new Error(`Invalid attribute name: "${n}"`);e=j(t,e);let s="";if("NOTATION"===t.substring(e,e+8).toUpperCase()){if(s="NOTATION","("!==t[e=j(t,e+=8)])throw new Error(`Expected '(', found "${t[e]}"`);e++;let i=[];for(;e<t.length&&")"!==t[e];){let n="";for(;e<t.length&&"|"!==t[e]&&")"!==t[e];)n+=t[e],e++;if(n=n.trim(),!D(n))throw new Error(`Invalid notation name: "${n}"`);i.push(n),"|"===t[e]&&(e++,e=j(t,e))}if(")"!==t[e])throw new Error("Unterminated list of notations");e++,s+=" ("+i.join("|")+")"}else{for(;e<t.length&&!/\s/.test(t[e]);)s+=t[e],e++;const i=["CDATA","ID","IDREF","IDREFS","ENTITY","ENTITIES","NMTOKEN","NMTOKENS"];if(!this.suppressValidationErr&&!i.includes(s.toUpperCase()))throw new Error(`Invalid attribute type: "${s}"`)}e=j(t,e);let r="";return"#REQUIRED"===t.substring(e,e+8).toUpperCase()?(r="#REQUIRED",e+=8):"#IMPLIED"===t.substring(e,e+7).toUpperCase()?(r="#IMPLIED",e+=7):[e,r]=this.readIdentifierVal(t,e,"ATTLIST"),{elementName:i,attributeName:n,attributeType:s,defaultValue:r,index:e}}}const j=(t,e)=>{for(;e<t.length&&/\s/.test(t[e]);)e++;return e};function _(t,e,i){for(let n=0;n<e.length;n++)if(e[n]!==t[i+n+1])return!1;return!0}function D(t){if(r(t))return t;throw new Error(`Invalid entity name ${t}`)}const V=/^[-+]?0x[a-fA-F0-9]+$/,k=/^([\-\+])?(0*)([0-9]*(\.[0-9]*)?)$/,F={hex:!0,leadingZeros:!0,decimalPoint:".",eNotation:!0};const L=/^([-+])?(0*)(\d*(\.\d*)?[eE][-\+]?\d+)$/;class M{constructor(t={}){this.separator=t.separator||".",this.path=[],this.siblingStacks=[]}push(t,e=null,i=null){this.path.length>0&&(this.path[this.path.length-1].values=void 0);const n=this.path.length;this.siblingStacks[n]||(this.siblingStacks[n]=new Map);const s=this.siblingStacks[n],r=i?`${i}:${t}`:t,o=s.get(r)||0;let a=0;for(const t of s.values())a+=t;s.set(r,o+1);const h={tag:t,position:a,counter:o};null!=i&&(h.namespace=i),null!=e&&(h.values=e),this.path.push(h)}pop(){if(0===this.path.length)return;const t=this.path.pop();return this.siblingStacks.length>this.path.length+1&&(this.siblingStacks.length=this.path.length+1),t}updateCurrent(t){if(this.path.length>0){const e=this.path[this.path.length-1];null!=t&&(e.values=t)}}getCurrentTag(){return this.path.length>0?this.path[this.path.length-1].tag:void 0}getCurrentNamespace(){return this.path.length>0?this.path[this.path.length-1].namespace:void 0}getAttrValue(t){if(0===this.path.length)return;const e=this.path[this.path.length-1];return e.values?.[t]}hasAttr(t){if(0===this.path.length)return!1;const e=this.path[this.path.length-1];return void 0!==e.values&&t in e.values}getPosition(){return 0===this.path.length?-1:this.path[this.path.length-1].position??0}getCounter(){return 0===this.path.length?-1:this.path[this.path.length-1].counter??0}getIndex(){return this.getPosition()}getDepth(){return this.path.length}toString(t,e=!0){const i=t||this.separator;return this.path.map(t=>e&&t.namespace?`${t.namespace}:${t.tag}`:t.tag).join(i)}toArray(){return this.path.map(t=>t.tag)}reset(){this.path=[],this.siblingStacks=[]}matches(t){const e=t.segments;return 0!==e.length&&(t.hasDeepWildcard()?this._matchWithDeepWildcard(e):this._matchSimple(e))}_matchSimple(t){if(this.path.length!==t.length)return!1;for(let e=0;e<t.length;e++){const i=t[e],n=this.path[e],s=e===this.path.length-1;if(!this._matchSegment(i,n,s))return!1}return!0}_matchWithDeepWildcard(t){let e=this.path.length-1,i=t.length-1;for(;i>=0&&e>=0;){const n=t[i];if("deep-wildcard"===n.type){if(i--,i<0)return!0;const n=t[i];let s=!1;for(let t=e;t>=0;t--){const r=t===this.path.length-1;if(this._matchSegment(n,this.path[t],r)){e=t-1,i--,s=!0;break}}if(!s)return!1}else{const t=e===this.path.length-1;if(!this._matchSegment(n,this.path[e],t))return!1;e--,i--}}return i<0}_matchSegment(t,e,i){if("*"!==t.tag&&t.tag!==e.tag)return!1;if(void 0!==t.namespace&&"*"!==t.namespace&&t.namespace!==e.namespace)return!1;if(void 0!==t.attrName){if(!i)return!1;if(!e.values||!(t.attrName in e.values))return!1;if(void 0!==t.attrValue){const i=e.values[t.attrName];if(String(i)!==String(t.attrValue))return!1}}if(void 0!==t.position){if(!i)return!1;const n=e.counter??0;if("first"===t.position&&0!==n)return!1;if("odd"===t.position&&n%2!=1)return!1;if("even"===t.position&&n%2!=0)return!1;if("nth"===t.position&&n!==t.positionValue)return!1}return!0}snapshot(){return{path:this.path.map(t=>({...t})),siblingStacks:this.siblingStacks.map(t=>new Map(t))}}restore(t){this.path=t.path.map(t=>({...t})),this.siblingStacks=t.siblingStacks.map(t=>new Map(t))}}class G{constructor(t,e={}){this.pattern=t,this.separator=e.separator||".",this.segments=this._parse(t),this._hasDeepWildcard=this.segments.some(t=>"deep-wildcard"===t.type),this._hasAttributeCondition=this.segments.some(t=>void 0!==t.attrName),this._hasPositionSelector=this.segments.some(t=>void 0!==t.position)}_parse(t){const e=[];let i=0,n="";for(;i<t.length;)t[i]===this.separator?i+1<t.length&&t[i+1]===this.separator?(n.trim()&&(e.push(this._parseSegment(n.trim())),n=""),e.push({type:"deep-wildcard"}),i+=2):(n.trim()&&e.push(this._parseSegment(n.trim())),n="",i++):(n+=t[i],i++);return n.trim()&&e.push(this._parseSegment(n.trim())),e}_parseSegment(t){const e={type:"tag"};let i=null,n=t;const s=t.match(/^([^\[]+)(\[[^\]]*\])(.*)$/);if(s&&(n=s[1]+s[3],s[2])){const t=s[2].slice(1,-1);t&&(i=t)}let r,o,a=n;if(n.includes("::")){const e=n.indexOf("::");if(r=n.substring(0,e).trim(),a=n.substring(e+2).trim(),!r)throw new Error(`Invalid namespace in pattern: ${t}`)}let h=null;if(a.includes(":")){const t=a.lastIndexOf(":"),e=a.substring(0,t).trim(),i=a.substring(t+1).trim();["first","last","odd","even"].includes(i)||/^nth\(\d+\)$/.test(i)?(o=e,h=i):o=a}else o=a;if(!o)throw new Error(`Invalid segment pattern: ${t}`);if(e.tag=o,r&&(e.namespace=r),i)if(i.includes("=")){const t=i.indexOf("=");e.attrName=i.substring(0,t).trim(),e.attrValue=i.substring(t+1).trim()}else e.attrName=i.trim();if(h){const t=h.match(/^nth\((\d+)\)$/);t?(e.position="nth",e.positionValue=parseInt(t[1],10)):e.position=h}return e}get length(){return this.segments.length}hasDeepWildcard(){return this._hasDeepWildcard}hasAttributeCondition(){return this._hasAttributeCondition}hasPositionSelector(){return this._hasPositionSelector}toString(){return this.pattern}}function R(t,e){if(!t)return{};const i=e.attributesGroupName?t[e.attributesGroupName]:t;if(!i)return{};const n={};for(const t in i)t.startsWith(e.attributeNamePrefix)?n[t.substring(e.attributeNamePrefix.length)]=i[t]:n[t]=i[t];return n}function U(t){if(!t||"string"!=typeof t)return;const e=t.indexOf(":");if(-1!==e&&e>0){const i=t.substring(0,e);if("xmlns"!==i)return i}}class B{constructor(t){var e;if(this.options=t,this.currentNode=null,this.tagsNodeStack=[],this.docTypeEntities={},this.lastEntities={apos:{regex:/&(apos|#39|#x27);/g,val:"'"},gt:{regex:/&(gt|#62|#x3E);/g,val:">"},lt:{regex:/&(lt|#60|#x3C);/g,val:"<"},quot:{regex:/&(quot|#34|#x22);/g,val:'"'}},this.ampEntity={regex:/&(amp|#38|#x26);/g,val:"&"},this.htmlEntities={space:{regex:/&(nbsp|#160);/g,val:" "},cent:{regex:/&(cent|#162);/g,val:"¢"},pound:{regex:/&(pound|#163);/g,val:"£"},yen:{regex:/&(yen|#165);/g,val:"¥"},euro:{regex:/&(euro|#8364);/g,val:"€"},copyright:{regex:/&(copy|#169);/g,val:"©"},reg:{regex:/&(reg|#174);/g,val:"®"},inr:{regex:/&(inr|#8377);/g,val:"₹"},num_dec:{regex:/&#([0-9]{1,7});/g,val:(t,e)=>st(e,10,"&#")},num_hex:{regex:/&#x([0-9a-fA-F]{1,6});/g,val:(t,e)=>st(e,16,"&#x")}},this.addExternalEntities=W,this.parseXml=Z,this.parseTextData=Y,this.resolveNameSpace=X,this.buildAttributesMap=q,this.isItStopNode=H,this.replaceEntitiesValue=K,this.readStopNodeData=it,this.saveTextToParentTag=Q,this.addChild=J,this.ignoreAttributesFn="function"==typeof(e=this.options.ignoreAttributes)?e:Array.isArray(e)?t=>{for(const i of e){if("string"==typeof i&&t===i)return!0;if(i instanceof RegExp&&i.test(t))return!0}}:()=>!1,this.entityExpansionCount=0,this.currentExpandedLength=0,this.matcher=new M,this.isCurrentNodeStopNode=!1,this.options.stopNodes&&this.options.stopNodes.length>0){this.stopNodeExpressions=[];for(let t=0;t<this.options.stopNodes.length;t++){const e=this.options.stopNodes[t];"string"==typeof e?this.stopNodeExpressions.push(new G(e)):e instanceof G&&this.stopNodeExpressions.push(e)}}}}function W(t){const e=Object.keys(t);for(let i=0;i<e.length;i++){const n=e[i],s=n.replace(/[.\-+*:]/g,"\\.");this.lastEntities[n]={regex:new RegExp("&"+s+";","g"),val:t[n]}}}function Y(t,e,i,n,s,r,o){if(void 0!==t&&(this.options.trimValues&&!n&&(t=t.trim()),t.length>0)){o||(t=this.replaceEntitiesValue(t,e,i));const n=this.options.jPath?i.toString():i,a=this.options.tagValueProcessor(e,t,n,s,r);return null==a?t:typeof a!=typeof t||a!==t?a:this.options.trimValues||t.trim()===t?nt(t,this.options.parseTagValue,this.options.numberParseOptions):t}}function X(t){if(this.options.removeNSPrefix){const e=t.split(":"),i="/"===t.charAt(0)?"/":"";if("xmlns"===e[0])return"";2===e.length&&(t=i+e[1])}return t}const z=new RegExp("([^\\s=]+)\\s*(=\\s*(['\"])([\\s\\S]*?)\\3)?","gm");function q(t,e,i){if(!0!==this.options.ignoreAttributes&&"string"==typeof t){const n=s(t,z),r=n.length,o={},a={};for(let t=0;t<r;t++){const s=this.resolveNameSpace(n[t][1]),r=n[t][4];if(s.length&&void 0!==r){let t=r;this.options.trimValues&&(t=t.trim()),t=this.replaceEntitiesValue(t,i,e),a[s]=t}}Object.keys(a).length>0&&"object"==typeof e&&e.updateCurrent&&e.updateCurrent(a);for(let t=0;t<r;t++){const s=this.resolveNameSpace(n[t][1]),r=this.options.jPath?e.toString():e;if(this.ignoreAttributesFn(s,r))continue;let a=n[t][4],h=this.options.attributeNamePrefix+s;if(s.length)if(this.options.transformAttributeName&&(h=this.options.transformAttributeName(h)),h=ot(h,this.options),void 0!==a){this.options.trimValues&&(a=a.trim()),a=this.replaceEntitiesValue(a,i,e);const t=this.options.jPath?e.toString():e,n=this.options.attributeValueProcessor(s,a,t);o[h]=null==n?a:typeof n!=typeof a||n!==a?n:nt(a,this.options.parseAttributeValue,this.options.numberParseOptions)}else this.options.allowBooleanAttributes&&(o[h]=!0)}if(!Object.keys(o).length)return;if(this.options.attributesGroupName){const t={};return t[this.options.attributesGroupName]=o,t}return o}}const Z=function(t){t=t.replace(/\r\n?/g,"\n");const e=new $("!xml");let i=e,n="";this.matcher.reset(),this.entityExpansionCount=0,this.currentExpandedLength=0;const s=new I(this.options.processEntities);for(let r=0;r<t.length;r++)if("<"===t[r])if("/"===t[r+1]){const e=tt(t,">",r,"Closing Tag is not closed.");let s=t.substring(r+2,e).trim();if(this.options.removeNSPrefix){const t=s.indexOf(":");-1!==t&&(s=s.substr(t+1))}s=rt(this.options.transformTagName,s,"",this.options).tagName,i&&(n=this.saveTextToParentTag(n,i,this.matcher));const o=this.matcher.getCurrentTag();if(s&&-1!==this.options.unpairedTags.indexOf(s))throw new Error(`Unpaired tag can not be used as closing tag: </${s}>`);o&&-1!==this.options.unpairedTags.indexOf(o)&&(this.matcher.pop(),this.tagsNodeStack.pop()),this.matcher.pop(),this.isCurrentNodeStopNode=!1,i=this.tagsNodeStack.pop(),n="",r=e}else if("?"===t[r+1]){let e=et(t,r,!1,"?>");if(!e)throw new Error("Pi Tag is not closed.");if(n=this.saveTextToParentTag(n,i,this.matcher),this.options.ignoreDeclaration&&"?xml"===e.tagName||this.options.ignorePiTags);else{const t=new $(e.tagName);t.add(this.options.textNodeName,""),e.tagName!==e.tagExp&&e.attrExpPresent&&(t[":@"]=this.buildAttributesMap(e.tagExp,this.matcher,e.tagName)),this.addChild(i,t,this.matcher,r)}r=e.closeIndex+1}else if("!--"===t.substr(r+1,3)){const e=tt(t,"--\x3e",r+4,"Comment is not closed.");if(this.options.commentPropName){const s=t.substring(r+4,e-2);n=this.saveTextToParentTag(n,i,this.matcher),i.add(this.options.commentPropName,[{[this.options.textNodeName]:s}])}r=e}else if("!D"===t.substr(r+1,2)){const e=s.readDocType(t,r);this.docTypeEntities=e.entities,r=e.i}else if("!["===t.substr(r+1,2)){const e=tt(t,"]]>",r,"CDATA is not closed.")-2,s=t.substring(r+9,e);n=this.saveTextToParentTag(n,i,this.matcher);let o=this.parseTextData(s,i.tagname,this.matcher,!0,!1,!0,!0);null==o&&(o=""),this.options.cdataPropName?i.add(this.options.cdataPropName,[{[this.options.textNodeName]:s}]):i.add(this.options.textNodeName,o),r=e+2}else{let s=et(t,r,this.options.removeNSPrefix);if(!s){const e=t.substring(Math.max(0,r-50),Math.min(t.length,r+50));throw new Error(`readTagExp returned undefined at position ${r}. Context: "${e}"`)}let o=s.tagName;const a=s.rawTagName;let h=s.tagExp,l=s.attrExpPresent,p=s.closeIndex;if(({tagName:o,tagExp:h}=rt(this.options.transformTagName,o,h,this.options)),this.options.strictReservedNames&&(o===this.options.commentPropName||o===this.options.cdataPropName))throw new Error(`Invalid tag name: ${o}`);i&&n&&"!xml"!==i.tagname&&(n=this.saveTextToParentTag(n,i,this.matcher,!1));const u=i;u&&-1!==this.options.unpairedTags.indexOf(u.tagname)&&(i=this.tagsNodeStack.pop(),this.matcher.pop());let c=!1;h.length>0&&h.lastIndexOf("/")===h.length-1&&(c=!0,"/"===o[o.length-1]?(o=o.substr(0,o.length-1),h=o):h=h.substr(0,h.length-1),l=o!==h);let d,f=null,g={};d=U(a),o!==e.tagname&&this.matcher.push(o,{},d),o!==h&&l&&(f=this.buildAttributesMap(h,this.matcher,o),f&&(g=R(f,this.options))),o!==e.tagname&&(this.isCurrentNodeStopNode=this.isItStopNode(this.stopNodeExpressions,this.matcher));const m=r;if(this.isCurrentNodeStopNode){let e="";if(c)r=s.closeIndex;else if(-1!==this.options.unpairedTags.indexOf(o))r=s.closeIndex;else{const i=this.readStopNodeData(t,a,p+1);if(!i)throw new Error(`Unexpected end of ${a}`);r=i.i,e=i.tagContent}const n=new $(o);f&&(n[":@"]=f),n.add(this.options.textNodeName,e),this.matcher.pop(),this.isCurrentNodeStopNode=!1,this.addChild(i,n,this.matcher,m)}else{if(c){({tagName:o,tagExp:h}=rt(this.options.transformTagName,o,h,this.options));const t=new $(o);f&&(t[":@"]=f),this.addChild(i,t,this.matcher,m),this.matcher.pop(),this.isCurrentNodeStopNode=!1}else{if(-1!==this.options.unpairedTags.indexOf(o)){const t=new $(o);f&&(t[":@"]=f),this.addChild(i,t,this.matcher,m),this.matcher.pop(),this.isCurrentNodeStopNode=!1,r=s.closeIndex;continue}{const t=new $(o);if(this.tagsNodeStack.length>this.options.maxNestedTags)throw new Error("Maximum nested tags exceeded");this.tagsNodeStack.push(i),f&&(t[":@"]=f),this.addChild(i,t,this.matcher,m),i=t}}n="",r=p}}else n+=t[r];return e.child};function J(t,e,i,n){this.options.captureMetaData||(n=void 0);const s=this.options.jPath?i.toString():i,r=this.options.updateTag(e.tagname,s,e[":@"]);!1===r||("string"==typeof r?(e.tagname=r,t.addChild(e,n)):t.addChild(e,n))}function K(t,e,i){const n=this.options.processEntities;if(!n||!n.enabled)return t;if(n.allowedTags){const s=this.options.jPath?i.toString():i;if(!(Array.isArray(n.allowedTags)?n.allowedTags.includes(e):n.allowedTags(e,s)))return t}if(n.tagFilter){const s=this.options.jPath?i.toString():i;if(!n.tagFilter(e,s))return t}for(const e of Object.keys(this.docTypeEntities)){const i=this.docTypeEntities[e],s=t.match(i.regx);if(s){if(this.entityExpansionCount+=s.length,n.maxTotalExpansions&&this.entityExpansionCount>n.maxTotalExpansions)throw new Error(`Entity expansion limit exceeded: ${this.entityExpansionCount} > ${n.maxTotalExpansions}`);const e=t.length;if(t=t.replace(i.regx,i.val),n.maxExpandedLength&&(this.currentExpandedLength+=t.length-e,this.currentExpandedLength>n.maxExpandedLength))throw new Error(`Total expanded content size exceeded: ${this.currentExpandedLength} > ${n.maxExpandedLength}`)}}for(const e of Object.keys(this.lastEntities)){const i=this.lastEntities[e],s=t.match(i.regex);if(s&&(this.entityExpansionCount+=s.length,n.maxTotalExpansions&&this.entityExpansionCount>n.maxTotalExpansions))throw new Error(`Entity expansion limit exceeded: ${this.entityExpansionCount} > ${n.maxTotalExpansions}`);t=t.replace(i.regex,i.val)}if(-1===t.indexOf("&"))return t;if(this.options.htmlEntities)for(const e of Object.keys(this.htmlEntities)){const i=this.htmlEntities[e],s=t.match(i.regex);if(s&&(this.entityExpansionCount+=s.length,n.maxTotalExpansions&&this.entityExpansionCount>n.maxTotalExpansions))throw new Error(`Entity expansion limit exceeded: ${this.entityExpansionCount} > ${n.maxTotalExpansions}`);t=t.replace(i.regex,i.val)}return t.replace(this.ampEntity.regex,this.ampEntity.val)}function Q(t,e,i,n){return t&&(void 0===n&&(n=0===e.child.length),void 0!==(t=this.parseTextData(t,e.tagname,i,!1,!!e[":@"]&&0!==Object.keys(e[":@"]).length,n))&&""!==t&&e.add(this.options.textNodeName,t),t=""),t}function H(t,e){if(!t||0===t.length)return!1;for(let i=0;i<t.length;i++)if(e.matches(t[i]))return!0;return!1}function tt(t,e,i,n){const s=t.indexOf(e,i);if(-1===s)throw new Error(n);return s+e.length-1}function et(t,e,i,n=">"){const s=function(t,e,i=">"){let n,s="";for(let r=e;r<t.length;r++){let e=t[r];if(n)e===n&&(n="");else if('"'===e||"'"===e)n=e;else if(e===i[0]){if(!i[1])return{data:s,index:r};if(t[r+1]===i[1])return{data:s,index:r}}else"\t"===e&&(e=" ");s+=e}}(t,e+1,n);if(!s)return;let r=s.data;const o=s.index,a=r.search(/\s/);let h=r,l=!0;-1!==a&&(h=r.substring(0,a),r=r.substring(a+1).trimStart());const p=h;if(i){const t=h.indexOf(":");-1!==t&&(h=h.substr(t+1),l=h!==s.data.substr(t+1))}return{tagName:h,tagExp:r,closeIndex:o,attrExpPresent:l,rawTagName:p}}function it(t,e,i){const n=i;let s=1;for(;i<t.length;i++)if("<"===t[i])if("/"===t[i+1]){const r=tt(t,">",i,`${e} is not closed`);if(t.substring(i+2,r).trim()===e&&(s--,0===s))return{tagContent:t.substring(n,i),i:r};i=r}else if("?"===t[i+1])i=tt(t,"?>",i+1,"StopNode is not closed.");else if("!--"===t.substr(i+1,3))i=tt(t,"--\x3e",i+3,"StopNode is not closed.");else if("!["===t.substr(i+1,2))i=tt(t,"]]>",i,"StopNode is not closed.")-2;else{const n=et(t,i,">");n&&((n&&n.tagName)===e&&"/"!==n.tagExp[n.tagExp.length-1]&&s++,i=n.closeIndex)}}function nt(t,e,i){if(e&&"string"==typeof t){const e=t.trim();return"true"===e||"false"!==e&&function(t,e={}){if(e=Object.assign({},F,e),!t||"string"!=typeof t)return t;let i=t.trim();if(void 0!==e.skipLike&&e.skipLike.test(i))return t;if("0"===t)return 0;if(e.hex&&V.test(i))return function(t){if(parseInt)return parseInt(t,16);if(Number.parseInt)return Number.parseInt(t,16);if(window&&window.parseInt)return window.parseInt(t,16);throw new Error("parseInt, Number.parseInt, window.parseInt are not supported")}(i);if(i.includes("e")||i.includes("E"))return function(t,e,i){if(!i.eNotation)return t;const n=e.match(L);if(n){let s=n[1]||"";const r=-1===n[3].indexOf("e")?"E":"e",o=n[2],a=s?t[o.length+1]===r:t[o.length]===r;return o.length>1&&a?t:1!==o.length||!n[3].startsWith(`.${r}`)&&n[3][0]!==r?i.leadingZeros&&!a?(e=(n[1]||"")+n[3],Number(e)):t:Number(e)}return t}(t,i,e);{const s=k.exec(i);if(s){const r=s[1]||"",o=s[2];let a=(n=s[3])&&-1!==n.indexOf(".")?("."===(n=n.replace(/0+$/,""))?n="0":"."===n[0]?n="0"+n:"."===n[n.length-1]&&(n=n.substring(0,n.length-1)),n):n;const h=r?"."===t[o.length+1]:"."===t[o.length];if(!e.leadingZeros&&(o.length>1||1===o.length&&!h))return t;{const n=Number(i),s=String(n);if(0===n)return n;if(-1!==s.search(/[eE]/))return e.eNotation?n:t;if(-1!==i.indexOf("."))return"0"===s||s===a||s===`${r}${a}`?n:t;let h=o?a:i;return o?h===s||r+h===s?n:t:h===s||h===r+s?n:t}}return t}var n}(t,i)}return void 0!==t?t:""}function st(t,e,i){const n=Number.parseInt(t,e);return n>=0&&n<=1114111?String.fromCodePoint(n):i+t+";"}function rt(t,e,i,n){if(t){const n=t(e);i===e&&(i=n),e=n}return{tagName:e=ot(e,n),tagExp:i}}function ot(t,e){if(a.includes(t))throw new Error(`[SECURITY] Invalid name: "${t}" is a reserved JavaScript keyword that could cause prototype pollution`);return o.includes(t)?e.onDangerousProperty(t):t}const at=$.getMetaDataSymbol();function ht(t,e){if(!t||"object"!=typeof t)return{};if(!e)return t;const i={};for(const n in t)n.startsWith(e)?i[n.substring(e.length)]=t[n]:i[n]=t[n];return i}function lt(t,e,i){return pt(t,e,i)}function pt(t,e,i){let n;const s={};for(let r=0;r<t.length;r++){const o=t[r],a=ut(o);if(void 0!==a&&a!==e.textNodeName){const t=ht(o[":@"]||{},e.attributeNamePrefix);i.push(a,t)}if(a===e.textNodeName)void 0===n?n=o[a]:n+=""+o[a];else{if(void 0===a)continue;if(o[a]){let t=pt(o[a],e,i);const n=dt(t,e);if(o[":@"]?ct(t,o[":@"],i,e):1!==Object.keys(t).length||void 0===t[e.textNodeName]||e.alwaysCreateTextNode?0===Object.keys(t).length&&(e.alwaysCreateTextNode?t[e.textNodeName]="":t=""):t=t[e.textNodeName],void 0!==o[at]&&"object"==typeof t&&null!==t&&(t[at]=o[at]),void 0!==s[a]&&Object.prototype.hasOwnProperty.call(s,a))Array.isArray(s[a])||(s[a]=[s[a]]),s[a].push(t);else{const r=e.jPath?i.toString():i;e.isArray(a,r,n)?s[a]=[t]:s[a]=t}void 0!==a&&a!==e.textNodeName&&i.pop()}}}return"string"==typeof n?n.length>0&&(s[e.textNodeName]=n):void 0!==n&&(s[e.textNodeName]=n),s}function ut(t){const e=Object.keys(t);for(let t=0;t<e.length;t++){const i=e[t];if(":@"!==i)return i}}function ct(t,e,i,n){if(e){const s=Object.keys(e),r=s.length;for(let o=0;o<r;o++){const r=s[o],a=r.startsWith(n.attributeNamePrefix)?r.substring(n.attributeNamePrefix.length):r,h=n.jPath?i.toString()+"."+a:i;n.isArray(r,h,!0,!0)?t[r]=[e[r]]:t[r]=e[r]}}}function dt(t,e){const{textNodeName:i}=e,n=Object.keys(t).length;return 0===n||!(1!==n||!t[i]&&"boolean"!=typeof t[i]&&0!==t[i])}class ft{constructor(t){this.externalEntities={},this.options=C(t)}parse(t,e){if("string"!=typeof t&&t.toString)t=t.toString();else if("string"!=typeof t)throw new Error("XML data is accepted in String or Bytes[] form.");if(e){!0===e&&(e={});const i=l(t,e);if(!0!==i)throw Error(`${i.err.msg}:${i.err.line}:${i.err.col}`)}const i=new B(this.options);i.addExternalEntities(this.externalEntities);const n=i.parseXml(t);return this.options.preserveOrder||void 0===n?n:lt(n,this.options,i.matcher)}addEntity(t,e){if(-1!==e.indexOf("&"))throw new Error("Entity value can't have '&'");if(-1!==t.indexOf("&")||-1!==t.indexOf(";"))throw new Error("An entity must be set without '&' and ';'. Eg. use '#xD' for '&#xD;'");if("&"===e)throw new Error("An entity with value '&' is not permitted");this.externalEntities[t]=e}static getMetaDataSymbol(){return $.getMetaDataSymbol()}}function gt(t,e){let i="";e.format&&e.indentBy.length>0&&(i="\n");const n=[];if(e.stopNodes&&Array.isArray(e.stopNodes))for(let t=0;t<e.stopNodes.length;t++){const i=e.stopNodes[t];"string"==typeof i?n.push(new G(i)):i instanceof G&&n.push(i)}return mt(t,e,i,new M,n)}function mt(t,e,i,n,s){let r="",o=!1;if(e.maxNestedTags&&n.getDepth()>e.maxNestedTags)throw new Error("Maximum nested tags exceeded");if(!Array.isArray(t)){if(null!=t){let i=t.toString();return i=vt(i,e),i}return""}for(let a=0;a<t.length;a++){const h=t[a],l=Et(h);if(void 0===l)continue;const p=xt(h[":@"],e);n.push(l,p);const u=wt(n,s);if(l===e.textNodeName){let t=h[l];u||(t=e.tagValueProcessor(l,t),t=vt(t,e)),o&&(r+=i),r+=t,o=!1,n.pop();continue}if(l===e.cdataPropName){o&&(r+=i),r+=`<![CDATA[${h[l][0][e.textNodeName]}]]>`,o=!1,n.pop();continue}if(l===e.commentPropName){r+=i+`\x3c!--${h[l][0][e.textNodeName]}--\x3e`,o=!0,n.pop();continue}if("?"===l[0]){const t=yt(h[":@"],e,u),s="?xml"===l?"":i;let a=h[l][0][e.textNodeName];a=0!==a.length?" "+a:"",r+=s+`<${l}${a}${t}?>`,o=!0,n.pop();continue}let c=i;""!==c&&(c+=e.indentBy);const d=i+`<${l}${yt(h[":@"],e,u)}`;let f;f=u?Nt(h[l],e):mt(h[l],e,c,n,s),-1!==e.unpairedTags.indexOf(l)?e.suppressUnpairedNode?r+=d+">":r+=d+"/>":f&&0!==f.length||!e.suppressEmptyNode?f&&f.endsWith(">")?r+=d+`>${f}${i}</${l}>`:(r+=d+">",f&&""!==i&&(f.includes("/>")||f.includes("</"))?r+=i+e.indentBy+f+i:r+=f,r+=`</${l}>`):r+=d+"/>",o=!0,n.pop()}return r}function xt(t,e){if(!t||e.ignoreAttributes)return null;const i={};let n=!1;for(let s in t)Object.prototype.hasOwnProperty.call(t,s)&&(i[s.startsWith(e.attributeNamePrefix)?s.substr(e.attributeNamePrefix.length):s]=t[s],n=!0);return n?i:null}function Nt(t,e){if(!Array.isArray(t))return null!=t?t.toString():"";let i="";for(let n=0;n<t.length;n++){const s=t[n],r=Et(s);if(r===e.textNodeName)i+=s[r];else if(r===e.cdataPropName)i+=s[r][0][e.textNodeName];else if(r===e.commentPropName)i+=s[r][0][e.textNodeName];else{if(r&&"?"===r[0])continue;if(r){const t=bt(s[":@"],e),n=Nt(s[r],e);n&&0!==n.length?i+=`<${r}${t}>${n}</${r}>`:i+=`<${r}${t}/>`}}}return i}function bt(t,e){let i="";if(t&&!e.ignoreAttributes)for(let n in t){if(!Object.prototype.hasOwnProperty.call(t,n))continue;let s=t[n];!0===s&&e.suppressBooleanAttributes?i+=` ${n.substr(e.attributeNamePrefix.length)}`:i+=` ${n.substr(e.attributeNamePrefix.length)}="${s}"`}return i}function Et(t){const e=Object.keys(t);for(let i=0;i<e.length;i++){const n=e[i];if(Object.prototype.hasOwnProperty.call(t,n)&&":@"!==n)return n}}function yt(t,e,i){let n="";if(t&&!e.ignoreAttributes)for(let s in t){if(!Object.prototype.hasOwnProperty.call(t,s))continue;let r;i?r=t[s]:(r=e.attributeValueProcessor(s,t[s]),r=vt(r,e)),!0===r&&e.suppressBooleanAttributes?n+=` ${s.substr(e.attributeNamePrefix.length)}`:n+=` ${s.substr(e.attributeNamePrefix.length)}="${r}"`}return n}function wt(t,e){if(!e||0===e.length)return!1;for(let i=0;i<e.length;i++)if(t.matches(e[i]))return!0;return!1}function vt(t,e){if(t&&t.length>0&&e.processEntities)for(let i=0;i<e.entities.length;i++){const n=e.entities[i];t=t.replace(n.regex,n.val)}return t}const Tt={attributeNamePrefix:"@_",attributesGroupName:!1,textNodeName:"#text",ignoreAttributes:!0,cdataPropName:!1,format:!1,indentBy:"  ",suppressEmptyNode:!1,suppressUnpairedNode:!0,suppressBooleanAttributes:!0,tagValueProcessor:function(t,e){return e},attributeValueProcessor:function(t,e){return e},preserveOrder:!1,commentPropName:!1,unpairedTags:[],entities:[{regex:new RegExp("&","g"),val:"&amp;"},{regex:new RegExp(">","g"),val:"&gt;"},{regex:new RegExp("<","g"),val:"&lt;"},{regex:new RegExp("'","g"),val:"&apos;"},{regex:new RegExp('"',"g"),val:"&quot;"}],processEntities:!0,stopNodes:[],oneListGroup:!1,maxNestedTags:100,jPath:!0};function Pt(t){if(this.options=Object.assign({},Tt,t),this.options.stopNodes&&Array.isArray(this.options.stopNodes)&&(this.options.stopNodes=this.options.stopNodes.map(t=>"string"==typeof t&&t.startsWith("*.")?".."+t.substring(2):t)),this.stopNodeExpressions=[],this.options.stopNodes&&Array.isArray(this.options.stopNodes))for(let t=0;t<this.options.stopNodes.length;t++){const e=this.options.stopNodes[t];"string"==typeof e?this.stopNodeExpressions.push(new G(e)):e instanceof G&&this.stopNodeExpressions.push(e)}var e;!0===this.options.ignoreAttributes||this.options.attributesGroupName?this.isAttribute=function(){return!1}:(this.ignoreAttributesFn="function"==typeof(e=this.options.ignoreAttributes)?e:Array.isArray(e)?t=>{for(const i of e){if("string"==typeof i&&t===i)return!0;if(i instanceof RegExp&&i.test(t))return!0}}:()=>!1,this.attrPrefixLen=this.options.attributeNamePrefix.length,this.isAttribute=Ct),this.processTextOrObjNode=St,this.options.format?(this.indentate=At,this.tagEndChar=">\n",this.newLine="\n"):(this.indentate=function(){return""},this.tagEndChar=">",this.newLine="")}function St(t,e,i,n){const s=this.extractAttributes(t);if(n.push(e,s),this.checkStopNode(n)){const s=this.buildRawContent(t),r=this.buildAttributesForStopNode(t);return n.pop(),this.buildObjectNode(s,e,r,i)}const r=this.j2x(t,i+1,n);return n.pop(),void 0!==t[this.options.textNodeName]&&1===Object.keys(t).length?this.buildTextValNode(t[this.options.textNodeName],e,r.attrStr,i,n):this.buildObjectNode(r.val,e,r.attrStr,i)}function At(t){return this.options.indentBy.repeat(t)}function Ct(t){return!(!t.startsWith(this.options.attributeNamePrefix)||t===this.options.textNodeName)&&t.substr(this.attrPrefixLen)}Pt.prototype.build=function(t){if(this.options.preserveOrder)return gt(t,this.options);{Array.isArray(t)&&this.options.arrayNodeName&&this.options.arrayNodeName.length>1&&(t={[this.options.arrayNodeName]:t});const e=new M;return this.j2x(t,0,e).val}},Pt.prototype.j2x=function(t,e,i){let n="",s="";if(this.options.maxNestedTags&&i.getDepth()>=this.options.maxNestedTags)throw new Error("Maximum nested tags exceeded");const r=this.options.jPath?i.toString():i,o=this.checkStopNode(i);for(let a in t)if(Object.prototype.hasOwnProperty.call(t,a))if(void 0===t[a])this.isAttribute(a)&&(s+="");else if(null===t[a])this.isAttribute(a)||a===this.options.cdataPropName?s+="":"?"===a[0]?s+=this.indentate(e)+"<"+a+"?"+this.tagEndChar:s+=this.indentate(e)+"<"+a+"/"+this.tagEndChar;else if(t[a]instanceof Date)s+=this.buildTextValNode(t[a],a,"",e,i);else if("object"!=typeof t[a]){const h=this.isAttribute(a);if(h&&!this.ignoreAttributesFn(h,r))n+=this.buildAttrPairStr(h,""+t[a],o);else if(!h)if(a===this.options.textNodeName){let e=this.options.tagValueProcessor(a,""+t[a]);s+=this.replaceEntitiesValue(e)}else{i.push(a);const n=this.checkStopNode(i);if(i.pop(),n){const i=""+t[a];s+=""===i?this.indentate(e)+"<"+a+this.closeTag(a)+this.tagEndChar:this.indentate(e)+"<"+a+">"+i+"</"+a+this.tagEndChar}else s+=this.buildTextValNode(t[a],a,"",e,i)}}else if(Array.isArray(t[a])){const n=t[a].length;let r="",o="";for(let h=0;h<n;h++){const n=t[a][h];if(void 0===n);else if(null===n)"?"===a[0]?s+=this.indentate(e)+"<"+a+"?"+this.tagEndChar:s+=this.indentate(e)+"<"+a+"/"+this.tagEndChar;else if("object"==typeof n)if(this.options.oneListGroup){i.push(a);const t=this.j2x(n,e+1,i);i.pop(),r+=t.val,this.options.attributesGroupName&&n.hasOwnProperty(this.options.attributesGroupName)&&(o+=t.attrStr)}else r+=this.processTextOrObjNode(n,a,e,i);else if(this.options.oneListGroup){let t=this.options.tagValueProcessor(a,n);t=this.replaceEntitiesValue(t),r+=t}else{i.push(a);const t=this.checkStopNode(i);if(i.pop(),t){const t=""+n;r+=""===t?this.indentate(e)+"<"+a+this.closeTag(a)+this.tagEndChar:this.indentate(e)+"<"+a+">"+t+"</"+a+this.tagEndChar}else r+=this.buildTextValNode(n,a,"",e,i)}}this.options.oneListGroup&&(r=this.buildObjectNode(r,a,o,e)),s+=r}else if(this.options.attributesGroupName&&a===this.options.attributesGroupName){const e=Object.keys(t[a]),i=e.length;for(let s=0;s<i;s++)n+=this.buildAttrPairStr(e[s],""+t[a][e[s]],o)}else s+=this.processTextOrObjNode(t[a],a,e,i);return{attrStr:n,val:s}},Pt.prototype.buildAttrPairStr=function(t,e,i){return i||(e=this.options.attributeValueProcessor(t,""+e),e=this.replaceEntitiesValue(e)),this.options.suppressBooleanAttributes&&"true"===e?" "+t:" "+t+'="'+e+'"'},Pt.prototype.extractAttributes=function(t){if(!t||"object"!=typeof t)return null;const e={};let i=!1;if(this.options.attributesGroupName&&t[this.options.attributesGroupName]){const n=t[this.options.attributesGroupName];for(let t in n)Object.prototype.hasOwnProperty.call(n,t)&&(e[t.startsWith(this.options.attributeNamePrefix)?t.substring(this.options.attributeNamePrefix.length):t]=n[t],i=!0)}else for(let n in t){if(!Object.prototype.hasOwnProperty.call(t,n))continue;const s=this.isAttribute(n);s&&(e[s]=t[n],i=!0)}return i?e:null},Pt.prototype.buildRawContent=function(t){if("string"==typeof t)return t;if("object"!=typeof t||null===t)return String(t);if(void 0!==t[this.options.textNodeName])return t[this.options.textNodeName];let e="";for(let i in t){if(!Object.prototype.hasOwnProperty.call(t,i))continue;if(this.isAttribute(i))continue;if(this.options.attributesGroupName&&i===this.options.attributesGroupName)continue;const n=t[i];if(i===this.options.textNodeName)e+=n;else if(Array.isArray(n)){for(let t of n)if("string"==typeof t||"number"==typeof t)e+=`<${i}>${t}</${i}>`;else if("object"==typeof t&&null!==t){const n=this.buildRawContent(t),s=this.buildAttributesForStopNode(t);e+=""===n?`<${i}${s}/>`:`<${i}${s}>${n}</${i}>`}}else if("object"==typeof n&&null!==n){const t=this.buildRawContent(n),s=this.buildAttributesForStopNode(n);e+=""===t?`<${i}${s}/>`:`<${i}${s}>${t}</${i}>`}else e+=`<${i}>${n}</${i}>`}return e},Pt.prototype.buildAttributesForStopNode=function(t){if(!t||"object"!=typeof t)return"";let e="";if(this.options.attributesGroupName&&t[this.options.attributesGroupName]){const i=t[this.options.attributesGroupName];for(let t in i){if(!Object.prototype.hasOwnProperty.call(i,t))continue;const n=t.startsWith(this.options.attributeNamePrefix)?t.substring(this.options.attributeNamePrefix.length):t,s=i[t];!0===s&&this.options.suppressBooleanAttributes?e+=" "+n:e+=" "+n+'="'+s+'"'}}else for(let i in t){if(!Object.prototype.hasOwnProperty.call(t,i))continue;const n=this.isAttribute(i);if(n){const s=t[i];!0===s&&this.options.suppressBooleanAttributes?e+=" "+n:e+=" "+n+'="'+s+'"'}}return e},Pt.prototype.buildObjectNode=function(t,e,i,n){if(""===t)return"?"===e[0]?this.indentate(n)+"<"+e+i+"?"+this.tagEndChar:this.indentate(n)+"<"+e+i+this.closeTag(e)+this.tagEndChar;{let s="</"+e+this.tagEndChar,r="";return"?"===e[0]&&(r="?",s=""),!i&&""!==i||-1!==t.indexOf("<")?!1!==this.options.commentPropName&&e===this.options.commentPropName&&0===r.length?this.indentate(n)+`\x3c!--${t}--\x3e`+this.newLine:this.indentate(n)+"<"+e+i+r+this.tagEndChar+t+this.indentate(n)+s:this.indentate(n)+"<"+e+i+r+">"+t+s}},Pt.prototype.closeTag=function(t){let e="";return-1!==this.options.unpairedTags.indexOf(t)?this.options.suppressUnpairedNode||(e="/"):e=this.options.suppressEmptyNode?"/":`></${t}`,e},Pt.prototype.checkStopNode=function(t){if(!this.stopNodeExpressions||0===this.stopNodeExpressions.length)return!1;for(let e=0;e<this.stopNodeExpressions.length;e++)if(t.matches(this.stopNodeExpressions[e]))return!0;return!1},Pt.prototype.buildTextValNode=function(t,e,i,n,s){if(!1!==this.options.cdataPropName&&e===this.options.cdataPropName)return this.indentate(n)+`<![CDATA[${t}]]>`+this.newLine;if(!1!==this.options.commentPropName&&e===this.options.commentPropName)return this.indentate(n)+`\x3c!--${t}--\x3e`+this.newLine;if("?"===e[0])return this.indentate(n)+"<"+e+i+"?"+this.tagEndChar;{let s=this.options.tagValueProcessor(e,t);return s=this.replaceEntitiesValue(s),""===s?this.indentate(n)+"<"+e+i+this.closeTag(e)+this.tagEndChar:this.indentate(n)+"<"+e+i+">"+s+"</"+e+this.tagEndChar}},Pt.prototype.replaceEntitiesValue=function(t){if(t&&t.length>0&&this.options.processEntities)for(let e=0;e<this.options.entities.length;e++){const i=this.options.entities[e];t=t.replace(i.regex,i.val)}return t};const Ot=Pt,$t={validate:l};module.exports=e})();
 
 /***/ }),
 

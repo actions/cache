@@ -25,6 +25,12 @@
 
 ## Changelog
 
+### 5.0.4
+
+- Bump `minimatch` to v3.1.5 (fixes ReDoS via globstar patterns)
+- Bump `undici` to v6.24.1 (WebSocket decompression bomb protection, header validation fixes)
+- Bump `fast-xml-parser` to v5.5.6
+
 ### 5.0.3
 
 - Bump `@actions/cache` to v5.0.5 (Resolves: https://github.com/actions/cache/security/dependabot/33)
