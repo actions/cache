@@ -179,6 +179,8 @@ jobs:
 
 > **Note**
 > You must use the `cache` or `restore` action in your workflow before you need to use the files that might be restored from the cache. If the provided `key` matches an existing cache, a new cache is not created and if the provided `key` doesn't match an existing cache, a new cache is automatically created provided the job completes successfully.
+>
+> The save path must match the restore path, see [Cache Version](#cache-version) below.
 
 ## Caching Strategies
 
