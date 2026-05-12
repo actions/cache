@@ -41,7 +41,7 @@ runs:
   using: 'node24'
   main: 'dist/restore/index.js'
   post: 'dist/save/index.js'
-  post-if: "success()"
+  post-if: "success() && github.event_name != 'pull_request_target'"
 branding:
   icon: 'archive'
   color: 'gray-dark'
