@@ -179,6 +179,8 @@ jobs:
 
 > **Note**
 > You must use the `cache` or `restore` action in your workflow before you need to use the files that might be restored from the cache. If the provided `key` matches an existing cache, a new cache is not created and if the provided `key` doesn't match an existing cache, a new cache is automatically created provided the job completes successfully.
+>
+> **`pull_request_target` exception:** When `actions/cache` is used in a `pull_request_target` workflow, the automatic post-step save is **skipped**. This is a security measure to prevent untrusted pull request code from poisoning caches accessible to privileged workflows. If really you need to save a cache in a trusted `pull_request_target` context (e.g., after validating the PR source), use [`actions/cache/save`](./save/README.md) explicitly with an appropriate `if` condition.
 
 ## Caching Strategies
 
