@@ -618,7 +618,26 @@ whenever possible:
       ~/.cargo/registry/cache/
       ~/.cargo/git/db/
       target/
-    key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
+```
+
+Since Rust compile times are so long, you might want to take advantage of incremental builds. To do this, use the configuration below.
+- Include the `run_id` in the key to force `actions/cache` to upload a new snapshot after every build.
+- Use `restore-keys:` to load the previous build (when there are multiple partial matches, it selects the most recent).
+
+```yaml
+- uses: actions/cache@v3
+  with:
+    path: |
+      ~/.cargo/bin/
+      ~/.cargo/registry/index/
+      ~/.cargo/registry/cache/
+      ~/.cargo/git/db/
+      ~/.rustup/
+      target/
+    key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}-${{ github.run_id }}
+    restore-keys: |
+      ${{ runner.os }}-cargo-${{ hashFiles(**/'Cargo.lock', 'rust-toolchain.toml') }}
 ```
 
 ## Scala - SBT
