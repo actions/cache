@@ -35,6 +35,16 @@ beforeAll(() => {
             return actualUtils.getInputAsBool(name, options);
         }
     );
+
+    jest.spyOn(actionUtils, "getPathValidationInput").mockImplementation(() => {
+        const actualUtils = jest.requireActual("../src/utils/actionUtils");
+        return actualUtils.getPathValidationInput();
+    });
+
+    jest.spyOn(actionUtils, "logWarning").mockImplementation(message => {
+        const actualUtils = jest.requireActual("../src/utils/actionUtils");
+        return actualUtils.logWarning(message);
+    });
 });
 
 beforeEach(() => {
@@ -127,7 +137,8 @@ test("restore on GHES with AC available ", async () => {
         key,
         [],
         {
-            lookupOnly: false
+            lookupOnly: false,
+            pathValidation: "warn"
         },
         false
     );
@@ -181,7 +192,8 @@ test("restore with too many keys should fail", async () => {
         key,
         restoreKeys,
         {
-            lookupOnly: false
+            lookupOnly: false,
+            pathValidation: "warn"
         },
         false
     );
@@ -207,7 +219,8 @@ test("restore with large key should fail", async () => {
         key,
         [],
         {
-            lookupOnly: false
+            lookupOnly: false,
+            pathValidation: "warn"
         },
         false
     );
@@ -233,7 +246,8 @@ test("restore with invalid key should fail", async () => {
         key,
         [],
         {
-            lookupOnly: false
+            lookupOnly: false,
+            pathValidation: "warn"
         },
         false
     );
@@ -268,7 +282,8 @@ test("restore with no cache found", async () => {
         key,
         [],
         {
-            lookupOnly: false
+            lookupOnly: false,
+            pathValidation: "warn"
         },
         false
     );
@@ -309,7 +324,8 @@ test("restore with restore keys and no cache found", async () => {
         key,
         [restoreKey],
         {
-            lookupOnly: false
+            lookupOnly: false,
+            pathValidation: "warn"
         },
         false
     );
@@ -349,7 +365,8 @@ test("restore with cache found for key", async () => {
         key,
         [],
         {
-            lookupOnly: false
+            lookupOnly: false,
+            pathValidation: "warn"
         },
         false
     );
@@ -391,7 +408,8 @@ test("restore with cache found for restore key", async () => {
         key,
         [restoreKey],
         {
-            lookupOnly: false
+            lookupOnly: false,
+            pathValidation: "warn"
         },
         false
     );
@@ -432,7 +450,8 @@ test("restore with lookup-only set", async () => {
         key,
         [],
         {
-            lookupOnly: true
+            lookupOnly: true,
+            pathValidation: "warn"
         },
         false
     );
@@ -464,4 +483,247 @@ test("restore failure with earlyExit should call process exit", async () => {
         "Input required and not supplied: key"
     );
     expect(processExitMock).toHaveBeenCalledWith(1);
+});
+
+// ---------------------------------------------------------------------------
+// Path validation tests
+//
+// These tests verify that the action correctly forwards the `strict-paths`
+// input to the @actions/cache toolkit and handles `CacheIntegrityError`
+// rejections according to the `fail-on-cache-invalid` input.
+// ---------------------------------------------------------------------------
+
+test("restore defaults strict-paths to 'warn' and forwards it to restoreCache", async () => {
+    const path = "node_modules";
+    const key = "node-test";
+    testUtils.setInputs({ path, key });
+
+    const restoreCacheMock = jest
+        .spyOn(cache, "restoreCache")
+        .mockResolvedValueOnce(key);
+
+    await restoreImpl(new StateProvider());
+
+    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        [path],
+        key,
+        [],
+        { lookupOnly: false, pathValidation: "warn" },
+        false
+    );
+});
+
+test.each(["off", "warn", "error"])(
+    "restore forwards strict-paths value '%s' to restoreCache",
+    async value => {
+        const path = "node_modules";
+        const key = "node-test";
+        testUtils.setInputs({ path, key, strictPaths: value });
+
+        const restoreCacheMock = jest
+            .spyOn(cache, "restoreCache")
+            .mockResolvedValueOnce(key);
+
+        await restoreImpl(new StateProvider());
+
+        expect(restoreCacheMock).toHaveBeenCalledTimes(1);
+        expect(restoreCacheMock).toHaveBeenCalledWith(
+            [path],
+            key,
+            [],
+            { lookupOnly: false, pathValidation: value },
+            false
+        );
+    }
+);
+
+test("restore falls back to 'warn' when strict-paths input is unrecognized", async () => {
+    const path = "node_modules";
+    const key = "node-test";
+    testUtils.setInputs({ path, key, strictPaths: "STRICT" });
+
+    const restoreCacheMock = jest
+        .spyOn(cache, "restoreCache")
+        .mockResolvedValueOnce(key);
+    // getPathValidationInput()'s call to logWarning() is intra-module so a
+    // spy on actionUtils.logWarning would not intercept it. Spy on core.info
+    // (the underlying transport for logWarning) and suppress the real
+    // implementation so the warning does not print into the Jest log.
+    const infoMock = jest
+        .spyOn(core, "info")
+        .mockImplementation(() => undefined);
+
+    await restoreImpl(new StateProvider());
+
+    expect(restoreCacheMock).toHaveBeenCalledWith(
+        [path],
+        key,
+        [],
+        { lookupOnly: false, pathValidation: "warn" },
+        false
+    );
+    expect(infoMock).toHaveBeenCalledWith(
+        expect.stringContaining("Unrecognized value for strict-paths")
+    );
+});
+
+test("restore treats CacheIntegrityError as a cache miss by default", async () => {
+    const path = "node_modules";
+    const key = "node-test";
+    testUtils.setInputs({ path, key, strictPaths: "error" });
+
+    const integrityError = new Error("entries escape declared paths");
+    integrityError.name = "CacheIntegrityError";
+    (integrityError as Error & { code?: string }).code = "PATH_VIOLATION";
+
+    const restoreCacheMock = jest
+        .spyOn(cache, "restoreCache")
+        .mockRejectedValueOnce(integrityError);
+    const setOutputMock = jest.spyOn(core, "setOutput");
+    const failedMock = jest.spyOn(core, "setFailed");
+    // Suppress the real logWarning so the discarded-cache warning does not
+    // pollute test output. beforeEach's jest.restoreAllMocks() handles
+    // cross-test cleanup.
+    const logWarningMock = jest
+        .spyOn(actionUtils, "logWarning")
+        .mockImplementation(() => undefined);
+
+    await restoreImpl(new StateProvider());
+
+    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
+    // Intentionally NOT set: a discarded cache must look identical to a
+    // regular cache miss to downstream `if:` checks (see issue #1466).
+    const cacheHitCalls = setOutputMock.mock.calls.filter(
+        c => c[0] === "cache-hit"
+    );
+    expect(cacheHitCalls).toHaveLength(0);
+    expect(failedMock).not.toHaveBeenCalled();
+    expect(logWarningMock).toHaveBeenCalledWith(
+        expect.stringContaining("PATH_VIOLATION")
+    );
+});
+
+test("restore fails when CacheIntegrityError is raised and fail-on-cache-invalid is true", async () => {
+    const path = "node_modules";
+    const key = "node-test";
+    testUtils.setInputs({
+        path,
+        key,
+        strictPaths: "error",
+        failOnCacheInvalid: true
+    });
+
+    const integrityError = new Error("entry escapes workspace");
+    integrityError.name = "CacheIntegrityError";
+    (integrityError as Error & { code?: string }).code = "PATH_VIOLATION";
+
+    jest.spyOn(cache, "restoreCache").mockRejectedValueOnce(integrityError);
+    const failedMock = jest.spyOn(core, "setFailed");
+
+    await restoreImpl(new StateProvider());
+
+    expect(failedMock).toHaveBeenCalledTimes(1);
+    expect(failedMock.mock.calls[0][0]).toContain("integrity validation");
+    expect(failedMock.mock.calls[0][0]).toContain("PATH_VIOLATION");
+});
+
+test("restore propagates non-integrity errors normally", async () => {
+    const path = "node_modules";
+    const key = "node-test";
+    testUtils.setInputs({ path, key });
+
+    const networkError = new Error("Network timeout");
+    jest.spyOn(cache, "restoreCache").mockRejectedValueOnce(networkError);
+    const failedMock = jest.spyOn(core, "setFailed");
+    const logWarningMock = jest
+        .spyOn(actionUtils, "logWarning")
+        .mockImplementation(() => undefined);
+
+    await restoreImpl(new StateProvider());
+
+    expect(failedMock).toHaveBeenCalledWith("Network timeout");
+    expect(logWarningMock).not.toHaveBeenCalledWith(
+        expect.stringContaining("integrity")
+    );
+});
+
+test("restore parse-error integrity failure also treated as miss by default", async () => {
+    const path = "node_modules";
+    const key = "node-test";
+    testUtils.setInputs({ path, key, strictPaths: "error" });
+
+    const parseError = new Error("malformed gzip header");
+    parseError.name = "CacheIntegrityError";
+    (parseError as Error & { code?: string }).code = "PARSE_ERROR";
+
+    jest.spyOn(cache, "restoreCache").mockRejectedValueOnce(parseError);
+    const setOutputMock = jest.spyOn(core, "setOutput");
+    const failedMock = jest.spyOn(core, "setFailed");
+    const logWarningMock = jest
+        .spyOn(actionUtils, "logWarning")
+        .mockImplementation(() => undefined);
+
+    await restoreImpl(new StateProvider());
+
+    const cacheHitCalls = setOutputMock.mock.calls.filter(
+        c => c[0] === "cache-hit"
+    );
+    expect(cacheHitCalls).toHaveLength(0);
+    expect(failedMock).not.toHaveBeenCalled();
+    expect(logWarningMock).toHaveBeenCalledWith(
+        expect.stringContaining("PARSE_ERROR")
+    );
+});
+
+test("restore tolerates CacheIntegrityError without explicit code", async () => {
+    const path = "node_modules";
+    const key = "node-test";
+    testUtils.setInputs({ path, key, strictPaths: "error" });
+
+    const integrityError = new Error("bad archive");
+    integrityError.name = "CacheIntegrityError";
+    // intentionally no .code property
+
+    jest.spyOn(cache, "restoreCache").mockRejectedValueOnce(integrityError);
+    const setOutputMock = jest.spyOn(core, "setOutput");
+    const logWarningMock = jest
+        .spyOn(actionUtils, "logWarning")
+        .mockImplementation(() => undefined);
+
+    await restoreImpl(new StateProvider());
+
+    const cacheHitCalls = setOutputMock.mock.calls.filter(
+        c => c[0] === "cache-hit"
+    );
+    expect(cacheHitCalls).toHaveLength(0);
+    expect(logWarningMock).toHaveBeenCalledWith(
+        expect.stringContaining("unknown")
+    );
+});
+
+test("restore does not set cache-hit output when integrity error is rethrown", async () => {
+    const path = "node_modules";
+    const key = "node-test";
+    testUtils.setInputs({
+        path,
+        key,
+        strictPaths: "error",
+        failOnCacheInvalid: true
+    });
+
+    const integrityError = new Error("rejected");
+    integrityError.name = "CacheIntegrityError";
+    (integrityError as Error & { code?: string }).code = "PATH_VIOLATION";
+
+    jest.spyOn(cache, "restoreCache").mockRejectedValueOnce(integrityError);
+    const setOutputMock = jest.spyOn(core, "setOutput");
+
+    await restoreImpl(new StateProvider());
+
+    // setOutput should NOT have been called with cache-hit at all in this path
+    const cacheHitCalls = setOutputMock.mock.calls.filter(
+        c => c[0] === "cache-hit"
+    );
+    expect(cacheHitCalls).toHaveLength(0);
 });

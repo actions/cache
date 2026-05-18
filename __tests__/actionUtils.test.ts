@@ -265,3 +265,61 @@ test("isGhes returns true when the GITHUB_SERVER_URL environment variable is set
     process.env["GITHUB_SERVER_URL"] = "https://src.onpremise.fabrikam.com";
     expect(actionUtils.isGhes()).toBeTruthy();
 });
+
+describe("getPathValidationInput", () => {
+    const inputEnv = "INPUT_STRICT-PATHS";
+
+    beforeEach(() => {
+        delete process.env[inputEnv];
+        // Re-mock getInput so the each-test environment reads INPUT_STRICT-PATHS
+        jest.spyOn(core, "getInput").mockImplementation((name, options) => {
+            return jest.requireActual("@actions/core").getInput(name, options);
+        });
+    });
+
+    afterEach(() => {
+        delete process.env[inputEnv];
+    });
+
+    test("returns 'warn' when input is unset", () => {
+        expect(actionUtils.getPathValidationInput()).toBe("warn");
+    });
+
+    test.each([
+        ["off", "off"],
+        ["warn", "warn"],
+        ["error", "error"],
+        ["OFF", "off"],
+        ["Warn", "warn"],
+        ["ERROR", "error"]
+    ])("normalizes %s to %s", (input, expected) => {
+        process.env[inputEnv] = input;
+        expect(actionUtils.getPathValidationInput()).toBe(expected);
+    });
+
+    test("falls back to 'warn' for unrecognized values and logs a warning", () => {
+        process.env[inputEnv] = "strict";
+        // getPathValidationInput() calls the same module's logWarning() via a
+        // local function reference (TypeScript compiles intra-module calls as
+        // direct references, not exports.X lookups), so a jest.spyOn on
+        // actionUtils.logWarning cannot intercept it. Spy on core.info — the
+        // only externally observable side effect — and suppress the real
+        // implementation so the warning does not pollute the Jest log.
+        const infoSpy = jest
+            .spyOn(core, "info")
+            .mockImplementation(() => undefined);
+        try {
+            expect(actionUtils.getPathValidationInput()).toBe("warn");
+            expect(infoSpy).toHaveBeenCalledWith(
+                expect.stringContaining("Unrecognized value for strict-paths")
+            );
+        } finally {
+            infoSpy.mockRestore();
+        }
+    });
+
+    test("treats empty string as default 'warn'", () => {
+        process.env[inputEnv] = "";
+        expect(actionUtils.getPathValidationInput()).toBe("warn");
+    });
+});

@@ -66,6 +66,24 @@ export function getInputAsBool(
     return result.toLowerCase() === "true";
 }
 
+/**
+ * Read the `strict-paths` input and coerce it to a value the `@actions/cache`
+ * toolkit understands. Unknown values default to `'warn'` (a best-effort
+ * recovery — we don't want a typo to silently disable client-side validation)
+ * and a warning is emitted so the user notices.
+ */
+export function getPathValidationInput(): "off" | "warn" | "error" {
+    const raw = core.getInput("strict-paths") || "warn";
+    const normalized = raw.toLowerCase();
+    if (normalized === "off" || normalized === "warn" || normalized === "error") {
+        return normalized;
+    }
+    logWarning(
+        `Unrecognized value for strict-paths: "${raw}". Falling back to "warn". Valid values are: off, warn, error.`
+    );
+    return "warn";
+}
+
 export function isCacheFeatureAvailable(): boolean {
     if (cache.isFeatureAvailable()) {
         return true;

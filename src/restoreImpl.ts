@@ -41,14 +41,47 @@ export async function restoreImpl(
         );
         const failOnCacheMiss = utils.getInputAsBool(Inputs.FailOnCacheMiss);
         const lookupOnly = utils.getInputAsBool(Inputs.LookupOnly);
-
-        const cacheKey = await cache.restoreCache(
-            cachePaths,
-            primaryKey,
-            restoreKeys,
-            { lookupOnly: lookupOnly },
-            enableCrossOsArchive
+        const pathValidation = utils.getPathValidationInput();
+        const failOnCacheInvalid = utils.getInputAsBool(
+            Inputs.FailOnCacheInvalid
         );
+
+        let cacheKey: string | undefined;
+        try {
+            cacheKey = await cache.restoreCache(
+                cachePaths,
+                primaryKey,
+                restoreKeys,
+                { lookupOnly: lookupOnly, pathValidation: pathValidation },
+                enableCrossOsArchive
+            );
+        } catch (err: unknown) {
+            // The toolkit throws CacheIntegrityError when client-side path
+            // validation rejects the archive (in 'error' mode) or when the
+            // archive cannot be parsed. Detect by name/code so we don't have
+            // to take a hard dependency on the class identity (which may not
+            // round-trip across module boundaries in all bundlers).
+            if (err instanceof Error && err.name === "CacheIntegrityError") {
+                const code = (err as Error & { code?: string }).code;
+                if (failOnCacheInvalid) {
+                    throw new Error(
+                        `Restored cache failed integrity validation (${
+                            code ?? "unknown"
+                        }): ${err.message}`
+                    );
+                }
+                // Treat as a cache miss. Intentionally do NOT set the
+                // `cache-hit` output here, to preserve the same downstream
+                // semantics as a regular miss (see issue #1466).
+                utils.logWarning(
+                    `Restored cache failed integrity validation (${
+                        code ?? "unknown"
+                    }) and was discarded: ${err.message}`
+                );
+                return;
+            }
+            throw err;
+        }
 
         if (!cacheKey) {
             // `cache-hit` is intentionally not set to `false` here to preserve existing behavior
