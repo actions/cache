@@ -1,6 +1,6 @@
-name: 'Save Cache with GCS Support'
-description: 'Save cache artifacts to Google Cloud Storage or GitHub with automatic fallback'
-author: 'danySam'
+name: 'Save a cache'
+description: 'Save Cache artifacts like dependencies and build outputs to improve workflow execution time'
+author: 'GitHub'
 inputs:
   path:
     description: 'A list of files, directories, and wildcard patterns to cache'

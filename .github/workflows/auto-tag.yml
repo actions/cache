@@ -1,5 +1,11 @@
 name: Auto-tag main
 
+# Keeps this fork's release tags in lockstep with upstream actions/cache.
+# On every push to main we look up upstream's highest semver release tag and
+# point both that exact-version tag (e.g. v5.0.5) and its moving major alias
+# (e.g. v5) at the current commit. Consumers can therefore pin
+# Cula-Technologies/cache@v5 and stay aligned with upstream's major line.
+
 on:
   push:
     branches: [main]
@@ -11,8 +17,39 @@ jobs:
   tag:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Force-update v1 tag
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync release tags with upstream actions/cache
         run: |
-          git tag -f v1
-          git push -f origin v1
+          set -euo pipefail
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          UPSTREAM="https://github.com/actions/cache.git"
+
+          # Highest upstream stable release tag (vMAJOR.MINOR.PATCH), by semver.
+          LATEST=$(git ls-remote --tags --refs "$UPSTREAM" \
+            | awk -F/ '{print $NF}' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -V \
+            | tail -n1)
+
+          if [ -z "$LATEST" ]; then
+            echo "Could not determine upstream latest release tag" >&2
+            exit 1
+          fi
+
+          MAJOR="${LATEST%%.*}"   # e.g. v5.0.5 -> v5
+
+          echo "Upstream latest release: $LATEST (major alias: $MAJOR)"
+
+          # Point the exact-version tag and the moving major alias at this commit.
+          git tag -f "$LATEST"
+          git tag -f "$MAJOR"
+
+          git push -f origin "refs/tags/$LATEST"
+          git push -f origin "refs/tags/$MAJOR"
