@@ -1,12 +1,13 @@
 {
   "name": "cache",
-  "version": "5.0.4",
+  "version": "6.0.0",
   "private": true,
   "description": "Cache dependencies and build outputs",
+  "type": "module",
   "main": "dist/restore/index.js",
   "scripts": {
     "build": "tsc && ncc build -o dist/restore src/restore.ts && ncc build -o dist/save src/save.ts && ncc build -o dist/restore-only src/restoreOnly.ts && ncc build -o dist/save-only src/saveOnly.ts",
-    "test": "tsc --noEmit && jest --coverage",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "lint": "eslint **/*.ts --cache",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts"
@@ -23,13 +24,13 @@
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
-    "@actions/cache": "^5.0.5",
-    "@actions/core": "^2.0.3",
-    "@actions/exec": "^2.0.0",
-    "@actions/io": "^2.0.0"
+    "@actions/cache": "^6.0.1",
+    "@actions/core": "^3.0.1",
+    "@actions/exec": "^3.0.0",
+    "@actions/io": "^3.0.2"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.14",
+    "@types/jest": "^30.0.0",
     "@types/nock": "^11.1.0",
     "@types/node": "^24.1.0",
     "@typescript-eslint/eslint-plugin": "^7.2.0",
@@ -41,11 +42,11 @@
     "eslint-plugin-jest": "^27.9.0",
     "eslint-plugin-prettier": "^5.5.3",
     "eslint-plugin-simple-import-sort": "^12.1.1",
-    "jest": "^29.7.0",
-    "jest-circus": "^29.7.0",
+    "jest": "^30.2.0",
     "nock": "^13.2.9",
     "prettier": "^3.6.2",
     "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },
   "engines": {

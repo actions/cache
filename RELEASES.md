@@ -25,6 +25,12 @@
 
 ## Changelog
 
+### 6.0.0
+
+- Updated `@actions/cache` to ^6.0.1, `@actions/core` to ^3.0.1, `@actions/exec` to ^3.0.0, `@actions/io` to ^3.0.2
+- Migrated to ESM module system
+- Upgraded Jest to v30 and test infrastructure to be ESM compatible
+
 ### 5.0.4
 
 - Bump `minimatch` to v3.1.5 (fixes ReDoS via globstar patterns)

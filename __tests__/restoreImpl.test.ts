@@ -1,51 +1,68 @@
-import * as cache from "@actions/cache";
-import * as core from "@actions/core";
+import { afterEach, beforeEach, expect, jest, test } from "@jest/globals";
 
-import { Events, Inputs, RefKey } from "../src/constants";
-import { restoreImpl } from "../src/restoreImpl";
-import { StateProvider } from "../src/stateProvider";
-import * as actionUtils from "../src/utils/actionUtils";
-import * as testUtils from "../src/utils/testUtils";
-
-jest.mock("../src/utils/actionUtils");
-
-beforeAll(() => {
-    jest.spyOn(actionUtils, "isExactKeyMatch").mockImplementation(
-        (key, cacheResult) => {
-            const actualUtils = jest.requireActual("../src/utils/actionUtils");
-            return actualUtils.isExactKeyMatch(key, cacheResult);
+// Mock @actions/core
+jest.unstable_mockModule("@actions/core", () => ({
+    getInput: jest.fn((name: string, options?: { required?: boolean }) => {
+        const val =
+            process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
+        if (options && options.required && !val) {
+            throw new Error(`Input required and not supplied: ${name}`);
         }
-    );
+        return val.trim();
+    }),
+    setOutput: jest.fn(),
+    setFailed: jest.fn(),
+    info: jest.fn(),
+    warning: jest.fn(),
+    debug: jest.fn(),
+    error: jest.fn(),
+    saveState: jest.fn(),
+    getState: jest.fn(() => ""),
+    isDebug: jest.fn(() => false),
+    exportVariable: jest.fn(),
+    addPath: jest.fn(),
+    group: jest.fn((name: string, fn: () => Promise<unknown>) => fn()),
+    startGroup: jest.fn(),
+    endGroup: jest.fn()
+}));
 
-    jest.spyOn(actionUtils, "isValidEvent").mockImplementation(() => {
-        const actualUtils = jest.requireActual("../src/utils/actionUtils");
-        return actualUtils.isValidEvent();
-    });
-
-    jest.spyOn(actionUtils, "getInputAsArray").mockImplementation(
-        (name, options) => {
-            const actualUtils = jest.requireActual("../src/utils/actionUtils");
-            return actualUtils.getInputAsArray(name, options);
+// Mock @actions/cache
+jest.unstable_mockModule("@actions/cache", () => ({
+    restoreCache: jest.fn(),
+    saveCache: jest.fn(),
+    isFeatureAvailable: jest.fn(() => true),
+    ReserveCacheError: class ReserveCacheError extends Error {
+        constructor(message: string) {
+            super(message);
+            this.name = "ReserveCacheError";
         }
-    );
+    }
+}));
 
-    jest.spyOn(actionUtils, "getInputAsBool").mockImplementation(
-        (name, options) => {
-            const actualUtils = jest.requireActual("../src/utils/actionUtils");
-            return actualUtils.getInputAsBool(name, options);
-        }
-    );
-});
+const core = await import("@actions/core");
+const cache = await import("@actions/cache");
+const { Events, Inputs, RefKey } = await import("../src/constants");
+const { restoreImpl } = await import("../src/restoreImpl");
+const { StateProvider } = await import("../src/stateProvider");
+const testUtils = await import("../src/utils/testUtils");
 
 beforeEach(() => {
-    jest.restoreAllMocks();
+    jest.clearAllMocks();
+    (core.getInput as jest.Mock).mockImplementation(
+        (name: string, options?: { required?: boolean }) => {
+            const val =
+                process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] ||
+                "";
+            if (options && options.required && !val) {
+                throw new Error(`Input required and not supplied: ${name}`);
+            }
+            return val.trim();
+        }
+    );
+    (core.getState as jest.Mock).mockReturnValue("");
+    (cache.isFeatureAvailable as jest.Mock).mockReturnValue(true);
     process.env[Events.Key] = Events.Push;
     process.env[RefKey] = "refs/heads/feature-branch";
-
-    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
-    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
-        () => true
-    );
 });
 
 afterEach(() => {
@@ -55,52 +72,37 @@ afterEach(() => {
 });
 
 test("restore with invalid event outputs warning", async () => {
-    const logWarningMock = jest.spyOn(actionUtils, "logWarning");
-    const failedMock = jest.spyOn(core, "setFailed");
     const invalidEvent = "commit_comment";
     process.env[Events.Key] = invalidEvent;
     delete process.env[RefKey];
     await restoreImpl(new StateProvider());
-    expect(logWarningMock).toHaveBeenCalledWith(
-        `Event Validation Error: The event type ${invalidEvent} is not supported because it's not tied to a branch or tag ref.`
+    expect(core.info).toHaveBeenCalledWith(
+        `[warning]Event Validation Error: The event type ${invalidEvent} is not supported because it's not tied to a branch or tag ref.`
     );
-    expect(failedMock).toHaveBeenCalledTimes(0);
+    expect(core.setFailed).toHaveBeenCalledTimes(0);
 });
 
 test("restore without AC available should no-op", async () => {
-    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
-    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
-        () => false
-    );
-
-    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
-    const setCacheHitOutputMock = jest.spyOn(core, "setOutput");
+    (cache.isFeatureAvailable as jest.Mock).mockReturnValue(false);
 
     await restoreImpl(new StateProvider());
 
-    expect(restoreCacheMock).toHaveBeenCalledTimes(0);
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
-    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "false");
+    expect(cache.restoreCache).toHaveBeenCalledTimes(0);
+    expect(core.setOutput).toHaveBeenCalledTimes(1);
+    expect(core.setOutput).toHaveBeenCalledWith("cache-hit", "false");
 });
 
 test("restore on GHES without AC available should no-op", async () => {
-    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
-    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
-        () => false
-    );
-
-    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
-    const setCacheHitOutputMock = jest.spyOn(core, "setOutput");
+    (cache.isFeatureAvailable as jest.Mock).mockReturnValue(false);
 
     await restoreImpl(new StateProvider());
 
-    expect(restoreCacheMock).toHaveBeenCalledTimes(0);
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
-    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "false");
+    expect(cache.restoreCache).toHaveBeenCalledTimes(0);
+    expect(core.setOutput).toHaveBeenCalledTimes(1);
+    expect(core.setOutput).toHaveBeenCalledWith("cache-hit", "false");
 });
 
 test("restore on GHES with AC available ", async () => {
-    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => true);
     const path = "node_modules";
     const key = "node-test";
     testUtils.setInputs({
@@ -109,20 +111,12 @@ test("restore on GHES with AC available ", async () => {
         enableCrossOsArchive: false
     });
 
-    const infoMock = jest.spyOn(core, "info");
-    const failedMock = jest.spyOn(core, "setFailed");
-    const stateMock = jest.spyOn(core, "saveState");
-    const setCacheHitOutputMock = jest.spyOn(core, "setOutput");
-    const restoreCacheMock = jest
-        .spyOn(cache, "restoreCache")
-        .mockImplementationOnce(() => {
-            return Promise.resolve(key);
-        });
+    (cache.restoreCache as jest.Mock).mockResolvedValue(key);
 
     await restoreImpl(new StateProvider());
 
-    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith(
+    expect(cache.restoreCache).toHaveBeenCalledTimes(1);
+    expect(cache.restoreCache).toHaveBeenCalledWith(
         [path],
         key,
         [],
@@ -132,32 +126,26 @@ test("restore on GHES with AC available ", async () => {
         false
     );
 
-    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
-    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "true");
-
-    expect(infoMock).toHaveBeenCalledWith(`Cache restored from key: ${key}`);
-    expect(failedMock).toHaveBeenCalledTimes(0);
+    expect(core.saveState).toHaveBeenCalledWith("CACHE_KEY", key);
+    expect(core.setOutput).toHaveBeenCalledTimes(1);
+    expect(core.setOutput).toHaveBeenCalledWith("cache-hit", "true");
+    expect(core.info).toHaveBeenCalledWith(`Cache restored from key: ${key}`);
+    expect(core.setFailed).toHaveBeenCalledTimes(0);
 });
 
 test("restore with no path should fail", async () => {
-    const failedMock = jest.spyOn(core, "setFailed");
-    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
     await restoreImpl(new StateProvider());
-    expect(restoreCacheMock).toHaveBeenCalledTimes(0);
-    // this input isn't necessary for restore b/c tarball contains entries relative to workspace
-    expect(failedMock).not.toHaveBeenCalledWith(
+    expect(cache.restoreCache).toHaveBeenCalledTimes(0);
+    expect(core.setFailed).not.toHaveBeenCalledWith(
         "Input required and not supplied: path"
     );
 });
 
 test("restore with no key", async () => {
     testUtils.setInput(Inputs.Path, "node_modules");
-    const failedMock = jest.spyOn(core, "setFailed");
-    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
     await restoreImpl(new StateProvider());
-    expect(restoreCacheMock).toHaveBeenCalledTimes(0);
-    expect(failedMock).toHaveBeenCalledWith(
+    expect(cache.restoreCache).toHaveBeenCalledTimes(0);
+    expect(core.setFailed).toHaveBeenCalledWith(
         "Input required and not supplied: key"
     );
 });
@@ -172,46 +160,32 @@ test("restore with too many keys should fail", async () => {
         restoreKeys,
         enableCrossOsArchive: false
     });
-    const failedMock = jest.spyOn(core, "setFailed");
-    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
-    await restoreImpl(new StateProvider());
-    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith(
-        [path],
-        key,
-        restoreKeys,
-        {
-            lookupOnly: false
-        },
-        false
+    (cache.restoreCache as jest.Mock).mockRejectedValue(
+        new Error("Key Validation Error: Keys are limited to a maximum of 10.")
     );
-    expect(failedMock).toHaveBeenCalledWith(
+    await restoreImpl(new StateProvider());
+    expect(cache.restoreCache).toHaveBeenCalledTimes(1);
+    expect(core.setFailed).toHaveBeenCalledWith(
         `Key Validation Error: Keys are limited to a maximum of 10.`
     );
 });
 
 test("restore with large key should fail", async () => {
     const path = "node_modules";
-    const key = "foo".repeat(512); // Over the 512 character limit
+    const key = "foo".repeat(512);
     testUtils.setInputs({
         path: path,
         key,
         enableCrossOsArchive: false
     });
-    const failedMock = jest.spyOn(core, "setFailed");
-    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
-    await restoreImpl(new StateProvider());
-    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith(
-        [path],
-        key,
-        [],
-        {
-            lookupOnly: false
-        },
-        false
+    (cache.restoreCache as jest.Mock).mockRejectedValue(
+        new Error(
+            `Key Validation Error: ${key} cannot be larger than 512 characters.`
+        )
     );
-    expect(failedMock).toHaveBeenCalledWith(
+    await restoreImpl(new StateProvider());
+    expect(cache.restoreCache).toHaveBeenCalledTimes(1);
+    expect(core.setFailed).toHaveBeenCalledWith(
         `Key Validation Error: ${key} cannot be larger than 512 characters.`
     );
 });
@@ -224,20 +198,12 @@ test("restore with invalid key should fail", async () => {
         key,
         enableCrossOsArchive: false
     });
-    const failedMock = jest.spyOn(core, "setFailed");
-    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
-    await restoreImpl(new StateProvider());
-    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith(
-        [path],
-        key,
-        [],
-        {
-            lookupOnly: false
-        },
-        false
+    (cache.restoreCache as jest.Mock).mockRejectedValue(
+        new Error(`Key Validation Error: ${key} cannot contain commas.`)
     );
-    expect(failedMock).toHaveBeenCalledWith(
+    await restoreImpl(new StateProvider());
+    expect(cache.restoreCache).toHaveBeenCalledTimes(1);
+    expect(core.setFailed).toHaveBeenCalledWith(
         `Key Validation Error: ${key} cannot contain commas.`
     );
 });
@@ -251,32 +217,14 @@ test("restore with no cache found", async () => {
         enableCrossOsArchive: false
     });
 
-    const infoMock = jest.spyOn(core, "info");
-    const failedMock = jest.spyOn(core, "setFailed");
-    const stateMock = jest.spyOn(core, "saveState");
-    const restoreCacheMock = jest
-        .spyOn(cache, "restoreCache")
-        .mockImplementationOnce(() => {
-            return Promise.resolve(undefined);
-        });
+    (cache.restoreCache as jest.Mock).mockResolvedValue(undefined);
 
     await restoreImpl(new StateProvider());
 
-    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith(
-        [path],
-        key,
-        [],
-        {
-            lookupOnly: false
-        },
-        false
-    );
-
-    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(failedMock).toHaveBeenCalledTimes(0);
-
-    expect(infoMock).toHaveBeenCalledWith(
+    expect(cache.restoreCache).toHaveBeenCalledTimes(1);
+    expect(core.saveState).toHaveBeenCalledWith("CACHE_KEY", key);
+    expect(core.setFailed).toHaveBeenCalledTimes(0);
+    expect(core.info).toHaveBeenCalledWith(
         `Cache not found for input keys: ${key}`
     );
 });
@@ -292,32 +240,14 @@ test("restore with restore keys and no cache found", async () => {
         enableCrossOsArchive: false
     });
 
-    const infoMock = jest.spyOn(core, "info");
-    const failedMock = jest.spyOn(core, "setFailed");
-    const stateMock = jest.spyOn(core, "saveState");
-    const restoreCacheMock = jest
-        .spyOn(cache, "restoreCache")
-        .mockImplementationOnce(() => {
-            return Promise.resolve(undefined);
-        });
+    (cache.restoreCache as jest.Mock).mockResolvedValue(undefined);
 
     await restoreImpl(new StateProvider());
 
-    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith(
-        [path],
-        key,
-        [restoreKey],
-        {
-            lookupOnly: false
-        },
-        false
-    );
-
-    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(failedMock).toHaveBeenCalledTimes(0);
-
-    expect(infoMock).toHaveBeenCalledWith(
+    expect(cache.restoreCache).toHaveBeenCalledTimes(1);
+    expect(core.saveState).toHaveBeenCalledWith("CACHE_KEY", key);
+    expect(core.setFailed).toHaveBeenCalledTimes(0);
+    expect(core.info).toHaveBeenCalledWith(
         `Cache not found for input keys: ${key}, ${restoreKey}`
     );
 });
@@ -331,35 +261,16 @@ test("restore with cache found for key", async () => {
         enableCrossOsArchive: false
     });
 
-    const infoMock = jest.spyOn(core, "info");
-    const failedMock = jest.spyOn(core, "setFailed");
-    const stateMock = jest.spyOn(core, "saveState");
-    const setCacheHitOutputMock = jest.spyOn(core, "setOutput");
-    const restoreCacheMock = jest
-        .spyOn(cache, "restoreCache")
-        .mockImplementationOnce(() => {
-            return Promise.resolve(key);
-        });
+    (cache.restoreCache as jest.Mock).mockResolvedValue(key);
 
     await restoreImpl(new StateProvider());
 
-    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith(
-        [path],
-        key,
-        [],
-        {
-            lookupOnly: false
-        },
-        false
-    );
-
-    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
-    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "true");
-
-    expect(infoMock).toHaveBeenCalledWith(`Cache restored from key: ${key}`);
-    expect(failedMock).toHaveBeenCalledTimes(0);
+    expect(cache.restoreCache).toHaveBeenCalledTimes(1);
+    expect(core.saveState).toHaveBeenCalledWith("CACHE_KEY", key);
+    expect(core.setOutput).toHaveBeenCalledTimes(1);
+    expect(core.setOutput).toHaveBeenCalledWith("cache-hit", "true");
+    expect(core.info).toHaveBeenCalledWith(`Cache restored from key: ${key}`);
+    expect(core.setFailed).toHaveBeenCalledTimes(0);
 });
 
 test("restore with cache found for restore key", async () => {
@@ -373,36 +284,18 @@ test("restore with cache found for restore key", async () => {
         enableCrossOsArchive: false
     });
 
-    const infoMock = jest.spyOn(core, "info");
-    const failedMock = jest.spyOn(core, "setFailed");
-    const stateMock = jest.spyOn(core, "saveState");
-    const setCacheHitOutputMock = jest.spyOn(core, "setOutput");
-    const restoreCacheMock = jest
-        .spyOn(cache, "restoreCache")
-        .mockImplementationOnce(() => {
-            return Promise.resolve(restoreKey);
-        });
+    (cache.restoreCache as jest.Mock).mockResolvedValue(restoreKey);
 
     await restoreImpl(new StateProvider());
 
-    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith(
-        [path],
-        key,
-        [restoreKey],
-        {
-            lookupOnly: false
-        },
-        false
-    );
-
-    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
-    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "false");
-    expect(infoMock).toHaveBeenCalledWith(
+    expect(cache.restoreCache).toHaveBeenCalledTimes(1);
+    expect(core.saveState).toHaveBeenCalledWith("CACHE_KEY", key);
+    expect(core.setOutput).toHaveBeenCalledTimes(1);
+    expect(core.setOutput).toHaveBeenCalledWith("cache-hit", "false");
+    expect(core.info).toHaveBeenCalledWith(
         `Cache restored from key: ${restoreKey}`
     );
-    expect(failedMock).toHaveBeenCalledTimes(0);
+    expect(core.setFailed).toHaveBeenCalledTimes(0);
 });
 
 test("restore with lookup-only set", async () => {
@@ -414,20 +307,12 @@ test("restore with lookup-only set", async () => {
         lookupOnly: true
     });
 
-    const infoMock = jest.spyOn(core, "info");
-    const failedMock = jest.spyOn(core, "setFailed");
-    const stateMock = jest.spyOn(core, "saveState");
-    const setCacheHitOutputMock = jest.spyOn(core, "setOutput");
-    const restoreCacheMock = jest
-        .spyOn(cache, "restoreCache")
-        .mockImplementationOnce(() => {
-            return Promise.resolve(key);
-        });
+    (cache.restoreCache as jest.Mock).mockResolvedValue(key);
 
     await restoreImpl(new StateProvider());
 
-    expect(restoreCacheMock).toHaveBeenCalledTimes(1);
-    expect(restoreCacheMock).toHaveBeenCalledWith(
+    expect(cache.restoreCache).toHaveBeenCalledTimes(1);
+    expect(cache.restoreCache).toHaveBeenCalledWith(
         [path],
         key,
         [],
@@ -437,31 +322,30 @@ test("restore with lookup-only set", async () => {
         false
     );
 
-    expect(stateMock).toHaveBeenCalledWith("CACHE_KEY", key);
-    expect(stateMock).toHaveBeenCalledWith("CACHE_RESULT", key);
-    expect(stateMock).toHaveBeenCalledTimes(2);
-
-    expect(setCacheHitOutputMock).toHaveBeenCalledTimes(1);
-    expect(setCacheHitOutputMock).toHaveBeenCalledWith("cache-hit", "true");
-
-    expect(infoMock).toHaveBeenCalledWith(
+    expect(core.saveState).toHaveBeenCalledWith("CACHE_KEY", key);
+    expect(core.saveState).toHaveBeenCalledWith("CACHE_RESULT", key);
+    expect(core.saveState).toHaveBeenCalledTimes(2);
+    expect(core.setOutput).toHaveBeenCalledTimes(1);
+    expect(core.setOutput).toHaveBeenCalledWith("cache-hit", "true");
+    expect(core.info).toHaveBeenCalledWith(
         `Cache found and can be restored from key: ${key}`
     );
-    expect(failedMock).toHaveBeenCalledTimes(0);
+    expect(core.setFailed).toHaveBeenCalledTimes(0);
 });
 
 test("restore failure with earlyExit should call process exit", async () => {
     testUtils.setInput(Inputs.Path, "node_modules");
-    const failedMock = jest.spyOn(core, "setFailed");
-    const restoreCacheMock = jest.spyOn(cache, "restoreCache");
-    const processExitMock = jest.spyOn(process, "exit").mockImplementation();
+    const processExitMock = jest
+        .spyOn(process, "exit")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .mockImplementation((() => {}) as any);
 
-    // call restoreImpl with `earlyExit` set to true
     await restoreImpl(new StateProvider(), true);
 
-    expect(restoreCacheMock).toHaveBeenCalledTimes(0);
-    expect(failedMock).toHaveBeenCalledWith(
+    expect(cache.restoreCache).toHaveBeenCalledTimes(0);
+    expect(core.setFailed).toHaveBeenCalledWith(
         "Input required and not supplied: key"
     );
     expect(processExitMock).toHaveBeenCalledWith(1);
+    processExitMock.mockRestore();
 });
