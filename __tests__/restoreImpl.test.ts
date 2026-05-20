@@ -1,4 +1,4 @@
-import { jest, test, expect, beforeEach, afterEach } from "@jest/globals";
+import { afterEach, beforeEach, expect, jest, test } from "@jest/globals";
 
 // Mock @actions/core
 jest.unstable_mockModule("@actions/core", () => ({
@@ -51,13 +51,10 @@ beforeEach(() => {
     (core.getInput as jest.Mock).mockImplementation(
         (name: string, options?: { required?: boolean }) => {
             const val =
-                process.env[
-                    `INPUT_${name.replace(/ /g, "_").toUpperCase()}`
-                ] || "";
+                process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] ||
+                "";
             if (options && options.required && !val) {
-                throw new Error(
-                    `Input required and not supplied: ${name}`
-                );
+                throw new Error(`Input required and not supplied: ${name}`);
             }
             return val.trim();
         }
@@ -182,7 +179,9 @@ test("restore with large key should fail", async () => {
         enableCrossOsArchive: false
     });
     (cache.restoreCache as jest.Mock).mockRejectedValue(
-        new Error(`Key Validation Error: ${key} cannot be larger than 512 characters.`)
+        new Error(
+            `Key Validation Error: ${key} cannot be larger than 512 characters.`
+        )
     );
     await restoreImpl(new StateProvider());
     expect(cache.restoreCache).toHaveBeenCalledTimes(1);
@@ -336,7 +335,10 @@ test("restore with lookup-only set", async () => {
 
 test("restore failure with earlyExit should call process exit", async () => {
     testUtils.setInput(Inputs.Path, "node_modules");
-    const processExitMock = jest.spyOn(process, "exit").mockImplementation((() => {}) as any);
+    const processExitMock = jest
+        .spyOn(process, "exit")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .mockImplementation((() => {}) as any);
 
     await restoreImpl(new StateProvider(), true);
 

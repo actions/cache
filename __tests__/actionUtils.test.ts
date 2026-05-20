@@ -1,4 +1,4 @@
-import { jest, test, expect, beforeEach, afterAll } from "@jest/globals";
+import { afterAll, beforeEach, expect, jest, test } from "@jest/globals";
 
 // Mock @actions/core
 jest.unstable_mockModule("@actions/core", () => ({
@@ -53,13 +53,10 @@ beforeEach(() => {
     (core.getInput as jest.Mock).mockImplementation(
         (name: string, options?: { required?: boolean }) => {
             const val =
-                process.env[
-                    `INPUT_${name.replace(/ /g, "_").toUpperCase()}`
-                ] || "";
+                process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] ||
+                "";
             if (options && options.required && !val) {
-                throw new Error(
-                    `Input required and not supplied: ${name}`
-                );
+                throw new Error(`Input required and not supplied: ${name}`);
             }
             return val.trim();
         }
@@ -103,7 +100,9 @@ test("isExactKeyMatch with different keys returns false", () => {
 });
 
 test("isExactKeyMatch with different key accents returns false", () => {
-    expect(actionUtils.isExactKeyMatch("linux-áccent", "linux-accent")).toBe(false);
+    expect(actionUtils.isExactKeyMatch("linux-áccent", "linux-accent")).toBe(
+        false
+    );
 });
 
 test("isExactKeyMatch with same key returns true", () => {

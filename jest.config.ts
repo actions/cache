@@ -1,7 +1,7 @@
 export default {
   clearMocks: true,
   moduleFileExtensions: ['js', 'ts'],
-  roots: ['<rootDir>'],
+  roots: ['<rootDir>/__tests__'],
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts'],
   transform: {

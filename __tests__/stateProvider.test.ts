@@ -1,4 +1,6 @@
-import { jest, test, expect, beforeEach, afterEach } from "@jest/globals";
+import { afterEach, beforeEach, expect, jest, test } from "@jest/globals";
+
+import type { IStateProvider } from "../src/stateProvider";
 
 // Mock @actions/core
 jest.unstable_mockModule("@actions/core", () => ({
@@ -28,8 +30,8 @@ jest.unstable_mockModule("@actions/core", () => ({
 
 const core = await import("@actions/core");
 const { Events, RefKey, State } = await import("../src/constants");
-const { NullStateProvider, StateProvider } = await import("../src/stateProvider");
-import type { IStateProvider } from "../src/stateProvider";
+const { NullStateProvider, StateProvider } =
+    await import("../src/stateProvider");
 
 beforeEach(() => {
     jest.clearAllMocks();
@@ -43,10 +45,14 @@ afterEach(() => {
 
 test("StateProvider saves states", async () => {
     const states = new Map<string, string>();
-    (core.getState as jest.Mock).mockImplementation((key: string) => states.get(key) || "");
-    (core.saveState as jest.Mock).mockImplementation((key: string, value: string) => {
-        states.set(key, value);
-    });
+    (core.getState as jest.Mock).mockImplementation(
+        (key: string) => states.get(key) || ""
+    );
+    (core.saveState as jest.Mock).mockImplementation(
+        (key: string, value: string) => {
+            states.set(key, value);
+        }
+    );
 
     const cacheMatchedKey = "node-cache";
 
