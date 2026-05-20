@@ -1,22 +1,39 @@
-import * as core from "@actions/core";
+import { jest, test, expect, beforeEach, afterEach } from "@jest/globals";
 
-import { Events, RefKey, State } from "../src/constants";
-import {
-    IStateProvider,
-    NullStateProvider,
-    StateProvider
-} from "../src/stateProvider";
+// Mock @actions/core
+jest.unstable_mockModule("@actions/core", () => ({
+    getInput: jest.fn((name: string, options?: { required?: boolean }) => {
+        const val =
+            process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
+        if (options && options.required && !val) {
+            throw new Error(`Input required and not supplied: ${name}`);
+        }
+        return val.trim();
+    }),
+    setOutput: jest.fn(),
+    setFailed: jest.fn(),
+    info: jest.fn(),
+    warning: jest.fn(),
+    debug: jest.fn(),
+    error: jest.fn(),
+    saveState: jest.fn(),
+    getState: jest.fn(() => ""),
+    isDebug: jest.fn(() => false),
+    exportVariable: jest.fn(),
+    addPath: jest.fn(),
+    group: jest.fn((name: string, fn: () => Promise<unknown>) => fn()),
+    startGroup: jest.fn(),
+    endGroup: jest.fn()
+}));
 
-jest.mock("@actions/core");
+const core = await import("@actions/core");
+const { Events, RefKey, State } = await import("../src/constants");
+const { NullStateProvider, StateProvider } = await import("../src/stateProvider");
+import type { IStateProvider } from "../src/stateProvider";
 
-beforeAll(() => {
-    jest.spyOn(core, "getInput").mockImplementation((name, options) => {
-        return jest.requireActual("@actions/core").getInput(name, options);
-    });
-
-    jest.spyOn(core, "setOutput").mockImplementation((key, value) => {
-        return jest.requireActual("@actions/core").setOutput(key, value);
-    });
+beforeEach(() => {
+    jest.clearAllMocks();
+    (core.getState as jest.Mock).mockReturnValue("");
 });
 
 afterEach(() => {
@@ -26,21 +43,10 @@ afterEach(() => {
 
 test("StateProvider saves states", async () => {
     const states = new Map<string, string>();
-    const getStateMock = jest
-        .spyOn(core, "getState")
-        .mockImplementation(key => states.get(key) || "");
-
-    const saveStateMock = jest
-        .spyOn(core, "saveState")
-        .mockImplementation((key, value) => {
-            states.set(key, value);
-        });
-
-    const setOutputMock = jest
-        .spyOn(core, "setOutput")
-        .mockImplementation((key, value) => {
-            return jest.requireActual("@actions/core").setOutput(key, value);
-        });
+    (core.getState as jest.Mock).mockImplementation((key: string) => states.get(key) || "");
+    (core.saveState as jest.Mock).mockImplementation((key: string, value: string) => {
+        states.set(key, value);
+    });
 
     const cacheMatchedKey = "node-cache";
 
@@ -52,38 +58,19 @@ test("StateProvider saves states", async () => {
 
     expect(stateValue).toBe("stateValue");
     expect(cacheStateValue).toBe(cacheMatchedKey);
-    expect(getStateMock).toHaveBeenCalledTimes(2);
-    expect(saveStateMock).toHaveBeenCalledTimes(2);
-    expect(setOutputMock).toHaveBeenCalledTimes(0);
+    expect(core.getState).toHaveBeenCalledTimes(2);
+    expect(core.saveState).toHaveBeenCalledTimes(2);
+    expect(core.setOutput).toHaveBeenCalledTimes(0);
 });
 
 test("NullStateProvider saves outputs", async () => {
-    const getStateMock = jest
-        .spyOn(core, "getState")
-        .mockImplementation(name =>
-            jest.requireActual("@actions/core").getState(name)
-        );
-
-    const setOutputMock = jest
-        .spyOn(core, "setOutput")
-        .mockImplementation((key, value) => {
-            return jest.requireActual("@actions/core").setOutput(key, value);
-        });
-
-    const saveStateMock = jest
-        .spyOn(core, "saveState")
-        .mockImplementation((key, value) => {
-            return jest.requireActual("@actions/core").saveState(key, value);
-        });
-
-    const cacheMatchedKey = "node-cache";
     const nullStateProvider: IStateProvider = new NullStateProvider();
     nullStateProvider.setState(State.CacheMatchedKey, "outputValue");
-    nullStateProvider.setState(State.CachePrimaryKey, cacheMatchedKey);
+    nullStateProvider.setState(State.CachePrimaryKey, "node-cache");
     nullStateProvider.getState("outputKey");
     nullStateProvider.getCacheState();
 
-    expect(getStateMock).toHaveBeenCalledTimes(0);
-    expect(setOutputMock).toHaveBeenCalledTimes(2);
-    expect(saveStateMock).toHaveBeenCalledTimes(0);
+    expect(core.getState).toHaveBeenCalledTimes(0);
+    expect(core.setOutput).toHaveBeenCalledTimes(2);
+    expect(core.saveState).toHaveBeenCalledTimes(0);
 });
