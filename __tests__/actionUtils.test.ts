@@ -1,7 +1,7 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
-import { Events, RefKey } from "../src/constants";
+import { Events, Inputs, RefKey } from "../src/constants";
 import * as actionUtils from "../src/utils/actionUtils";
 import * as testUtils from "../src/utils/testUtils";
 
@@ -267,11 +267,11 @@ test("isGhes returns true when the GITHUB_SERVER_URL environment variable is set
 });
 
 describe("getPathValidationInput", () => {
-    const inputEnv = "INPUT_STRICT-PATHS";
+    const inputEnv = `INPUT_${Inputs.StrictPaths.toUpperCase()}`;
 
     beforeEach(() => {
         delete process.env[inputEnv];
-        // Re-mock getInput so the each-test environment reads INPUT_STRICT-PATHS
+        // Re-mock getInput so the each-test environment reads the input env var
         jest.spyOn(core, "getInput").mockImplementation((name, options) => {
             return jest.requireActual("@actions/core").getInput(name, options);
         });
@@ -297,24 +297,21 @@ describe("getPathValidationInput", () => {
         expect(actionUtils.getPathValidationInput()).toBe(expected);
     });
 
-    test("falls back to 'warn' for unrecognized values and logs a warning", () => {
+    test("falls back to 'warn' for unrecognized values and emits a workflow warning", () => {
         process.env[inputEnv] = "strict";
-        // getPathValidationInput() calls the same module's logWarning() via a
-        // local function reference (TypeScript compiles intra-module calls as
-        // direct references, not exports.X lookups), so a jest.spyOn on
-        // actionUtils.logWarning cannot intercept it. Spy on core.info — the
-        // only externally observable side effect — and suppress the real
-        // implementation so the warning does not pollute the Jest log.
-        const infoSpy = jest
-            .spyOn(core, "info")
+        // Suppress the real implementation so the warning does not pollute
+        // the Jest log, and assert it was emitted via core.warning so it
+        // surfaces as a real `::warning::` workflow annotation.
+        const warningSpy = jest
+            .spyOn(core, "warning")
             .mockImplementation(() => undefined);
         try {
             expect(actionUtils.getPathValidationInput()).toBe("warn");
-            expect(infoSpy).toHaveBeenCalledWith(
+            expect(warningSpy).toHaveBeenCalledWith(
                 expect.stringContaining("Unrecognized value for strict-paths")
             );
         } finally {
-            infoSpy.mockRestore();
+            warningSpy.mockRestore();
         }
     });
 

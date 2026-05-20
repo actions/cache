@@ -24,10 +24,15 @@ permissions:
 #        - warn:  the malicious entry is extracted but a workflow warning is logged.
 #        - error: the malicious entry is rejected (no extraction).
 #
-# NOTE: The poisoned-cache phase requires a small Node.js helper script
-# (__tests__/e2e/generate-poisoned-archive.mjs) that the test workflow invokes.
-# We build the archive locally and upload it via the action under a strict-paths
-# label so the cache key namespacing remains consistent.
+# NOTE: The poisoned-cache phase relies on a small Node.js helper script
+# (__tests__/e2e/save-poisoned-cache.mjs) that the workflow invokes. Rather
+# than fabricating a tar archive by hand, the helper calls the toolkit's
+# `@actions/cache.saveCache()` with the declared `path` AND one or more extra
+# paths that escape it; the toolkit packs everything into a normal cache
+# archive. The action's later restore step declares only the legitimate
+# `path`, so the extra entries become "escape" entries that the client-side
+# validation should reject (or warn about) per the configured strict-paths
+# mode.
 
 jobs:
   good-cache:

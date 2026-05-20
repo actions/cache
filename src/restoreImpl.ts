@@ -64,11 +64,16 @@ export async function restoreImpl(
             if (err instanceof Error && err.name === "CacheIntegrityError") {
                 const code = (err as Error & { code?: string }).code;
                 if (failOnCacheInvalid) {
-                    throw new Error(
+                    // Preserve the toolkit's original error via `Error.cause`.
+                    // (Assigned after construction because this project's
+                    // tsconfig targets ES6.)
+                    const failure = new Error(
                         `Restored cache failed integrity validation (${
                             code ?? "unknown"
                         }): ${err.message}`
                     );
+                    (failure as Error & { cause?: unknown }).cause = err;
+                    throw failure;
                 }
                 // Treat as a cache miss. Intentionally do NOT set the
                 // `cache-hit` output here, to preserve the same downstream

@@ -546,12 +546,12 @@ test("restore falls back to 'warn' when strict-paths input is unrecognized", asy
     const restoreCacheMock = jest
         .spyOn(cache, "restoreCache")
         .mockResolvedValueOnce(key);
-    // getPathValidationInput()'s call to logWarning() is intra-module so a
-    // spy on actionUtils.logWarning would not intercept it. Spy on core.info
-    // (the underlying transport for logWarning) and suppress the real
-    // implementation so the warning does not print into the Jest log.
-    const infoMock = jest
-        .spyOn(core, "info")
+    // getPathValidationInput() emits the misconfiguration notice via
+    // core.warning() so it surfaces as a real `::warning::` workflow
+    // annotation. Suppress the real implementation to keep the Jest log
+    // clean while asserting it was called.
+    const warningMock = jest
+        .spyOn(core, "warning")
         .mockImplementation(() => undefined);
 
     await restoreImpl(new StateProvider());
@@ -563,7 +563,7 @@ test("restore falls back to 'warn' when strict-paths input is unrecognized", asy
         { lookupOnly: false, pathValidation: "warn" },
         false
     );
-    expect(infoMock).toHaveBeenCalledWith(
+    expect(warningMock).toHaveBeenCalledWith(
         expect.stringContaining("Unrecognized value for strict-paths")
     );
 });

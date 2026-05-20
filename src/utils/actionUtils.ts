@@ -1,7 +1,7 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
 
-import { RefKey } from "../constants";
+import { Inputs, RefKey } from "../constants";
 
 export function isGhes(): boolean {
     const ghUrl = new URL(
@@ -70,15 +70,19 @@ export function getInputAsBool(
  * Read the `strict-paths` input and coerce it to a value the `@actions/cache`
  * toolkit understands. Unknown values default to `'warn'` (a best-effort
  * recovery — we don't want a typo to silently disable client-side validation)
- * and a warning is emitted so the user notices.
+ * and a workflow warning annotation is emitted so the user notices.
+ *
+ * Uses `core.warning()` directly (rather than this module's `logWarning()`
+ * helper, which routes through `core.info()`) so an input misconfiguration
+ * surfaces as a real `::warning::` annotation in the run summary.
  */
 export function getPathValidationInput(): "off" | "warn" | "error" {
-    const raw = core.getInput("strict-paths") || "warn";
+    const raw = core.getInput(Inputs.StrictPaths) || "warn";
     const normalized = raw.toLowerCase();
     if (normalized === "off" || normalized === "warn" || normalized === "error") {
         return normalized;
     }
-    logWarning(
+    core.warning(
         `Unrecognized value for strict-paths: "${raw}". Falling back to "warn". Valid values are: off, warn, error.`
     );
     return "warn";
