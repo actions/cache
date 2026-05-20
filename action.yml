@@ -34,6 +34,23 @@ inputs:
       save-always does not work as intended and will be removed in a future release.
       A separate `actions/cache/restore` step should be used instead.
       See https://github.com/actions/cache/tree/main/save#always-save-cache for more details.
+  strict-paths:
+    description: |
+      Controls client-side validation of cache archive entry paths before extraction.
+      'off' disables validation (legacy behavior). 'warn' logs a single warning when any
+      entry would resolve outside the declared `path` inputs and still extracts the cache.
+      'error' rejects the cache with a CacheIntegrityError and skips extraction entirely.
+      Default is 'warn'.
+    default: 'warn'
+    required: false
+  fail-on-cache-invalid:
+    description: |
+      Fail the workflow if the restored cache is rejected by client-side path validation
+      (entries that escape the declared paths, or an archive that cannot be parsed).
+      Only applies when `strict-paths` is 'error'; the 'off' and 'warn' modes never
+      reject a cache. When 'false' (default), a rejected cache is treated as a cache miss.
+    default: 'false'
+    required: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'

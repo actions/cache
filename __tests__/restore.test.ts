@@ -34,6 +34,11 @@ beforeAll(() => {
             return actualUtils.getInputAsBool(name, options);
         }
     );
+
+    jest.spyOn(actionUtils, "getPathValidationInput").mockImplementation(() => {
+        const actualUtils = jest.requireActual("../src/utils/actionUtils");
+        return actualUtils.getPathValidationInput();
+    });
 });
 
 beforeEach(() => {
@@ -79,7 +84,8 @@ test("restore with no cache found", async () => {
         key,
         [],
         {
-            lookupOnly: false
+            lookupOnly: false,
+            pathValidation: "warn"
         },
         false
     );
@@ -122,7 +128,8 @@ test("restore with restore keys and no cache found", async () => {
         key,
         [restoreKey],
         {
-            lookupOnly: false
+            lookupOnly: false,
+            pathValidation: "warn"
         },
         false
     );
@@ -164,7 +171,8 @@ test("restore with cache found for key", async () => {
         key,
         [],
         {
-            lookupOnly: false
+            lookupOnly: false,
+            pathValidation: "warn"
         },
         false
     );
@@ -209,7 +217,8 @@ test("restore with cache found for restore key", async () => {
         key,
         [restoreKey],
         {
-            lookupOnly: false
+            lookupOnly: false,
+            pathValidation: "warn"
         },
         false
     );
@@ -254,7 +263,8 @@ test("Fail restore when fail on cache miss is enabled and primary + restore keys
         key,
         [restoreKey],
         {
-            lookupOnly: false
+            lookupOnly: false,
+            pathValidation: "warn"
         },
         false
     );
@@ -297,7 +307,8 @@ test("restore when fail on cache miss is enabled and primary key doesn't match r
         key,
         [restoreKey],
         {
-            lookupOnly: false
+            lookupOnly: false,
+            pathValidation: "warn"
         },
         false
     );
@@ -343,7 +354,8 @@ test("restore with fail on cache miss disabled and no cache found", async () => 
         key,
         [restoreKey],
         {
-            lookupOnly: false
+            lookupOnly: false,
+            pathValidation: "warn"
         },
         false
     );

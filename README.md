@@ -90,6 +90,11 @@ If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are requir
 * `enableCrossOsArchive` - An optional boolean when enabled, allows Windows runners to save or restore caches that can be restored or saved respectively on other platforms. Default: `false`
 * `fail-on-cache-miss` - Fail the workflow if cache entry is not found. Default: `false`
 * `lookup-only` - If true, only checks if cache entry exists and skips download. Does not change save cache behavior. Default: `false`
+* `strict-paths` - Client-side path-validation strictness applied when extracting a restored cache. Helps protect against some forms of cache poisoning attacks. Valid values:
+  * `off` - Disable path validation entirely (legacy behavior). Skipping validation may slightly improve performance for very large cache archives, but is not recommended for best security.
+  * `warn` *(current default)* - Pre-scan the archive and emit a workflow warning if any entry would resolve outside the declared `path` inputs. The cache is still extracted.
+  * `error` *(future default)* - Pre-scan the archive and reject it (without extracting) if any entry would resolve outside the declared `path` inputs.
+* `fail-on-cache-invalid` - Fail the workflow when a restored cache is rejected by client-side validation (entries that escape the declared paths, or an archive that cannot be parsed). Only applies when `strict-paths: error` is set; the `off` and `warn` modes never reject a cache. When `false` (default) the rejected cache is treated as a cache miss.
 
 #### Environment Variables
 

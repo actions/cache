@@ -1,0 +1,282 @@
+name: Path Validation E2E
+
+# Manually triggered only — this matrix runs 39 jobs with multiple cache
+# saves/restores per job, which is too expensive to run on every PR. Maintainers
+# should dispatch it from the Actions tab against a PR branch whenever changes
+# touch the path-validation codepath (src/restoreImpl.ts, src/utils/actionUtils.ts,
+# or the bundled @actions/cache version).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# This workflow validates client-side path validation for action/cache restores.
+# It is intentionally structured as two phases:
+#   1. The "good cache" phase saves a legitimate cache, then restores it under
+#      each strict-paths value and asserts extraction succeeded.
+#   2. The "poisoned cache" phase manufactures a tar archive that contains an
+#      entry whose path resolves outside the declared `path` input. It uploads
+#      that archive directly to the cache backend via the toolkit's internal
+#      APIs (not via this action), then attempts to restore it via this action
+#      under each strict-paths value and asserts the expected behavior:
+#        - off:   the malicious entry is extracted (validation disabled).
+#        - warn:  the malicious entry is extracted but a workflow warning is logged.
+#        - error: the malicious entry is rejected (no extraction).
+#
+# NOTE: The poisoned-cache phase relies on a small Node.js helper script
+# (__tests__/e2e/save-poisoned-cache.mjs) that the workflow invokes. Rather
+# than fabricating a tar archive by hand, the helper calls the toolkit's
+# `@actions/cache.saveCache()` with the declared `path` AND one or more extra
+# paths that escape it; the toolkit packs everything into a normal cache
+# archive. The action's later restore step declares only the legitimate
+# `path`, so the extra entries become "escape" entries that the client-side
+# validation should reject (or warn about) per the configured strict-paths
+# mode.
+
+jobs:
+  good-cache:
+    name: 'Restore legitimate cache (strict-paths=${{ matrix.strict-paths }})'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-22.04, macos-latest, macos-13, windows-latest, windows-2022]
+        strict-paths: [off, warn, error]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js 24.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Generate legitimate cache files
+        shell: bash
+        run: |
+          mkdir -p path-validation-cache
+          for i in 1 2 3 4 5; do
+            echo "file-${i}-${{ matrix.os }}-${{ matrix.strict-paths }}" > "path-validation-cache/file-${i}.txt"
+          done
+
+      - name: Save legitimate cache
+        uses: ./
+        with:
+          key: path-validation-good-${{ matrix.os }}-${{ matrix.strict-paths }}-${{ github.run_id }}
+          path: path-validation-cache
+
+      - name: Remove local files
+        shell: bash
+        run: rm -rf path-validation-cache
+
+      - name: Restore legitimate cache (should succeed under all modes)
+        id: restore
+        uses: ./
+        with:
+          key: path-validation-good-${{ matrix.os }}-${{ matrix.strict-paths }}-${{ github.run_id }}
+          path: path-validation-cache
+          strict-paths: ${{ matrix.strict-paths }}
+          fail-on-cache-invalid: true
+
+      - name: Verify legitimate cache extracted
+        shell: bash
+        run: |
+          if [ "${{ steps.restore.outputs.cache-hit }}" != "true" ]; then
+            echo "::error::Expected cache-hit=true but got '${{ steps.restore.outputs.cache-hit }}'"
+            exit 1
+          fi
+          for i in 1 2 3 4 5; do
+            if [ ! -f "path-validation-cache/file-${i}.txt" ]; then
+              echo "::error::Missing expected file path-validation-cache/file-${i}.txt"
+              exit 1
+            fi
+          done
+          echo "Legitimate cache restored successfully under strict-paths=${{ matrix.strict-paths }}"
+
+  poisoned-cache:
+    name: 'Restore poisoned cache (strict-paths=${{ matrix.strict-paths }})'
+    needs: good-cache
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-22.04, macos-latest, macos-13, windows-latest, windows-2022]
+        strict-paths: [off, warn, error]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js 24.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npm run build
+
+      # Build a tar.zst archive containing one legitimate entry plus one entry
+      # whose path escapes the declared `path` input. We then save it to the
+      # cache backend using the toolkit's saveCache() with the same path the
+      # restore step uses, so the archive header roots and declared paths match
+      # what the action expects.
+      - name: Generate poisoned archive locally
+        shell: bash
+        run: |
+          mkdir -p path-validation-cache
+          echo "legitimate" > path-validation-cache/legit.txt
+          # The escape file is created at the working-dir level (one above the
+          # declared path), simulating an attacker who built the cache from a
+          # workspace where the relative path "../escape.txt" pointed outside
+          # the declared `path: path-validation-cache` input.
+          echo "should-be-rejected" > escape.txt
+
+      - name: Save poisoned cache via toolkit helper
+        shell: bash
+        env:
+          POISONED_KEY: path-validation-bad-${{ matrix.os }}-${{ matrix.strict-paths }}-${{ github.run_id }}
+        run: |
+          node __tests__/e2e/save-poisoned-cache.mjs \
+            "$POISONED_KEY" \
+            path-validation-cache \
+            ../escape.txt
+
+      - name: Remove staged files (force restore to re-extract)
+        shell: bash
+        run: |
+          rm -rf path-validation-cache escape.txt
+
+      - name: Restore poisoned cache
+        id: restore
+        continue-on-error: true
+        uses: ./
+        with:
+          key: path-validation-bad-${{ matrix.os }}-${{ matrix.strict-paths }}-${{ github.run_id }}
+          path: path-validation-cache
+          strict-paths: ${{ matrix.strict-paths }}
+          # Always treat integrity failures as misses for this E2E so we can
+          # assert on outputs rather than job failure.
+          fail-on-cache-invalid: false
+
+      - name: Assert behavior for strict-paths=off (no validation)
+        if: matrix.strict-paths == 'off'
+        shell: bash
+        run: |
+          # In off mode the malicious entry IS extracted.
+          if [ "${{ steps.restore.outputs.cache-hit }}" != "true" ]; then
+            echo "::error::Expected cache-hit=true for strict-paths=off"
+            exit 1
+          fi
+          if [ ! -f "escape.txt" ]; then
+            echo "::error::Expected the malicious entry 'escape.txt' to be extracted in 'off' mode"
+            exit 1
+          fi
+          echo "OK: strict-paths=off extracted the cache without validation (expected legacy behavior)."
+
+      - name: Assert behavior for strict-paths=warn (warn but extract)
+        if: matrix.strict-paths == 'warn'
+        shell: bash
+        run: |
+          # In warn mode the cache IS extracted but a warning should be logged.
+          if [ "${{ steps.restore.outputs.cache-hit }}" != "true" ]; then
+            echo "::error::Expected cache-hit=true for strict-paths=warn"
+            exit 1
+          fi
+          if [ ! -f "escape.txt" ]; then
+            echo "::error::Expected the malicious entry 'escape.txt' to be extracted in 'warn' mode (warn does not reject)"
+            exit 1
+          fi
+          echo "OK: strict-paths=warn extracted the cache (a workflow warning should be visible in the action log above)."
+
+      - name: Assert behavior for strict-paths=error (reject)
+        if: matrix.strict-paths == 'error'
+        shell: bash
+        run: |
+          # In error mode the action should treat the cache as a miss
+          # (because fail-on-cache-invalid: false).
+          if [ -f "escape.txt" ]; then
+            echo "::error::Malicious entry 'escape.txt' was extracted in 'error' mode (validation failed open)"
+            exit 1
+          fi
+          if [ -f "path-validation-cache/legit.txt" ]; then
+            echo "::error::Cache was extracted in 'error' mode (validation should have rejected the entire archive)"
+            exit 1
+          fi
+          # The discarded cache must look identical to a regular cache miss
+          # to downstream `if:` checks (see issue #1466), so `cache-hit` is
+          # intentionally NOT set (empty string), NOT 'false'.
+          if [ -n "${{ steps.restore.outputs.cache-hit }}" ]; then
+            echo "::error::Expected cache-hit to be unset for rejected cache in 'error' mode (got '${{ steps.restore.outputs.cache-hit }}')"
+            exit 1
+          fi
+          echo "OK: strict-paths=error rejected the poisoned cache and treated it as a miss."
+
+  poisoned-cache-fail-on-invalid:
+    name: 'Reject poisoned cache (fail-on-cache-invalid=true)'
+    needs: poisoned-cache
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js 24.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Generate poisoned archive locally
+        shell: bash
+        run: |
+          mkdir -p path-validation-cache
+          echo "legitimate" > path-validation-cache/legit.txt
+          echo "should-be-rejected" > escape.txt
+
+      - name: Save poisoned cache via toolkit helper
+        shell: bash
+        env:
+          POISONED_KEY: path-validation-fail-${{ matrix.os }}-${{ github.run_id }}
+        run: |
+          node __tests__/e2e/save-poisoned-cache.mjs \
+            "$POISONED_KEY" \
+            path-validation-cache \
+            ../escape.txt
+
+      - name: Remove staged files
+        shell: bash
+        run: |
+          rm -rf path-validation-cache escape.txt
+
+      - name: Attempt restore (expected to fail the workflow)
+        id: restore
+        continue-on-error: true
+        uses: ./
+        with:
+          key: path-validation-fail-${{ matrix.os }}-${{ github.run_id }}
+          path: path-validation-cache
+          strict-paths: error
+          fail-on-cache-invalid: true
+
+      - name: Assert the restore step failed
+        shell: bash
+        run: |
+          if [ "${{ steps.restore.outcome }}" != "failure" ]; then
+            echo "::error::Expected the restore step to fail when fail-on-cache-invalid=true and the cache is rejected (got outcome='${{ steps.restore.outcome }}')"
+            exit 1
+          fi
+          echo "OK: restore step failed as expected when fail-on-cache-invalid=true."

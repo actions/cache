@@ -25,6 +25,13 @@
 
 ## Changelog
 
+### 5.1.0
+
+- Add path validation for restored caches.
+  - New `strict-paths` input (`off`, `warn` *(default)*, `error`) pre-scans the archive entry list before extraction and reports or rejects entries that would resolve outside the declared `path` inputs.
+  - New `fail-on-cache-invalid` input controls whether a rejected cache archive fails the workflow (`true`) or is treated as a cache miss (`false`, default).
+- Bump `@actions/cache` toolkit dependency to `^6.1.0` (introduces the validation surface and bumps `tar` to v7.5.15).
+
 ### 5.0.4
 
 - Bump `minimatch` to v3.1.5 (fixes ReDoS via globstar patterns)
