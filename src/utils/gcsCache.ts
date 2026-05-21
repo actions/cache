@@ -12,7 +12,7 @@ import { Storage } from "@google-cloud/storage";
 import * as path from "path";
 
 import { Inputs } from "../constants";
-import { isGCSAvailable } from "./actionUtils";
+import { getGCSBucket, isGCSAvailable } from "./actionUtils";
 
 const DEFAULT_PATH_PREFIX = "github-cache";
 
@@ -116,7 +116,7 @@ async function restoreFromGCS(
         return undefined;
     }
 
-    const bucket = core.getInput(Inputs.GCSBucket);
+    const bucket = getGCSBucket();
     const pathPrefix =
         core.getInput(Inputs.GCSPathPrefix) || DEFAULT_PATH_PREFIX;
     const compressionMethod = await utils.getCompressionMethod();
@@ -202,7 +202,7 @@ async function saveToGCS(
         return undefined;
     }
 
-    const bucket = core.getInput(Inputs.GCSBucket);
+    const bucket = getGCSBucket();
     const pathPrefix =
         core.getInput(Inputs.GCSPathPrefix) || DEFAULT_PATH_PREFIX;
     const compressionMethod = await utils.getCompressionMethod();

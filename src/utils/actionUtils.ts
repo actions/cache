@@ -66,10 +66,14 @@ export function getInputAsBool(
     return result.toLowerCase() === "true";
 }
 
+export function getGCSBucket(): string {
+    return core.getInput(Inputs.GCSBucket) || process.env["CULA_CACHE_GCS_BUCKET"] || "";
+}
+
 // Check if GCS is configured and available
 export function isGCSAvailable(): boolean {
     try {
-        const bucket = core.getInput(Inputs.GCSBucket);
+        const bucket = getGCSBucket();
         if (!bucket) {
             core.info(
                 "GCS bucket name not provided, falling back to GitHub cache"

@@ -78341,6 +78341,7 @@ exports.isValidEvent = isValidEvent;
 exports.getInputAsArray = getInputAsArray;
 exports.getInputAsInt = getInputAsInt;
 exports.getInputAsBool = getInputAsBool;
+exports.getGCSBucket = getGCSBucket;
 exports.isGCSAvailable = isGCSAvailable;
 exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
 const cache = __importStar(__nccwpck_require__(5116));
@@ -78387,10 +78388,13 @@ function getInputAsBool(name, options) {
     const result = core.getInput(name, options);
     return result.toLowerCase() === "true";
 }
+function getGCSBucket() {
+    return core.getInput(constants_1.Inputs.GCSBucket) || process.env["CULA_CACHE_GCS_BUCKET"] || "";
+}
 // Check if GCS is configured and available
 function isGCSAvailable() {
     try {
-        const bucket = core.getInput(constants_1.Inputs.GCSBucket);
+        const bucket = getGCSBucket();
         if (!bucket) {
             core.info("GCS bucket name not provided, falling back to GitHub cache");
             return false;
@@ -78561,7 +78565,7 @@ function restoreFromGCS(_paths_1, primaryKey_1) {
         if (!storage) {
             return undefined;
         }
-        const bucket = core.getInput(constants_1.Inputs.GCSBucket);
+        const bucket = (0, actionUtils_1.getGCSBucket)();
         const pathPrefix = core.getInput(constants_1.Inputs.GCSPathPrefix) || DEFAULT_PATH_PREFIX;
         const compressionMethod = yield utils.getCompressionMethod();
         const archiveFolder = yield utils.createTempDirectory();
@@ -78618,7 +78622,7 @@ function saveToGCS(paths, key) {
         if (!storage) {
             return undefined;
         }
-        const bucket = core.getInput(constants_1.Inputs.GCSBucket);
+        const bucket = (0, actionUtils_1.getGCSBucket)();
         const pathPrefix = core.getInput(constants_1.Inputs.GCSPathPrefix) || DEFAULT_PATH_PREFIX;
         const compressionMethod = yield utils.getCompressionMethod();
         const cachePaths = yield utils.resolvePaths(paths);

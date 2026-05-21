@@ -203,6 +203,40 @@ test("getInputAsBool throws if required and value missing", () => {
     ).toThrowError();
 });
 
+test("getGCSBucket returns gcs-bucket input when provided", () => {
+    try {
+        testUtils.setInput("gcs-bucket", "input-bucket");
+        process.env["CULA_CACHE_GCS_BUCKET"] = "env-bucket";
+
+        expect(actionUtils.getGCSBucket()).toBe("input-bucket");
+    } finally {
+        testUtils.clearInputs();
+        delete process.env["CULA_CACHE_GCS_BUCKET"];
+    }
+});
+
+test("getGCSBucket falls back to CULA_CACHE_GCS_BUCKET", () => {
+    try {
+        process.env["CULA_CACHE_GCS_BUCKET"] = "env-bucket";
+
+        expect(actionUtils.getGCSBucket()).toBe("env-bucket");
+    } finally {
+        delete process.env["CULA_CACHE_GCS_BUCKET"];
+    }
+});
+
+test("getGCSBucket returns empty string without input or environment variable", () => {
+    try {
+        testUtils.clearInputs();
+        delete process.env["CULA_CACHE_GCS_BUCKET"];
+
+        expect(actionUtils.getGCSBucket()).toBe("");
+    } finally {
+        testUtils.clearInputs();
+        delete process.env["CULA_CACHE_GCS_BUCKET"];
+    }
+});
+
 test("isCacheFeatureAvailable for ac enabled", () => {
     jest.spyOn(cache, "isFeatureAvailable").mockImplementation(() => true);
 
