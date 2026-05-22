@@ -67,7 +67,12 @@ export function getInputAsBool(
 }
 
 export function getGCSBucket(): string {
-    return core.getInput(Inputs.GCSBucket) || process.env["CULA_CACHE_GCS_BUCKET"] || "";
+    return (
+        core.getInput(Inputs.GCSBucket) ||
+        process.env["CULA_CACHE_GCS_BUCKET"] ||
+        process.env["CONFIGURED_GCS_BUCKET"] ||
+        ""
+    );
 }
 
 // Check if GCS is configured and available

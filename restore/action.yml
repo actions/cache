@@ -24,7 +24,7 @@ inputs:
     default: 'false'
     required: false
   gcs-bucket:
-    description: 'Google Cloud Storage bucket name to use for caching. When provided, GCS will be used as the cache backend. Defaults to the CULA_CACHE_GCS_BUCKET environment variable when omitted.'
+    description: 'Google Cloud Storage bucket name to use for caching. When provided, GCS will be used as the cache backend. Defaults to the CULA_CACHE_GCS_BUCKET or CONFIGURED_GCS_BUCKET environment variable when omitted.'
     required: false
   gcs-path-prefix:
     description: 'Optional prefix path within the GCS bucket for cache files'

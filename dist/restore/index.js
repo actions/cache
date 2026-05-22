@@ -78376,7 +78376,10 @@ function getInputAsBool(name, options) {
     return result.toLowerCase() === "true";
 }
 function getGCSBucket() {
-    return core.getInput(constants_1.Inputs.GCSBucket) || process.env["CULA_CACHE_GCS_BUCKET"] || "";
+    return (core.getInput(constants_1.Inputs.GCSBucket) ||
+        process.env["CULA_CACHE_GCS_BUCKET"] ||
+        process.env["CONFIGURED_GCS_BUCKET"] ||
+        "");
 }
 // Check if GCS is configured and available
 function isGCSAvailable() {

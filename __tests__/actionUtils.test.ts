@@ -207,11 +207,13 @@ test("getGCSBucket returns gcs-bucket input when provided", () => {
     try {
         testUtils.setInput("gcs-bucket", "input-bucket");
         process.env["CULA_CACHE_GCS_BUCKET"] = "env-bucket";
+        process.env["CONFIGURED_GCS_BUCKET"] = "configured-bucket";
 
         expect(actionUtils.getGCSBucket()).toBe("input-bucket");
     } finally {
         testUtils.clearInputs();
         delete process.env["CULA_CACHE_GCS_BUCKET"];
+        delete process.env["CONFIGURED_GCS_BUCKET"];
     }
 });
 
@@ -225,15 +227,39 @@ test("getGCSBucket falls back to CULA_CACHE_GCS_BUCKET", () => {
     }
 });
 
+test("getGCSBucket falls back to CONFIGURED_GCS_BUCKET", () => {
+    try {
+        process.env["CONFIGURED_GCS_BUCKET"] = "configured-bucket";
+
+        expect(actionUtils.getGCSBucket()).toBe("configured-bucket");
+    } finally {
+        delete process.env["CONFIGURED_GCS_BUCKET"];
+    }
+});
+
+test("getGCSBucket prefers CULA_CACHE_GCS_BUCKET over CONFIGURED_GCS_BUCKET", () => {
+    try {
+        process.env["CULA_CACHE_GCS_BUCKET"] = "env-bucket";
+        process.env["CONFIGURED_GCS_BUCKET"] = "configured-bucket";
+
+        expect(actionUtils.getGCSBucket()).toBe("env-bucket");
+    } finally {
+        delete process.env["CULA_CACHE_GCS_BUCKET"];
+        delete process.env["CONFIGURED_GCS_BUCKET"];
+    }
+});
+
 test("getGCSBucket returns empty string without input or environment variable", () => {
     try {
         testUtils.clearInputs();
         delete process.env["CULA_CACHE_GCS_BUCKET"];
+        delete process.env["CONFIGURED_GCS_BUCKET"];
 
         expect(actionUtils.getGCSBucket()).toBe("");
     } finally {
         testUtils.clearInputs();
         delete process.env["CULA_CACHE_GCS_BUCKET"];
+        delete process.env["CONFIGURED_GCS_BUCKET"];
     }
 });
 
