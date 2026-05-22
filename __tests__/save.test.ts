@@ -1,5 +1,6 @@
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
+import nock from "nock";
 
 import { Events, Inputs, RefKey } from "../src/constants";
 import { saveRun } from "../src/saveImpl";
@@ -11,6 +12,7 @@ jest.mock("@actions/cache");
 jest.mock("../src/utils/actionUtils");
 
 beforeAll(() => {
+    nock.disableNetConnect();
     jest.spyOn(core, "getInput").mockImplementation((name, options) => {
         return jest.requireActual("@actions/core").getInput(name, options);
     });
@@ -73,10 +75,14 @@ afterEach(() => {
     delete process.env[RefKey];
 });
 
+afterAll(() => {
+    nock.enableNetConnect();
+});
+
 test("save with valid inputs uploads a cache", async () => {
     const failedMock = jest.spyOn(core, "setFailed");
 
-    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+    const primaryKey = testUtils.successCacheKey;
     const savedCacheKey = "Linux-node-";
 
     jest.spyOn(core, "getState")
