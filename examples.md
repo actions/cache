@@ -25,6 +25,7 @@
 - [Node - Yarn](#node---yarn)
 - [Node - Yarn 2](#node---yarn-2)
 - [OCaml/Reason - esy](#ocamlreason---esy)
+- [OCaml/Reason - opam](#ocamlreason---opam)
 - [PHP - Composer](#php---composer)
 - [Python - pip](#python---pip)
   - [Simple example](#simple-example)
@@ -435,6 +436,30 @@ Esy allows you to export built dependencies and import pre-built dependencies.
       run: |
         esy export-dependencies
       if: steps.restore-cache.outputs.cache-hit != 'true'
+```
+
+## OCaml/Reason - opam
+
+This example requires you to have `opam.locked` file which you can generate with `opam lock .`.
+
+It's worth noting that even if lock file was change, it might be optimal to restore previous cache, so `hashFiles` in the key and if statement in "Save opam cache" step are optional.
+```yaml
+    - name: Restore opam cache
+      id: restore-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: _opam
+        key: ${{ runner.os }}-opam-${{ hashFiles('opam.locked') }}
+
+    - name: Install dependencies
+      run: opam install . --locked --deps-only -y
+
+    - name: Save opam cache
+      if: steps.restore-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: _opam
+        key: ${{ steps.restore-cache.outputs.cache-primary-key }}
 ```
 
 ## PHP - Composer
