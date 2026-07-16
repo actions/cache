@@ -4,8 +4,8 @@ This action allows caching dependencies and build outputs to improve workflow ex
 
 >Two other actions are available in addition to the primary `cache` action:
 >
->* [Restore action](./restore/README.md)
->* [Save action](./save/README.md)
+>* [Restore action](./restore/README.md) - Restores a cache. It provides granular ability to restore a cache without having to save it. It accepts the same set of inputs as the cache action.
+>* [Save action](./save/README.md) - Saves a cache. It provides granular ability to save a cache without having to restore it, or to do a save at any stage of the workflow job -- not only in post phase.
 
 [![Tests](https://github.com/actions/cache/actions/workflows/workflow.yml/badge.svg)](https://github.com/actions/cache/actions/workflows/workflow.yml)
 
