@@ -41,6 +41,9 @@
 - [Swift - Swift Package Manager](#swift---swift-package-manager)
 - [Swift - Mint](#swift---mint)
 - [* - Bazel](#---bazel)
+- [Common use cases](#common-use-cases)
+  - [Restore-only caches](#restore-only-caches)
+  - [Automatically detect cached paths](#automatically-detect-cached-paths)
 
 ## Bun
 
@@ -711,4 +714,33 @@ steps:
     restore-keys: |
       ${{ runner.os }}-bazel-
 - run: bazelisk test //...
+```
+##  Common use cases
+
+### Restore-only caches
+If there are several builds on the same repo it might make sense to create a cache in one build and use it in the
+others. The action [actions/cache/restore](https://github.com/actions/cache/blob/main/restore/README.md#only-restore-cache)
+should be used in this case.
+
+### Automatically detect cached paths
+[Defining outputs for jobs](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs) can be used to
+automatically detect paths to cache and use them to configure `actions/cache` action.
+
+```yaml
+- name: Get Go cached paths
+  id: find-cached-paths
+  run: |
+    echo "cache=$(go env GOCACHE)" >> $GITHUB_ENV
+    echo "modcache=$(go env GOMODCACHE)" >> $GITHUB_ENV
+
+- name: Set up cache
+  uses: actions/cache@v3
+  needs: find-cached-paths
+  with:
+    path: |
+      ${{ env.cache }}
+      ${{ env.modcache }}
+    key: setup-go-${{ runner.os }}-go-${{ hashFiles('go.sum go.mod') }}
+    restore-keys: |
+      setup-go-${{ runner.os }}-go-
 ```
