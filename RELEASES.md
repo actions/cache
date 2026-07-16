@@ -201,7 +201,7 @@ Upgrading to the recommended versions will not break your workflows.
 
 ### 3.0.9
 
-- Enhanced the warning message for cache unavailablity in case of GHES.
+- Enhanced the warning message for cache unavailability in case of GHES.
 
 ### 3.0.8
 
