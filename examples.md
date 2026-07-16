@@ -10,6 +10,7 @@
   - [Linux](#linux)
   - [macOS](#macos)
   - [Windows](#windows-1)
+- [Docker](#docker)
 - [Elixir - Mix](#elixir---mix)
 - [Erlang - Rebar3](#erlang--rebar3)
 - [Go - Modules](#go---modules)
@@ -174,6 +175,40 @@ steps:
       ~\.deno
       ~\AppData\Local\deno
     key: ${{ runner.os }}-deno-${{ hashFiles('**/deps.ts') }}
+```
+
+## Docker
+
+```yaml
+- name: Cache Docker layers
+  uses: actions/cache@v3
+  with:
+    path: /tmp/.buildx-cache
+    key: my-project-${{ matrix.arch }}-buildx-${{ hashFiles('my-directory/Dockerfile') }}
+    restore-keys: |
+      my-project-${{ matrix.arch }}-buildx-
+- name: Set up QEMU
+  uses: docker/setup-qemu-action@v3
+- name: Set up Docker Buildx
+  uses: docker/setup-buildx-action@v3
+- name: Build and Test
+  uses: docker/build-push-action@v3
+  with:
+    push: false
+    context: .
+    platforms: ${{ matrix.arch }}
+    file: my-directory/Dockerfile
+    tags: my-username/my-image:latest
+    cache-from: type=local,src=/tmp/.buildx-cache
+    cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+-
+  # Temporary workaround
+  # https://github.com/docker/build-push-action/issues/252
+  # https://github.com/moby/buildkit/issues/1896
+  name: Move cache
+  run: |
+    rm -rf /tmp/.buildx-cache
+    mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 ```
 
 ## Elixir - Mix
