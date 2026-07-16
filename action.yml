@@ -11,6 +11,7 @@ inputs:
   restore-keys:
     description: 'An ordered multiline string listing the prefix-matched keys, that are used for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case.'
     required: false
+    default: ''
   upload-chunk-size:
     description: 'The chunk size used to split up large files during upload, in bytes'
     required: false
@@ -36,7 +37,7 @@ inputs:
       See https://github.com/actions/cache/tree/main/save#always-save-cache for more details.
 outputs:
   cache-hit:
-    description: 'A boolean value to indicate an exact match was found for the primary key'
+    description: "A boolean value to indicate an exact match was found for the primary key. Returns 'true' on exact key match, 'false' on partial match via restore-keys or when the cache service is unavailable. Not set when no cache entry is found."
 runs:
   using: 'node24'
   main: 'dist/restore/index.js'
