@@ -621,6 +621,75 @@ whenever possible:
     key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 ```
 
+### Multiple OS with a build matrix
+
+```yml
+name: CI
+on: [push, pull_request]
+
+jobs:
+  tests:
+    name: Test ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            SEP: /
+            PIP_WHEELS_DIR: ~/.cache/pip
+            CARGO_INDEX_DIR: ~/.cargo/git
+            CARGO_REGISTRY_DIR: ~/.cargo/registry
+
+          - os: macos-latest
+            SEP: /
+            PIP_WHEELS_DIR: ~/Library/Caches/pip
+            CARGO_INDEX_DIR: ~/.cargo/git
+            CARGO_REGISTRY_DIR: ~/.cargo/registry
+
+          - os: windows-latest
+            SEP: \
+            PIP_WHEELS_DIR: ~\AppData\Local\pip\Cache
+            CARGO_INDEX_DIR: C:\Rust\.cargo\git
+            CARGO_REGISTRY_DIR: C:\Rust\.cargo\registry
+
+      # Keep running all matrices if something fail
+      fail-fast: false
+
+    steps:
+      - name: Cache pip wheels
+        uses: actions/cache@v1
+        with:
+          path: ${{ matrix.PIP_WHEELS_DIR }}
+          key: ${{ runner.os }}-pip-wheels-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/setup.py') }}-14-
+
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ${{ matrix.CARGO_INDEX_DIR }}
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.toml') }}-14-
+
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ${{ matrix.CARGO_REGISTRY_DIR }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.toml') }}-14-
+
+      - name: Cache cargo target
+        uses: actions/cache@v1
+        with:
+          path: ${{ github.workspace }}${{ matrix.SEP }}target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.toml') }}-14-
+
+      - name: Run on Windows
+        if: matrix.os == 'windows-latest'
+        run: echo Windows
+
+      - name: Run on Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: echo Linux
+```
+
 ## Scala - SBT
 
 ```yaml
