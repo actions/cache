@@ -15,6 +15,10 @@ inputs:
     description: 'An optional boolean when enabled, allows windows runners to save caches that can be restored on other platforms'
     default: 'false'
     required: false
+  fail-on-error:
+    description: 'Fail the workflow if cache save fails'
+    default: 'false'
+    required: false
 runs:
   using: 'node24'
   main: '../dist/save-only/index.js'

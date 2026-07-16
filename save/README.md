@@ -9,6 +9,7 @@ The save action saves a cache. It works similarly to the `cache` action except t
 * `key` - An explicit key for a cache entry. See [creating a cache key](../README.md#creating-a-cache-key).
 * `path` - A list of files, directories, and wildcard patterns to cache. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `upload-chunk-size` - The chunk size used to split up large files during upload, in bytes
+* `fail-on-error` - Fail the workflow if the cache save encounters an error, rather than logging a warning and succeeding. Default: `false`
 
 ### Outputs
 
@@ -66,6 +67,24 @@ with:
 uses: actions/cache/save@v5
 with:
     key: npm-cache-${{hashfiles(package-lock.json)}}
+```
+
+### Fail workflow on save error
+
+By default, errors during cache save (such as exceeding the cache size limit or a network failure) log a warning and allow the workflow to continue. Use `fail-on-error: true` to treat any save error as a workflow failure instead.
+
+```yaml
+steps:
+  - uses: actions/checkout@v6
+
+  - name: Install Dependencies
+    run: /install.sh
+
+  - uses: actions/cache/save@v5
+    with:
+      path: path/to/dependencies
+      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+      fail-on-error: true
 ```
 
 ### Always save cache
