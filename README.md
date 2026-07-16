@@ -18,23 +18,16 @@ See ["Caching dependencies to speed up workflows"](https://docs.github.com/en/ac
 ### ⚠️ Important changes
 
 > [!IMPORTANT]
-> `actions/cache@v5` runs on the Node.js 24 runtime and requires a minimum Actions Runner version of `2.327.1`.
+> `actions/cache@v6` runs on the Node.js 24 runtime and requires a minimum Actions Runner version of `2.327.1`.
 > If you are using self-hosted runners, ensure they are updated before upgrading.
 
 The cache backend service has been rewritten from the ground up for improved performance and reliability. [actions/cache](https://github.com/actions/cache) now integrates with the new cache service (v2) APIs.
 
-The new service will gradually roll out as of **February 1st, 2025**. The legacy service will also be sunset on the same date. Changes in these releases are **fully backward compatible**.
+The new cache backend service rollout began on **February 1st, 2025**, and the legacy service was sunset shortly after. Older pinned versions that did not integrate with the new cache service were deprecated; users should upgrade to a supported release such as `v4.2.0` or later.
 
-**We are deprecating some versions of this action**. We recommend upgrading to version `v4` or `v3` as soon as possible before **February 1st, 2025.** (Upgrade instructions below).
+If you are using pinned SHAs, please use the SHAs of versions `v4.2.0` or later.
 
-If you are using pinned SHAs, please use the SHAs of versions `v4.2.0` or `v3.4.0`.
-
-If you do not upgrade, all workflow runs using any of the deprecated [actions/cache](https://github.com/actions/cache) will fail.
-
-Upgrading to the recommended versions will not break your workflows.
-
-> **Additionally, if you are managing your own GitHub runners, you must update your runner version to `2.231.0` or newer to ensure compatibility with the new cache service.**
-> Failure to update both the action version and your runner version may result in workflow failures after the migration date.
+> **Additionally, if you are managing your own GitHub runners, ensure your runner version is `2.327.1` or newer.**
 
 Read more about the change & access the migration guide: [reference to the announcement](https://github.com/actions/cache/discussions/1510).
 
@@ -83,7 +76,7 @@ Create a workflow `.yml` file in your repository's `.github/workflows` directory
 
 If you are using this inside a container, a POSIX-compliant `tar` needs to be included and accessible from the execution path.
 
-Note: `actions/cache@v5` runs on Node.js 24 and requires a minimum Actions Runner version of `2.327.1`.
+Note: `actions/cache@v6` runs on Node.js 24 and requires a minimum Actions Runner version of `2.327.1`.
 
 If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are required for [Cross-OS caching](https://github.com/actions/cache/blob/main/tips-and-workarounds.md#cross-os-cache) to work. They are also recommended to be installed in general so the performance is on par with `hosted` Windows runners.
 
