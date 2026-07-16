@@ -165,6 +165,10 @@ steps:
     run: /publish.sh
 ```
 
+> [!IMPORTANT]
+> 
+> The `path` must match on both the centralized job and the target job, otherwise there will be no cache-hit whatsoever. Also take notes of the [restrictions for accessing caches across workflows](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/caching-dependencies-to-speed-up-workflows#restrictions-for-accessing-a-cache).  
+
 ### Failing/Exiting the workflow if cache with exact key is not found
 
 You can use the output of this action to exit the workflow on cache miss. This way you can restrict your workflow to only initiate the build when `cache-hit` occurs, in other words, cache with exact key is found.
