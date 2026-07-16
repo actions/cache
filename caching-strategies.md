@@ -287,3 +287,8 @@ steps:
   - name: Publish package to public
     run: ./publish.sh
 ```
+run: ./build-child-module.sh
+uses: actions/cache/restore@v5
+path: path/to/dependencies
+key: ${{runner.os}}-${{ hashfiles('**/lockfiles')}}
+
