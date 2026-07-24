@@ -262,11 +262,42 @@ async function findFileOnGCS(
     keys: string[],
     compressionMethod: CompressionMethod
 ): Promise<{ key: string; path: string } | undefined> {
-    for (const key of keys) {
-        const gcsPath = getGCSPath(pathPrefix, key, compressionMethod);
-        if (await checkFileExists(storage, bucket, gcsPath)) {
-            core.info(`Found file on bucket: ${bucket} with key: ${gcsPath}`);
-            return { key, path: gcsPath };
+    const [primaryKey, ...restoreKeys] = keys;
+    const fileName = utils.getCacheFileName(compressionMethod);
+
+    // Primary key: exact match only. The `cache-hit` output compares the
+    // returned key against the primary key, so a prefix match here would
+    // report false hits.
+    const primaryPath = getGCSPath(pathPrefix, primaryKey, compressionMethod);
+    if (await checkFileExists(storage, bucket, primaryPath)) {
+        core.info(`Found file on bucket: ${bucket} with key: ${primaryPath}`);
+        return { key: primaryKey, path: primaryPath };
+    }
+
+    // Restore keys: prefix match, newest entry wins — mirrors the
+    // actions/cache restore-keys contract that callers rely on for rolling
+    // caches (e.g. `nx-` matching `nx-<sha>` saved by an earlier run).
+    for (const key of restoreKeys) {
+        const [files] = await storage
+            .bucket(bucket)
+            .getFiles({ prefix: `${pathPrefix}/${key}` });
+        const newest = files
+            .filter(file => file.name.endsWith(`.${fileName}`))
+            .sort(
+                (a, b) =>
+                    new Date(b.metadata.updated ?? 0).getTime() -
+                    new Date(a.metadata.updated ?? 0).getTime()
+            )[0];
+
+        if (newest) {
+            const matchedKey = newest.name.slice(
+                pathPrefix.length + 1,
+                -(fileName.length + 1)
+            );
+            core.info(
+                `Found file on bucket: ${bucket} with key: ${newest.name}`
+            );
+            return { key: matchedKey, path: newest.name };
         }
     }
     return undefined;

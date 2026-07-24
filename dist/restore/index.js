@@ -78653,11 +78653,34 @@ function saveToGCS(paths, key) {
 }
 function findFileOnGCS(storage, bucket, pathPrefix, keys, compressionMethod) {
     return __awaiter(this, void 0, void 0, function* () {
-        for (const key of keys) {
-            const gcsPath = getGCSPath(pathPrefix, key, compressionMethod);
-            if (yield checkFileExists(storage, bucket, gcsPath)) {
-                core.info(`Found file on bucket: ${bucket} with key: ${gcsPath}`);
-                return { key, path: gcsPath };
+        const [primaryKey, ...restoreKeys] = keys;
+        const fileName = utils.getCacheFileName(compressionMethod);
+        // Primary key: exact match only. The `cache-hit` output compares the
+        // returned key against the primary key, so a prefix match here would
+        // report false hits.
+        const primaryPath = getGCSPath(pathPrefix, primaryKey, compressionMethod);
+        if (yield checkFileExists(storage, bucket, primaryPath)) {
+            core.info(`Found file on bucket: ${bucket} with key: ${primaryPath}`);
+            return { key: primaryKey, path: primaryPath };
+        }
+        // Restore keys: prefix match, newest entry wins — mirrors the
+        // actions/cache restore-keys contract that callers rely on for rolling
+        // caches (e.g. `nx-` matching `nx-<sha>` saved by an earlier run).
+        for (const key of restoreKeys) {
+            const [files] = yield storage
+                .bucket(bucket)
+                .getFiles({ prefix: `${pathPrefix}/${key}` });
+            const newest = files
+                .filter(file => file.name.endsWith(`.${fileName}`))
+                .sort((a, b) => {
+                var _a, _b;
+                return new Date((_a = b.metadata.updated) !== null && _a !== void 0 ? _a : 0).getTime() -
+                    new Date((_b = a.metadata.updated) !== null && _b !== void 0 ? _b : 0).getTime();
+            })[0];
+            if (newest) {
+                const matchedKey = newest.name.slice(pathPrefix.length + 1, -(fileName.length + 1));
+                core.info(`Found file on bucket: ${bucket} with key: ${newest.name}`);
+                return { key: matchedKey, path: newest.name };
             }
         }
         return undefined;
