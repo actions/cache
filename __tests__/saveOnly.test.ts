@@ -10,6 +10,11 @@ jest.unstable_mockModule("@actions/core", () => ({
         }
         return val.trim();
     }),
+    getBooleanInput: jest.fn(
+        (name: string, options?: { required?: boolean }) => {
+            return core.getInput(name, options).toLowerCase() === "true";
+        }
+    ),
     setOutput: jest.fn(),
     setFailed: jest.fn(),
     info: jest.fn(),
@@ -128,4 +133,40 @@ test("save failing logs the debug message", async () => {
     expect(debugMock).toHaveBeenCalledWith("Cache was not saved.");
     expect(warningMock).not.toHaveBeenCalled();
     expect(failedMock).not.toHaveBeenCalled();
+});
+
+test.each([
+    [true, false],
+    [true, true],
+    [false, true],
+    [false, false]
+])("save honors post behavior", async (postInput, postMode) => {
+    const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
+
+    const inputPath = "node_modules";
+    testUtils.setInput(Inputs.Key, primaryKey);
+    testUtils.setInput(Inputs.Path, inputPath);
+    testUtils.setInput(Inputs.Post, `${postInput}`);
+
+    const cacheId = 4;
+    (cache.saveCache as jest.Mock).mockResolvedValue(cacheId);
+
+    await saveOnlyRun(undefined, postMode);
+
+    if (postInput === postMode) {
+        // expects cache to run
+        expect(cache.saveCache).toHaveBeenCalledTimes(1);
+        expect(cache.saveCache).toHaveBeenCalledWith(
+            [inputPath],
+            primaryKey,
+            {},
+            false
+        );
+
+        expect(core.setFailed).toHaveBeenCalledTimes(0);
+    } else {
+        // expect to be no-op
+        expect(cache.saveCache).not.toHaveBeenCalled();
+        expect(core.setFailed).not.toHaveBeenCalled();
+    }
 });

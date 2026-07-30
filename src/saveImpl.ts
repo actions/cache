@@ -79,8 +79,16 @@ export async function saveImpl(
 }
 
 export async function saveOnlyRun(
-    earlyExit?: boolean | undefined
+    earlyExit?: boolean | undefined,
+    postStep?: boolean | undefined
 ): Promise<void> {
+    if (
+        postStep !== undefined &&
+        postStep !== utils.getInputAsBool(Inputs.Post)
+    ) {
+        return;
+    }
+
     try {
         const cacheId = await saveImpl(new NullStateProvider());
         if (cacheId === -1) {

@@ -1,3 +1,3 @@
 import { saveOnlyRun } from "./saveImpl";
 
-saveOnlyRun(true, false);
+saveOnlyRun(true, true);

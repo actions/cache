@@ -6,7 +6,7 @@
   "type": "module",
   "main": "dist/restore/index.js",
   "scripts": {
-    "build": "tsc && ncc build -o dist/restore src/restore.ts && ncc build -o dist/save src/save.ts && ncc build -o dist/restore-only src/restoreOnly.ts && ncc build -o dist/save-only src/saveOnly.ts",
+    "build": "tsc && ncc build -o dist/restore src/restore.ts && ncc build -o dist/save src/save.ts && ncc build -o dist/restore-only src/restoreOnly.ts && ncc build -o dist/save-only src/saveOnly.ts && ncc build -o dist/save-only/post src/saveOnlyPost.ts",
     "test": "tsc --noEmit && node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "lint": "eslint **/*.ts --cache",
     "format": "prettier --write **/*.ts",

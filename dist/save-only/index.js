@@ -94892,7 +94892,8 @@ var Inputs;
     Inputs["UploadChunkSize"] = "upload-chunk-size";
     Inputs["EnableCrossOsArchive"] = "enableCrossOsArchive";
     Inputs["FailOnCacheMiss"] = "fail-on-cache-miss";
-    Inputs["LookupOnly"] = "lookup-only"; // Input for cache, restore action
+    Inputs["LookupOnly"] = "lookup-only";
+    Inputs["Post"] = "post"; // Input for save action
 })(Inputs || (Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -95052,7 +95053,11 @@ async function saveImpl(stateProvider) {
     }
     return cacheId;
 }
-async function saveOnlyRun(earlyExit) {
+async function saveOnlyRun(earlyExit, postStep) {
+    if (postStep !== undefined &&
+        postStep !== getInputAsBool(Inputs.Post)) {
+        return;
+    }
     try {
         const cacheId = await saveImpl(new NullStateProvider());
         if (cacheId === -1) {
@@ -95100,5 +95105,5 @@ async function saveRun(earlyExit) {
 
 ;// CONCATENATED MODULE: ./src/saveOnly.ts
 
-saveOnlyRun(true);
+saveOnlyRun(true, false);
 

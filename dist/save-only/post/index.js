@@ -42271,23 +42271,23 @@ function getOptions(copy) {
     if (copy) {
         if (typeof copy.followSymbolicLinks === 'boolean') {
             result.followSymbolicLinks = copy.followSymbolicLinks;
-            core.debug(`followSymbolicLinks '${result.followSymbolicLinks}'`);
+            core_debug(`followSymbolicLinks '${result.followSymbolicLinks}'`);
         }
         if (typeof copy.implicitDescendants === 'boolean') {
             result.implicitDescendants = copy.implicitDescendants;
-            core.debug(`implicitDescendants '${result.implicitDescendants}'`);
+            core_debug(`implicitDescendants '${result.implicitDescendants}'`);
         }
         if (typeof copy.matchDirectories === 'boolean') {
             result.matchDirectories = copy.matchDirectories;
-            core.debug(`matchDirectories '${result.matchDirectories}'`);
+            core_debug(`matchDirectories '${result.matchDirectories}'`);
         }
         if (typeof copy.omitBrokenSymbolicLinks === 'boolean') {
             result.omitBrokenSymbolicLinks = copy.omitBrokenSymbolicLinks;
-            core.debug(`omitBrokenSymbolicLinks '${result.omitBrokenSymbolicLinks}'`);
+            core_debug(`omitBrokenSymbolicLinks '${result.omitBrokenSymbolicLinks}'`);
         }
         if (typeof copy.excludeHiddenFiles === 'boolean') {
             result.excludeHiddenFiles = copy.excludeHiddenFiles;
-            core.debug(`excludeHiddenFiles '${result.excludeHiddenFiles}'`);
+            core_debug(`excludeHiddenFiles '${result.excludeHiddenFiles}'`);
         }
     }
     return result;
@@ -42322,7 +42322,7 @@ function dirname(p) {
         return p;
     }
     // Get dirname
-    let result = path.dirname(p);
+    let result = external_path_.dirname(p);
     // Trim trailing slash for Windows UNC root, e.g. \\hello\world\
     if (internal_path_helper_IS_WINDOWS && /^\\\\[^\\]+\\[^\\]+\\$/.test(result)) {
         result = safeTrimTrailingSeparator(result);
@@ -42334,8 +42334,8 @@ function dirname(p) {
  * or `C:` are expanded based on the current working directory.
  */
 function ensureAbsoluteRoot(root, itemPath) {
-    assert(root, `ensureAbsoluteRoot parameter 'root' must not be empty`);
-    assert(itemPath, `ensureAbsoluteRoot parameter 'itemPath' must not be empty`);
+    external_assert_(root, `ensureAbsoluteRoot parameter 'root' must not be empty`);
+    external_assert_(itemPath, `ensureAbsoluteRoot parameter 'itemPath' must not be empty`);
     // Already rooted
     if (hasAbsoluteRoot(itemPath)) {
         return itemPath;
@@ -42345,7 +42345,7 @@ function ensureAbsoluteRoot(root, itemPath) {
         // Check for itemPath like C: or C:foo
         if (itemPath.match(/^[A-Z]:[^\\/]|^[A-Z]:$/i)) {
             let cwd = process.cwd();
-            assert(cwd.match(/^[A-Z]:\\/i), `Expected current directory to start with an absolute drive root. Actual '${cwd}'`);
+            external_assert_(cwd.match(/^[A-Z]:\\/i), `Expected current directory to start with an absolute drive root. Actual '${cwd}'`);
             // Drive letter matches cwd? Expand to cwd
             if (itemPath[0].toUpperCase() === cwd[0].toUpperCase()) {
                 // Drive only, e.g. C:
@@ -42370,18 +42370,18 @@ function ensureAbsoluteRoot(root, itemPath) {
         // Check for itemPath like \ or \foo
         else if (internal_path_helper_normalizeSeparators(itemPath).match(/^\\$|^\\[^\\]/)) {
             const cwd = process.cwd();
-            assert(cwd.match(/^[A-Z]:\\/i), `Expected current directory to start with an absolute drive root. Actual '${cwd}'`);
+            external_assert_(cwd.match(/^[A-Z]:\\/i), `Expected current directory to start with an absolute drive root. Actual '${cwd}'`);
             return `${cwd[0]}:\\${itemPath.substr(1)}`;
         }
     }
-    assert(hasAbsoluteRoot(root), `ensureAbsoluteRoot parameter 'root' must have an absolute root`);
+    external_assert_(hasAbsoluteRoot(root), `ensureAbsoluteRoot parameter 'root' must have an absolute root`);
     // Otherwise ensure root ends with a separator
     if (root.endsWith('/') || (internal_path_helper_IS_WINDOWS && root.endsWith('\\'))) {
         // Intentionally empty
     }
     else {
         // Append separator
-        root += path.sep;
+        root += external_path_.sep;
     }
     return root + itemPath;
 }
@@ -42390,7 +42390,7 @@ function ensureAbsoluteRoot(root, itemPath) {
  * `\\hello\share` and `C:\hello` (and using alternate separator).
  */
 function hasAbsoluteRoot(itemPath) {
-    assert(itemPath, `hasAbsoluteRoot parameter 'itemPath' must not be empty`);
+    external_assert_(itemPath, `hasAbsoluteRoot parameter 'itemPath' must not be empty`);
     // Normalize separators
     itemPath = internal_path_helper_normalizeSeparators(itemPath);
     // Windows
@@ -42406,7 +42406,7 @@ function hasAbsoluteRoot(itemPath) {
  * `\`, `\hello`, `\\hello\share`, `C:`, and `C:\hello` (and using alternate separator).
  */
 function hasRoot(itemPath) {
-    assert(itemPath, `isRooted parameter 'itemPath' must not be empty`);
+    external_assert_(itemPath, `isRooted parameter 'itemPath' must not be empty`);
     // Normalize separators
     itemPath = internal_path_helper_normalizeSeparators(itemPath);
     // Windows
@@ -42446,11 +42446,11 @@ function safeTrimTrailingSeparator(p) {
     // Normalize separators
     p = internal_path_helper_normalizeSeparators(p);
     // No trailing slash
-    if (!p.endsWith(path.sep)) {
+    if (!p.endsWith(external_path_.sep)) {
         return p;
     }
     // Check '/' on Linux/macOS and '\' on Windows
-    if (p === path.sep) {
+    if (p === external_path_.sep) {
         return p;
     }
     // On Windows check if drive root. E.g. C:\
@@ -42465,7 +42465,7 @@ function safeTrimTrailingSeparator(p) {
 /**
  * Indicates whether a pattern matches a path
  */
-var internal_match_kind_MatchKind;
+var MatchKind;
 (function (MatchKind) {
     /** Not matched */
     MatchKind[MatchKind["None"] = 0] = "None";
@@ -42475,7 +42475,7 @@ var internal_match_kind_MatchKind;
     MatchKind[MatchKind["File"] = 2] = "File";
     /** Matched */
     MatchKind[MatchKind["All"] = 3] = "All";
-})(internal_match_kind_MatchKind || (internal_match_kind_MatchKind = {}));
+})(MatchKind || (MatchKind = {}));
 //# sourceMappingURL=internal-match-kind.js.map
 ;// CONCATENATED MODULE: ./node_modules/@actions/glob/lib/internal-pattern-helper.js
 
@@ -42508,14 +42508,14 @@ function getSearchPaths(patterns) {
         // Check for an ancestor search path
         let foundAncestor = false;
         let tempKey = key;
-        let parent = pathHelper.dirname(tempKey);
+        let parent = dirname(tempKey);
         while (parent !== tempKey) {
             if (searchPathMap[parent]) {
                 foundAncestor = true;
                 break;
             }
             tempKey = parent;
-            parent = pathHelper.dirname(tempKey);
+            parent = dirname(tempKey);
         }
         // Include the search pattern in the result
         if (!foundAncestor) {
@@ -42528,7 +42528,7 @@ function getSearchPaths(patterns) {
 /**
  * Matches the patterns against the path
  */
-function match(patterns, itemPath) {
+function internal_pattern_helper_match(patterns, itemPath) {
     let result = MatchKind.None;
     for (const pattern of patterns) {
         if (pattern.negate) {
@@ -42543,7 +42543,7 @@ function match(patterns, itemPath) {
 /**
  * Checks whether to descend further into the directory
  */
-function partialMatch(patterns, itemPath) {
+function internal_pattern_helper_partialMatch(patterns, itemPath) {
     return patterns.some(x => !x.negate && x.partialMatch(itemPath));
 }
 //# sourceMappingURL=internal-pattern-helper.js.map
@@ -42557,7 +42557,7 @@ const internal_path_IS_WINDOWS = process.platform === 'win32';
 /**
  * Helper class for parsing paths into segments
  */
-class internal_path_Path {
+class Path {
     /**
      * Constructs a Path
      * @param itemPath Path or array of segments
@@ -42566,25 +42566,25 @@ class internal_path_Path {
         this.segments = [];
         // String
         if (typeof itemPath === 'string') {
-            assert(itemPath, `Parameter 'itemPath' must not be empty`);
+            external_assert_(itemPath, `Parameter 'itemPath' must not be empty`);
             // Normalize slashes and trim unnecessary trailing slash
-            itemPath = pathHelper.safeTrimTrailingSeparator(itemPath);
+            itemPath = safeTrimTrailingSeparator(itemPath);
             // Not rooted
-            if (!pathHelper.hasRoot(itemPath)) {
-                this.segments = itemPath.split(path.sep);
+            if (!hasRoot(itemPath)) {
+                this.segments = itemPath.split(external_path_.sep);
             }
             // Rooted
             else {
                 // Add all segments, while not at the root
                 let remaining = itemPath;
-                let dir = pathHelper.dirname(remaining);
+                let dir = dirname(remaining);
                 while (dir !== remaining) {
                     // Add the segment
-                    const basename = path.basename(remaining);
+                    const basename = external_path_.basename(remaining);
                     this.segments.unshift(basename);
                     // Truncate the last segment
                     remaining = dir;
-                    dir = pathHelper.dirname(remaining);
+                    dir = dirname(remaining);
                 }
                 // Remainder is the root
                 this.segments.unshift(remaining);
@@ -42593,24 +42593,24 @@ class internal_path_Path {
         // Array
         else {
             // Must not be empty
-            assert(itemPath.length > 0, `Parameter 'itemPath' must not be an empty array`);
+            external_assert_(itemPath.length > 0, `Parameter 'itemPath' must not be an empty array`);
             // Each segment
             for (let i = 0; i < itemPath.length; i++) {
                 let segment = itemPath[i];
                 // Must not be empty
-                assert(segment, `Parameter 'itemPath' must not contain any empty segments`);
+                external_assert_(segment, `Parameter 'itemPath' must not contain any empty segments`);
                 // Normalize slashes
-                segment = pathHelper.normalizeSeparators(itemPath[i]);
+                segment = internal_path_helper_normalizeSeparators(itemPath[i]);
                 // Root segment
-                if (i === 0 && pathHelper.hasRoot(segment)) {
-                    segment = pathHelper.safeTrimTrailingSeparator(segment);
-                    assert(segment === pathHelper.dirname(segment), `Parameter 'itemPath' root segment contains information for multiple segments`);
+                if (i === 0 && hasRoot(segment)) {
+                    segment = safeTrimTrailingSeparator(segment);
+                    external_assert_(segment === dirname(segment), `Parameter 'itemPath' root segment contains information for multiple segments`);
                     this.segments.push(segment);
                 }
                 // All other segments
                 else {
                     // Must not contain slash
-                    assert(!segment.includes(path.sep), `Parameter 'itemPath' contains unexpected path separators`);
+                    external_assert_(!segment.includes(external_path_.sep), `Parameter 'itemPath' contains unexpected path separators`);
                     this.segments.push(segment);
                 }
             }
@@ -42623,13 +42623,13 @@ class internal_path_Path {
         // First segment
         let result = this.segments[0];
         // All others
-        let skipSlash = result.endsWith(path.sep) || (internal_path_IS_WINDOWS && /^[A-Z]:$/i.test(result));
+        let skipSlash = result.endsWith(external_path_.sep) || (internal_path_IS_WINDOWS && /^[A-Z]:$/i.test(result));
         for (let i = 1; i < this.segments.length; i++) {
             if (skipSlash) {
                 skipSlash = false;
             }
             else {
-                result += path.sep;
+                result += external_path_.sep;
             }
             result += this.segments[i];
         }
@@ -42647,7 +42647,7 @@ class internal_path_Path {
 
 const { Minimatch } = minimatch;
 const internal_pattern_IS_WINDOWS = process.platform === 'win32';
-class internal_pattern_Pattern {
+class Pattern {
     constructor(patternOrNegate, isImplicitPattern = false, segments, homedir) {
         /**
          * Indicates whether matches should be excluded from the result set
@@ -42662,9 +42662,9 @@ class internal_pattern_Pattern {
         else {
             // Convert to pattern
             segments = segments || [];
-            assert(segments.length, `Parameter 'segments' must not empty`);
-            const root = internal_pattern_Pattern.getLiteral(segments[0]);
-            assert(root && pathHelper.hasAbsoluteRoot(root), `Parameter 'segments' first element must be a root path`);
+            external_assert_(segments.length, `Parameter 'segments' must not empty`);
+            const root = Pattern.getLiteral(segments[0]);
+            external_assert_(root && hasAbsoluteRoot(root), `Parameter 'segments' first element must be a root path`);
             pattern = new Path(segments).toString().trim();
             if (patternOrNegate) {
                 pattern = `!${pattern}`;
@@ -42676,22 +42676,21 @@ class internal_pattern_Pattern {
             pattern = pattern.substr(1).trim();
         }
         // Normalize slashes and ensures absolute root
-        pattern = internal_pattern_Pattern.fixupPattern(pattern, homedir);
+        pattern = Pattern.fixupPattern(pattern, homedir);
         // Segments
         this.segments = new Path(pattern).segments;
         // Trailing slash indicates the pattern should only match directories, not regular files
-        this.trailingSeparator = pathHelper
-            .normalizeSeparators(pattern)
-            .endsWith(path.sep);
-        pattern = pathHelper.safeTrimTrailingSeparator(pattern);
+        this.trailingSeparator = internal_path_helper_normalizeSeparators(pattern)
+            .endsWith(external_path_.sep);
+        pattern = safeTrimTrailingSeparator(pattern);
         // Search path (literal path prior to the first glob segment)
         let foundGlob = false;
         const searchSegments = this.segments
-            .map(x => internal_pattern_Pattern.getLiteral(x))
+            .map(x => Pattern.getLiteral(x))
             .filter(x => !foundGlob && !(foundGlob = x === ''));
         this.searchPath = new Path(searchSegments).toString();
         // Root RegExp (required when determining partial match)
-        this.rootRegExp = new RegExp(internal_pattern_Pattern.regExpEscape(searchSegments[0]), internal_pattern_IS_WINDOWS ? 'i' : '');
+        this.rootRegExp = new RegExp(Pattern.regExpEscape(searchSegments[0]), internal_pattern_IS_WINDOWS ? 'i' : '');
         this.isImplicitPattern = isImplicitPattern;
         // Create minimatch
         const minimatchOptions = {
@@ -42712,19 +42711,19 @@ class internal_pattern_Pattern {
         // Last segment is globstar?
         if (this.segments[this.segments.length - 1] === '**') {
             // Normalize slashes
-            itemPath = pathHelper.normalizeSeparators(itemPath);
+            itemPath = internal_path_helper_normalizeSeparators(itemPath);
             // Append a trailing slash. Otherwise Minimatch will not match the directory immediately
             // preceding the globstar. For example, given the pattern `/foo/**`, Minimatch returns
             // false for `/foo` but returns true for `/foo/`. Append a trailing slash to handle that quirk.
-            if (!itemPath.endsWith(path.sep) && this.isImplicitPattern === false) {
+            if (!itemPath.endsWith(external_path_.sep) && this.isImplicitPattern === false) {
                 // Note, this is safe because the constructor ensures the pattern has an absolute root.
                 // For example, formats like C: and C:foo on Windows are resolved to an absolute root.
-                itemPath = `${itemPath}${path.sep}`;
+                itemPath = `${itemPath}${external_path_.sep}`;
             }
         }
         else {
             // Normalize slashes and trim unnecessary trailing slash
-            itemPath = pathHelper.safeTrimTrailingSeparator(itemPath);
+            itemPath = safeTrimTrailingSeparator(itemPath);
         }
         // Match
         if (this.minimatch.match(itemPath)) {
@@ -42737,9 +42736,9 @@ class internal_pattern_Pattern {
      */
     partialMatch(itemPath) {
         // Normalize slashes and trim unnecessary trailing slash
-        itemPath = pathHelper.safeTrimTrailingSeparator(itemPath);
+        itemPath = safeTrimTrailingSeparator(itemPath);
         // matchOne does not handle root path correctly
-        if (pathHelper.dirname(itemPath) === itemPath) {
+        if (dirname(itemPath) === itemPath) {
             return this.rootRegExp.test(itemPath);
         }
         return this.minimatch.matchOne(itemPath.split(internal_pattern_IS_WINDOWS ? /\\+/ : /\/+/), this.minimatch.set[0], true);
@@ -42758,48 +42757,48 @@ class internal_pattern_Pattern {
      */
     static fixupPattern(pattern, homedir) {
         // Empty
-        assert(pattern, 'pattern cannot be empty');
+        external_assert_(pattern, 'pattern cannot be empty');
         // Must not contain `.` segment, unless first segment
         // Must not contain `..` segment
-        const literalSegments = new Path(pattern).segments.map(x => internal_pattern_Pattern.getLiteral(x));
-        assert(literalSegments.every((x, i) => (x !== '.' || i === 0) && x !== '..'), `Invalid pattern '${pattern}'. Relative pathing '.' and '..' is not allowed.`);
+        const literalSegments = new Path(pattern).segments.map(x => Pattern.getLiteral(x));
+        external_assert_(literalSegments.every((x, i) => (x !== '.' || i === 0) && x !== '..'), `Invalid pattern '${pattern}'. Relative pathing '.' and '..' is not allowed.`);
         // Must not contain globs in root, e.g. Windows UNC path \\foo\b*r
-        assert(!pathHelper.hasRoot(pattern) || literalSegments[0], `Invalid pattern '${pattern}'. Root segment must not contain globs.`);
+        external_assert_(!hasRoot(pattern) || literalSegments[0], `Invalid pattern '${pattern}'. Root segment must not contain globs.`);
         // Normalize slashes
-        pattern = pathHelper.normalizeSeparators(pattern);
+        pattern = internal_path_helper_normalizeSeparators(pattern);
         // Replace leading `.` segment
-        if (pattern === '.' || pattern.startsWith(`.${path.sep}`)) {
-            pattern = internal_pattern_Pattern.globEscape(process.cwd()) + pattern.substr(1);
+        if (pattern === '.' || pattern.startsWith(`.${external_path_.sep}`)) {
+            pattern = Pattern.globEscape(process.cwd()) + pattern.substr(1);
         }
         // Replace leading `~` segment
-        else if (pattern === '~' || pattern.startsWith(`~${path.sep}`)) {
-            homedir = homedir || os.homedir();
-            assert(homedir, 'Unable to determine HOME directory');
-            assert(pathHelper.hasAbsoluteRoot(homedir), `Expected HOME directory to be a rooted path. Actual '${homedir}'`);
-            pattern = internal_pattern_Pattern.globEscape(homedir) + pattern.substr(1);
+        else if (pattern === '~' || pattern.startsWith(`~${external_path_.sep}`)) {
+            homedir = homedir || external_os_.homedir();
+            external_assert_(homedir, 'Unable to determine HOME directory');
+            external_assert_(hasAbsoluteRoot(homedir), `Expected HOME directory to be a rooted path. Actual '${homedir}'`);
+            pattern = Pattern.globEscape(homedir) + pattern.substr(1);
         }
         // Replace relative drive root, e.g. pattern is C: or C:foo
         else if (internal_pattern_IS_WINDOWS &&
             (pattern.match(/^[A-Z]:$/i) || pattern.match(/^[A-Z]:[^\\]/i))) {
-            let root = pathHelper.ensureAbsoluteRoot('C:\\dummy-root', pattern.substr(0, 2));
+            let root = ensureAbsoluteRoot('C:\\dummy-root', pattern.substr(0, 2));
             if (pattern.length > 2 && !root.endsWith('\\')) {
                 root += '\\';
             }
-            pattern = internal_pattern_Pattern.globEscape(root) + pattern.substr(2);
+            pattern = Pattern.globEscape(root) + pattern.substr(2);
         }
         // Replace relative root, e.g. pattern is \ or \foo
         else if (internal_pattern_IS_WINDOWS && (pattern === '\\' || pattern.match(/^\\[^\\]/))) {
-            let root = pathHelper.ensureAbsoluteRoot('C:\\dummy-root', '\\');
+            let root = ensureAbsoluteRoot('C:\\dummy-root', '\\');
             if (!root.endsWith('\\')) {
                 root += '\\';
             }
-            pattern = internal_pattern_Pattern.globEscape(root) + pattern.substr(1);
+            pattern = Pattern.globEscape(root) + pattern.substr(1);
         }
         // Otherwise ensure absolute root
         else {
-            pattern = pathHelper.ensureAbsoluteRoot(internal_pattern_Pattern.globEscape(process.cwd()), pattern);
+            pattern = ensureAbsoluteRoot(Pattern.globEscape(process.cwd()), pattern);
         }
-        return pathHelper.normalizeSeparators(pattern);
+        return internal_path_helper_normalizeSeparators(pattern);
     }
     /**
      * Attempts to unescape a pattern segment to create a literal path segment.
@@ -42868,6 +42867,14 @@ class internal_pattern_Pattern {
     }
 }
 //# sourceMappingURL=internal-pattern.js.map
+;// CONCATENATED MODULE: ./node_modules/@actions/glob/lib/internal-search-state.js
+class SearchState {
+    constructor(path, level) {
+        this.path = path;
+        this.level = level;
+    }
+}
+//# sourceMappingURL=internal-search-state.js.map
 ;// CONCATENATED MODULE: ./node_modules/@actions/glob/lib/internal-globber.js
 var internal_globber_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -42907,11 +42914,11 @@ var __asyncGenerator = (undefined && undefined.__asyncGenerator) || function (th
 
 
 const internal_globber_IS_WINDOWS = process.platform === 'win32';
-class internal_globber_DefaultGlobber {
+class DefaultGlobber {
     constructor(options) {
         this.patterns = [];
         this.searchPaths = [];
-        this.options = globOptionsHelper.getOptions(options);
+        this.options = getOptions(options);
     }
     getSearchPaths() {
         // Return a copy
@@ -42942,7 +42949,7 @@ class internal_globber_DefaultGlobber {
     globGenerator() {
         return __asyncGenerator(this, arguments, function* globGenerator_1() {
             // Fill in defaults options
-            const options = globOptionsHelper.getOptions(this.options);
+            const options = getOptions(this.options);
             // Implicit descendants?
             const patterns = [];
             for (const pattern of this.patterns) {
@@ -42955,13 +42962,13 @@ class internal_globber_DefaultGlobber {
             }
             // Push the search paths
             const stack = [];
-            for (const searchPath of patternHelper.getSearchPaths(patterns)) {
-                core.debug(`Search path '${searchPath}'`);
+            for (const searchPath of getSearchPaths(patterns)) {
+                core_debug(`Search path '${searchPath}'`);
                 // Exists?
                 try {
                     // Intentionally using lstat. Detection for broken symlink
                     // will be performed later (if following symlinks).
-                    yield __await(fs.promises.lstat(searchPath));
+                    yield __await(external_fs_namespaceObject.promises.lstat(searchPath));
                 }
                 catch (err) {
                     if (err.code === 'ENOENT') {
@@ -42977,13 +42984,13 @@ class internal_globber_DefaultGlobber {
                 // Pop
                 const item = stack.pop();
                 // Match?
-                const match = patternHelper.match(patterns, item.path);
-                const partialMatch = !!match || patternHelper.partialMatch(patterns, item.path);
+                const match = internal_pattern_helper_match(patterns, item.path);
+                const partialMatch = !!match || internal_pattern_helper_partialMatch(patterns, item.path);
                 if (!match && !partialMatch) {
                     continue;
                 }
                 // Stat
-                const stats = yield __await(internal_globber_DefaultGlobber.stat(item, options, traversalChain)
+                const stats = yield __await(DefaultGlobber.stat(item, options, traversalChain)
                 // Broken symlink, or symlink cycle detected, or no longer exists
                 );
                 // Broken symlink, or symlink cycle detected, or no longer exists
@@ -42991,7 +42998,7 @@ class internal_globber_DefaultGlobber {
                     continue;
                 }
                 // Hidden file or directory?
-                if (options.excludeHiddenFiles && path.basename(item.path).match(/^\./)) {
+                if (options.excludeHiddenFiles && external_path_.basename(item.path).match(/^\./)) {
                     continue;
                 }
                 // Directory
@@ -43006,7 +43013,7 @@ class internal_globber_DefaultGlobber {
                     }
                     // Push the child items in reverse
                     const childLevel = item.level + 1;
-                    const childItems = (yield __await(fs.promises.readdir(item.path))).map(x => new SearchState(path.join(item.path, x), childLevel));
+                    const childItems = (yield __await(external_fs_namespaceObject.promises.readdir(item.path))).map(x => new SearchState(external_path_.join(item.path, x), childLevel));
                     stack.push(...childItems.reverse());
                 }
                 // File
@@ -43021,7 +43028,7 @@ class internal_globber_DefaultGlobber {
      */
     static create(patterns, options) {
         return internal_globber_awaiter(this, void 0, void 0, function* () {
-            const result = new internal_globber_DefaultGlobber(options);
+            const result = new DefaultGlobber(options);
             if (internal_globber_IS_WINDOWS) {
                 patterns = patterns.replace(/\r\n/g, '\n');
                 patterns = patterns.replace(/\r/g, '\n');
@@ -43037,7 +43044,7 @@ class internal_globber_DefaultGlobber {
                     result.patterns.push(new Pattern(line));
                 }
             }
-            result.searchPaths.push(...patternHelper.getSearchPaths(result.patterns));
+            result.searchPaths.push(...getSearchPaths(result.patterns));
             return result;
         });
     }
@@ -43050,12 +43057,12 @@ class internal_globber_DefaultGlobber {
             if (options.followSymbolicLinks) {
                 try {
                     // Use `stat` (following symlinks)
-                    stats = yield fs.promises.stat(item.path);
+                    stats = yield external_fs_namespaceObject.promises.stat(item.path);
                 }
                 catch (err) {
                     if (err.code === 'ENOENT') {
                         if (options.omitBrokenSymbolicLinks) {
-                            core.debug(`Broken symlink '${item.path}'`);
+                            core_debug(`Broken symlink '${item.path}'`);
                             return undefined;
                         }
                         throw new Error(`No information found for the path '${item.path}'. This may indicate a broken symbolic link.`);
@@ -43065,19 +43072,19 @@ class internal_globber_DefaultGlobber {
             }
             else {
                 // Use `lstat` (not following symlinks)
-                stats = yield fs.promises.lstat(item.path);
+                stats = yield external_fs_namespaceObject.promises.lstat(item.path);
             }
             // Note, isDirectory() returns false for the lstat of a symlink
             if (stats.isDirectory() && options.followSymbolicLinks) {
                 // Get the realpath
-                const realPath = yield fs.promises.realpath(item.path);
+                const realPath = yield external_fs_namespaceObject.promises.realpath(item.path);
                 // Fixup the traversal chain to match the item level
                 while (traversalChain.length >= item.level) {
                     traversalChain.pop();
                 }
                 // Test for a cycle
                 if (traversalChain.some((x) => x === realPath)) {
-                    core.debug(`Symlink cycle detected for path '${item.path}' and realpath '${realPath}'`);
+                    core_debug(`Symlink cycle detected for path '${item.path}' and realpath '${realPath}'`);
                     return undefined;
                 }
                 // Update the traversal chain
@@ -43239,18 +43246,18 @@ const DefaultRetryDelay = 5000;
 // Socket timeout in milliseconds during download.  If no traffic is received
 // over the socket during this period, the socket is destroyed and the download
 // is aborted.
-const SocketTimeout = 5000;
+const constants_SocketTimeout = 5000;
 // The default path of GNUtar on hosted Windows runners
 const GnuTarPathOnWindows = `${process.env['PROGRAMFILES']}\\Git\\usr\\bin\\tar.exe`;
 // The default path of BSDtar on hosted Windows runners
 const SystemTarPathOnWindows = `${process.env['SYSTEMDRIVE']}\\Windows\\System32\\tar.exe`;
 const TarFilename = 'cache.tar';
-const constants_ManifestFilename = 'manifest.txt';
+const ManifestFilename = 'manifest.txt';
 const CacheFileSizeLimit = 10 * Math.pow(1024, 3); // 10GiB per repository
 // Prefix the cache backend embeds in a read-denial message (v2 twirp
 // GetCacheEntryDownloadURL error or the GHES v1 `_apis/artifactcache` 403 body).
 // Shared so cache.ts and cacheHttpClient.ts match the same contract value.
-const CacheReadDeniedMessagePrefix = 'cache read denied:';
+const constants_CacheReadDeniedMessagePrefix = 'cache read denied:';
 //# sourceMappingURL=constants.js.map
 ;// CONCATENATED MODULE: ./node_modules/@actions/cache/lib/internal/cacheUtils.js
 var cacheUtils_awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -43315,7 +43322,7 @@ function resolvePaths(patterns) {
         var _d;
         const paths = [];
         const workspace = (_d = process.env['GITHUB_WORKSPACE']) !== null && _d !== void 0 ? _d : process.cwd();
-        const globber = yield glob.create(patterns.join('\n'), {
+        const globber = yield create(patterns.join('\n'), {
             implicitDescendants: false
         });
         try {
@@ -43323,10 +43330,9 @@ function resolvePaths(patterns) {
                 _c = _g.value;
                 _e = false;
                 const file = _c;
-                const relativeFile = path
-                    .relative(workspace, file)
-                    .replace(new RegExp(`\\${path.sep}`, 'g'), '/');
-                core.debug(`Matched: ${relativeFile}`);
+                const relativeFile = external_path_.relative(workspace, file)
+                    .replace(new RegExp(`\\${external_path_.sep}`, 'g'), '/');
+                core_debug(`Matched: ${relativeFile}`);
                 // Paths are made relative so the tar entries are all relative to the root of the workspace.
                 if (relativeFile === '') {
                     // path.relative returns empty string if workspace and file are equal
@@ -86066,7 +86072,7 @@ const fsCreateReadStream = external_node_fs_namespaceObject.createReadStream;
  * A BlobClient represents a URL to an Azure Storage blob; the blob may be a block blob,
  * append blob, or page blob.
  */
-class Clients_BlobClient extends StorageClient_StorageClient {
+class BlobClient extends StorageClient_StorageClient {
     /**
      * blobContext provided by protocol layer.
      */
@@ -86173,7 +86179,7 @@ class Clients_BlobClient extends StorageClient_StorageClient {
      * @returns A new BlobClient object identical to the source but with the specified snapshot timestamp
      */
     withSnapshot(snapshot) {
-        return new Clients_BlobClient(utils_common_setURLParameter(this.url, utils_constants_URLConstants.Parameters.SNAPSHOT, snapshot.length === 0 ? undefined : snapshot), this.pipeline, this.blobClientConfig);
+        return new BlobClient(utils_common_setURLParameter(this.url, utils_constants_URLConstants.Parameters.SNAPSHOT, snapshot.length === 0 ? undefined : snapshot), this.pipeline, this.blobClientConfig);
     }
     /**
      * Creates a new BlobClient object pointing to a version of this blob.
@@ -86183,7 +86189,7 @@ class Clients_BlobClient extends StorageClient_StorageClient {
      * @returns A new BlobClient object pointing to the version of this blob.
      */
     withVersion(versionId) {
-        return new Clients_BlobClient(utils_common_setURLParameter(this.url, utils_constants_URLConstants.Parameters.VERSIONID, versionId.length === 0 ? undefined : versionId), this.pipeline, this.blobClientConfig);
+        return new BlobClient(utils_common_setURLParameter(this.url, utils_constants_URLConstants.Parameters.VERSIONID, versionId.length === 0 ? undefined : versionId), this.pipeline, this.blobClientConfig);
     }
     /**
      * Creates a AppendBlobClient object.
@@ -86197,7 +86203,7 @@ class Clients_BlobClient extends StorageClient_StorageClient {
      *
      */
     getBlockBlobClient() {
-        return new BlockBlobClient(this.url, this.pipeline, this.blobClientConfig);
+        return new Clients_BlockBlobClient(this.url, this.pipeline, this.blobClientConfig);
     }
     /**
      * Creates a PageBlobClient object.
@@ -87220,7 +87226,7 @@ class Clients_BlobClient extends StorageClient_StorageClient {
 /**
  * AppendBlobClient defines a set of operations applicable to append blobs.
  */
-class AppendBlobClient extends Clients_BlobClient {
+class AppendBlobClient extends BlobClient {
     /**
      * appendBlobsContext provided by protocol layer.
      */
@@ -87522,7 +87528,7 @@ class AppendBlobClient extends Clients_BlobClient {
 /**
  * BlockBlobClient defines a set of operations applicable to block blobs.
  */
-class BlockBlobClient extends Clients_BlobClient {
+class Clients_BlockBlobClient extends BlobClient {
     /**
      * blobContext provided by protocol layer.
      *
@@ -87616,7 +87622,7 @@ class BlockBlobClient extends Clients_BlobClient {
      * @returns A new BlockBlobClient object identical to the source but with the specified snapshot timestamp.
      */
     withSnapshot(snapshot) {
-        return new BlockBlobClient(utils_common_setURLParameter(this.url, utils_constants_URLConstants.Parameters.SNAPSHOT, snapshot.length === 0 ? undefined : snapshot), this.pipeline, this.blobClientConfig);
+        return new Clients_BlockBlobClient(utils_common_setURLParameter(this.url, utils_constants_URLConstants.Parameters.SNAPSHOT, snapshot.length === 0 ? undefined : snapshot), this.pipeline, this.blobClientConfig);
     }
     /**
      * ONLY AVAILABLE IN NODE.JS RUNTIME.
@@ -88187,7 +88193,7 @@ class BlockBlobClient extends Clients_BlobClient {
 /**
  * PageBlobClient defines a set of operations applicable to page blobs.
  */
-class PageBlobClient extends Clients_BlobClient {
+class PageBlobClient extends BlobClient {
     /**
      * pageBlobsContext provided by protocol layer.
      */
@@ -89255,7 +89261,7 @@ class BlobBatch {
             url = urlOrBlobClient;
             credential = credentialOrOptions;
         }
-        else if (urlOrBlobClient instanceof Clients_BlobClient) {
+        else if (urlOrBlobClient instanceof BlobClient) {
             // Second overload
             url = urlOrBlobClient.url;
             credential = urlOrBlobClient.credential;
@@ -89273,7 +89279,7 @@ class BlobBatch {
                 url: url,
                 credential: credential,
             }, async () => {
-                await new Clients_BlobClient(url, this.batchRequest.createPipeline(credential)).delete(updatedOptions);
+                await new BlobClient(url, this.batchRequest.createPipeline(credential)).delete(updatedOptions);
             });
         });
     }
@@ -89290,7 +89296,7 @@ class BlobBatch {
             credential = credentialOrTier;
             tier = tierOrOptions;
         }
-        else if (urlOrBlobClient instanceof Clients_BlobClient) {
+        else if (urlOrBlobClient instanceof BlobClient) {
             // Second overload
             url = urlOrBlobClient.url;
             credential = urlOrBlobClient.credential;
@@ -89309,7 +89315,7 @@ class BlobBatch {
                 url: url,
                 credential: credential,
             }, async () => {
-                await new Clients_BlobClient(url, this.batchRequest.createPipeline(credential)).setAccessTier(tier, updatedOptions);
+                await new BlobClient(url, this.batchRequest.createPipeline(credential)).setAccessTier(tier, updatedOptions);
             });
         });
     }
@@ -89815,7 +89821,7 @@ class ContainerClient extends StorageClient_StorageClient {
      * @returns A new BlobClient object for the given blob name.
      */
     getBlobClient(blobName) {
-        return new Clients_BlobClient(utils_common_appendToURLPath(this.url, utils_common_EscapePath(blobName)), this.pipeline, this.blobClientConfig);
+        return new BlobClient(utils_common_appendToURLPath(this.url, utils_common_EscapePath(blobName)), this.pipeline, this.blobClientConfig);
     }
     /**
      * Creates an {@link AppendBlobClient}
@@ -89853,7 +89859,7 @@ class ContainerClient extends StorageClient_StorageClient {
      * ```
      */
     getBlockBlobClient(blobName) {
-        return new BlockBlobClient(utils_common_appendToURLPath(this.url, utils_common_EscapePath(blobName)), this.pipeline, this.blobClientConfig);
+        return new Clients_BlockBlobClient(utils_common_appendToURLPath(this.url, utils_common_EscapePath(blobName)), this.pipeline, this.blobClientConfig);
     }
     /**
      * Creates a {@link PageBlobClient}
@@ -92160,7 +92166,7 @@ class FilesNotFoundError extends Error {
         this.name = 'FilesNotFoundError';
     }
 }
-class errors_InvalidResponseError extends Error {
+class InvalidResponseError extends Error {
     constructor(message) {
         super(message);
         this.name = 'InvalidResponseError';
@@ -92273,7 +92279,7 @@ class UploadProgress {
         const uploadSpeed = (transferredBytes /
             (1024 * 1024) /
             (elapsedTime / 1000)).toFixed(1);
-        core.info(`Sent ${transferredBytes} of ${this.contentLength} (${percentage}%), ${uploadSpeed} MBs/sec`);
+        info(`Sent ${transferredBytes} of ${this.contentLength} (${percentage}%), ${uploadSpeed} MBs/sec`);
         if (this.isDone()) {
             this.displayedComplete = true;
         }
@@ -92323,7 +92329,7 @@ class UploadProgress {
  * @param options
  * @returns
  */
-function uploadUtils_uploadCacheArchiveSDK(signedUploadURL, archivePath, options) {
+function uploadCacheArchiveSDK(signedUploadURL, archivePath, options) {
     return uploadUtils_awaiter(this, void 0, void 0, function* () {
         var _a;
         const blobClient = new BlobClient(signedUploadURL);
@@ -92338,7 +92344,7 @@ function uploadUtils_uploadCacheArchiveSDK(signedUploadURL, archivePath, options
         };
         try {
             uploadProgress.startDisplayTimer();
-            core.debug(`BlobClient: ${blobClient.name}:${blobClient.accountName}:${blobClient.containerName}`);
+            core_debug(`BlobClient: ${blobClient.name}:${blobClient.accountName}:${blobClient.containerName}`);
             const response = yield blockBlobClient.uploadFile(archivePath, uploadOptions);
             // TODO: better management of non-retryable errors
             if (response._response.status >= 400) {
@@ -92347,7 +92353,7 @@ function uploadUtils_uploadCacheArchiveSDK(signedUploadURL, archivePath, options
             return response;
         }
         catch (error) {
-            core.warning(`uploadCacheArchiveSDK: internal error uploading cache archive: ${error.message}`);
+            warning(`uploadCacheArchiveSDK: internal error uploading cache archive: ${error.message}`);
             throw error;
         }
         finally {
@@ -92490,7 +92496,7 @@ var downloadUtils_awaiter = (undefined && undefined.__awaiter) || function (this
  */
 function pipeResponseToStream(response, output) {
     return downloadUtils_awaiter(this, void 0, void 0, function* () {
-        const pipeline = external_util_.promisify(external_stream_namespaceObject.pipeline);
+        const pipeline = util.promisify(stream.pipeline);
         yield pipeline(response.message, output);
     });
 }
@@ -92518,7 +92524,7 @@ class DownloadProgress {
         this.segmentIndex = this.segmentIndex + 1;
         this.segmentSize = segmentSize;
         this.receivedBytes = 0;
-        core_debug(`Downloading segment at offset ${this.segmentOffset} with length ${this.segmentSize}...`);
+        core.debug(`Downloading segment at offset ${this.segmentOffset} with length ${this.segmentSize}...`);
     }
     /**
      * Sets the number of bytes received for the current segment.
@@ -92554,7 +92560,7 @@ class DownloadProgress {
         const downloadSpeed = (transferredBytes /
             (1024 * 1024) /
             (elapsedTime / 1000)).toFixed(1);
-        info(`Received ${transferredBytes} of ${this.contentLength} (${percentage}%), ${downloadSpeed} MBs/sec`);
+        core.info(`Received ${transferredBytes} of ${this.contentLength} (${percentage}%), ${downloadSpeed} MBs/sec`);
         if (this.isDone()) {
             this.displayedComplete = true;
         }
@@ -92600,28 +92606,28 @@ class DownloadProgress {
  * @param archiveLocation the URL for the cache
  * @param archivePath the local path where the cache is saved
  */
-function downloadCacheHttpClient(archiveLocation, archivePath) {
+function downloadUtils_downloadCacheHttpClient(archiveLocation, archivePath) {
     return downloadUtils_awaiter(this, void 0, void 0, function* () {
-        const writeStream = external_fs_namespaceObject.createWriteStream(archivePath);
-        const httpClient = new lib_HttpClient('actions/cache');
-        const downloadResponse = yield requestUtils_retryHttpClientResponse('downloadCache', () => downloadUtils_awaiter(this, void 0, void 0, function* () { return httpClient.get(archiveLocation); }));
+        const writeStream = fs.createWriteStream(archivePath);
+        const httpClient = new HttpClient('actions/cache');
+        const downloadResponse = yield retryHttpClientResponse('downloadCache', () => downloadUtils_awaiter(this, void 0, void 0, function* () { return httpClient.get(archiveLocation); }));
         // Abort download if no traffic received over the socket.
         downloadResponse.message.socket.setTimeout(SocketTimeout, () => {
             downloadResponse.message.destroy();
-            core_debug(`Aborting download, socket timed out after ${SocketTimeout} ms`);
+            core.debug(`Aborting download, socket timed out after ${SocketTimeout} ms`);
         });
         yield pipeResponseToStream(downloadResponse, writeStream);
         // Validate download size.
         const contentLengthHeader = downloadResponse.message.headers['content-length'];
         if (contentLengthHeader) {
             const expectedLength = parseInt(contentLengthHeader);
-            const actualLength = getArchiveFileSizeInBytes(archivePath);
+            const actualLength = utils.getArchiveFileSizeInBytes(archivePath);
             if (actualLength !== expectedLength) {
                 throw new Error(`Incomplete download. Expected file size: ${expectedLength}, actual file size: ${actualLength}`);
             }
         }
         else {
-            core_debug('Unable to validate download, no Content-Length header');
+            core.debug('Unable to validate download, no Content-Length header');
         }
     });
 }
@@ -92631,16 +92637,16 @@ function downloadCacheHttpClient(archiveLocation, archivePath) {
  * @param archiveLocation the URL for the cache
  * @param archivePath the local path where the cache is saved
  */
-function downloadCacheHttpClientConcurrent(archiveLocation, archivePath, options) {
+function downloadUtils_downloadCacheHttpClientConcurrent(archiveLocation, archivePath, options) {
     return downloadUtils_awaiter(this, void 0, void 0, function* () {
         var _a;
-        const archiveDescriptor = yield external_fs_namespaceObject.promises.open(archivePath, 'w');
-        const httpClient = new lib_HttpClient('actions/cache', undefined, {
+        const archiveDescriptor = yield fs.promises.open(archivePath, 'w');
+        const httpClient = new HttpClient('actions/cache', undefined, {
             socketTimeout: options.timeoutInMs,
             keepAlive: true
         });
         try {
-            const res = yield requestUtils_retryHttpClientResponse('downloadCacheMetadata', () => downloadUtils_awaiter(this, void 0, void 0, function* () { return yield httpClient.request('HEAD', archiveLocation, null, {}); }));
+            const res = yield retryHttpClientResponse('downloadCacheMetadata', () => downloadUtils_awaiter(this, void 0, void 0, function* () { return yield httpClient.request('HEAD', archiveLocation, null, {}); }));
             const lengthHeader = res.message.headers['content-length'];
             if (lengthHeader === undefined || lengthHeader === null) {
                 throw new Error('Content-Length not found on blob response');
@@ -92718,7 +92724,7 @@ function downloadSegmentRetry(httpClient, archiveLocation, offset, count) {
 }
 function downloadSegment(httpClient, archiveLocation, offset, count) {
     return downloadUtils_awaiter(this, void 0, void 0, function* () {
-        const partRes = yield requestUtils_retryHttpClientResponse('downloadCachePart', () => downloadUtils_awaiter(this, void 0, void 0, function* () {
+        const partRes = yield retryHttpClientResponse('downloadCachePart', () => downloadUtils_awaiter(this, void 0, void 0, function* () {
             return yield httpClient.get(archiveLocation, {
                 Range: `bytes=${offset}-${offset + count - 1}`
             });
@@ -92741,7 +92747,7 @@ function downloadSegment(httpClient, archiveLocation, offset, count) {
  * @param archivePath the local path where the cache is saved
  * @param options the download options with the defaults set
  */
-function downloadCacheStorageSDK(archiveLocation, archivePath, options) {
+function downloadUtils_downloadCacheStorageSDK(archiveLocation, archivePath, options) {
     return downloadUtils_awaiter(this, void 0, void 0, function* () {
         var _a;
         const client = new BlockBlobClient(archiveLocation, undefined, {
@@ -92756,8 +92762,8 @@ function downloadCacheStorageSDK(archiveLocation, archivePath, options) {
         if (contentLength < 0) {
             // We should never hit this condition, but just in case fall back to downloading the
             // file as one large stream
-            core_debug('Unable to determine content length, downloading file with http-client...');
-            yield downloadCacheHttpClient(archiveLocation, archivePath);
+            core.debug('Unable to determine content length, downloading file with http-client...');
+            yield downloadUtils_downloadCacheHttpClient(archiveLocation, archivePath);
         }
         else {
             // Use downloadToBuffer for faster downloads, since internally it splits the
@@ -92767,9 +92773,9 @@ function downloadCacheStorageSDK(archiveLocation, archivePath, options) {
             // on 64-bit systems), split the download into multiple segments
             // ~2 GB = 2147483647, beyond this, we start getting out of range error. So, capping it accordingly.
             // Updated segment size to 128MB = 134217728 bytes, to complete a segment faster and fail fast
-            const maxSegmentSize = Math.min(134217728, external_buffer_namespaceObject.constants.MAX_LENGTH);
+            const maxSegmentSize = Math.min(134217728, buffer.constants.MAX_LENGTH);
             const downloadProgress = new DownloadProgress(contentLength);
-            const fd = external_fs_namespaceObject.openSync(archivePath, 'w');
+            const fd = fs.openSync(archivePath, 'w');
             try {
                 downloadProgress.startDisplayTimer();
                 const controller = new AbortController();
@@ -92788,13 +92794,13 @@ function downloadCacheStorageSDK(archiveLocation, archivePath, options) {
                         throw new Error('Aborting cache download as the download time exceeded the timeout.');
                     }
                     else if (Buffer.isBuffer(result)) {
-                        external_fs_namespaceObject.writeFileSync(fd, result);
+                        fs.writeFileSync(fd, result);
                     }
                 }
             }
             finally {
                 downloadProgress.stopDisplayTimer();
-                external_fs_namespaceObject.closeSync(fd);
+                fs.closeSync(fd);
             }
         }
     });
@@ -92817,7 +92823,7 @@ const promiseWithTimeout = (timeoutMs, promise) => downloadUtils_awaiter(void 0,
  *
  * @param copy the original upload options
  */
-function options_getUploadOptions(copy) {
+function getUploadOptions(copy) {
     // Defaults if not overriden
     const result = {
         useAzureSdk: false,
@@ -92846,9 +92852,9 @@ function options_getUploadOptions(copy) {
     result.uploadChunkSize = !isNaN(Number(process.env['CACHE_UPLOAD_CHUNK_SIZE']))
         ? Math.min(128 * 1024 * 1024, Number(process.env['CACHE_UPLOAD_CHUNK_SIZE']) * 1024 * 1024)
         : result.uploadChunkSize;
-    core.debug(`Use Azure SDK: ${result.useAzureSdk}`);
-    core.debug(`Upload concurrency: ${result.uploadConcurrency}`);
-    core.debug(`Upload chunk size: ${result.uploadChunkSize}`);
+    core_debug(`Use Azure SDK: ${result.useAzureSdk}`);
+    core_debug(`Upload concurrency: ${result.uploadConcurrency}`);
+    core_debug(`Upload chunk size: ${result.uploadChunkSize}`);
     return result;
 }
 /**
@@ -92856,7 +92862,7 @@ function options_getUploadOptions(copy) {
  *
  * @param copy the original download options
  */
-function getDownloadOptions(copy) {
+function options_getDownloadOptions(copy) {
     const result = {
         useAzureSdk: false,
         concurrentBlobDownloads: true,
@@ -92891,17 +92897,17 @@ function getDownloadOptions(copy) {
         isFinite(Number(segmentDownloadTimeoutMins))) {
         result.segmentTimeoutInMs = Number(segmentDownloadTimeoutMins) * 60 * 1000;
     }
-    core_debug(`Use Azure SDK: ${result.useAzureSdk}`);
-    core_debug(`Download concurrency: ${result.downloadConcurrency}`);
-    core_debug(`Request timeout (ms): ${result.timeoutInMs}`);
-    core_debug(`Cache segment download timeout mins env var: ${process.env['SEGMENT_DOWNLOAD_TIMEOUT_MINS']}`);
-    core_debug(`Segment download timeout (ms): ${result.segmentTimeoutInMs}`);
-    core_debug(`Lookup only: ${result.lookupOnly}`);
+    core.debug(`Use Azure SDK: ${result.useAzureSdk}`);
+    core.debug(`Download concurrency: ${result.downloadConcurrency}`);
+    core.debug(`Request timeout (ms): ${result.timeoutInMs}`);
+    core.debug(`Cache segment download timeout mins env var: ${process.env['SEGMENT_DOWNLOAD_TIMEOUT_MINS']}`);
+    core.debug(`Segment download timeout (ms): ${result.segmentTimeoutInMs}`);
+    core.debug(`Lookup only: ${result.lookupOnly}`);
     return result;
 }
 //# sourceMappingURL=options.js.map
 ;// CONCATENATED MODULE: ./node_modules/@actions/cache/lib/internal/config.js
-function config_isGhes() {
+function isGhes() {
     const ghUrl = new URL(process.env['GITHUB_SERVER_URL'] || 'https://github.com');
     const hostname = ghUrl.hostname.trimEnd().toUpperCase();
     const isGitHubHost = hostname === 'GITHUB.COM';
@@ -92912,7 +92918,7 @@ function config_isGhes() {
 function config_getCacheServiceVersion() {
     // Cache service v2 is not supported on GHES. We will default to
     // cache service v1 even if the feature flag was enabled by user.
-    if (config_isGhes())
+    if (isGhes())
         return 'v1';
     return process.env['ACTIONS_CACHE_SERVICE_V2'] ? 'v2' : 'v1';
 }
@@ -92924,12 +92930,12 @@ function config_getCacheMode() {
     return (process.env['ACTIONS_CACHE_MODE'] || '').trim().toLowerCase();
 }
 // Unset or unrecognized modes are permissive so behavior matches today.
-function isCacheReadable(mode) {
+function config_isCacheReadable(mode) {
     if (!KNOWN_CACHE_MODES.includes(mode))
         return true;
     return mode === 'read' || mode === 'write';
 }
-function config_isCacheWritable(mode) {
+function isCacheWritable(mode) {
     if (!KNOWN_CACHE_MODES.includes(mode))
         return true;
     return mode === 'write' || mode === 'write-only';
@@ -93013,18 +93019,18 @@ function getCacheEntry(keys, paths, options) {
     return cacheHttpClient_awaiter(this, void 0, void 0, function* () {
         var _a;
         const httpClient = createHttpClient();
-        const version = getCacheVersion(paths, options === null || options === void 0 ? void 0 : options.compressionMethod, options === null || options === void 0 ? void 0 : options.enableCrossOsArchive);
+        const version = utils.getCacheVersion(paths, options === null || options === void 0 ? void 0 : options.compressionMethod, options === null || options === void 0 ? void 0 : options.enableCrossOsArchive);
         const resource = `cache?keys=${encodeURIComponent(keys.join(','))}&version=${version}`;
-        const response = yield requestUtils_retryTypedResponse('getCacheEntry', () => cacheHttpClient_awaiter(this, void 0, void 0, function* () { return httpClient.getJson(getCacheApiUrl(resource)); }));
+        const response = yield retryTypedResponse('getCacheEntry', () => cacheHttpClient_awaiter(this, void 0, void 0, function* () { return httpClient.getJson(getCacheApiUrl(resource)); }));
         // Cache not found
         if (response.statusCode === 204) {
             // List cache for primary key only if cache miss occurs
-            if (isDebug()) {
+            if (core.isDebug()) {
                 yield printCachesListForDiagnostics(keys[0], httpClient, version);
             }
             return null;
         }
-        if (!requestUtils_isSuccessStatusCode(response.statusCode)) {
+        if (!isSuccessStatusCode(response.statusCode)) {
             // Only surface the receiver's body for a `cache read denied:` policy denial
             // so callers can dispatch on it; keep the generic message otherwise.
             const errorMessage = (_a = response.error) === null || _a === void 0 ? void 0 : _a.message;
@@ -93039,23 +93045,23 @@ function getCacheEntry(keys, paths, options) {
             // Cache achiveLocation not found. This should never happen, and hence bail out.
             throw new Error('Cache not found.');
         }
-        core_setSecret(cacheDownloadUrl);
-        core_debug(`Cache Result:`);
-        core_debug(JSON.stringify(cacheResult));
+        core.setSecret(cacheDownloadUrl);
+        core.debug(`Cache Result:`);
+        core.debug(JSON.stringify(cacheResult));
         return cacheResult;
     });
 }
 function printCachesListForDiagnostics(key, httpClient, version) {
     return cacheHttpClient_awaiter(this, void 0, void 0, function* () {
         const resource = `caches?key=${encodeURIComponent(key)}`;
-        const response = yield requestUtils_retryTypedResponse('listCache', () => cacheHttpClient_awaiter(this, void 0, void 0, function* () { return httpClient.getJson(getCacheApiUrl(resource)); }));
+        const response = yield retryTypedResponse('listCache', () => cacheHttpClient_awaiter(this, void 0, void 0, function* () { return httpClient.getJson(getCacheApiUrl(resource)); }));
         if (response.statusCode === 200) {
             const cacheListResult = response.result;
             const totalCount = cacheListResult === null || cacheListResult === void 0 ? void 0 : cacheListResult.totalCount;
             if (totalCount && totalCount > 0) {
-                core_debug(`No matching cache found for cache key '${key}', version '${version} and scope ${process.env['GITHUB_REF']}. There exist one or more cache(s) with similar key but they have different version or scope. See more info on cache matching here: https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#matching-a-cache-key \nOther caches with similar key:`);
+                core.debug(`No matching cache found for cache key '${key}', version '${version} and scope ${process.env['GITHUB_REF']}. There exist one or more cache(s) with similar key but they have different version or scope. See more info on cache matching here: https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#matching-a-cache-key \nOther caches with similar key:`);
                 for (const cacheEntry of (cacheListResult === null || cacheListResult === void 0 ? void 0 : cacheListResult.artifactCaches) || []) {
-                    core_debug(`Cache Key: ${cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.cacheKey}, Cache Version: ${cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.cacheVersion}, Cache Scope: ${cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.scope}, Cache Created: ${cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.creationTime}`);
+                    core.debug(`Cache Key: ${cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.cacheKey}, Cache Version: ${cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.cacheVersion}, Cache Scope: ${cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.scope}, Cache Created: ${cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.creationTime}`);
                 }
             }
         }
@@ -93063,7 +93069,7 @@ function printCachesListForDiagnostics(key, httpClient, version) {
 }
 function downloadCache(archiveLocation, archivePath, options) {
     return cacheHttpClient_awaiter(this, void 0, void 0, function* () {
-        const archiveUrl = new external_url_.URL(archiveLocation);
+        const archiveUrl = new URL(archiveLocation);
         const downloadOptions = getDownloadOptions(options);
         if (archiveUrl.hostname.endsWith('.blob.core.windows.net')) {
             if (downloadOptions.useAzureSdk) {
@@ -93088,13 +93094,13 @@ function downloadCache(archiveLocation, archivePath, options) {
 function reserveCache(key, paths, options) {
     return cacheHttpClient_awaiter(this, void 0, void 0, function* () {
         const httpClient = createHttpClient();
-        const version = utils.getCacheVersion(paths, options === null || options === void 0 ? void 0 : options.compressionMethod, options === null || options === void 0 ? void 0 : options.enableCrossOsArchive);
+        const version = getCacheVersion(paths, options === null || options === void 0 ? void 0 : options.compressionMethod, options === null || options === void 0 ? void 0 : options.enableCrossOsArchive);
         const reserveCacheRequest = {
             key,
             version,
             cacheSize: options === null || options === void 0 ? void 0 : options.cacheSize
         };
-        const response = yield retryTypedResponse('reserveCache', () => cacheHttpClient_awaiter(this, void 0, void 0, function* () {
+        const response = yield requestUtils_retryTypedResponse('reserveCache', () => cacheHttpClient_awaiter(this, void 0, void 0, function* () {
             return httpClient.postJson(getCacheApiUrl('caches'), reserveCacheRequest);
         }));
         return response;
@@ -93110,15 +93116,15 @@ function getContentRange(start, end) {
 }
 function uploadChunk(httpClient, resourceUrl, openStream, start, end) {
     return cacheHttpClient_awaiter(this, void 0, void 0, function* () {
-        core.debug(`Uploading chunk of size ${end - start + 1} bytes at offset ${start} with content range: ${getContentRange(start, end)}`);
+        core_debug(`Uploading chunk of size ${end - start + 1} bytes at offset ${start} with content range: ${getContentRange(start, end)}`);
         const additionalHeaders = {
             'Content-Type': 'application/octet-stream',
             'Content-Range': getContentRange(start, end)
         };
-        const uploadChunkResponse = yield retryHttpClientResponse(`uploadChunk (start: ${start}, end: ${end})`, () => cacheHttpClient_awaiter(this, void 0, void 0, function* () {
+        const uploadChunkResponse = yield requestUtils_retryHttpClientResponse(`uploadChunk (start: ${start}, end: ${end})`, () => cacheHttpClient_awaiter(this, void 0, void 0, function* () {
             return httpClient.sendStream('PATCH', resourceUrl, openStream(), additionalHeaders);
         }));
-        if (!isSuccessStatusCode(uploadChunkResponse.message.statusCode)) {
+        if (!requestUtils_isSuccessStatusCode(uploadChunkResponse.message.statusCode)) {
             throw new Error(`Cache service responded with ${uploadChunkResponse.message.statusCode} during upload chunk.`);
         }
     });
@@ -93126,14 +93132,14 @@ function uploadChunk(httpClient, resourceUrl, openStream, start, end) {
 function uploadFile(httpClient, cacheId, archivePath, options) {
     return cacheHttpClient_awaiter(this, void 0, void 0, function* () {
         // Upload Chunks
-        const fileSize = utils.getArchiveFileSizeInBytes(archivePath);
+        const fileSize = getArchiveFileSizeInBytes(archivePath);
         const resourceUrl = getCacheApiUrl(`caches/${cacheId.toString()}`);
-        const fd = fs.openSync(archivePath, 'r');
+        const fd = external_fs_namespaceObject.openSync(archivePath, 'r');
         const uploadOptions = getUploadOptions(options);
-        const concurrency = utils.assertDefined('uploadConcurrency', uploadOptions.uploadConcurrency);
-        const maxChunkSize = utils.assertDefined('uploadChunkSize', uploadOptions.uploadChunkSize);
+        const concurrency = assertDefined('uploadConcurrency', uploadOptions.uploadConcurrency);
+        const maxChunkSize = assertDefined('uploadChunkSize', uploadOptions.uploadChunkSize);
         const parallelUploads = [...new Array(concurrency).keys()];
-        core.debug('Awaiting all uploads');
+        core_debug('Awaiting all uploads');
         let offset = 0;
         try {
             yield Promise.all(parallelUploads.map(() => cacheHttpClient_awaiter(this, void 0, void 0, function* () {
@@ -93142,8 +93148,7 @@ function uploadFile(httpClient, cacheId, archivePath, options) {
                     const start = offset;
                     const end = offset + chunkSize - 1;
                     offset += maxChunkSize;
-                    yield uploadChunk(httpClient, resourceUrl, () => fs
-                        .createReadStream(archivePath, {
+                    yield uploadChunk(httpClient, resourceUrl, () => external_fs_namespaceObject.createReadStream(archivePath, {
                         fd,
                         start,
                         end,
@@ -93156,7 +93161,7 @@ function uploadFile(httpClient, cacheId, archivePath, options) {
             })));
         }
         finally {
-            fs.closeSync(fd);
+            external_fs_namespaceObject.closeSync(fd);
         }
         return;
     });
@@ -93164,7 +93169,7 @@ function uploadFile(httpClient, cacheId, archivePath, options) {
 function commitCache(httpClient, cacheId, filesize) {
     return cacheHttpClient_awaiter(this, void 0, void 0, function* () {
         const commitCacheRequest = { size: filesize };
-        return yield retryTypedResponse('commitCache', () => cacheHttpClient_awaiter(this, void 0, void 0, function* () {
+        return yield requestUtils_retryTypedResponse('commitCache', () => cacheHttpClient_awaiter(this, void 0, void 0, function* () {
             return httpClient.postJson(getCacheApiUrl(`caches/${cacheId.toString()}`), commitCacheRequest);
         }));
     });
@@ -93181,17 +93186,17 @@ function saveCache(cacheId, archivePath, signedUploadURL, options) {
         }
         else {
             const httpClient = createHttpClient();
-            core.debug('Upload cache');
+            core_debug('Upload cache');
             yield uploadFile(httpClient, cacheId, archivePath, options);
             // Commit Cache
-            core.debug('Commiting cache');
-            const cacheSize = utils.getArchiveFileSizeInBytes(archivePath);
-            core.info(`Cache Size: ~${Math.round(cacheSize / (1024 * 1024))} MB (${cacheSize} B)`);
+            core_debug('Commiting cache');
+            const cacheSize = getArchiveFileSizeInBytes(archivePath);
+            info(`Cache Size: ~${Math.round(cacheSize / (1024 * 1024))} MB (${cacheSize} B)`);
             const commitCacheResponse = yield commitCache(httpClient, cacheId, cacheSize);
-            if (!isSuccessStatusCode(commitCacheResponse.statusCode)) {
+            if (!requestUtils_isSuccessStatusCode(commitCacheResponse.statusCode)) {
                 throw new Error(`Cache service responded with ${commitCacheResponse.statusCode} during commit cache.`);
             }
-            core.info('Cache saved successfully');
+            info('Cache saved successfully');
         }
     });
 }
@@ -94104,7 +94109,7 @@ function getTarArgs(tarPath_1, compressionMethod_1, type_1) {
                     ? tarFile
                     : cacheFileName.replace(new RegExp(`\\${external_path_.sep}`, 'g'), '/'), '--exclude', BSD_TAR_ZSTD
                     ? tarFile
-                    : cacheFileName.replace(new RegExp(`\\${external_path_.sep}`, 'g'), '/'), '-P', '-C', workingDirectory.replace(new RegExp(`\\${external_path_.sep}`, 'g'), '/'), '--files-from', constants_ManifestFilename);
+                    : cacheFileName.replace(new RegExp(`\\${external_path_.sep}`, 'g'), '/'), '-P', '-C', workingDirectory.replace(new RegExp(`\\${external_path_.sep}`, 'g'), '/'), '--files-from', ManifestFilename);
                 break;
             case 'extract':
                 args.push('-xf', BSD_TAR_ZSTD
@@ -94255,20 +94260,20 @@ function tar_listTar(archivePath, compressionMethod) {
     });
 }
 // Extract a tar
-function extractTar(archivePath, compressionMethod) {
+function tar_extractTar(archivePath, compressionMethod) {
     return tar_awaiter(this, void 0, void 0, function* () {
         // Create directory to extract tar into
         const workingDirectory = getWorkingDirectory();
-        yield mkdirP(workingDirectory);
+        yield io.mkdirP(workingDirectory);
         const commands = yield getCommands(compressionMethod, 'extract', archivePath);
         yield execCommands(commands);
     });
 }
 // Create a tar
-function tar_createTar(archiveFolder, sourceDirectories, compressionMethod) {
+function createTar(archiveFolder, sourceDirectories, compressionMethod) {
     return tar_awaiter(this, void 0, void 0, function* () {
         // Write source directories to manifest.txt to avoid command length limits
-        writeFileSync(path.join(archiveFolder, ManifestFilename), sourceDirectories.join('\n'));
+        (0,external_fs_namespaceObject.writeFileSync)(external_path_.join(archiveFolder, ManifestFilename), sourceDirectories.join('\n'));
         const commands = yield getCommands(compressionMethod, 'create');
         yield execCommands(commands, archiveFolder);
     });
@@ -94339,7 +94344,7 @@ class CacheWriteDeniedError extends ReserveCacheError {
 }
 // Re-exported from constants so consumers keep referencing it here; the shared
 // value also drives detection in cacheHttpClient without duplicating the string.
-const CACHE_READ_DENIED_PREFIX = CacheReadDeniedMessagePrefix;
+const CACHE_READ_DENIED_PREFIX = (/* unused pure expression or super */ null && (CacheReadDeniedMessagePrefix));
 // Raised when the cache backend denies a download URL because the run's token
 // has no readable cache scopes. Caching is best-effort, so restoreCache logs a
 // warning and reports a cache miss rather than rethrowing this.
@@ -94401,13 +94406,13 @@ function isFeatureAvailable() {
  */
 function restoreCache(paths_1, primaryKey_1, restoreKeys_1, options_1) {
     return cache_awaiter(this, arguments, void 0, function* (paths, primaryKey, restoreKeys, options, enableCrossOsArchive = false) {
-        const cacheServiceVersion = config_getCacheServiceVersion();
-        core_debug(`Cache service version: ${cacheServiceVersion}`);
+        const cacheServiceVersion = getCacheServiceVersion();
+        core.debug(`Cache service version: ${cacheServiceVersion}`);
         checkPaths(paths);
-        const cacheMode = config_getCacheMode();
+        const cacheMode = getCacheMode();
         if (!isCacheReadable(cacheMode)) {
-            info(`Cache restore skipped: the effective cache-mode '${cacheMode}' does not permit reads.`);
-            core_debug(`Skipped restore for paths [${paths.join(', ')}] with primary key '${primaryKey}'.`);
+            core.info(`Cache restore skipped: the effective cache-mode '${cacheMode}' does not permit reads.`);
+            core.debug(`Skipped restore for paths [${paths.join(', ')}] with primary key '${primaryKey}'.`);
             return undefined;
         }
         switch (cacheServiceVersion) {
@@ -94434,21 +94439,21 @@ function restoreCacheV1(paths_1, primaryKey_1, restoreKeys_1, options_1) {
         var _a;
         restoreKeys = restoreKeys || [];
         const keys = [primaryKey, ...restoreKeys];
-        core_debug('Resolved Keys:');
-        core_debug(JSON.stringify(keys));
+        core.debug('Resolved Keys:');
+        core.debug(JSON.stringify(keys));
         if (keys.length > 10) {
             throw new ValidationError(`Key Validation Error: Keys are limited to a maximum of 10.`);
         }
         for (const key of keys) {
             checkKey(key);
         }
-        const compressionMethod = yield getCompressionMethod();
+        const compressionMethod = yield utils.getCompressionMethod();
         let archivePath = '';
         try {
             // path are needed to compute version
             let cacheEntry;
             try {
-                cacheEntry = yield getCacheEntry(keys, paths, {
+                cacheEntry = yield cacheHttpClient.getCacheEntry(keys, paths, {
                     compressionMethod,
                     enableCrossOsArchive
                 });
@@ -94471,20 +94476,20 @@ function restoreCacheV1(paths_1, primaryKey_1, restoreKeys_1, options_1) {
                 return undefined;
             }
             if (options === null || options === void 0 ? void 0 : options.lookupOnly) {
-                info('Lookup only - skipping download');
+                core.info('Lookup only - skipping download');
                 return cacheEntry.cacheKey;
             }
-            archivePath = external_path_.join(yield createTempDirectory(), getCacheFileName(compressionMethod));
-            core_debug(`Archive Path: ${archivePath}`);
+            archivePath = path.join(yield utils.createTempDirectory(), utils.getCacheFileName(compressionMethod));
+            core.debug(`Archive Path: ${archivePath}`);
             // Download the cache from the cache entry
-            yield downloadCache(cacheEntry.archiveLocation, archivePath, options);
-            if (isDebug()) {
-                yield tar_listTar(archivePath, compressionMethod);
+            yield cacheHttpClient.downloadCache(cacheEntry.archiveLocation, archivePath, options);
+            if (core.isDebug()) {
+                yield listTar(archivePath, compressionMethod);
             }
-            const archiveFileSize = getArchiveFileSizeInBytes(archivePath);
-            info(`Cache Size: ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B)`);
+            const archiveFileSize = utils.getArchiveFileSizeInBytes(archivePath);
+            core.info(`Cache Size: ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B)`);
             yield extractTar(archivePath, compressionMethod);
-            info('Cache restored successfully');
+            core.info('Cache restored successfully');
             return cacheEntry.cacheKey;
         }
         catch (error) {
@@ -94497,23 +94502,23 @@ function restoreCacheV1(paths_1, primaryKey_1, restoreKeys_1, options_1) {
                 // Log server errors (5xx) as errors, all other errors as warnings.
                 // A read denied by policy (CacheReadDeniedError) is not an HttpClientError
                 // so it falls here and is warned, treated as a cache miss.
-                if (typedError instanceof lib_HttpClientError &&
+                if (typedError instanceof HttpClientError &&
                     typeof typedError.statusCode === 'number' &&
                     typedError.statusCode >= 500) {
-                    core_error(`Failed to restore: ${error.message}`);
+                    core.error(`Failed to restore: ${error.message}`);
                 }
                 else {
-                    warning(`Failed to restore: ${error.message}`);
+                    core.warning(`Failed to restore: ${error.message}`);
                 }
             }
         }
         finally {
             // Try to delete the archive to save space
             try {
-                yield unlinkFile(archivePath);
+                yield utils.unlinkFile(archivePath);
             }
             catch (error) {
-                core_debug(`Failed to delete archive: ${error}`);
+                core.debug(`Failed to delete archive: ${error}`);
             }
         }
         return undefined;
@@ -94536,8 +94541,8 @@ function restoreCacheV2(paths_1, primaryKey_1, restoreKeys_1, options_1) {
         options = Object.assign(Object.assign({}, options), { useAzureSdk: true });
         restoreKeys = restoreKeys || [];
         const keys = [primaryKey, ...restoreKeys];
-        core_debug('Resolved Keys:');
-        core_debug(JSON.stringify(keys));
+        core.debug('Resolved Keys:');
+        core.debug(JSON.stringify(keys));
         if (keys.length > 10) {
             throw new ValidationError(`Key Validation Error: Keys are limited to a maximum of 10.`);
         }
@@ -94546,12 +94551,12 @@ function restoreCacheV2(paths_1, primaryKey_1, restoreKeys_1, options_1) {
         }
         let archivePath = '';
         try {
-            const twirpClient = internalCacheTwirpClient();
-            const compressionMethod = yield getCompressionMethod();
+            const twirpClient = cacheTwirpClient.internalCacheTwirpClient();
+            const compressionMethod = yield utils.getCompressionMethod();
             const request = {
                 key: primaryKey,
                 restoreKeys,
-                version: getCacheVersion(paths, compressionMethod, enableCrossOsArchive)
+                version: utils.getCacheVersion(paths, compressionMethod, enableCrossOsArchive)
             };
             let response;
             try {
@@ -94568,31 +94573,31 @@ function restoreCacheV2(paths_1, primaryKey_1, restoreKeys_1, options_1) {
                 throw error;
             }
             if (!response.ok) {
-                core_debug(`Cache not found for version ${request.version} of keys: ${keys.join(', ')}`);
+                core.debug(`Cache not found for version ${request.version} of keys: ${keys.join(', ')}`);
                 return undefined;
             }
             const isRestoreKeyMatch = request.key !== response.matchedKey;
             if (isRestoreKeyMatch) {
-                info(`Cache hit for restore-key: ${response.matchedKey}`);
+                core.info(`Cache hit for restore-key: ${response.matchedKey}`);
             }
             else {
-                info(`Cache hit for: ${response.matchedKey}`);
+                core.info(`Cache hit for: ${response.matchedKey}`);
             }
             if (options === null || options === void 0 ? void 0 : options.lookupOnly) {
-                info('Lookup only - skipping download');
+                core.info('Lookup only - skipping download');
                 return response.matchedKey;
             }
-            archivePath = external_path_.join(yield createTempDirectory(), getCacheFileName(compressionMethod));
-            core_debug(`Archive path: ${archivePath}`);
-            core_debug(`Starting download of archive to: ${archivePath}`);
-            yield downloadCache(response.signedDownloadUrl, archivePath, options);
-            const archiveFileSize = getArchiveFileSizeInBytes(archivePath);
-            info(`Cache Size: ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B)`);
-            if (isDebug()) {
-                yield tar_listTar(archivePath, compressionMethod);
+            archivePath = path.join(yield utils.createTempDirectory(), utils.getCacheFileName(compressionMethod));
+            core.debug(`Archive path: ${archivePath}`);
+            core.debug(`Starting download of archive to: ${archivePath}`);
+            yield cacheHttpClient.downloadCache(response.signedDownloadUrl, archivePath, options);
+            const archiveFileSize = utils.getArchiveFileSizeInBytes(archivePath);
+            core.info(`Cache Size: ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B)`);
+            if (core.isDebug()) {
+                yield listTar(archivePath, compressionMethod);
             }
             yield extractTar(archivePath, compressionMethod);
-            info('Cache restored successfully');
+            core.info('Cache restored successfully');
             return response.matchedKey;
         }
         catch (error) {
@@ -94605,24 +94610,24 @@ function restoreCacheV2(paths_1, primaryKey_1, restoreKeys_1, options_1) {
                 // Log server errors (5xx) as errors, all other errors as warnings.
                 // A read denied by policy (CacheReadDeniedError) is not an HttpClientError
                 // so it falls here and is warned, treated as a cache miss.
-                if (typedError instanceof lib_HttpClientError &&
+                if (typedError instanceof HttpClientError &&
                     typeof typedError.statusCode === 'number' &&
                     typedError.statusCode >= 500) {
-                    core_error(`Failed to restore: ${error.message}`);
+                    core.error(`Failed to restore: ${error.message}`);
                 }
                 else {
-                    warning(`Failed to restore: ${error.message}`);
+                    core.warning(`Failed to restore: ${error.message}`);
                 }
             }
         }
         finally {
             try {
                 if (archivePath) {
-                    yield unlinkFile(archivePath);
+                    yield utils.unlinkFile(archivePath);
                 }
             }
             catch (error) {
-                core_debug(`Failed to delete archive: ${error}`);
+                core.debug(`Failed to delete archive: ${error}`);
             }
         }
         return undefined;
@@ -94639,14 +94644,14 @@ function restoreCacheV2(paths_1, primaryKey_1, restoreKeys_1, options_1) {
  */
 function cache_saveCache(paths_1, key_1, options_1) {
     return cache_awaiter(this, arguments, void 0, function* (paths, key, options, enableCrossOsArchive = false) {
-        const cacheServiceVersion = getCacheServiceVersion();
-        core.debug(`Cache service version: ${cacheServiceVersion}`);
+        const cacheServiceVersion = config_getCacheServiceVersion();
+        core_debug(`Cache service version: ${cacheServiceVersion}`);
         checkPaths(paths);
         checkKey(key);
-        const cacheMode = getCacheMode();
+        const cacheMode = config_getCacheMode();
         if (!isCacheWritable(cacheMode)) {
-            core.info(`Cache save skipped: the effective cache-mode '${cacheMode}' does not permit writes.`);
-            core.debug(`Skipped save for paths [${paths.join(', ')}] with key '${key}'.`);
+            info(`Cache save skipped: the effective cache-mode '${cacheMode}' does not permit writes.`);
+            core_debug(`Skipped save for paths [${paths.join(', ')}] with key '${key}'.`);
             return -1;
         }
         switch (cacheServiceVersion) {
@@ -94670,31 +94675,31 @@ function cache_saveCache(paths_1, key_1, options_1) {
 function saveCacheV1(paths_1, key_1, options_1) {
     return cache_awaiter(this, arguments, void 0, function* (paths, key, options, enableCrossOsArchive = false) {
         var _a, _b, _c, _d, _e, _f;
-        const compressionMethod = yield utils.getCompressionMethod();
+        const compressionMethod = yield getCompressionMethod();
         let cacheId = -1;
-        const cachePaths = yield utils.resolvePaths(paths);
-        core.debug('Cache Paths:');
-        core.debug(`${JSON.stringify(cachePaths)}`);
+        const cachePaths = yield resolvePaths(paths);
+        core_debug('Cache Paths:');
+        core_debug(`${JSON.stringify(cachePaths)}`);
         if (cachePaths.length === 0) {
             throw new Error(`Path Validation Error: Path(s) specified in the action for caching do(es) not exist, hence no cache is being saved.`);
         }
-        const archiveFolder = yield utils.createTempDirectory();
-        const archivePath = path.join(archiveFolder, utils.getCacheFileName(compressionMethod));
-        core.debug(`Archive Path: ${archivePath}`);
+        const archiveFolder = yield createTempDirectory();
+        const archivePath = external_path_.join(archiveFolder, getCacheFileName(compressionMethod));
+        core_debug(`Archive Path: ${archivePath}`);
         try {
             yield createTar(archiveFolder, cachePaths, compressionMethod);
-            if (core.isDebug()) {
-                yield listTar(archivePath, compressionMethod);
+            if (isDebug()) {
+                yield tar_listTar(archivePath, compressionMethod);
             }
             const fileSizeLimit = 10 * 1024 * 1024 * 1024; // 10GB per repo limit
-            const archiveFileSize = utils.getArchiveFileSizeInBytes(archivePath);
-            core.debug(`File Size: ${archiveFileSize}`);
+            const archiveFileSize = getArchiveFileSizeInBytes(archivePath);
+            core_debug(`File Size: ${archiveFileSize}`);
             // For GHES, this check will take place in ReserveCache API with enterprise file size limit
             if (archiveFileSize > fileSizeLimit && !isGhes()) {
                 throw new Error(`Cache size of ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B) is over the 10GB limit, not saving cache.`);
             }
-            core.debug('Reserving Cache');
-            const reserveCacheResponse = yield cacheHttpClient.reserveCache(key, paths, {
+            core_debug('Reserving Cache');
+            const reserveCacheResponse = yield reserveCache(key, paths, {
                 compressionMethod,
                 enableCrossOsArchive,
                 cacheSize: archiveFileSize
@@ -94718,8 +94723,8 @@ function saveCacheV1(paths_1, key_1, options_1) {
                 }
                 throw new ReserveCacheError(`Unable to reserve cache with key ${key}, another job may be creating this cache. More details: ${(_f = reserveCacheResponse === null || reserveCacheResponse === void 0 ? void 0 : reserveCacheResponse.error) === null || _f === void 0 ? void 0 : _f.message}`);
             }
-            core.debug(`Saving Cache (ID: ${cacheId})`);
-            yield cacheHttpClient.saveCache(cacheId, archivePath, '', options);
+            core_debug(`Saving Cache (ID: ${cacheId})`);
+            yield saveCache(cacheId, archivePath, '', options);
         }
         catch (error) {
             const typedError = error;
@@ -94727,30 +94732,30 @@ function saveCacheV1(paths_1, key_1, options_1) {
                 throw error;
             }
             else if (typedError.name === ReserveCacheError.name) {
-                core.info(`Failed to save: ${typedError.message}`);
+                info(`Failed to save: ${typedError.message}`);
             }
             else {
                 // Log server errors (5xx) as errors, all other errors as warnings.
                 // A write denied by policy (CacheWriteDeniedError) is not an
                 // HttpClientError and its name does not match the ReserveCacheError arm,
                 // so it falls here and is warned without failing the run.
-                if (typedError instanceof HttpClientError &&
+                if (typedError instanceof lib_HttpClientError &&
                     typeof typedError.statusCode === 'number' &&
                     typedError.statusCode >= 500) {
-                    core.error(`Failed to save: ${typedError.message}`);
+                    core_error(`Failed to save: ${typedError.message}`);
                 }
                 else {
-                    core.warning(`Failed to save: ${typedError.message}`);
+                    warning(`Failed to save: ${typedError.message}`);
                 }
             }
         }
         finally {
             // Try to delete the archive to save space
             try {
-                yield utils.unlinkFile(archivePath);
+                yield unlinkFile(archivePath);
             }
             catch (error) {
-                core.debug(`Failed to delete archive: ${error}`);
+                core_debug(`Failed to delete archive: ${error}`);
             }
         }
         return cacheId;
@@ -94772,29 +94777,29 @@ function saveCacheV2(paths_1, key_1, options_1) {
         // ...options goes first because we want to override the default values
         // set in UploadOptions with these specific figures
         options = Object.assign(Object.assign({}, options), { uploadChunkSize: 64 * 1024 * 1024, uploadConcurrency: 8, useAzureSdk: true });
-        const compressionMethod = yield utils.getCompressionMethod();
-        const twirpClient = cacheTwirpClient.internalCacheTwirpClient();
+        const compressionMethod = yield getCompressionMethod();
+        const twirpClient = internalCacheTwirpClient();
         let cacheId = -1;
-        const cachePaths = yield utils.resolvePaths(paths);
-        core.debug('Cache Paths:');
-        core.debug(`${JSON.stringify(cachePaths)}`);
+        const cachePaths = yield resolvePaths(paths);
+        core_debug('Cache Paths:');
+        core_debug(`${JSON.stringify(cachePaths)}`);
         if (cachePaths.length === 0) {
             throw new Error(`Path Validation Error: Path(s) specified in the action for caching do(es) not exist, hence no cache is being saved.`);
         }
-        const archiveFolder = yield utils.createTempDirectory();
-        const archivePath = path.join(archiveFolder, utils.getCacheFileName(compressionMethod));
-        core.debug(`Archive Path: ${archivePath}`);
+        const archiveFolder = yield createTempDirectory();
+        const archivePath = external_path_.join(archiveFolder, getCacheFileName(compressionMethod));
+        core_debug(`Archive Path: ${archivePath}`);
         try {
             yield createTar(archiveFolder, cachePaths, compressionMethod);
-            if (core.isDebug()) {
-                yield listTar(archivePath, compressionMethod);
+            if (isDebug()) {
+                yield tar_listTar(archivePath, compressionMethod);
             }
-            const archiveFileSize = utils.getArchiveFileSizeInBytes(archivePath);
-            core.debug(`File Size: ${archiveFileSize}`);
+            const archiveFileSize = getArchiveFileSizeInBytes(archivePath);
+            core_debug(`File Size: ${archiveFileSize}`);
             // Set the archive size in the options, will be used to display the upload progress
             options.archiveSizeBytes = archiveFileSize;
-            core.debug('Reserving Cache');
-            const version = utils.getCacheVersion(paths, compressionMethod, enableCrossOsArchive);
+            core_debug('Reserving Cache');
+            const version = getCacheVersion(paths, compressionMethod, enableCrossOsArchive);
             const request = {
                 key,
                 version
@@ -94808,29 +94813,29 @@ function saveCacheV2(paths_1, key_1, options_1) {
                     // customer-facing warning.
                     if (response.message &&
                         !response.message.startsWith(CACHE_WRITE_DENIED_PREFIX)) {
-                        core.warning(`Cache reservation failed: ${response.message}`);
+                        warning(`Cache reservation failed: ${response.message}`);
                     }
                     throw new Error(response.message || 'Response was not ok');
                 }
                 signedUploadUrl = response.signedUploadUrl;
             }
             catch (error) {
-                core.debug(`Failed to reserve cache: ${error}`);
+                core_debug(`Failed to reserve cache: ${error}`);
                 const errorMessage = (_a = error === null || error === void 0 ? void 0 : error.message) !== null && _a !== void 0 ? _a : '';
                 if (errorMessage.startsWith(CACHE_WRITE_DENIED_PREFIX)) {
                     throw new CacheWriteDeniedError(`Unable to reserve cache with key ${key}. More details: ${errorMessage}`);
                 }
                 throw new ReserveCacheError(`Unable to reserve cache with key ${key}, another job may be creating this cache.`);
             }
-            core.debug(`Attempting to upload cache located at: ${archivePath}`);
-            yield cacheHttpClient.saveCache(cacheId, archivePath, signedUploadUrl, options);
+            core_debug(`Attempting to upload cache located at: ${archivePath}`);
+            yield saveCache(cacheId, archivePath, signedUploadUrl, options);
             const finalizeRequest = {
                 key,
                 version,
                 sizeBytes: `${archiveFileSize}`
             };
             const finalizeResponse = yield twirpClient.FinalizeCacheEntryUpload(finalizeRequest);
-            core.debug(`FinalizeCacheEntryUploadResponse: ${finalizeResponse.ok}`);
+            core_debug(`FinalizeCacheEntryUploadResponse: ${finalizeResponse.ok}`);
             if (!finalizeResponse.ok) {
                 if (finalizeResponse.message) {
                     throw new FinalizeCacheError(finalizeResponse.message);
@@ -94845,33 +94850,33 @@ function saveCacheV2(paths_1, key_1, options_1) {
                 throw error;
             }
             else if (typedError.name === ReserveCacheError.name) {
-                core.info(`Failed to save: ${typedError.message}`);
+                info(`Failed to save: ${typedError.message}`);
             }
             else if (typedError.name === FinalizeCacheError.name) {
-                core.warning(typedError.message);
+                warning(typedError.message);
             }
             else {
                 // Log server errors (5xx) as errors, all other errors as warnings.
                 // A write denied by policy (CacheWriteDeniedError) is not an
                 // HttpClientError and its name does not match the ReserveCacheError arm,
                 // so it falls here and is warned without failing the run.
-                if (typedError instanceof HttpClientError &&
+                if (typedError instanceof lib_HttpClientError &&
                     typeof typedError.statusCode === 'number' &&
                     typedError.statusCode >= 500) {
-                    core.error(`Failed to save: ${typedError.message}`);
+                    core_error(`Failed to save: ${typedError.message}`);
                 }
                 else {
-                    core.warning(`Failed to save: ${typedError.message}`);
+                    warning(`Failed to save: ${typedError.message}`);
                 }
             }
         }
         finally {
             // Try to delete the archive to save space
             try {
-                yield utils.unlinkFile(archivePath);
+                yield unlinkFile(archivePath);
             }
             catch (error) {
-                core.debug(`Failed to delete archive: ${error}`);
+                core_debug(`Failed to delete archive: ${error}`);
             }
         }
         return cacheId;
@@ -94954,7 +94959,7 @@ function actionUtils_isGhes() {
     const isLocalHost = hostname.endsWith(".LOCALHOST");
     return !isGitHubHost && !isGitHubEnterpriseCloudHost && !isLocalHost;
 }
-function actionUtils_isExactKeyMatch(key, cacheKey) {
+function isExactKeyMatch(key, cacheKey) {
     return !!(cacheKey &&
         cacheKey.localeCompare(key, undefined, {
             sensitivity: "accent"
@@ -94976,7 +94981,7 @@ function getInputAsArray(name, options) {
         .filter(x => x !== "");
 }
 function getInputAsInt(name, options) {
-    const value = parseInt(core.getInput(name, options));
+    const value = parseInt(getInput(name, options));
     if (isNaN(value) || value < 0) {
         return undefined;
     }
@@ -94999,66 +95004,76 @@ Otherwise please upgrade to GHES version >= 3.5 and If you are also using Github
     return false;
 }
 
-;// CONCATENATED MODULE: ./src/restoreImpl.ts
+;// CONCATENATED MODULE: ./src/saveImpl.ts
 
 
 
 
 
-async function restoreImpl(stateProvider, earlyExit) {
+// Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
+// @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
+// throw an uncaught exception.  Instead of failing this action, just warn.
+process.on("uncaughtException", e => logWarning(e.message));
+async function saveImpl(stateProvider) {
+    let cacheId = -1;
     try {
         if (!isCacheFeatureAvailable()) {
-            setOutput(Outputs.CacheHit, "false");
             return;
         }
-        // Validate inputs, this can cause task failure
         if (!isValidEvent()) {
             logWarning(`Event Validation Error: The event type ${process.env[Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
             return;
         }
-        const primaryKey = getInput(Inputs.Key, { required: true });
-        stateProvider.setState(State.CachePrimaryKey, primaryKey);
-        const restoreKeys = getInputAsArray(Inputs.RestoreKeys);
+        // If restore has stored a primary key in state, reuse that
+        // Else re-evaluate from inputs
+        const primaryKey = stateProvider.getState(State.CachePrimaryKey) ||
+            getInput(Inputs.Key);
+        if (!primaryKey) {
+            logWarning(`Key is not specified.`);
+            return;
+        }
+        // If matched restore key is same as primary key, then do not save cache
+        // NO-OP in case of SaveOnly action
+        const restoredKey = stateProvider.getCacheState();
+        if (isExactKeyMatch(primaryKey, restoredKey)) {
+            info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
+            return;
+        }
         const cachePaths = getInputAsArray(Inputs.Path, {
             required: true
         });
         const enableCrossOsArchive = getInputAsBool(Inputs.EnableCrossOsArchive);
-        const failOnCacheMiss = getInputAsBool(Inputs.FailOnCacheMiss);
-        const lookupOnly = getInputAsBool(Inputs.LookupOnly);
-        const cacheKey = await restoreCache(cachePaths, primaryKey, restoreKeys, { lookupOnly: lookupOnly }, enableCrossOsArchive);
-        if (!cacheKey) {
-            // `cache-hit` is intentionally not set to `false` here to preserve existing behavior
-            // See https://github.com/actions/cache/issues/1466
-            if (failOnCacheMiss) {
-                throw new Error(`Failed to restore cache entry. Exiting as fail-on-cache-miss is set. Input key: ${primaryKey}`);
-            }
-            info(`Cache not found for input keys: ${[
-                primaryKey,
-                ...restoreKeys
-            ].join(", ")}`);
-            return;
+        cacheId = await cache_saveCache(cachePaths, primaryKey, { uploadChunkSize: getInputAsInt(Inputs.UploadChunkSize) }, enableCrossOsArchive);
+        if (cacheId != -1) {
+            info(`Cache saved with key: ${primaryKey}`);
         }
-        // Store the matched cache key in states
-        stateProvider.setState(State.CacheMatchedKey, cacheKey);
-        const isExactKeyMatch = actionUtils_isExactKeyMatch(getInput(Inputs.Key, { required: true }), cacheKey);
-        setOutput(Outputs.CacheHit, isExactKeyMatch.toString());
-        if (lookupOnly) {
-            info(`Cache found and can be restored from key: ${cacheKey}`);
-        }
-        else {
-            info(`Cache restored from key: ${cacheKey}`);
-        }
-        return cacheKey;
     }
     catch (error) {
-        setFailed(error.message);
+        logWarning(error.message);
+    }
+    return cacheId;
+}
+async function saveOnlyRun(earlyExit, postStep) {
+    if (postStep !== undefined &&
+        postStep !== getInputAsBool(Inputs.Post)) {
+        return;
+    }
+    try {
+        const cacheId = await saveImpl(new NullStateProvider());
+        if (cacheId === -1) {
+            // The toolkit's saveCache already logs the underlying reason at
+            // the appropriate severity (warning for most failures, info for
+            // benign concurrency races, error for 5xx). Avoid emitting a
+            // generic warning here that would duplicate or mask that signal.
+            core_debug(`Cache was not saved.`);
+        }
+    }
+    catch (err) {
+        console.error(err);
         if (earlyExit) {
             process.exit(1);
         }
     }
-}
-async function run(stateProvider, earlyExit) {
-    await restoreImpl(stateProvider, earlyExit);
     // node will stay alive if any promises are not resolved,
     // which is a possibility if HTTP requests are dangling
     // due to retries or timeouts. We know that if we got here
@@ -95068,14 +95083,27 @@ async function run(stateProvider, earlyExit) {
         process.exit(0);
     }
 }
-async function restoreOnlyRun(earlyExit) {
-    await run(new NullStateProvider(), earlyExit);
-}
-async function restoreRun(earlyExit) {
-    await run(new StateProvider(), earlyExit);
+async function saveRun(earlyExit) {
+    try {
+        await saveImpl(new StateProvider());
+    }
+    catch (err) {
+        console.error(err);
+        if (earlyExit) {
+            process.exit(1);
+        }
+    }
+    // node will stay alive if any promises are not resolved,
+    // which is a possibility if HTTP requests are dangling
+    // due to retries or timeouts. We know that if we got here
+    // that all promises that we care about have successfully
+    // resolved, so simply exit with success.
+    if (earlyExit) {
+        process.exit(0);
+    }
 }
 
-;// CONCATENATED MODULE: ./src/restoreOnly.ts
+;// CONCATENATED MODULE: ./src/saveOnlyPost.ts
 
-restoreOnlyRun(true);
+saveOnlyRun(true, true);
 
