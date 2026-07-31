@@ -9,6 +9,7 @@ The save action saves a cache. It works similarly to the `cache` action except t
 * `key` - An explicit key for a cache entry. See [creating a cache key](../README.md#creating-a-cache-key).
 * `path` - A list of files, directories, and wildcard patterns to cache. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns.
 * `upload-chunk-size` - The chunk size used to split up large files during upload, in bytes
+* `post` - If set to `true` the action will run as a post-step, after the job has finished.
 
 ### Outputs
 

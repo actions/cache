@@ -15,9 +15,15 @@ inputs:
     description: 'An optional boolean when enabled, allows windows runners to save caches that can be restored on other platforms'
     default: 'false'
     required: false
+  post:
+    description: 'An optional boolean when enabled, allows the action to run after the job has completed'
+    default: 'false'
+    required: false
 runs:
   using: 'node24'
   main: '../dist/save-only/index.js'
+  post: '../dist/save-only/post/index.js'
+  post-if: "success()"
 branding:
   icon: 'archive'
   color: 'gray-dark'

@@ -94884,7 +94884,7 @@ function saveCacheV2(paths_1, key_1, options_1) {
 }
 //# sourceMappingURL=cache.js.map
 ;// CONCATENATED MODULE: ./src/constants.ts
-var Inputs;
+var constants_Inputs;
 (function (Inputs) {
     Inputs["Key"] = "key";
     Inputs["Path"] = "path";
@@ -94892,8 +94892,9 @@ var Inputs;
     Inputs["UploadChunkSize"] = "upload-chunk-size";
     Inputs["EnableCrossOsArchive"] = "enableCrossOsArchive";
     Inputs["FailOnCacheMiss"] = "fail-on-cache-miss";
-    Inputs["LookupOnly"] = "lookup-only"; // Input for cache, restore action
-})(Inputs || (Inputs = {}));
+    Inputs["LookupOnly"] = "lookup-only";
+    Inputs["Post"] = "post"; // Input for save action
+})(constants_Inputs || (constants_Inputs = {}));
 var constants_Outputs;
 (function (Outputs) {
     Outputs["CacheHit"] = "cache-hit";
@@ -95026,7 +95027,7 @@ async function saveImpl(stateProvider) {
         // If restore has stored a primary key in state, reuse that
         // Else re-evaluate from inputs
         const primaryKey = stateProvider.getState(constants_State.CachePrimaryKey) ||
-            getInput(Inputs.Key);
+            getInput(constants_Inputs.Key);
         if (!primaryKey) {
             logWarning(`Key is not specified.`);
             return;
@@ -95038,11 +95039,11 @@ async function saveImpl(stateProvider) {
             info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
             return;
         }
-        const cachePaths = getInputAsArray(Inputs.Path, {
+        const cachePaths = getInputAsArray(constants_Inputs.Path, {
             required: true
         });
-        const enableCrossOsArchive = getInputAsBool(Inputs.EnableCrossOsArchive);
-        cacheId = await cache_saveCache(cachePaths, primaryKey, { uploadChunkSize: getInputAsInt(Inputs.UploadChunkSize) }, enableCrossOsArchive);
+        const enableCrossOsArchive = getInputAsBool(constants_Inputs.EnableCrossOsArchive);
+        cacheId = await cache_saveCache(cachePaths, primaryKey, { uploadChunkSize: getInputAsInt(constants_Inputs.UploadChunkSize) }, enableCrossOsArchive);
         if (cacheId != -1) {
             info(`Cache saved with key: ${primaryKey}`);
         }
@@ -95052,7 +95053,11 @@ async function saveImpl(stateProvider) {
     }
     return cacheId;
 }
-async function saveOnlyRun(earlyExit) {
+async function saveOnlyRun(earlyExit, postStep) {
+    if (postStep !== undefined &&
+        postStep !== utils.getInputAsBool(Inputs.Post)) {
+        return;
+    }
     try {
         const cacheId = await saveImpl(new NullStateProvider());
         if (cacheId === -1) {
