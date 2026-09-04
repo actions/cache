@@ -78025,7 +78025,7 @@ module.exports = Queue;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
+exports.RefKey = exports.Events = exports.CacheSource = exports.State = exports.Outputs = exports.Inputs = void 0;
 var Inputs;
 (function (Inputs) {
     Inputs["Key"] = "key";
@@ -78048,7 +78048,19 @@ var State;
 (function (State) {
     State["CachePrimaryKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_RESULT";
+    // Which backend served the restore, so the post step knows whether a hit
+    // still has to be written to GCS.
+    State["CacheSource"] = "CACHE_SOURCE";
+    // The resolved `path` input, newline-separated. A composite action's post
+    // step cannot see sibling step outputs, so `path: ${{ steps.x.outputs.y }}`
+    // arrives empty there; the save falls back to what restore saw.
+    State["CachePaths"] = "CACHE_PATHS";
 })(State || (exports.State = State = {}));
+var CacheSource;
+(function (CacheSource) {
+    CacheSource["GCS"] = "gcs";
+    CacheSource["GitHub"] = "github";
+})(CacheSource || (exports.CacheSource = CacheSource = {}));
 var Events;
 (function (Events) {
     Events["Key"] = "GITHUB_EVENT_NAME";
@@ -78141,16 +78153,37 @@ function saveImpl(stateProvider) {
             }
             // If matched restore key is same as primary key, then do not save cache
             // NO-OP in case of SaveOnly action
+            //
+            // Exception: a hit served by the GitHub fallback while GCS is
+            // configured. GCS is the primary backend, so the entry is written
+            // there too — otherwise the GitHub copy keeps every later job on the
+            // fallback and GCS never gets the key.
             const restoredKey = stateProvider.getCacheState();
-            if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
+            const exactMatch = utils.isExactKeyMatch(primaryKey, restoredKey);
+            const backfillGCS = exactMatch &&
+                stateProvider.getState(constants_1.State.CacheSource) === constants_1.CacheSource.GitHub &&
+                utils.isGCSAvailable();
+            if (exactMatch && !backfillGCS) {
                 core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
                 return;
             }
-            const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
-                required: true
-            });
+            if (backfillGCS) {
+                core.info(`Cache hit on the primary key ${primaryKey} came from the GitHub cache, saving it to GCS.`);
+            }
+            // Prefer the paths restore recorded: in a nested composite action the
+            // `path` input is empty in the post step (see State.CachePaths).
+            const inputPaths = utils.getInputAsArray(constants_1.Inputs.Path);
+            const cachePaths = inputPaths.length
+                ? inputPaths
+                : (stateProvider.getState(constants_1.State.CachePaths) || "")
+                    .split("\n")
+                    .filter(Boolean);
+            if (cachePaths.length === 0) {
+                utils.logWarning("Input required and not supplied: path");
+                return;
+            }
             const enableCrossOsArchive = utils.getInputAsBool(constants_1.Inputs.EnableCrossOsArchive);
-            cacheId = yield cache.saveCache(cachePaths, primaryKey, { uploadChunkSize: utils.getInputAsInt(constants_1.Inputs.UploadChunkSize) }, enableCrossOsArchive);
+            cacheId = yield cache.saveCache(cachePaths, primaryKey, { uploadChunkSize: utils.getInputAsInt(constants_1.Inputs.UploadChunkSize) }, enableCrossOsArchive, !backfillGCS);
             if (cacheId != -1) {
                 core.info(`Cache saved with key: ${primaryKey}`);
             }
@@ -78283,8 +78316,13 @@ class NullStateProvider extends StateProviderBase {
             [constants_1.State.CacheMatchedKey, constants_1.Outputs.CacheMatchedKey],
             [constants_1.State.CachePrimaryKey, constants_1.Outputs.CachePrimaryKey]
         ]);
+        // Only states with an output counterpart are exposed; the rest are
+        // save-step bookkeeping that a restore-only action has no post step for.
         this.setState = (key, value) => {
-            core.setOutput(this.stateToOutputMap.get(key), value);
+            const output = this.stateToOutputMap.get(key);
+            if (output) {
+                core.setOutput(output, value);
+            }
         };
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         this.getState = (key) => "";
@@ -78517,7 +78555,7 @@ function restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArch
                 const result = yield restoreFromGCS(paths, primaryKey, restoreKeys, options);
                 if (result) {
                     core.info(`Cache restored from GCS with key: ${result}`);
-                    return result;
+                    return { key: result, source: constants_1.CacheSource.GCS };
                 }
                 core.info("Cache not found in GCS, falling back to GitHub cache");
             }
@@ -78530,11 +78568,18 @@ function restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArch
             core.info("GCS not configured, using GitHub cache");
         }
         // Fall back to GitHub cache
-        return yield cache.restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArchive);
+        const key = yield cache.restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArchive);
+        return key ? { key, source: constants_1.CacheSource.GitHub } : undefined;
     });
 }
-function saveCache(paths, key, options, enableCrossOsArchive) {
-    return __awaiter(this, void 0, void 0, function* () {
+/**
+ * Saves to GCS when it is configured, otherwise (or when the GCS upload
+ * fails) to the GitHub cache. `fallbackToGitHub: false` is for backfilling a
+ * GCS miss the GitHub cache already covered: a second GitHub save would only
+ * fail on the existing entry.
+ */
+function saveCache(paths_1, key_1, options_1, enableCrossOsArchive_1) {
+    return __awaiter(this, arguments, void 0, function* (paths, key, options, enableCrossOsArchive, fallbackToGitHub = true) {
         if ((0, actionUtils_1.isGCSAvailable)()) {
             try {
                 const result = yield saveToGCS(paths, key);
@@ -78542,15 +78587,20 @@ function saveCache(paths, key, options, enableCrossOsArchive) {
                     core.info(`Cache saved to GCS with key: [${key} | ${result}]`);
                     return 1; // Success ID
                 }
-                core.warning("Failed to save to GCS, falling back to GitHub cache");
-                return -1;
+                core.warning("Failed to save to GCS");
             }
             catch (error) {
                 core.warning(`Failed to save to GCS: ${error.message}`);
-                core.info("Falling back to GitHub cache");
             }
+            if (!fallbackToGitHub) {
+                return -1;
+            }
+            core.info("Falling back to GitHub cache");
         }
         else {
+            if (!fallbackToGitHub) {
+                return -1;
+            }
             core.info("GCS not configured, using GitHub cache");
         }
         // Fall back to GitHub cache

@@ -79,15 +79,11 @@ test("save with valid inputs uploads a cache", async () => {
     const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
     const savedCacheKey = "Linux-node-";
 
-    jest.spyOn(core, "getState")
-        // Cache Entry State
-        .mockImplementationOnce(() => {
-            return primaryKey;
-        })
-        // Cache Key State
-        .mockImplementationOnce(() => {
-            return savedCacheKey;
-        });
+    jest.spyOn(core, "getState").mockImplementation((name: string) => {
+        return (
+            { CACHE_KEY: primaryKey, CACHE_RESULT: savedCacheKey }[name] ?? ""
+        );
+    });
 
     const inputPath = "node_modules";
     testUtils.setInput(Inputs.Path, inputPath);

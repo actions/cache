@@ -38,8 +38,13 @@ export class NullStateProvider extends StateProviderBase {
         [State.CachePrimaryKey, Outputs.CachePrimaryKey]
     ]);
 
+    // Only states with an output counterpart are exposed; the rest are
+    // save-step bookkeeping that a restore-only action has no post step for.
     setState = (key: string, value: string) => {
-        core.setOutput(this.stateToOutputMap.get(key) as string, value);
+        const output = this.stateToOutputMap.get(key);
+        if (output) {
+            core.setOutput(output, value);
+        }
     };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getState = (key: string) => "";

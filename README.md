@@ -103,6 +103,17 @@ If you are using a `self-hosted` Windows runner, `GNU tar` and `zstd` are requir
 
 See [Skipping steps based on cache-hit](#skipping-steps-based-on-cache-hit) for info on using this output
 
+### Google Cloud Storage backend
+
+When `gcs-bucket` (or the `CULA_CACHE_GCS_BUCKET` / `CONFIGURED_GCS_BUCKET` environment variable) is set, GCS is the primary backend and the GitHub cache is the fallback:
+
+* **Restore** looks in GCS first (primary key, then `restore-keys`) and only then in the GitHub cache. The matched key is reported the same way for both, so `cache-hit` keeps its meaning.
+* **Save** always goes to GCS. If the GCS upload fails, the entry is saved to the GitHub cache instead.
+* **A hit served by the GitHub cache is written to GCS anyway.** Without this, a GitHub-only entry (from an earlier GCS failure) would satisfy every later job and GCS would never receive the key.
+* **The `path` input is remembered from the restore step.** In a nested composite action the post step cannot see sibling step outputs, so a `path: ${{ steps.x.outputs.y }}` arrives empty there; the save then uses the paths restore resolved.
+
+Objects are stored as `<gcs-path-prefix>/<key>.cache.tzst`; authentication uses Application Default Credentials, so the credentials must still exist when the post step runs (put `google-github-actions/auth` **before** this action in the job, its cleanup runs in reverse order).
+
 ### Cache scopes
 
 The cache is scoped to the key, [version](#cache-version), and branch. The default branch cache is available to other branches.

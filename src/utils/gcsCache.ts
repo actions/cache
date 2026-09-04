@@ -11,10 +11,15 @@ import * as core from "@actions/core";
 import { Storage } from "@google-cloud/storage";
 import * as path from "path";
 
-import { Inputs } from "../constants";
+import { CacheSource, Inputs } from "../constants";
 import { getGCSBucket, isGCSAvailable } from "./actionUtils";
 
 const DEFAULT_PATH_PREFIX = "github-cache";
+
+export interface RestoreResult {
+    key: string;
+    source: CacheSource;
+}
 
 // Function to initialize GCS client using Application Default Credentials
 function getGCSClient(): Storage | null {
@@ -35,7 +40,7 @@ export async function restoreCache(
     restoreKeys?: string[],
     options?: DownloadOptions,
     enableCrossOsArchive?: boolean
-): Promise<string | undefined> {
+): Promise<RestoreResult | undefined> {
     // Check if GCS is available
     if (isGCSAvailable()) {
         try {
@@ -48,7 +53,7 @@ export async function restoreCache(
 
             if (result) {
                 core.info(`Cache restored from GCS with key: ${result}`);
-                return result;
+                return { key: result, source: CacheSource.GCS };
             }
 
             core.info("Cache not found in GCS, falling back to GitHub cache");
@@ -63,20 +68,28 @@ export async function restoreCache(
     }
 
     // Fall back to GitHub cache
-    return await cache.restoreCache(
+    const key = await cache.restoreCache(
         paths,
         primaryKey,
         restoreKeys,
         options,
         enableCrossOsArchive
     );
+    return key ? { key, source: CacheSource.GitHub } : undefined;
 }
 
+/**
+ * Saves to GCS when it is configured, otherwise (or when the GCS upload
+ * fails) to the GitHub cache. `fallbackToGitHub: false` is for backfilling a
+ * GCS miss the GitHub cache already covered: a second GitHub save would only
+ * fail on the existing entry.
+ */
 export async function saveCache(
     paths: string[],
     key: string,
     options?: UploadOptions,
-    enableCrossOsArchive?: boolean
+    enableCrossOsArchive?: boolean,
+    fallbackToGitHub = true
 ): Promise<number> {
     if (isGCSAvailable()) {
         try {
@@ -86,13 +99,18 @@ export async function saveCache(
                 return 1; // Success ID
             }
 
-            core.warning("Failed to save to GCS, falling back to GitHub cache");
-            return -1;
+            core.warning("Failed to save to GCS");
         } catch (error) {
             core.warning(`Failed to save to GCS: ${(error as Error).message}`);
-            core.info("Falling back to GitHub cache");
         }
+        if (!fallbackToGitHub) {
+            return -1;
+        }
+        core.info("Falling back to GitHub cache");
     } else {
+        if (!fallbackToGitHub) {
+            return -1;
+        }
         core.info("GCS not configured, using GitHub cache");
     }
 

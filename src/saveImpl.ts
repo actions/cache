@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 
-import { Events, Inputs, State } from "./constants";
+import { CacheSource, Events, Inputs, State } from "./constants";
 import {
     IStateProvider,
     NullStateProvider,
@@ -45,18 +45,42 @@ export async function saveImpl(
 
         // If matched restore key is same as primary key, then do not save cache
         // NO-OP in case of SaveOnly action
+        //
+        // Exception: a hit served by the GitHub fallback while GCS is
+        // configured. GCS is the primary backend, so the entry is written
+        // there too — otherwise the GitHub copy keeps every later job on the
+        // fallback and GCS never gets the key.
         const restoredKey = stateProvider.getCacheState();
+        const exactMatch = utils.isExactKeyMatch(primaryKey, restoredKey);
+        const backfillGCS =
+            exactMatch &&
+            stateProvider.getState(State.CacheSource) === CacheSource.GitHub &&
+            utils.isGCSAvailable();
 
-        if (utils.isExactKeyMatch(primaryKey, restoredKey)) {
+        if (exactMatch && !backfillGCS) {
             core.info(
                 `Cache hit occurred on the primary key ${primaryKey}, not saving cache.`
             );
             return;
         }
+        if (backfillGCS) {
+            core.info(
+                `Cache hit on the primary key ${primaryKey} came from the GitHub cache, saving it to GCS.`
+            );
+        }
 
-        const cachePaths = utils.getInputAsArray(Inputs.Path, {
-            required: true
-        });
+        // Prefer the paths restore recorded: in a nested composite action the
+        // `path` input is empty in the post step (see State.CachePaths).
+        const inputPaths = utils.getInputAsArray(Inputs.Path);
+        const cachePaths = inputPaths.length
+            ? inputPaths
+            : (stateProvider.getState(State.CachePaths) || "")
+                  .split("\n")
+                  .filter(Boolean);
+        if (cachePaths.length === 0) {
+            utils.logWarning("Input required and not supplied: path");
+            return;
+        }
 
         const enableCrossOsArchive = utils.getInputAsBool(
             Inputs.EnableCrossOsArchive
@@ -66,7 +90,8 @@ export async function saveImpl(
             cachePaths,
             primaryKey,
             { uploadChunkSize: utils.getInputAsInt(Inputs.UploadChunkSize) },
-            enableCrossOsArchive
+            enableCrossOsArchive,
+            !backfillGCS
         );
 
         if (cacheId != -1) {

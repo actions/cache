@@ -78025,7 +78025,7 @@ module.exports = Queue;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
+exports.RefKey = exports.Events = exports.CacheSource = exports.State = exports.Outputs = exports.Inputs = void 0;
 var Inputs;
 (function (Inputs) {
     Inputs["Key"] = "key";
@@ -78048,7 +78048,19 @@ var State;
 (function (State) {
     State["CachePrimaryKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_RESULT";
+    // Which backend served the restore, so the post step knows whether a hit
+    // still has to be written to GCS.
+    State["CacheSource"] = "CACHE_SOURCE";
+    // The resolved `path` input, newline-separated. A composite action's post
+    // step cannot see sibling step outputs, so `path: ${{ steps.x.outputs.y }}`
+    // arrives empty there; the save falls back to what restore saw.
+    State["CachePaths"] = "CACHE_PATHS";
 })(State || (exports.State = State = {}));
+var CacheSource;
+(function (CacheSource) {
+    CacheSource["GCS"] = "gcs";
+    CacheSource["GitHub"] = "github";
+})(CacheSource || (exports.CacheSource = CacheSource = {}));
 var Events;
 (function (Events) {
     Events["Key"] = "GITHUB_EVENT_NAME";
@@ -78134,11 +78146,13 @@ function restoreImpl(stateProvider, earlyExit) {
             const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
                 required: true
             });
+            stateProvider.setState(constants_1.State.CachePaths, cachePaths.join("\n"));
             const enableCrossOsArchive = utils.getInputAsBool(constants_1.Inputs.EnableCrossOsArchive);
             const failOnCacheMiss = utils.getInputAsBool(constants_1.Inputs.FailOnCacheMiss);
             const lookupOnly = utils.getInputAsBool(constants_1.Inputs.LookupOnly);
-            const cacheKey = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys, { lookupOnly: lookupOnly }, enableCrossOsArchive);
-            if (!cacheKey) {
+            const restored = yield cache.restoreCache(cachePaths, primaryKey, restoreKeys, { lookupOnly: lookupOnly }, enableCrossOsArchive);
+            const cacheKey = restored === null || restored === void 0 ? void 0 : restored.key;
+            if (!restored || !cacheKey) {
                 // `cache-hit` is intentionally not set to `false` here to preserve existing behavior
                 // See https://github.com/actions/cache/issues/1466
                 if (failOnCacheMiss) {
@@ -78150,8 +78164,9 @@ function restoreImpl(stateProvider, earlyExit) {
                 ].join(", ")}`);
                 return;
             }
-            // Store the matched cache key in states
+            // Store the matched cache key and its backend in states
             stateProvider.setState(constants_1.State.CacheMatchedKey, cacheKey);
+            stateProvider.setState(constants_1.State.CacheSource, restored.source);
             const isExactKeyMatch = utils.isExactKeyMatch(core.getInput(constants_1.Inputs.Key, { required: true }), cacheKey);
             core.setOutput(constants_1.Outputs.CacheHit, isExactKeyMatch.toString());
             if (lookupOnly) {
@@ -78270,8 +78285,13 @@ class NullStateProvider extends StateProviderBase {
             [constants_1.State.CacheMatchedKey, constants_1.Outputs.CacheMatchedKey],
             [constants_1.State.CachePrimaryKey, constants_1.Outputs.CachePrimaryKey]
         ]);
+        // Only states with an output counterpart are exposed; the rest are
+        // save-step bookkeeping that a restore-only action has no post step for.
         this.setState = (key, value) => {
-            core.setOutput(this.stateToOutputMap.get(key), value);
+            const output = this.stateToOutputMap.get(key);
+            if (output) {
+                core.setOutput(output, value);
+            }
         };
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         this.getState = (key) => "";
@@ -78504,7 +78524,7 @@ function restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArch
                 const result = yield restoreFromGCS(paths, primaryKey, restoreKeys, options);
                 if (result) {
                     core.info(`Cache restored from GCS with key: ${result}`);
-                    return result;
+                    return { key: result, source: constants_1.CacheSource.GCS };
                 }
                 core.info("Cache not found in GCS, falling back to GitHub cache");
             }
@@ -78517,11 +78537,18 @@ function restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArch
             core.info("GCS not configured, using GitHub cache");
         }
         // Fall back to GitHub cache
-        return yield cache.restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArchive);
+        const key = yield cache.restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArchive);
+        return key ? { key, source: constants_1.CacheSource.GitHub } : undefined;
     });
 }
-function saveCache(paths, key, options, enableCrossOsArchive) {
-    return __awaiter(this, void 0, void 0, function* () {
+/**
+ * Saves to GCS when it is configured, otherwise (or when the GCS upload
+ * fails) to the GitHub cache. `fallbackToGitHub: false` is for backfilling a
+ * GCS miss the GitHub cache already covered: a second GitHub save would only
+ * fail on the existing entry.
+ */
+function saveCache(paths_1, key_1, options_1, enableCrossOsArchive_1) {
+    return __awaiter(this, arguments, void 0, function* (paths, key, options, enableCrossOsArchive, fallbackToGitHub = true) {
         if ((0, actionUtils_1.isGCSAvailable)()) {
             try {
                 const result = yield saveToGCS(paths, key);
@@ -78529,15 +78556,20 @@ function saveCache(paths, key, options, enableCrossOsArchive) {
                     core.info(`Cache saved to GCS with key: [${key} | ${result}]`);
                     return 1; // Success ID
                 }
-                core.warning("Failed to save to GCS, falling back to GitHub cache");
-                return -1;
+                core.warning("Failed to save to GCS");
             }
             catch (error) {
                 core.warning(`Failed to save to GCS: ${error.message}`);
-                core.info("Falling back to GitHub cache");
             }
+            if (!fallbackToGitHub) {
+                return -1;
+            }
+            core.info("Falling back to GitHub cache");
         }
         else {
+            if (!fallbackToGitHub) {
+                return -1;
+            }
             core.info("GCS not configured, using GitHub cache");
         }
         // Fall back to GitHub cache
