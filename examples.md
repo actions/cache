@@ -613,6 +613,8 @@ whenever possible:
 - uses: actions/cache@v6
   with:
     path: |
+      ~/.cargo/.crates.toml
+      ~/.cargo/.crates2.json
       ~/.cargo/bin/
       ~/.cargo/registry/index/
       ~/.cargo/registry/cache/
