@@ -176,6 +176,38 @@ test("getInputAsArray removes spaces after ! at the beginning", () => {
     ]);
 });
 
+test("getInputAsArray handles YAML list format (JSON array)", () => {
+    testUtils.setInput("foo", '["bar", "baz", "qux"]');
+    expect(actionUtils.getInputAsArray("foo")).toEqual(["bar", "baz", "qux"]);
+});
+
+test("getInputAsArray handles YAML list format with exclusion patterns", () => {
+    testUtils.setInput(
+        "foo",
+        '["~/cache", "!   ~/cache/exclude", "**/node_modules"]'
+    );
+    expect(actionUtils.getInputAsArray("foo")).toEqual([
+        "~/cache",
+        "!~/cache/exclude",
+        "**/node_modules"
+    ]);
+});
+
+test("getInputAsArray handles YAML list format with empty strings", () => {
+    testUtils.setInput("foo", '["bar", "", "baz", "  ", "qux"]');
+    expect(actionUtils.getInputAsArray("foo")).toEqual(["bar", "baz", "qux"]);
+});
+
+test("getInputAsArray handles invalid JSON gracefully and falls back to newline parsing", () => {
+    testUtils.setInput("foo", "[invalid json");
+    expect(actionUtils.getInputAsArray("foo")).toEqual(["[invalid json"]);
+});
+
+test("getInputAsArray handles JSON that is not an array", () => {
+    testUtils.setInput("foo", '{"key": "value"}');
+    expect(actionUtils.getInputAsArray("foo")).toEqual(['{"key": "value"}']);
+});
+
 test("getInputAsInt returns undefined if input not set", () => {
     expect(actionUtils.getInputAsInt("undefined")).toBeUndefined();
 });
