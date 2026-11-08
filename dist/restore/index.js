@@ -94969,7 +94969,23 @@ function isValidEvent() {
     return RefKey in process.env && Boolean(process.env[RefKey]);
 }
 function getInputAsArray(name, options) {
-    return getInput(name, options)
+    const input = getInput(name, options);
+    // Try to parse as JSON array (YAML list format)
+    if (input.startsWith("[")) {
+        try {
+            const parsed = JSON.parse(input);
+            if (Array.isArray(parsed)) {
+                return parsed
+                    .map(s => String(s).replace(/^!\s+/, "!").trim())
+                    .filter(x => x !== "");
+            }
+        }
+        catch {
+            // Not valid JSON, fall through to newline parsing
+        }
+    }
+    // Fall back to newline-separated format
+    return input
         .split("\n")
         .map(s => s.replace(/^!\s+/, "!").trim())
         .filter(x => x !== "");
