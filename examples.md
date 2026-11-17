@@ -304,7 +304,7 @@ We cache the elements of the Cabal store separately, as the entirety of `~/.caba
 ## Hugo - Resources
 
 ```yaml
-- uses: actions/cache@v3
+- uses: actions/cache@v6
   with:
     path: resources
     key: ${{ runner.os }}-hugo-resources
