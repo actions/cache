@@ -1,6 +1,6 @@
 ---
 name: "@actions/glob"
-version: 0.1.2
+version: 0.6.1
 type: npm
 summary: Actions glob lib
 homepage: https://github.com/actions/toolkit/tree/main/packages/glob

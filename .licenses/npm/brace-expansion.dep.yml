@@ -1,6 +1,6 @@
 ---
 name: brace-expansion
-version: 1.1.11
+version: 1.1.12
 type: npm
 summary: Brace expansion as known from sh/bash
 homepage: https://github.com/juliangruber/brace-expansion

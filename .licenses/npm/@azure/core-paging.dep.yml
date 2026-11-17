@@ -1,6 +1,6 @@
 ---
 name: "@azure/core-paging"
-version: 1.5.0
+version: 1.6.2
 type: npm
 summary: Core types for paging async iterable iterators
 homepage: https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/core/core-paging/README.md

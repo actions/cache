@@ -1,6 +1,14 @@
 sources:
   npm: true
 
+# Force UTF-8 encoding
+encoding: 'utf-8'
+
+# Ignore problematic packages with encoding issues
+ignored:
+  npm:
+    - form-data
+
 allowed:
   - apache-2.0
   - bsd-2-clause
@@ -20,3 +28,4 @@ reviewed:
   - glob # ISC
   - prettier # MIT
   - lodash # MIT
+  - "@actions/http-client" # MIT

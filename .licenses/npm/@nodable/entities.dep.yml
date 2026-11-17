@@ -1,0 +1,11 @@
+---
+name: "@nodable/entities"
+version: 2.2.0
+type: npm
+summary: Entity parser for XML, HTML, External entites with security and NCR control
+homepage: 
+license: mit
+licenses:
+- sources: README.md
+  text: MIT
+notices: []

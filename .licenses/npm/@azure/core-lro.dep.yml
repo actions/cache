@@ -1,6 +1,6 @@
 ---
 name: "@azure/core-lro"
-version: 2.5.1
+version: 2.7.2
 type: npm
 summary: Isomorphic client library for supporting long-running operations in node.js
   and browser.

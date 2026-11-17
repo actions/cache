@@ -1,70 +1,66 @@
-import * as cache from "@actions/cache";
-import * as core from "@actions/core";
+import { afterEach, beforeEach, expect, jest, test } from "@jest/globals";
 
-import { Events, Inputs, RefKey } from "../src/constants";
-import { saveRun } from "../src/saveImpl";
-import * as actionUtils from "../src/utils/actionUtils";
-import * as testUtils from "../src/utils/testUtils";
-
-jest.mock("@actions/core");
-jest.mock("@actions/cache");
-jest.mock("../src/utils/actionUtils");
-
-beforeAll(() => {
-    jest.spyOn(core, "getInput").mockImplementation((name, options) => {
-        return jest.requireActual("@actions/core").getInput(name, options);
-    });
-
-    jest.spyOn(core, "getState").mockImplementation(name => {
-        return jest.requireActual("@actions/core").getState(name);
-    });
-
-    jest.spyOn(actionUtils, "getInputAsArray").mockImplementation(
-        (name, options) => {
-            return jest
-                .requireActual("../src/utils/actionUtils")
-                .getInputAsArray(name, options);
+// Mock @actions/core
+jest.unstable_mockModule("@actions/core", () => ({
+    getInput: jest.fn((name: string, options?: { required?: boolean }) => {
+        const val =
+            process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
+        if (options && options.required && !val) {
+            throw new Error(`Input required and not supplied: ${name}`);
         }
-    );
+        return val.trim();
+    }),
+    setOutput: jest.fn(),
+    setFailed: jest.fn(),
+    info: jest.fn(),
+    warning: jest.fn(),
+    debug: jest.fn(),
+    error: jest.fn(),
+    saveState: jest.fn(),
+    getState: jest.fn(() => ""),
+    isDebug: jest.fn(() => false),
+    exportVariable: jest.fn(),
+    addPath: jest.fn(),
+    group: jest.fn((name: string, fn: () => Promise<unknown>) => fn()),
+    startGroup: jest.fn(),
+    endGroup: jest.fn()
+}));
 
-    jest.spyOn(actionUtils, "getInputAsInt").mockImplementation(
-        (name, options) => {
-            return jest
-                .requireActual("../src/utils/actionUtils")
-                .getInputAsInt(name, options);
+// Mock @actions/cache
+jest.unstable_mockModule("@actions/cache", () => ({
+    restoreCache: jest.fn(),
+    saveCache: jest.fn(),
+    isFeatureAvailable: jest.fn(() => true),
+    ReserveCacheError: class ReserveCacheError extends Error {
+        constructor(message: string) {
+            super(message);
+            this.name = "ReserveCacheError";
         }
-    );
+    }
+}));
 
-    jest.spyOn(actionUtils, "getInputAsBool").mockImplementation(
-        (name, options) => {
-            return jest
-                .requireActual("../src/utils/actionUtils")
-                .getInputAsBool(name, options);
-        }
-    );
-
-    jest.spyOn(actionUtils, "isExactKeyMatch").mockImplementation(
-        (key, cacheResult) => {
-            return jest
-                .requireActual("../src/utils/actionUtils")
-                .isExactKeyMatch(key, cacheResult);
-        }
-    );
-
-    jest.spyOn(actionUtils, "isValidEvent").mockImplementation(() => {
-        const actualUtils = jest.requireActual("../src/utils/actionUtils");
-        return actualUtils.isValidEvent();
-    });
-});
+const core = await import("@actions/core");
+const cache = await import("@actions/cache");
+const { Events, Inputs, RefKey } = await import("../src/constants");
+const { saveRun } = await import("../src/saveImpl");
+const testUtils = await import("../src/utils/testUtils");
 
 beforeEach(() => {
+    jest.clearAllMocks();
+    (core.getInput as jest.Mock).mockImplementation(
+        (name: string, options?: { required?: boolean }) => {
+            const val =
+                process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] ||
+                "";
+            if (options && options.required && !val) {
+                throw new Error(`Input required and not supplied: ${name}`);
+            }
+            return val.trim();
+        }
+    );
+    (cache.isFeatureAvailable as jest.Mock).mockReturnValue(true);
     process.env[Events.Key] = Events.Push;
     process.env[RefKey] = "refs/heads/feature-branch";
-
-    jest.spyOn(actionUtils, "isGhes").mockImplementation(() => false);
-    jest.spyOn(actionUtils, "isCacheFeatureAvailable").mockImplementation(
-        () => true
-    );
 });
 
 afterEach(() => {
@@ -74,36 +70,24 @@ afterEach(() => {
 });
 
 test("save with valid inputs uploads a cache", async () => {
-    const failedMock = jest.spyOn(core, "setFailed");
-
     const primaryKey = "Linux-node-bb828da54c148048dd17899ba9fda624811cfb43";
     const savedCacheKey = "Linux-node-";
 
-    jest.spyOn(core, "getState")
-        // Cache Entry State
-        .mockImplementationOnce(() => {
-            return primaryKey;
-        })
-        // Cache Key State
-        .mockImplementationOnce(() => {
-            return savedCacheKey;
-        });
+    (core.getState as jest.Mock)
+        .mockReturnValueOnce(primaryKey)
+        .mockReturnValueOnce(savedCacheKey);
 
     const inputPath = "node_modules";
     testUtils.setInput(Inputs.Path, inputPath);
     testUtils.setInput(Inputs.UploadChunkSize, "4000000");
 
     const cacheId = 4;
-    const saveCacheMock = jest
-        .spyOn(cache, "saveCache")
-        .mockImplementationOnce(() => {
-            return Promise.resolve(cacheId);
-        });
+    (cache.saveCache as jest.Mock).mockResolvedValue(cacheId);
 
     await saveRun();
 
-    expect(saveCacheMock).toHaveBeenCalledTimes(1);
-    expect(saveCacheMock).toHaveBeenCalledWith(
+    expect(cache.saveCache).toHaveBeenCalledTimes(1);
+    expect(cache.saveCache).toHaveBeenCalledWith(
         [inputPath],
         primaryKey,
         {
@@ -112,5 +96,5 @@ test("save with valid inputs uploads a cache", async () => {
         false
     );
 
-    expect(failedMock).toHaveBeenCalledTimes(0);
+    expect(core.setFailed).toHaveBeenCalledTimes(0);
 });

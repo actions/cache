@@ -84,7 +84,11 @@ export async function saveOnlyRun(
     try {
         const cacheId = await saveImpl(new NullStateProvider());
         if (cacheId === -1) {
-            core.warning(`Cache save failed.`);
+            // The toolkit's saveCache already logs the underlying reason at
+            // the appropriate severity (warning for most failures, info for
+            // benign concurrency races, error for 5xx). Avoid emitting a
+            // generic warning here that would duplicate or mask that signal.
+            core.debug(`Cache was not saved.`);
         }
     } catch (err) {
         console.error(err);
