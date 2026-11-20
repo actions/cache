@@ -33,7 +33,7 @@ If you do not upgrade, all workflow runs using any of the deprecated [actions/ca
 
 Upgrading to the recommended versions will not break your workflows.
 
-> **Additionally, if you are managing your own GitHub runners, you must update your runner version to `2.231.0` or newer to ensure compatibility with the new cache service.**
+> **Additionally, if you are managing your own GitHub runners, you must update your runner version to `2.321.0` or newer to ensure compatibility with the new cache service.**
 > Failure to update both the action version and your runner version may result in workflow failures after the migration date.
 
 Read more about the change & access the migration guide: [reference to the announcement](https://github.com/actions/cache/discussions/1510).
